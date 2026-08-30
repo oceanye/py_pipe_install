@@ -1,0 +1,40 @@
+name: 功能建议
+description: 提议新的能力、试验或工程改进
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的问题
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收方式
+      description: 给出可测量的完成条件和需要覆盖的安全场景。
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 主要范围
+      options:
+        - CAD / 数字孪生
+        - 相机 / 标定 / 采集
+        - OpenCV / 几何算法
+        - 状态机 / 证据链
+        - AI / VLM
+        - 多机位 / 3DGS
+        - 部署 / 存储 / 安全
+        - 文档 / 测试
+    validations:
+      required: true

@@ -1,0 +1,2 @@
+# The documentation/planning stage currently has no third-party runtime dependencies.
+# Add direct dependencies here when executable modules are introduced.

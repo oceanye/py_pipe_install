@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题
+    url: https://github.com/oceanye/py_pipe_install/security/advisories/new
+    about: 请通过私有 Security Advisory 报告凭据、数据或安全问题。

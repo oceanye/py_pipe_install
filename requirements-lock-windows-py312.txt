@@ -1,0 +1,2 @@
+# Validated lock for Windows and CPython 3.12.
+# No third-party packages are required at the current documentation/planning stage.

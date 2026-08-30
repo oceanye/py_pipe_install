@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs and generated outputs
+*.log
+/artifacts/
+/outputs/
+/runs/
+/build/
+/dist/
+*.egg-info/
+
+# Raw capture data should live in controlled object storage
+/data/raw/
+/data/captures/
+*.avi
+*.mp4
+*.mkv
+*.bag

@@ -1,0 +1,51 @@
+name: Bug 报告
+description: 报告可复现的错误、误判或工程故障
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: 请勿在 Issue 中提交凭据、现场网络信息或未经脱敏的人员影像。
+  - type: textarea
+    id: result
+    attributes:
+      label: 问题结果
+      description: 实际发生了什么？
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 重现步骤
+      description: 包括输入、配置、命令和最小复现条件。
+    validations:
+      required: true
+  - type: textarea
+    id: revisions
+    attributes:
+      label: 版本信息
+      description: 代码提交、相机、固件、CAD、标定、配置和模型 revision/hash。
+    validations:
+      required: true
+  - type: dropdown
+    id: safety
+    attributes:
+      label: 是否涉及错误状态推进或错误缺失？
+      options:
+        - 否
+        - 是，已停止相关状态写入
+        - 不确定
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据与日志
+      description: 提供去敏后的 reason code、指标和诊断包引用，不要粘贴密钥。
