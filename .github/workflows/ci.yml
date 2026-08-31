@@ -39,3 +39,8 @@ jobs:
           python -m pipe_twin analyze
           --manifest test_model/manifest.json
           --output outputs/current_demo_report.json
+      - name: Generate pipe-group2 synthetic stereo fixture
+        run: >-
+          python -m pipe_twin simulate-stereo
+          --manifest test_model/pipe_group2_manifest.json
+          --output-dir outputs/pipe_group2_synthetic_stereo

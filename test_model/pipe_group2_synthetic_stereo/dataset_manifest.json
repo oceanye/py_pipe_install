@@ -1,0 +1,394 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "pipe-group2-synthetic-stereo-v1",
+  "domain": "synthetic_cad_truth",
+  "generated_by": {
+    "package": "pipe_twin",
+    "version": "0.2.0",
+    "renderer": "cpu_triangle_zbuffer_v1",
+    "random_seed": null
+  },
+  "source": {
+    "manifest_path": "pipe_group2_manifest.json",
+    "manifest_sha256": "bafdddfaf3afac345c8651b81c27ff7b6c0917f5e20513477468b16fd087c8ca",
+    "model_path": "管道群2.3mf",
+    "model_sha256": "782c4e0180f64d1ee0cd520662b216a9952d6b28769caeff7749a88b398583dc",
+    "reference_video": {
+      "path": "管道群2.mkv",
+      "sha256": "a7a0a0483a890219f5f6c50820dcac6734dce6217e59c592f3bba74d37587ee9",
+      "role": "visual_reference_only_not_stereo_truth",
+      "verified_but_not_used_for_rendering": true
+    }
+  },
+  "calibration": {
+    "path": "camera.json",
+    "sha256": "4b1251a764b6e0fb902b96f0a2830c5a766d0ec0925500060d3dd012f9a38ebc",
+    "size_bytes": 3517
+  },
+  "truth_semantics": {
+    "depth": "float32 camera optical-axis Z in millimetres; NaN is background",
+    "disparity": "float32 rectified magnitude fx*baseline/depth in pixels; NaN is background",
+    "stereo_correspondence_valid": "bool source pixel has a same-instance, depth-consistent visible sample in the paired view",
+    "instance": "uint16 stable instance_id; 0 is background",
+    "identity_source": "manifest instance_id, never RGB color",
+    "field_calibration_validated": false,
+    "installation_state_inferred": false
+  },
+  "instance_catalog": [
+    {
+      "instance_id": 1,
+      "pipe_id": "PG2-F-RED-D40-Y260",
+      "cad_object_id": "7",
+      "cad_uuid": "ab439689-684b-4bd8-b172-28bf31a8646e",
+      "layer_id": "front",
+      "color_class": "red",
+      "color_srgb": "#FF0000",
+      "nominal_diameter_mm": 40.0,
+      "cad_measured_diameter_mm": 39.999997764218946,
+      "centerline_world_mm": [
+        [
+          0.0,
+          260.27185055946256,
+          0.0
+        ],
+        [
+          500.0,
+          260.27185055946256,
+          0.0
+        ]
+      ]
+    },
+    {
+      "instance_id": 2,
+      "pipe_id": "PG2-F-BLUE-D45-Y105",
+      "cad_object_id": "5",
+      "cad_uuid": "23376a75-b798-4457-a9f0-1b3acfd5719d",
+      "layer_id": "front",
+      "color_class": "blue",
+      "color_srgb": "#0036FA",
+      "nominal_diameter_mm": 45.0,
+      "cad_measured_diameter_mm": 44.99999876006482,
+      "centerline_world_mm": [
+        [
+          0.0,
+          104.94650468574024,
+          -1.5383026352692468
+        ],
+        [
+          500.0,
+          104.94650468574024,
+          -1.5383026352692468
+        ]
+      ]
+    },
+    {
+      "instance_id": 3,
+      "pipe_id": "PG2-F-WHITE-D20-Y033",
+      "cad_object_id": "9",
+      "cad_uuid": "cd0dc82f-b964-497a-97b8-c0a40d1a0ad4",
+      "layer_id": "front",
+      "color_class": "white",
+      "color_srgb": "#FEFEFF",
+      "nominal_diameter_mm": 20.0,
+      "cad_measured_diameter_mm": 19.999999589678517,
+      "centerline_world_mm": [
+        [
+          0.0,
+          32.97864167528042,
+          -0.6342046432736197
+        ],
+        [
+          500.0,
+          32.97864167528042,
+          -0.6342046432736197
+        ]
+      ]
+    },
+    {
+      "instance_id": 4,
+      "pipe_id": "PG2-B-BLUE-D45-Y285",
+      "cad_object_id": "1",
+      "cad_uuid": "55b5ef97-fec2-4c83-ace8-156403c7bba2",
+      "layer_id": "back",
+      "color_class": "blue",
+      "color_srgb": "#0036FA",
+      "nominal_diameter_mm": 45.0,
+      "cad_measured_diameter_mm": 44.999996642810295,
+      "centerline_world_mm": [
+        [
+          0.0,
+          284.9465088456587,
+          -131.53830148958812
+        ],
+        [
+          500.0,
+          284.9465088456587,
+          -131.53830148958812
+        ]
+      ]
+    },
+    {
+      "instance_id": 5,
+      "pipe_id": "PG2-B-RED-D40-Y223",
+      "cad_object_id": "11",
+      "cad_uuid": "fa7e784a-3662-49e6-8f8b-4e5b65cc41d3",
+      "layer_id": "back",
+      "color_class": "red",
+      "color_srgb": "#FF0000",
+      "nominal_diameter_mm": 40.0,
+      "cad_measured_diameter_mm": 40.000003077443644,
+      "centerline_world_mm": [
+        [
+          0.0,
+          223.19543985390376,
+          -139.9694716161839
+        ],
+        [
+          500.0,
+          223.19543985390376,
+          -139.9694716161839
+        ]
+      ]
+    },
+    {
+      "instance_id": 6,
+      "pipe_id": "PG2-B-BLUE-D45-Y145",
+      "cad_object_id": "13",
+      "cad_uuid": "5682b102-1f66-4766-af2d-d703ef4a9a45",
+      "layer_id": "back",
+      "color_class": "blue",
+      "color_srgb": "#0036FA",
+      "nominal_diameter_mm": 45.0,
+      "cad_measured_diameter_mm": 44.99999759966394,
+      "centerline_world_mm": [
+        [
+          0.0,
+          144.94650370754138,
+          -131.5383014895884
+        ],
+        [
+          500.0,
+          144.94650370754138,
+          -131.5383014895884
+        ]
+      ]
+    },
+    {
+      "instance_id": 7,
+      "pipe_id": "PG2-B-WHITE-D20-Y103",
+      "cad_object_id": "3",
+      "cad_uuid": "fdc46d2f-aa38-40a4-acb8-80a111c539aa",
+      "layer_id": "back",
+      "color_class": "white",
+      "color_srgb": "#FEFEFF",
+      "nominal_diameter_mm": 20.0,
+      "cad_measured_diameter_mm": 19.99999668663595,
+      "centerline_world_mm": [
+        [
+          0.0,
+          102.97864078359854,
+          -130.63420480399293
+        ],
+        [
+          500.0,
+          102.97864078359854,
+          -130.63420480399293
+        ]
+      ]
+    },
+    {
+      "instance_id": 8,
+      "pipe_id": "PG2-B-WHITE-D20-Y073",
+      "cad_object_id": "17",
+      "cad_uuid": "bf9c4780-ee4a-494a-92fa-0a1376ee7b78",
+      "layer_id": "back",
+      "color_class": "white",
+      "color_srgb": "#FEFEFF",
+      "nominal_diameter_mm": 20.0,
+      "cad_measured_diameter_mm": 19.9999971732819,
+      "centerline_world_mm": [
+        [
+          0.0,
+          72.97864040392427,
+          -130.6342048039923
+        ],
+        [
+          500.0,
+          72.97864040392427,
+          -130.6342048039923
+        ]
+      ]
+    },
+    {
+      "instance_id": 9,
+      "pipe_id": "PG2-B-WHITE-D20-Y033",
+      "cad_object_id": "15",
+      "cad_uuid": "26cd1040-975e-4769-8456-863a0cbca5f5",
+      "layer_id": "back",
+      "color_class": "white",
+      "color_srgb": "#FEFEFF",
+      "nominal_diameter_mm": 20.0,
+      "cad_measured_diameter_mm": 19.999998712717165,
+      "centerline_world_mm": [
+        [
+          0.0,
+          32.97864104472611,
+          -130.63420480399307
+        ],
+        [
+          500.0,
+          32.97864104472611,
+          -130.63420480399307
+        ]
+      ]
+    }
+  ],
+  "capture": {
+    "capture_group_id": "pipe-group2-static-all-active",
+    "scene_state_id": "all-nine-active",
+    "synthetic_sync_error_ns": 0,
+    "products": {
+      "left": {
+        "camera_id": "left",
+        "rgb": {
+          "path": "left_rgb.png",
+          "sha256": "0837c82eab501d21a1a0a34a8a89a59bb9902c5d980d1289819fb0b8ed665a3e",
+          "size_bytes": 14840,
+          "shape": [
+            1080,
+            1920,
+            3
+          ],
+          "dtype": "uint8"
+        },
+        "rgb_textured": {
+          "path": "left_rgb_textured.png",
+          "sha256": "ec889ed27c65546ca4da0d9b2905862cf2dbf60a3168e049c238323620b20fd5",
+          "size_bytes": 465157,
+          "shape": [
+            1080,
+            1920,
+            3
+          ],
+          "dtype": "uint8"
+        },
+        "truth_npz": {
+          "path": "left_truth.npz",
+          "sha256": "3676bdc91411f0f516f7b2cb2307b2551dc51a9400404fa91def32feab55b141",
+          "size_bytes": 39744
+        },
+        "depth_preview": {
+          "path": "left_depth_preview.png",
+          "sha256": "c59c6e15de9863da29f74e61201d4a3c3897460b3e8e5479a7ca550c00d6b443",
+          "size_bytes": 16033
+        },
+        "instance_preview": {
+          "path": "left_instance_preview.png",
+          "sha256": "48152f5080a116a019dca4f01312e068835eac0f76edc6f43860fb33da3a4ffa",
+          "size_bytes": 14347
+        },
+        "view_topology": {
+          "path": "left_view_topology.json",
+          "sha256": "e500f0ddb14f850dbbefe801edd08ca34051cfac5fab0e6758db42da4b674900",
+          "size_bytes": 10494
+        }
+      },
+      "right": {
+        "camera_id": "right",
+        "rgb": {
+          "path": "right_rgb.png",
+          "sha256": "d74e784e628b99ef4b731cf7d2ea785d6c8cee6c91e40cee5174cb7c0a276e33",
+          "size_bytes": 14840,
+          "shape": [
+            1080,
+            1920,
+            3
+          ],
+          "dtype": "uint8"
+        },
+        "rgb_textured": {
+          "path": "right_rgb_textured.png",
+          "sha256": "ccc9183015017ec8ce660d858458c7df7458beebf7aef600c62edfc19ee63f27",
+          "size_bytes": 465161,
+          "shape": [
+            1080,
+            1920,
+            3
+          ],
+          "dtype": "uint8"
+        },
+        "truth_npz": {
+          "path": "right_truth.npz",
+          "sha256": "fdc64bd56fbbad9c22f5200fe0ed3215574649ebe0b848a5c312feef908930cc",
+          "size_bytes": 39742
+        },
+        "depth_preview": {
+          "path": "right_depth_preview.png",
+          "sha256": "3c549d086bc1348b444d1f547e3cf6ae4892e86b5ee85093a576283db9d408a1",
+          "size_bytes": 16033
+        },
+        "instance_preview": {
+          "path": "right_instance_preview.png",
+          "sha256": "5e056eca0f4467d82c36eb8affe5aed18be75369926dc0ce41bd61808ef11bca",
+          "size_bytes": 14347
+        },
+        "view_topology": {
+          "path": "right_view_topology.json",
+          "sha256": "7f2f5c4ec63e87bf738540590de61e51ea4f6b2ced7de9b1884c3c81523be30e",
+          "size_bytes": 10496
+        }
+      }
+    }
+  },
+  "reference_elevation": {
+    "rgb": {
+      "path": "elevation_reference.png",
+      "sha256": "845f50a2d9495af1572bad8ff08e8d5482bd53f9e9758cc0bba8852b02adb89b",
+      "size_bytes": 11008,
+      "shape": [
+        1000,
+        1600,
+        3
+      ],
+      "dtype": "uint8"
+    },
+    "amodal_overlay": {
+      "path": "elevation_amodal_overlay.png",
+      "sha256": "46b28258e04bf82fa53d44c13e7db8834819445526ffab1cdf9373cbe796805d",
+      "size_bytes": 96938
+    },
+    "view_topology": {
+      "path": "elevation_view_topology.json",
+      "sha256": "2efa125e780c96c79ce1eaa82c74510f23a1b4fcb0a1c68d72c682fe0808cbec",
+      "size_bytes": 10604
+    },
+    "vector_reference": {
+      "path": "elevation_reference.svg",
+      "sha256": "0f1a0df5424f7ff58eed11c1b52defe27cd9bc4a18ca7677f3b700921f2d6704",
+      "size_bytes": 4561
+    },
+    "topology_graph": {
+      "path": "occlusion_topology_graph.svg",
+      "sha256": "72cdaa2f8b2a76c2d0ab736b6f4bef3b32a4779f6e3dc520d726c0c1169df38a",
+      "size_bytes": 4559
+    },
+    "occlusion_matrix": {
+      "path": "occlusion_matrix.csv",
+      "sha256": "4523ae5e52235e2665a1a3cf3e6671cdddb729a8ea3543001a77f20a99142765",
+      "size_bytes": 1271
+    },
+    "continuous_overlap": {
+      "path": "elevation_continuous_overlap.csv",
+      "sha256": "5581ee4197789860cfbedd82c74d7c8b361af1dc65512a3c32da363fef6df2b6",
+      "size_bytes": 925
+    }
+  },
+  "limitations": [
+    "This dataset validates CAD projection, stereo geometry, depth ownership, and occlusion topology only.",
+    "It does not validate field camera calibration, reflective material response, sensor noise, D22/D50 physical accuracy, or installation state.",
+    "Flat RGB is not suitable for validating dense stereo matching; *_rgb_textured.png adds deterministic artificial world-anchored texture for OpenCV matcher experiments.",
+    "The rasterizer does not clip triangles crossing near/far planes; this fixture stays fully inside its clipping range.",
+    "Occlusion matrices are per-render pixel truth; elevation_continuous_overlap.csv separately reports nominal continuous cross-section overlap.",
+    "FULLY_OCCLUDED and NOT_OBSERVED never imply NOT_INSTALLED."
+  ]
+}

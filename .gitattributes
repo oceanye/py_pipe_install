@@ -5,6 +5,9 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 *.json text eol=lf
+*.csv text eol=lf
+*.svg text eol=lf
 *.sat binary
 *.3mf binary
 *.mkv binary
+*.npz binary

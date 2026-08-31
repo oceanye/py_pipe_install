@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+<rect width="100%" height="100%" fill="#AEAEAE"/>
+<g>
+<path d="M 425 387 L 425 442 L 1174 442 L 1174 387 Z" fill="#FF0000" stroke="#202020" stroke-width="0.8" opacity="0.9"/>
+<path d="M 425 497 L 425 556 L 1174 556 L 1174 497 Z" fill="#0036FA" stroke="#202020" stroke-width="0.8" opacity="0.9"/>
+<path d="M 425 287 L 425 326 L 1174 326 L 1174 287 Z" fill="#0036FA" stroke="#202020" stroke-width="0.8" opacity="0.9"/>
+<path d="M 425 624 L 425 652 L 1174 652 L 1174 624 Z" fill="#FEFEFF" stroke="#202020" stroke-width="0.8" opacity="0.9"/>
+<path d="M 425 557 L 425 623 L 1174 623 L 1174 557 Z" fill="#0036FA" stroke="#202020" stroke-width="0.8" opacity="0.9"/>
+<path d="M 425 683 L 425 712 L 1174 712 L 1174 683 Z" fill="#FEFEFF" stroke="#202020" stroke-width="0.8" opacity="0.9"/>
+<path d="M 425 327 L 425 386 L 1174 386 L 1174 327 Z" fill="#FF0000" stroke="#202020" stroke-width="0.8" opacity="0.9"/>
+</g><g>
+<path d="M 425 383 L 425 442 L 1174 442 L 1174 383 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 383 L 425 442 L 1174 442 L 1174 383 Z" fill="none" stroke="#FF0000" stroke-width="2" stroke-dasharray="9 6"/>
+<path d="M 425 497 L 425 563 L 1174 563 L 1174 497 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 497 L 425 563 L 1174 563 L 1174 497 Z" fill="none" stroke="#0036FA" stroke-width="2" stroke-dasharray="9 6"/>
+<path d="M 425 287 L 425 353 L 1174 353 L 1174 287 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 287 L 425 353 L 1174 353 L 1174 287 Z" fill="none" stroke="#0036FA" stroke-width="2" stroke-dasharray="9 6"/>
+<path d="M 425 683 L 425 712 L 1174 712 L 1174 683 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 683 L 425 712 L 1174 712 L 1174 683 Z" fill="none" stroke="#FEFEFF" stroke-width="2" stroke-dasharray="9 6"/>
+<path d="M 425 578 L 425 607 L 1174 607 L 1174 578 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 578 L 425 607 L 1174 607 L 1174 578 Z" fill="none" stroke="#FEFEFF" stroke-width="2" stroke-dasharray="9 6"/>
+<path d="M 425 623 L 425 652 L 1174 652 L 1174 623 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 623 L 425 652 L 1174 652 L 1174 623 Z" fill="none" stroke="#FEFEFF" stroke-width="2" stroke-dasharray="9 6"/>
+<path d="M 425 557 L 425 623 L 1174 623 L 1174 557 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 557 L 425 623 L 1174 623 L 1174 557 Z" fill="none" stroke="#0036FA" stroke-width="2" stroke-dasharray="9 6"/>
+<path d="M 425 683 L 425 712 L 1174 712 L 1174 683 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 683 L 425 712 L 1174 712 L 1174 683 Z" fill="none" stroke="#FEFEFF" stroke-width="2" stroke-dasharray="9 6"/>
+<path d="M 425 327 L 425 386 L 1174 386 L 1174 327 Z" fill="none" stroke="#151515" stroke-width="5" stroke-dasharray="9 6" opacity="0.8"/>
+<path d="M 425 327 L 425 386 L 1174 386 L 1174 327 Z" fill="none" stroke="#FF0000" stroke-width="2" stroke-dasharray="9 6"/>
+</g><g font-family="Arial, sans-serif" font-size="14">
+<rect x="1190" y="70" width="400" height="515" fill="#F5F5F5" stroke="#222"/>
+<text x="1205" y="101" font-size="17">Instance / layer / state / visible</text>
+<text x="1208" y="142" fill="#111">1 / front / FULLY_VISIBLE / 100.0%</text>
+<text x="1208" y="188" fill="#111">2 / front / FULLY_VISIBLE / 100.0%</text>
+<text x="1208" y="234" fill="#111">3 / front / FULLY_VISIBLE / 100.0%</text>
+<text x="1208" y="280" fill="#111">4 / back / PARTIALLY_OCCLUDED / 59.7%</text>
+<text x="1208" y="326" fill="#111">5 / back / PARTIALLY_OCCLUDED / 93.3%</text>
+<text x="1208" y="372" fill="#111">6 / back / PARTIALLY_OCCLUDED / 89.6%</text>
+<text x="1208" y="418" fill="#111">7 / back / FULLY_OCCLUDED / 0.0%</text>
+<text x="1208" y="464" fill="#111">8 / back / PARTIALLY_OCCLUDED / 96.7%</text>
+<text x="1208" y="510" fill="#111">9 / back / FULLY_OCCLUDED / 0.0%</text>
+</g>
+<g font-family="Arial, sans-serif" font-size="16" fill="#111">
+<text x="24" y="30">Solid fill = visible; dashed outline = amodal/occluded extent</text>
+<text x="24" y="54">Reference elevation looks along world -Z; identity comes from instance_id</text>
+</g>
+</svg>

@@ -1,7 +1,7 @@
-"""Single-layer pipe digital-twin validation baseline."""
+"""Pipe digital-twin validation fixtures and synthetic truth generation."""
 
 from __future__ import annotations
 
 __all__ = ["__version__"]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

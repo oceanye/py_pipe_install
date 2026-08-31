@@ -1,0 +1,448 @@
+{
+  "schema_version": "1.0",
+  "camera_id": "right",
+  "edge_direction": "occluder_to_occluded_target",
+  "pipes": [
+    {
+      "instance_id": 1,
+      "pipe_id": "PG2-F-RED-D40-Y260",
+      "layer_id": "front",
+      "nominal_diameter_mm": 40.0,
+      "axis_uv": [
+        [
+          191.3731048771133,
+          294.40295651206054
+        ],
+        [
+          1483.1830126466707,
+          294.40295651206054
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1020.884848,
+        1020.884848
+      ],
+      "amodal_bbox_xywh": [
+        176,
+        243,
+        1318,
+        103
+      ],
+      "visible_bbox_xywh": [
+        176,
+        243,
+        1318,
+        103
+      ],
+      "amodal_pixels_in_frame": 135155,
+      "visible_pixels": 135155,
+      "occluded_pixels": 0,
+      "visible_fraction": 1.0,
+      "visible_axis_coverage": 1.0,
+      "largest_visible_component_pixels": 135155,
+      "occlusion_state": "FULLY_VISIBLE",
+      "assessable": true,
+      "occluders": []
+    },
+    {
+      "instance_id": 2,
+      "pipe_id": "PG2-F-BLUE-D45-Y105",
+      "layer_id": "front",
+      "nominal_diameter_mm": 45.0,
+      "axis_uv": [
+        [
+          192.52955441326844,
+          695.4703301950371
+        ],
+        [
+          1482.395849517019,
+          695.4703301950371
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1022.4231506352693,
+        1022.4231506352693
+      ],
+      "amodal_bbox_xywh": [
+        175,
+        637,
+        1319,
+        117
+      ],
+      "visible_bbox_xywh": [
+        175,
+        637,
+        1319,
+        117
+      ],
+      "amodal_pixels_in_frame": 153566,
+      "visible_pixels": 153566,
+      "occluded_pixels": 0,
+      "visible_fraction": 1.0,
+      "visible_axis_coverage": 1.0,
+      "largest_visible_component_pixels": 153566,
+      "occlusion_state": "FULLY_VISIBLE",
+      "assessable": true,
+      "occluders": []
+    },
+    {
+      "instance_id": 3,
+      "pipe_id": "PG2-F-WHITE-D20-Y033",
+      "layer_id": "front",
+      "nominal_diameter_mm": 20.0,
+      "axis_uv": [
+        [
+          191.85030277623287,
+          881.4300881922453
+        ],
+        [
+          1482.8581972699592,
+          881.4300881922453
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1021.5190526432737,
+        1021.5190526432737
+      ],
+      "amodal_bbox_xywh": [
+        184,
+        855,
+        1304,
+        52
+      ],
+      "visible_bbox_xywh": [
+        184,
+        855,
+        1304,
+        52
+      ],
+      "amodal_pixels_in_frame": 67645,
+      "visible_pixels": 67645,
+      "occluded_pixels": 0,
+      "visible_fraction": 1.0,
+      "visible_axis_coverage": 1.0,
+      "largest_visible_component_pixels": 67645,
+      "occlusion_state": "FULLY_VISIBLE",
+      "assessable": true,
+      "occluders": []
+    },
+    {
+      "instance_id": 4,
+      "pipe_id": "PG2-B-BLUE-D45-Y285",
+      "layer_id": "back",
+      "nominal_diameter_mm": 45.0,
+      "axis_uv": [
+        [
+          279.10466104071486,
+          265.9620788028893
+        ],
+        [
+          1423.4665752580008,
+          265.9620788028893
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1152.4231494895882,
+        1152.4231494895882
+      ],
+      "amodal_bbox_xywh": [
+        266,
+        214,
+        1167,
+        103
+      ],
+      "visible_bbox_xywh": [
+        266,
+        214,
+        1166,
+        29
+      ],
+      "amodal_pixels_in_frame": 119708,
+      "visible_pixels": 33656,
+      "occluded_pixels": 86052,
+      "visible_fraction": 0.281150800280683,
+      "visible_axis_coverage": 0.9991431019708654,
+      "largest_visible_component_pixels": 33656,
+      "occlusion_state": "PARTIALLY_OCCLUDED",
+      "assessable": true,
+      "occluders": [
+        {
+          "occluder_instance_id": 1,
+          "occluder_pipe_id": "PG2-F-RED-D40-Y260",
+          "occluded_pixels": 86052,
+          "fraction_of_target_amodal": 0.718849199719317
+        }
+      ]
+    },
+    {
+      "instance_id": 5,
+      "pipe_id": "PG2-B-RED-D40-Y223",
+      "layer_id": "back",
+      "nominal_diameter_mm": 40.0,
+      "axis_uv": [
+        [
+          284.0499365538989,
+          408.2570580420728
+        ],
+        [
+          1420.1004633540688,
+          408.2570580420728
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1160.854319616184,
+        1160.854319616184
+      ],
+      "amodal_bbox_xywh": [
+        272,
+        363,
+        1156,
+        91
+      ],
+      "visible_bbox_xywh": [
+        272,
+        363,
+        1156,
+        91
+      ],
+      "amodal_pixels_in_frame": 104805,
+      "visible_pixels": 104805,
+      "occluded_pixels": 0,
+      "visible_fraction": 1.0,
+      "visible_axis_coverage": 1.0,
+      "largest_visible_component_pixels": 104805,
+      "occlusion_state": "FULLY_VISIBLE",
+      "assessable": true,
+      "occluders": []
+    },
+    {
+      "instance_id": 6,
+      "pipe_id": "PG2-B-BLUE-D45-Y145",
+      "layer_id": "back",
+      "nominal_diameter_mm": 45.0,
+      "axis_uv": [
+        [
+          279.104661040715,
+          586.3834265434609
+        ],
+        [
+          1423.4665752580008,
+          586.3834265434609
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1152.4231494895885,
+        1152.4231494895885
+      ],
+      "amodal_bbox_xywh": [
+        266,
+        535,
+        1167,
+        103
+      ],
+      "visible_bbox_xywh": [
+        266,
+        535,
+        1167,
+        102
+      ],
+      "amodal_pixels_in_frame": 119711,
+      "visible_pixels": 118563,
+      "occluded_pixels": 1148,
+      "visible_fraction": 0.9904102379898255,
+      "visible_axis_coverage": 1.0,
+      "largest_visible_component_pixels": 118563,
+      "occlusion_state": "PARTIALLY_OCCLUDED",
+      "assessable": true,
+      "occluders": [
+        {
+          "occluder_instance_id": 2,
+          "occluder_pipe_id": "PG2-F-BLUE-D45-Y105",
+          "occluded_pixels": 1148,
+          "fraction_of_target_amodal": 0.009589762010174504
+        }
+      ]
+    },
+    {
+      "instance_id": 7,
+      "pipe_id": "PG2-B-WHITE-D20-Y103",
+      "layer_id": "back",
+      "nominal_diameter_mm": 20.0,
+      "axis_uv": [
+        [
+          278.5700670036546,
+          682.5481059986616
+        ],
+        [
+          1423.8304585941512,
+          682.5481059986616
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1151.519052803993,
+        1151.519052803993
+      ],
+      "amodal_bbox_xywh": [
+        273,
+        660,
+        1155,
+        45
+      ],
+      "visible_bbox_xywh": null,
+      "amodal_pixels_in_frame": 51894,
+      "visible_pixels": 0,
+      "occluded_pixels": 51894,
+      "visible_fraction": 0.0,
+      "visible_axis_coverage": 0.0,
+      "largest_visible_component_pixels": 0,
+      "occlusion_state": "FULLY_OCCLUDED",
+      "assessable": false,
+      "occluders": [
+        {
+          "occluder_instance_id": 2,
+          "occluder_pipe_id": "PG2-F-BLUE-D45-Y105",
+          "occluded_pixels": 51894,
+          "fraction_of_target_amodal": 1.0
+        }
+      ]
+    },
+    {
+      "instance_id": 8,
+      "pipe_id": "PG2-B-WHITE-D20-Y073",
+      "layer_id": "back",
+      "nominal_diameter_mm": 20.0,
+      "axis_uv": [
+        [
+          278.5700670036541,
+          751.2637303637433
+        ],
+        [
+          1423.8304585941514,
+          751.2637303637433
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1151.5190528039923,
+        1151.5190528039923
+      ],
+      "amodal_bbox_xywh": [
+        273,
+        728,
+        1155,
+        46
+      ],
+      "visible_bbox_xywh": [
+        273,
+        754,
+        1155,
+        20
+      ],
+      "amodal_pixels_in_frame": 53040,
+      "visible_pixels": 23066,
+      "occluded_pixels": 29974,
+      "visible_fraction": 0.4348793363499246,
+      "visible_axis_coverage": 1.0,
+      "largest_visible_component_pixels": 23066,
+      "occlusion_state": "PARTIALLY_OCCLUDED",
+      "assessable": true,
+      "occluders": [
+        {
+          "occluder_instance_id": 2,
+          "occluder_pipe_id": "PG2-F-BLUE-D45-Y105",
+          "occluded_pixels": 29974,
+          "fraction_of_target_amodal": 0.5651206636500754
+        }
+      ]
+    },
+    {
+      "instance_id": 9,
+      "pipe_id": "PG2-B-WHITE-D20-Y033",
+      "layer_id": "back",
+      "nominal_diameter_mm": 20.0,
+      "axis_uv": [
+        [
+          278.5700670036547,
+          842.8845602232129
+        ],
+        [
+          1423.830458594151,
+          842.8845602232129
+        ]
+      ],
+      "axis_depth_z_mm": [
+        1151.5190528039932,
+        1151.5190528039932
+      ],
+      "amodal_bbox_xywh": [
+        273,
+        820,
+        1155,
+        46
+      ],
+      "visible_bbox_xywh": [
+        273,
+        820,
+        1155,
+        35
+      ],
+      "amodal_pixels_in_frame": 53042,
+      "visible_pixels": 40369,
+      "occluded_pixels": 12673,
+      "visible_fraction": 0.7610761283511179,
+      "visible_axis_coverage": 1.0,
+      "largest_visible_component_pixels": 40369,
+      "occlusion_state": "PARTIALLY_OCCLUDED",
+      "assessable": true,
+      "occluders": [
+        {
+          "occluder_instance_id": 3,
+          "occluder_pipe_id": "PG2-F-WHITE-D20-Y033",
+          "occluded_pixels": 12673,
+          "fraction_of_target_amodal": 0.238923871648882
+        }
+      ]
+    }
+  ],
+  "occlusion_edges": [
+    {
+      "from_instance_id": 1,
+      "from_pipe_id": "PG2-F-RED-D40-Y260",
+      "to_instance_id": 4,
+      "to_pipe_id": "PG2-B-BLUE-D45-Y285",
+      "occluded_pixels": 86052,
+      "fraction_of_target_amodal": 0.718849199719317
+    },
+    {
+      "from_instance_id": 2,
+      "from_pipe_id": "PG2-F-BLUE-D45-Y105",
+      "to_instance_id": 6,
+      "to_pipe_id": "PG2-B-BLUE-D45-Y145",
+      "occluded_pixels": 1148,
+      "fraction_of_target_amodal": 0.009589762010174504
+    },
+    {
+      "from_instance_id": 2,
+      "from_pipe_id": "PG2-F-BLUE-D45-Y105",
+      "to_instance_id": 7,
+      "to_pipe_id": "PG2-B-WHITE-D20-Y103",
+      "occluded_pixels": 51894,
+      "fraction_of_target_amodal": 1.0
+    },
+    {
+      "from_instance_id": 2,
+      "from_pipe_id": "PG2-F-BLUE-D45-Y105",
+      "to_instance_id": 8,
+      "to_pipe_id": "PG2-B-WHITE-D20-Y073",
+      "occluded_pixels": 29974,
+      "fraction_of_target_amodal": 0.5651206636500754
+    },
+    {
+      "from_instance_id": 3,
+      "from_pipe_id": "PG2-F-WHITE-D20-Y033",
+      "to_instance_id": 9,
+      "to_pipe_id": "PG2-B-WHITE-D20-Y033",
+      "occluded_pixels": 12673,
+      "fraction_of_target_amodal": 0.238923871648882
+    }
+  ]
+}

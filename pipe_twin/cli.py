@@ -1,4 +1,4 @@
-"""Command-line entry points for fixture inspection and replay."""
+"""Command-line entry points for fixture inspection, replay, and simulation."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Sequence
 
 from .model_3mf import inspect_3mf
 from .pipeline import analyze_manifest, atomic_write_text, ensure_paths_distinct
+from .synthetic_stereo import generate_synthetic_stereo
 
 
 def _write_json(path: str | Path, payload: dict) -> Path:
@@ -18,7 +19,7 @@ def _write_json(path: str | Path, payload: dict) -> Path:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="python -m pipe_twin",
-        description="Audit the current single-layer pipe digital-twin fixture.",
+        description="Audit and generate traceable pipe digital-twin fixtures.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -32,6 +33,21 @@ def build_parser() -> argparse.ArgumentParser:
     analyze_parser.add_argument(
         "--observations",
         help="optional frame-level JSONL evidence output path",
+    )
+
+    simulate_parser = subparsers.add_parser(
+        "simulate-stereo",
+        help="render deterministic stereo/depth/instance and elevation truth",
+    )
+    simulate_parser.add_argument(
+        "--manifest",
+        required=True,
+        help="path to a synthetic_cad_truth manifest",
+    )
+    simulate_parser.add_argument(
+        "--output-dir",
+        required=True,
+        help="directory for generated truth products",
     )
     return parser
 
@@ -47,6 +63,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"3MF inspection written to {output}")
         else:
             print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.command == "simulate-stereo":
+        result = generate_synthetic_stereo(args.manifest, args.output_dir)
+        output = Path(args.output_dir).resolve()
+        print(
+            f"Synthetic stereo dataset {result['dataset_id']} written to {output} "
+            f"({len(result['instance_catalog'])} instances)"
+        )
         return 0
 
     report = analyze_manifest(

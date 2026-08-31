@@ -1,0 +1,208 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "pipe-group2-synthetic-stereo-v1",
+  "domain": "synthetic_cad_truth",
+  "purpose": "Generate deterministic stereo, depth, instance, elevation, and occlusion-topology truth for the two-layer pipe-group fixture.",
+  "units": {
+    "geometry": "millimetre",
+    "depth": "millimetre",
+    "pixel": "pixel"
+  },
+  "coordinate_convention": {
+    "world": "right-handed 3MF coordinates; pipe axes run along +X",
+    "camera": "OpenCV X-right, Y-down, Z-forward",
+    "transform_name": "T_target_source"
+  },
+  "model": {
+    "path": "管道群2.3mf",
+    "sha256": "782c4e0180f64d1ee0cd520662b216a9952d6b28769caeff7749a88b398583dc",
+    "expected_object_count": 9,
+    "expected_unit": "millimeter",
+    "scene_state": "all_nine_active",
+    "pipes": [
+      {
+        "instance_id": 1,
+        "pipe_id": "PG2-F-RED-D40-Y260",
+        "cad_object_id": "7",
+        "cad_uuid": "ab439689-684b-4bd8-b172-28bf31a8646e",
+        "cad_name": "实体4",
+        "layer_id": "front",
+        "color_class": "red",
+        "color_srgb": "#FF0000",
+        "nominal_diameter_mm": 40.0,
+        "centerline_world_mm": [[0.0, 260.27185055946256, 0.0], [500.0, 260.27185055946256, 0.0]]
+      },
+      {
+        "instance_id": 2,
+        "pipe_id": "PG2-F-BLUE-D45-Y105",
+        "cad_object_id": "5",
+        "cad_uuid": "23376a75-b798-4457-a9f0-1b3acfd5719d",
+        "cad_name": "实体3",
+        "layer_id": "front",
+        "color_class": "blue",
+        "color_srgb": "#0036FA",
+        "nominal_diameter_mm": 45.0,
+        "centerline_world_mm": [[0.0, 104.94650468574024, -1.5383026352692468], [500.0, 104.94650468574024, -1.5383026352692468]]
+      },
+      {
+        "instance_id": 3,
+        "pipe_id": "PG2-F-WHITE-D20-Y033",
+        "cad_object_id": "9",
+        "cad_uuid": "cd0dc82f-b964-497a-97b8-c0a40d1a0ad4",
+        "cad_name": "实体5",
+        "layer_id": "front",
+        "color_class": "white",
+        "color_srgb": "#FEFEFF",
+        "nominal_diameter_mm": 20.0,
+        "centerline_world_mm": [[0.0, 32.97864167528042, -0.6342046432736197], [500.0, 32.97864167528042, -0.6342046432736197]]
+      },
+      {
+        "instance_id": 4,
+        "pipe_id": "PG2-B-BLUE-D45-Y285",
+        "cad_object_id": "1",
+        "cad_uuid": "55b5ef97-fec2-4c83-ace8-156403c7bba2",
+        "cad_name": "实体10",
+        "layer_id": "back",
+        "color_class": "blue",
+        "color_srgb": "#0036FA",
+        "nominal_diameter_mm": 45.0,
+        "centerline_world_mm": [[0.0, 284.9465088456587, -131.53830148958812], [500.0, 284.9465088456587, -131.53830148958812]]
+      },
+      {
+        "instance_id": 5,
+        "pipe_id": "PG2-B-RED-D40-Y223",
+        "cad_object_id": "11",
+        "cad_uuid": "fa7e784a-3662-49e6-8f8b-4e5b65cc41d3",
+        "cad_name": "实体6",
+        "layer_id": "back",
+        "color_class": "red",
+        "color_srgb": "#FF0000",
+        "nominal_diameter_mm": 40.0,
+        "centerline_world_mm": [[0.0, 223.19543985390376, -139.9694716161839], [500.0, 223.19543985390376, -139.9694716161839]]
+      },
+      {
+        "instance_id": 6,
+        "pipe_id": "PG2-B-BLUE-D45-Y145",
+        "cad_object_id": "13",
+        "cad_uuid": "5682b102-1f66-4766-af2d-d703ef4a9a45",
+        "cad_name": "实体7",
+        "layer_id": "back",
+        "color_class": "blue",
+        "color_srgb": "#0036FA",
+        "nominal_diameter_mm": 45.0,
+        "centerline_world_mm": [[0.0, 144.94650370754138, -131.5383014895884], [500.0, 144.94650370754138, -131.5383014895884]]
+      },
+      {
+        "instance_id": 7,
+        "pipe_id": "PG2-B-WHITE-D20-Y103",
+        "cad_object_id": "3",
+        "cad_uuid": "fdc46d2f-aa38-40a4-acb8-80a111c539aa",
+        "cad_name": "实体11",
+        "layer_id": "back",
+        "color_class": "white",
+        "color_srgb": "#FEFEFF",
+        "nominal_diameter_mm": 20.0,
+        "centerline_world_mm": [[0.0, 102.97864078359854, -130.63420480399293], [500.0, 102.97864078359854, -130.63420480399293]]
+      },
+      {
+        "instance_id": 8,
+        "pipe_id": "PG2-B-WHITE-D20-Y073",
+        "cad_object_id": "17",
+        "cad_uuid": "bf9c4780-ee4a-494a-92fa-0a1376ee7b78",
+        "cad_name": "实体9",
+        "layer_id": "back",
+        "color_class": "white",
+        "color_srgb": "#FEFEFF",
+        "nominal_diameter_mm": 20.0,
+        "centerline_world_mm": [[0.0, 72.97864040392427, -130.6342048039923], [500.0, 72.97864040392427, -130.6342048039923]]
+      },
+      {
+        "instance_id": 9,
+        "pipe_id": "PG2-B-WHITE-D20-Y033",
+        "cad_object_id": "15",
+        "cad_uuid": "26cd1040-975e-4769-8456-863a0cbca5f5",
+        "cad_name": "实体8",
+        "layer_id": "back",
+        "color_class": "white",
+        "color_srgb": "#FEFEFF",
+        "nominal_diameter_mm": 20.0,
+        "centerline_world_mm": [[0.0, 32.97864104472611, -130.63420480399307], [500.0, 32.97864104472611, -130.63420480399307]]
+      }
+    ]
+  },
+  "virtual_stereo_rig": {
+    "rig_id": "PG2-VIRTUAL-STEREO-095",
+    "calibration_id": "PG2-SYNTHETIC-EXACT-V1",
+    "baseline_mm": 95.0,
+    "rectified": true,
+    "nominal_front_surface_distance_mm": 1000.0,
+    "nominal_horizontal_fov_deg": 40.0,
+    "left_camera": {
+      "projection": "perspective",
+      "width": 1920,
+      "height": 1080,
+      "fx": 2637.5783226764374,
+      "fy": 2637.5783226764374,
+      "cx": 960.0,
+      "cy": 540.0,
+      "rotation_world_to_camera": [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]],
+      "center_world_mm": [202.5, 165.212569, 1020.884848],
+      "near_mm": 100.0,
+      "far_mm": 2000.0
+    },
+    "right_camera": {
+      "projection": "perspective",
+      "width": 1920,
+      "height": 1080,
+      "fx": 2637.5783226764374,
+      "fy": 2637.5783226764374,
+      "cx": 960.0,
+      "cy": 540.0,
+      "rotation_world_to_camera": [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]],
+      "center_world_mm": [297.5, 165.212569, 1020.884848],
+      "near_mm": 100.0,
+      "far_mm": 2000.0
+    }
+  },
+  "reference_elevation": {
+    "projection": "orthographic",
+    "width": 1600,
+    "height": 1000,
+    "scale_px_per_mm": 1.5,
+    "cx": 800.0,
+    "cy": 500.0,
+    "rotation_world_to_camera": [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]],
+    "center_world_mm": [250.0, 165.212569, 1020.884848],
+    "near_mm": 100.0,
+    "far_mm": 2000.0,
+    "edge_direction": "occluder_to_occluded_target",
+    "expected_fully_occluded_instance_ids": [7, 9]
+  },
+  "reference_video": {
+    "path": "管道群2.mkv",
+    "sha256": "a7a0a0483a890219f5f6c50820dcac6734dce6217e59c592f3bba74d37587ee9",
+    "role": "visual_reference_only_not_stereo_truth",
+    "width": 1920,
+    "height": 1080,
+    "frame_rate_fps": 60.0,
+    "frame_count": 1880,
+    "duration_seconds": 31.35,
+    "camera_motion": false,
+    "object_motion": false,
+    "authoring_action": "Fusion object visibility toggles",
+    "recommended_reference_frames_zero_based": [60, 510, 550, 590, 950, 1040, 1350, 1390, 1680, 1840]
+  },
+  "state_contract": {
+    "design_presence": "All nine manifest instances exist and are active in this synthetic scene.",
+    "observed_visibility": "Derived independently per camera from amodal and Z-buffer-visible masks.",
+    "fully_occluded_meaning": "The pipe exists in CAD but contributes no owned pixel in this view.",
+    "safety_rule": "FULLY_OCCLUDED or NOT_OBSERVED never means NOT_INSTALLED."
+  },
+  "limitations": [
+    "This is exact CAD-derived synthetic truth, not measured depth-camera output.",
+    "The virtual rig has no lens distortion, rolling shutter, exposure mismatch, material reflection, or sensor noise.",
+    "The current reference is a two-layer static scene; it does not validate field calibration, D22/D50 physical measurement, installation state, or 3DGS.",
+    "Color class and nominal diameter are independent attributes; instance identity comes only from instance_id/pipe_id.",
+    "This fixture still correlates white/D20, red/D40, and blue/D45, so it cannot by itself prove that a recognizer has disentangled color from diameter."
+  ]
+}

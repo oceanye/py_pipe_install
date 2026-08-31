@@ -1,0 +1,227 @@
+{
+  "schema_version": "1.0",
+  "rig_id": "PG2-VIRTUAL-STEREO-095",
+  "calibration_id": "PG2-SYNTHETIC-EXACT-V1",
+  "camera_calibration_kind": "synthetic_exact",
+  "field_calibration_validated": false,
+  "rectified": true,
+  "baseline_mm": 95.0,
+  "coordinate_convention": {
+    "camera": "OpenCV X-right Y-down Z-forward",
+    "transform": "T_target_source",
+    "pixel_sample": "pixel center at integer+0.5 during rasterization"
+  },
+  "left_camera": {
+    "camera_id": "left",
+    "width": 1920,
+    "height": 1080,
+    "projection": "perspective",
+    "rotation_world_to_camera": [
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    ],
+    "center_world_mm": [
+      202.5,
+      165.212569,
+      1020.884848
+    ],
+    "T_camera_world": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        -202.5
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0,
+        165.212569
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1020.884848
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "near_mm": 100.0,
+    "far_mm": 2000.0,
+    "depth_convention": "camera_z_mm",
+    "distortion_model": "none",
+    "K": [
+      [
+        2637.5783226764374,
+        0.0,
+        960.0
+      ],
+      [
+        0.0,
+        2637.5783226764374,
+        540.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "right_camera": {
+    "camera_id": "right",
+    "width": 1920,
+    "height": 1080,
+    "projection": "perspective",
+    "rotation_world_to_camera": [
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    ],
+    "center_world_mm": [
+      297.5,
+      165.212569,
+      1020.884848
+    ],
+    "T_camera_world": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        -297.5
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0,
+        165.212569
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1020.884848
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "near_mm": 100.0,
+    "far_mm": 2000.0,
+    "depth_convention": "camera_z_mm",
+    "distortion_model": "none",
+    "K": [
+      [
+        2637.5783226764374,
+        0.0,
+        960.0
+      ],
+      [
+        0.0,
+        2637.5783226764374,
+        540.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "reference_elevation": {
+    "camera_id": "reference_elevation",
+    "width": 1600,
+    "height": 1000,
+    "projection": "orthographic",
+    "rotation_world_to_camera": [
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    ],
+    "center_world_mm": [
+      250.0,
+      165.212569,
+      1020.884848
+    ],
+    "T_camera_world": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        -250.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0,
+        165.212569
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        1020.884848
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "near_mm": 100.0,
+    "far_mm": 2000.0,
+    "depth_convention": "camera_z_mm",
+    "distortion_model": "none",
+    "scale_px_per_mm": 1.5,
+    "principal_point_px": [
+      800.0,
+      500.0
+    ]
+  }
+}

@@ -11,6 +11,7 @@ from xml.etree import ElementTree
 ROOT = Path(__file__).resolve().parents[1]
 MODEL_DIR = ROOT / "test_model"
 MANIFEST_PATH = MODEL_DIR / "manifest.json"
+GROUP2_MANIFEST_PATH = MODEL_DIR / "pipe_group2_manifest.json"
 
 
 def _sha256(path: Path) -> str:
@@ -29,9 +30,19 @@ class RepositorySmokeTests(unittest.TestCase):
             "doc/需求文档.txt",
             "doc/camera_contour_3d_pipe_migration_guide.md",
             "doc/管道数字孪生识别系统测试开发计划.md",
+            "doc/管道群2模拟双目与遮挡拓扑说明.md",
             "test_model/管道群.3mf",
             "test_model/管道群.mkv",
             "test_model/manifest.json",
+            "test_model/管道群2.3mf",
+            "test_model/管道群2.mkv",
+            "test_model/pipe_group2_manifest.json",
+            "test_model/pipe_group2_synthetic_stereo/camera.json",
+            "test_model/pipe_group2_synthetic_stereo/left_truth.npz",
+            "test_model/pipe_group2_synthetic_stereo/right_truth.npz",
+            "test_model/pipe_group2_synthetic_stereo/elevation_amodal_overlay.png",
+            "test_model/pipe_group2_synthetic_stereo/elevation_view_topology.json",
+            "test_model/pipe_group2_synthetic_stereo/dataset_manifest.json",
         )
 
         for relative_path in required:
@@ -55,8 +66,9 @@ class RepositorySmokeTests(unittest.TestCase):
         self.assertEqual(len(root.findall(f".//{{{core}}}object")), 3)
 
     def test_mkv_fixture_has_matroska_ebml_header(self) -> None:
-        with (MODEL_DIR / "管道群.mkv").open("rb") as stream:
-            self.assertEqual(stream.read(4), bytes.fromhex("1A45DFA3"))
+        for name in ("管道群.mkv", "管道群2.mkv"):
+            with self.subTest(name=name), (MODEL_DIR / name).open("rb") as stream:
+                self.assertEqual(stream.read(4), bytes.fromhex("1A45DFA3"))
 
     def test_manifest_binds_current_model_and_video_by_hash(self) -> None:
         manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
@@ -70,6 +82,25 @@ class RepositorySmokeTests(unittest.TestCase):
 
         self.assertEqual(manifest["model"]["expected_object_count"], 3)
         self.assertEqual(manifest["video"]["expected_frame_count"], 1727)
+
+    def test_group2_manifest_binds_model_video_and_generated_dataset(self) -> None:
+        manifest = json.loads(GROUP2_MANIFEST_PATH.read_text(encoding="utf-8"))
+        model = manifest["model"]
+        video = manifest["reference_video"]
+        model_path = MODEL_DIR / model["path"]
+        video_path = MODEL_DIR / video["path"]
+
+        self.assertEqual(_sha256(model_path), model["sha256"].lower())
+        self.assertEqual(_sha256(video_path), video["sha256"].lower())
+        self.assertEqual(model["expected_object_count"], 9)
+        self.assertEqual(len(model["pipes"]), 9)
+        self.assertEqual(manifest["domain"], "synthetic_cad_truth")
+
+        generated_path = MODEL_DIR / "pipe_group2_synthetic_stereo" / "dataset_manifest.json"
+        generated = json.loads(generated_path.read_text(encoding="utf-8"))
+        self.assertEqual(generated["source"]["manifest_sha256"], _sha256(GROUP2_MANIFEST_PATH))
+        self.assertEqual(generated["source"]["model_sha256"], model["sha256"])
+        self.assertEqual(len(generated["instance_catalog"]), 9)
 
     def test_manifest_keeps_mvp_capability_boundaries_explicit(self) -> None:
         manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
