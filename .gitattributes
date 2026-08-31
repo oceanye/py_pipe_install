@@ -6,3 +6,5 @@
 *.yaml text eol=lf
 *.json text eol=lf
 *.sat binary
+*.3mf binary
+*.mkv binary

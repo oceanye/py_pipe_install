@@ -40,4 +40,5 @@ Desktop.ini
 *.avi
 *.mp4
 *.mkv
+!test_model/管道群.mkv
 *.bag

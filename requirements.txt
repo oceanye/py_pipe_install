@@ -1,2 +1,2 @@
-# The documentation/planning stage currently has no third-party runtime dependencies.
-# Add direct dependencies here when executable modules are introduced.
+numpy==2.2.6
+opencv-python-headless==4.13.0.92

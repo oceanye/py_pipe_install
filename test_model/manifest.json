@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "pipe-group-single-layer-demo-v1",
+  "dataset_class": "synthetic-screen-capture-smoke",
+  "model_revision": "3mf-2026-08-31",
+  "scope": {
+    "layer_model": "single",
+    "layer_id": "L0",
+    "identity_features": [
+      "appearance_color",
+      "projected_diameter_bucket"
+    ],
+    "metric_calibrated": false,
+    "supports_stereo": false,
+    "supports_occlusion_reasoning": false,
+    "supports_3dgs_training": false
+  },
+  "model": {
+    "path": "管道群.3mf",
+    "sha256": "9c6b4a218e8c1259a45dbde1de1d1dc939b61936b858ed82af229009183000fb",
+    "unit": "millimeter",
+    "expected_object_count": 3,
+    "pipes": [
+      {
+        "pipe_id": "pipe-blue-d45",
+        "cad_object_id": "1",
+        "cad_uuid": "eb81751b-ea7c-4c5e-8e36-d7a4d29f3d46",
+        "cad_name": "实体3",
+        "layer_id": "L0",
+        "appearance_color": "blue",
+        "nominal_color_srgb": "#0036FA",
+        "nominal_diameter_mm": 45.0,
+        "nominal_length_mm": 500.0,
+        "centerline_world_mm": [
+          [0.0, 104.946505, -1.538303],
+          [500.0, 104.946505, -1.538303]
+        ]
+      },
+      {
+        "pipe_id": "pipe-red-d40",
+        "cad_object_id": "3",
+        "cad_uuid": "3d18358a-a006-4619-94ec-cbe5c5109a7e",
+        "cad_name": "实体4",
+        "layer_id": "L0",
+        "appearance_color": "red",
+        "nominal_color_srgb": "#FF0000",
+        "nominal_diameter_mm": 40.0,
+        "nominal_length_mm": 500.0,
+        "centerline_world_mm": [
+          [0.0, 260.271851, 0.0],
+          [500.0, 260.271851, 0.0]
+        ]
+      },
+      {
+        "pipe_id": "pipe-white-d20",
+        "cad_object_id": "5",
+        "cad_uuid": "918c9795-d713-4098-8238-e6aeae36ed71",
+        "cad_name": "实体5",
+        "layer_id": "L0",
+        "appearance_color": "white",
+        "nominal_color_srgb": "#FEFEFF",
+        "nominal_diameter_mm": 20.0,
+        "nominal_length_mm": 500.0,
+        "centerline_world_mm": [
+          [0.0, 32.978642, -0.634205],
+          [500.0, 32.978642, -0.634205]
+        ]
+      }
+    ]
+  },
+  "video": {
+    "path": "管道群.mkv",
+    "sha256": "4734df74b1b96cf47edb2ff1d4298b4c429ac53c677a576935e967a2fdc1b75b",
+    "source_type": "cad_desktop_capture",
+    "camera_id": "cad-screen-capture-0",
+    "capture_group_id": "pipe-group-animation-v1",
+    "calibration_id": null,
+    "expected_width": 1920,
+    "expected_height": 1080,
+    "expected_fps": 60.0,
+    "expected_frame_count": 1727,
+    "analysis_roi_xyxy": [300, 250, 1400, 780],
+    "minimum_component_area_px": 1000,
+    "minimum_long_side_px": 500,
+    "minimum_aspect_ratio": 8.0,
+    "minimum_stable_frames": 3,
+    "diameter_absolute_tolerance_mm": 5.0,
+    "diameter_relative_tolerance": 0.2,
+    "delta_e76_tolerance": 35.0,
+    "color_rules": {
+      "red": [
+        [0, 12, 120, 255, 120, 255],
+        [170, 179, 120, 255, 120, 255]
+      ],
+      "blue": [
+        [95, 135, 80, 255, 80, 255]
+      ],
+      "white": [
+        [0, 179, 0, 60, 190, 255]
+      ]
+    },
+    "expected_visibility_intervals": [
+      {"start_frame": 0, "visible_pipe_ids": ["pipe-blue-d45", "pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 377, "visible_pipe_ids": ["pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 462, "visible_pipe_ids": ["pipe-blue-d45", "pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 548, "visible_pipe_ids": ["pipe-blue-d45", "pipe-red-d40"]},
+      {"start_frame": 637, "visible_pipe_ids": ["pipe-blue-d45", "pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 746, "visible_pipe_ids": ["pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 812, "visible_pipe_ids": ["pipe-blue-d45", "pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 909, "visible_pipe_ids": ["pipe-blue-d45", "pipe-white-d20"]},
+      {"start_frame": 982, "visible_pipe_ids": ["pipe-blue-d45", "pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 1058, "visible_pipe_ids": ["pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 1126, "visible_pipe_ids": ["pipe-red-d40"]},
+      {"start_frame": 1308, "visible_pipe_ids": ["pipe-red-d40", "pipe-white-d20"]},
+      {"start_frame": 1348, "visible_pipe_ids": ["pipe-blue-d45", "pipe-red-d40", "pipe-white-d20"]}
+    ]
+  },
+  "acceptance": {
+    "visibility_frame_accuracy_min": 0.995,
+    "event_boundary_error_frames_max": 2,
+    "stable_false_transition_count_max": 0
+  },
+  "limitations": [
+    "The video is a fixed-view CAD desktop capture, not synchronized stereo imagery.",
+    "Diameter values in observations are model-prior buckets, not calibrated physical measurements.",
+    "not_observed does not prove not_installed; installation state remains unknown without business evidence.",
+    "The current assets cover D20/D40/D45, not the target D22/D50 physical acceptance case.",
+    "The dataset must not be used to claim 1 m camera performance, depth accuracy, multi-layer occlusion handling, or 3DGS reconstruction quality."
+  ]
+}

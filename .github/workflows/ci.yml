@@ -34,3 +34,8 @@ jobs:
           python -m pip install -r requirements.txt
       - name: Run smoke tests
         run: python -m unittest discover -s tests -v
+      - name: Replay current M0 fixture
+        run: >-
+          python -m pipe_twin analyze
+          --manifest test_model/manifest.json
+          --output outputs/current_demo_report.json
