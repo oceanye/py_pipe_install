@@ -27,12 +27,15 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_parser.add_argument("model", help="path to the 3MF file")
     inspect_parser.add_argument("--output", help="optional JSON output path")
 
-    analyze_parser = subparsers.add_parser("analyze", help="replay a manifest-bound MKV")
+    analyze_parser = subparsers.add_parser(
+        "analyze",
+        help="analyze a manifest-bound legacy video or scheduled still photos",
+    )
     analyze_parser.add_argument("--manifest", required=True, help="path to manifest.json")
     analyze_parser.add_argument("--output", required=True, help="JSON report output path")
     analyze_parser.add_argument(
         "--observations",
-        help="optional frame-level JSONL evidence output path",
+        help="optional frame/photo-level JSONL evidence output path",
     )
 
     simulate_parser = subparsers.add_parser(
@@ -79,14 +82,28 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.observations,
         report_output_path=args.output,
     )
-    output = _write_json(args.output, report)
+    output = Path(args.output).resolve()
     evaluation = report["evaluation"]
-    print(
-        f"M0 replay {'PASS' if report['passed'] else 'FAIL'}: "
-        f"{evaluation['correct_frame_count']}/{evaluation['evaluated_frame_count']} frames, "
-        f"max event error={evaluation['event_boundary_error_frames_max']} frame(s)"
-    )
+    if report["report_type"].endswith("still-capture"):
+        result_label = (
+            "PASS"
+            if report["passed"] is True
+            else "FAIL"
+            if report["passed"] is False
+            else "NOT_EVALUATED"
+        )
+        print(
+            f"M0 still-photo analysis {result_label}: "
+            f"{evaluation['correct_capture_count']}/"
+            f"{evaluation['evaluated_capture_count']} evaluated capture(s)"
+        )
+    else:
+        print(
+            f"M0 replay {'PASS' if report['passed'] else 'FAIL'}: "
+            f"{evaluation['correct_frame_count']}/{evaluation['evaluated_frame_count']} frames, "
+            f"max event error={evaluation['event_boundary_error_frames_max']} frame(s)"
+        )
     print(f"Report written to {output}")
     if args.observations:
-        print(f"Frame evidence written to {Path(args.observations).resolve()}")
-    return 0 if report["passed"] else 1
+        print(f"Image evidence written to {Path(args.observations).resolve()}")
+    return 1 if report["passed"] is False else 0

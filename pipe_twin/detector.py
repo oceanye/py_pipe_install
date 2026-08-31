@@ -15,6 +15,8 @@ from typing import Any
 import cv2
 import numpy as np
 
+from .photo_capture import analysis_config, validate_still_capture_manifest
+
 
 class UnsupportedCapabilityError(ValueError):
     """Raised when a manifest asks this M0 implementation to claim more capability."""
@@ -57,6 +59,21 @@ def validate_m0_manifest(manifest: Mapping[str, Any]) -> None:
         raise UnsupportedCapabilityError("M0 requires one explicit scope.layer_id")
     if any(not isinstance(pipe, Mapping) or pipe.get("layer_id") != layer_id for pipe in pipes):
         raise UnsupportedCapabilityError("Every M0 pipe must use the single declared layer_id")
+
+    has_video_key = "video" in manifest
+    has_capture_key = "capture" in manifest
+    if has_video_key == has_capture_key:
+        raise UnsupportedCapabilityError(
+            "M0 requires exactly one input source: legacy video or still capture"
+        )
+    source_key = "capture" if has_capture_key else "video"
+    if not isinstance(manifest.get(source_key), Mapping):
+        raise UnsupportedCapabilityError(f"Manifest {source_key} must be an object")
+    if has_capture_key:
+        try:
+            validate_still_capture_manifest(manifest)
+        except ValueError as error:
+            raise UnsupportedCapabilityError(str(error)) from error
 
 
 def _opencv_lab_to_cie(value: np.ndarray) -> np.ndarray:
@@ -166,7 +183,7 @@ class ColorDiameterDetector:
     def __init__(self, manifest: Mapping[str, Any] | str | Path):
         self.manifest = _load_manifest(manifest)
         validate_m0_manifest(self.manifest)
-        self.video_config = self.manifest.get("video", {})
+        self.analysis_config = analysis_config(self.manifest)
         self.scope = self.manifest.get("scope", {})
         self.pipes = list(self.manifest.get("model", {}).get("pipes", []))
         if not self.pipes:
@@ -177,7 +194,7 @@ class ColorDiameterDetector:
 
     def _roi(self, frame: np.ndarray) -> tuple[np.ndarray, tuple[int, int]]:
         height, width = frame.shape[:2]
-        configured = self.video_config.get("analysis_roi_xyxy", [0, 0, width, height])
+        configured = self.analysis_config.get("analysis_roi_xyxy", [0, 0, width, height])
         x1, y1, x2, y2 = (int(value) for value in configured)
         x1, x2 = sorted((max(0, min(width, x1)), max(0, min(width, x2))))
         y1, y2 = sorted((max(0, min(height, y1)), max(0, min(height, y2))))
@@ -218,13 +235,17 @@ class ColorDiameterDetector:
         observations = {pipe["pipe_id"]: self._default_observation(pipe) for pipe in self.pipes}
         unmatched_components: list[dict[str, Any]] = []
 
-        rules_by_color = self.video_config.get("color_rules", {})
-        minimum_area = int(self.video_config.get("minimum_component_area_px", 100))
-        minimum_long_side = float(self.video_config.get("minimum_long_side_px", 20.0))
-        minimum_aspect = float(self.video_config.get("minimum_aspect_ratio", 3.0))
-        delta_tolerance = float(self.video_config.get("delta_e76_tolerance", 35.0))
-        absolute_tolerance = float(self.video_config.get("diameter_absolute_tolerance_mm", 5.0))
-        relative_tolerance = float(self.video_config.get("diameter_relative_tolerance", 0.2))
+        rules_by_color = self.analysis_config.get("color_rules", {})
+        minimum_area = int(self.analysis_config.get("minimum_component_area_px", 100))
+        minimum_long_side = float(self.analysis_config.get("minimum_long_side_px", 20.0))
+        minimum_aspect = float(self.analysis_config.get("minimum_aspect_ratio", 3.0))
+        delta_tolerance = float(self.analysis_config.get("delta_e76_tolerance", 35.0))
+        absolute_tolerance = float(
+            self.analysis_config.get("diameter_absolute_tolerance_mm", 5.0)
+        )
+        relative_tolerance = float(
+            self.analysis_config.get("diameter_relative_tolerance", 0.2)
+        )
 
         for appearance_color, rules in rules_by_color.items():
             mask = _mask_for_rules(hsv, rules)

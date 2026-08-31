@@ -28,6 +28,8 @@ class RepositorySmokeTests(unittest.TestCase):
         required = (
             "README.md",
             "requirements.txt",
+            "pipe_twin/photo_capture.py",
+            "tests/test_photo_capture.py",
             "doc/需求文档.txt",
             "doc/camera_contour_3d_pipe_migration_guide.md",
             "doc/管道数字孪生识别系统测试开发计划.md",

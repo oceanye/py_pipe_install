@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,6 +12,7 @@ from pipe_twin.cli import _write_json, main
 from pipe_twin.pipeline import (
     AssetIntegrityError,
     analyze_manifest,
+    atomic_write_text_bundle,
     load_json_snapshot,
     sha256_file,
 )
@@ -112,6 +114,76 @@ class OutputPathSafetyTests(unittest.TestCase):
                 list(output.parent.glob(f".{output.name}.*.tmp")),
                 [],
                 "Atomic writer left a temporary file behind",
+            )
+
+    def test_output_bundle_restores_both_previous_files_if_second_promote_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            report = root / "report.json"
+            observations = root / "observations.jsonl"
+            report.write_text("old-report", encoding="utf-8")
+            observations.write_text("old-observations", encoding="utf-8")
+            real_replace = os.replace
+
+            def fail_second_promote(source: str | Path, destination: str | Path) -> None:
+                source_path = Path(source)
+                if Path(destination) == observations and source_path.suffix == ".tmp":
+                    real_replace(source, destination)
+                    raise OSError("injected second-output failure")
+                real_replace(source, destination)
+
+            with mock.patch(
+                "pipe_twin.pipeline.os.replace", side_effect=fail_second_promote
+            ):
+                with self.assertRaises(OSError):
+                    atomic_write_text_bundle(
+                        {
+                            report: "new-report",
+                            observations: "new-observations",
+                        }
+                    )
+
+            self.assertEqual(report.read_text(encoding="utf-8"), "old-report")
+            self.assertEqual(
+                observations.read_text(encoding="utf-8"), "old-observations"
+            )
+            self.assertEqual(list(root.glob(".*.tmp")), [])
+            self.assertEqual(list(root.glob(".*.backup")), [])
+
+    def test_output_bundle_cleanup_interrupt_cannot_roll_back_committed_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            report = root / "report.json"
+            observations = root / "observations.jsonl"
+            report.write_text("old-report", encoding="utf-8")
+            observations.write_text("old-observations", encoding="utf-8")
+            real_unlink = Path.unlink
+            backup_unlink_calls = 0
+
+            def interrupt_first_committed_backup(
+                path: Path, missing_ok: bool = False
+            ) -> None:
+                nonlocal backup_unlink_calls
+                if path.suffix == ".backup":
+                    backup_unlink_calls += 1
+                    if backup_unlink_calls == 3:
+                        raise KeyboardInterrupt("injected backup-cleanup interruption")
+                real_unlink(path, missing_ok=missing_ok)
+
+            with mock.patch.object(
+                Path, "unlink", autospec=True, side_effect=interrupt_first_committed_backup
+            ):
+                with self.assertRaises(KeyboardInterrupt):
+                    atomic_write_text_bundle(
+                        {
+                            report: "new-report",
+                            observations: "new-observations",
+                        }
+                    )
+
+            self.assertEqual(report.read_text(encoding="utf-8"), "new-report")
+            self.assertEqual(
+                observations.read_text(encoding="utf-8"), "new-observations"
             )
 
 
