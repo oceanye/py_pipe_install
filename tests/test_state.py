@@ -2,12 +2,134 @@ from __future__ import annotations
 
 import unittest
 
-from pipe_twin.state import confirmed_intervals, debounce_states
+from pipe_twin.state import (
+    INSTALLATION_STATES,
+    NegativeInstallationEvidence,
+    classify_installation_state,
+    confirmed_intervals,
+    debounce_states,
+    installation_state_label_zh,
+)
 
 
 RED = ("pipe-red-d40",)
 RED_BLUE = ("pipe-blue-d45", "pipe-red-d40")
 ALL = ("pipe-blue-d45", "pipe-red-d40", "pipe-white-d20")
+
+
+def _qualified_negative_evidence(
+    **overrides: object,
+) -> NegativeInstallationEvidence:
+    values: dict[str, object] = {
+        "calibration_validated": True,
+        "registration_validated": True,
+        "expected_region_in_frame": True,
+        "expected_region_unoccluded": True,
+        "sensor_health_validated": True,
+        "free_space_validated": True,
+        "repeated_absence_observations": 2,
+        "independent_evidence_sources": 2,
+    }
+    values.update(overrides)
+    return NegativeInstallationEvidence(**values)
+
+
+class InstallationStateContractTests(unittest.TestCase):
+    def test_three_states_have_stable_chinese_labels(self) -> None:
+        self.assertEqual(
+            INSTALLATION_STATES,
+            ("INSTALLED", "NOT_INSTALLED", "UNKNOWN"),
+        )
+        self.assertEqual(installation_state_label_zh("INSTALLED"), "安装")
+        self.assertEqual(installation_state_label_zh("NOT_INSTALLED"), "未安装")
+        self.assertEqual(installation_state_label_zh("UNKNOWN"), "不明")
+        with self.assertRaises(ValueError):
+            installation_state_label_zh("MISSING")
+
+    def test_positive_negative_and_insufficient_evidence_resolve_safely(self) -> None:
+        self.assertEqual(
+            classify_installation_state(direct_instance_evidence=True),
+            "INSTALLED",
+        )
+        negative = _qualified_negative_evidence()
+        self.assertTrue(negative.is_qualified())
+        self.assertEqual(
+            classify_installation_state(negative_evidence=negative),
+            "NOT_INSTALLED",
+        )
+        self.assertEqual(classify_installation_state(), "UNKNOWN")
+
+    def test_every_negative_evidence_gate_is_mandatory(self) -> None:
+        failures: dict[str, object] = {
+            "calibration_validated": False,
+            "registration_validated": False,
+            "expected_region_in_frame": False,
+            "expected_region_unoccluded": False,
+            "sensor_health_validated": False,
+            "free_space_validated": False,
+            "repeated_absence_observations": 1,
+            "independent_evidence_sources": 1,
+        }
+        for field, failing_value in failures.items():
+            with self.subTest(field=field):
+                evidence = _qualified_negative_evidence(**{field: failing_value})
+                self.assertFalse(evidence.is_qualified())
+                self.assertEqual(
+                    classify_installation_state(negative_evidence=evidence),
+                    "UNKNOWN",
+                )
+
+    def test_negative_gate_rejects_truthy_non_boolean_or_non_integer_values(self) -> None:
+        for field, failing_value in (
+            ("calibration_validated", "yes"),
+            ("repeated_absence_observations", True),
+            ("repeated_absence_observations", 2.0),
+            ("independent_evidence_sources", True),
+        ):
+            with self.subTest(field=field, value=failing_value):
+                self.assertFalse(
+                    _qualified_negative_evidence(
+                        **{field: failing_value}
+                    ).is_qualified()
+                )
+
+    def test_resolver_rejects_truthy_values_that_are_not_typed_evidence(self) -> None:
+        invalid_inputs = (
+            {"direct_instance_evidence": "false"},
+            {"evidence_healthy": "false"},
+            {"conflict": 1},
+            {"negative_evidence": True},
+        )
+        for values in invalid_inputs:
+            with self.subTest(values=values):
+                with self.assertRaises(ValueError):
+                    classify_installation_state(**values)
+
+    def test_unhealthy_conflicting_or_mixed_evidence_is_unknown(self) -> None:
+        cases = (
+            {
+                "direct_instance_evidence": True,
+                "evidence_healthy": False,
+            },
+            {
+                "negative_evidence": _qualified_negative_evidence(),
+                "evidence_healthy": False,
+            },
+            {
+                "direct_instance_evidence": True,
+                "conflict": True,
+            },
+            {
+                "direct_instance_evidence": True,
+                "negative_evidence": _qualified_negative_evidence(),
+            },
+        )
+        for evidence in cases:
+            with self.subTest(evidence=evidence):
+                self.assertEqual(
+                    classify_installation_state(**evidence),
+                    "UNKNOWN",
+                )
 
 
 class DebounceStatesContractTests(unittest.TestCase):

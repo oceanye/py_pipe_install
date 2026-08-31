@@ -10,7 +10,7 @@
   },
   "source": {
     "manifest_path": "pipe_group2_manifest.json",
-    "manifest_sha256": "bafdddfaf3afac345c8651b81c27ff7b6c0917f5e20513477468b16fd087c8ca",
+    "manifest_sha256": "62914cd07957a6fc954756f3e7385aef6c3645f694366a45b442e4e213c5ed39",
     "model_path": "管道群2.3mf",
     "model_sha256": "782c4e0180f64d1ee0cd520662b216a9952d6b28769caeff7749a88b398583dc",
     "reference_video": {
@@ -32,7 +32,11 @@
     "instance": "uint16 stable instance_id; 0 is background",
     "identity_source": "manifest instance_id, never RGB color",
     "field_calibration_validated": false,
-    "installation_state_inferred": false
+    "installation_state_inferred": false,
+    "installation_state_inferred_scope": "field_observation_only",
+    "field_installation_state_inferred": false,
+    "synthetic_installation_assessment_generated": true,
+    "synthetic_installation_assessment_production_authority": false
   },
   "instance_catalog": [
     {
@@ -45,6 +49,7 @@
       "color_srgb": "#FF0000",
       "nominal_diameter_mm": 40.0,
       "cad_measured_diameter_mm": 39.999997764218946,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -68,6 +73,7 @@
       "color_srgb": "#0036FA",
       "nominal_diameter_mm": 45.0,
       "cad_measured_diameter_mm": 44.99999876006482,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -91,6 +97,7 @@
       "color_srgb": "#FEFEFF",
       "nominal_diameter_mm": 20.0,
       "cad_measured_diameter_mm": 19.999999589678517,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -114,6 +121,7 @@
       "color_srgb": "#0036FA",
       "nominal_diameter_mm": 45.0,
       "cad_measured_diameter_mm": 44.999996642810295,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -137,6 +145,7 @@
       "color_srgb": "#FF0000",
       "nominal_diameter_mm": 40.0,
       "cad_measured_diameter_mm": 40.000003077443644,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -160,6 +169,7 @@
       "color_srgb": "#0036FA",
       "nominal_diameter_mm": 45.0,
       "cad_measured_diameter_mm": 44.99999759966394,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -183,6 +193,7 @@
       "color_srgb": "#FEFEFF",
       "nominal_diameter_mm": 20.0,
       "cad_measured_diameter_mm": 19.99999668663595,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -206,6 +217,7 @@
       "color_srgb": "#FEFEFF",
       "nominal_diameter_mm": 20.0,
       "cad_measured_diameter_mm": 19.9999971732819,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -229,6 +241,7 @@
       "color_srgb": "#FEFEFF",
       "nominal_diameter_mm": 20.0,
       "cad_measured_diameter_mm": 19.999998712717165,
+      "ground_truth_installation_state": "INSTALLED",
       "centerline_world_mm": [
         [
           0.0,
@@ -289,8 +302,8 @@
         },
         "view_topology": {
           "path": "left_view_topology.json",
-          "sha256": "e500f0ddb14f850dbbefe801edd08ca34051cfac5fab0e6758db42da4b674900",
-          "size_bytes": 10494
+          "sha256": "4279c919febe1290db0e427204df73f22b12040eb98faa871bfd79aed56628c5",
+          "size_bytes": 14251
         }
       },
       "right": {
@@ -334,8 +347,8 @@
         },
         "view_topology": {
           "path": "right_view_topology.json",
-          "sha256": "7f2f5c4ec63e87bf738540590de61e51ea4f6b2ced7de9b1884c3c81523be30e",
-          "size_bytes": 10496
+          "sha256": "365b9dbd92681e59e8cd39652163dcdb597fd397496fc9ff1cc67636f3b3bbde",
+          "size_bytes": 14253
         }
       }
     }
@@ -359,8 +372,8 @@
     },
     "view_topology": {
       "path": "elevation_view_topology.json",
-      "sha256": "2efa125e780c96c79ce1eaa82c74510f23a1b4fcb0a1c68d72c682fe0808cbec",
-      "size_bytes": 10604
+      "sha256": "17b79d0b7f10eb3073c44a0f061a3ca58909ce1b155056a1c217a874bf209958",
+      "size_bytes": 14329
     },
     "vector_reference": {
       "path": "elevation_reference.svg",
@@ -383,12 +396,19 @@
       "size_bytes": 925
     }
   },
+  "installation_assessment": {
+    "path": "installation_status.json",
+    "sha256": "8faedfb2f69a914210c06634e74580068fda69a0408af043a21e18629b31c792",
+    "size_bytes": 19355
+  },
   "limitations": [
     "This dataset validates CAD projection, stereo geometry, depth ownership, and occlusion topology only.",
     "It does not validate field camera calibration, reflective material response, sensor noise, D22/D50 physical accuracy, or installation state.",
     "Flat RGB is not suitable for validating dense stereo matching; *_rgb_textured.png adds deterministic artificial world-anchored texture for OpenCV matcher experiments.",
     "The rasterizer does not clip triangles crossing near/far planes; this fixture stays fully inside its clipping range.",
     "Occlusion matrices are per-render pixel truth; elevation_continuous_overlap.csv separately reports nominal continuous cross-section overlap.",
+    "Synthetic installation states are non-production reference assessments; NOT_INSTALLED requires qualified negative evidence that this all-active fixture does not contain.",
+    "The current renderer accepts only active INSTALLED scene instances; a missing-pipe fixture must separate the complete design catalog from the rendered active-instance set.",
     "FULLY_OCCLUDED and NOT_OBSERVED never imply NOT_INSTALLED."
   ]
 }

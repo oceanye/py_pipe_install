@@ -3,10 +3,108 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 
 VisibilityState = tuple[str, ...]
+
+INSTALLATION_STATES = ("INSTALLED", "NOT_INSTALLED", "UNKNOWN")
+INSTALLATION_STATE_LABELS_ZH = {
+    "INSTALLED": "安装",
+    "NOT_INSTALLED": "未安装",
+    "UNKNOWN": "不明",
+}
+
+
+@dataclass(frozen=True)
+class NegativeInstallationEvidence:
+    """Required gates for concluding that a designed pipe is not installed.
+
+    This structure intentionally has no permissive defaults. A missing
+    detection is not negative evidence; every spatial, sensor-health, and
+    temporal gate must be supplied and pass.
+    """
+
+    calibration_validated: bool
+    registration_validated: bool
+    expected_region_in_frame: bool
+    expected_region_unoccluded: bool
+    sensor_health_validated: bool
+    free_space_validated: bool
+    repeated_absence_observations: int
+    independent_evidence_sources: int
+
+    def is_qualified(self) -> bool:
+        """Return whether this bundle clears the conservative negative gate."""
+
+        required_flags = (
+            self.calibration_validated,
+            self.registration_validated,
+            self.expected_region_in_frame,
+            self.expected_region_unoccluded,
+            self.sensor_health_validated,
+            self.free_space_validated,
+        )
+        return (
+            all(value is True for value in required_flags)
+            and type(self.repeated_absence_observations) is int
+            and self.repeated_absence_observations >= 2
+            and type(self.independent_evidence_sources) is int
+            and self.independent_evidence_sources >= 2
+        )
+
+
+def classify_installation_state(
+    *,
+    direct_instance_evidence: bool = False,
+    negative_evidence: NegativeInstallationEvidence | None = None,
+    evidence_healthy: bool = True,
+    conflict: bool = False,
+) -> str:
+    """Resolve one mutually exclusive installation state from qualified evidence.
+
+    Negative evidence is deliberately stronger than absence of a detection.
+    It must be supplied as a complete :class:`NegativeInstallationEvidence`
+    bundle. Occlusion or no observation alone therefore falls through to
+    ``UNKNOWN``.
+    """
+
+    boolean_inputs = {
+        "direct_instance_evidence": direct_instance_evidence,
+        "evidence_healthy": evidence_healthy,
+        "conflict": conflict,
+    }
+    for name, value in boolean_inputs.items():
+        if type(value) is not bool:
+            raise ValueError(f"{name} must be a boolean")
+    if negative_evidence is not None and not isinstance(
+        negative_evidence, NegativeInstallationEvidence
+    ):
+        raise ValueError(
+            "negative_evidence must be NegativeInstallationEvidence or None"
+        )
+    qualified_negative_evidence = (
+        negative_evidence is not None and negative_evidence.is_qualified()
+    )
+    if not evidence_healthy or conflict:
+        return "UNKNOWN"
+    if direct_instance_evidence and qualified_negative_evidence:
+        return "UNKNOWN"
+    if direct_instance_evidence:
+        return "INSTALLED"
+    if qualified_negative_evidence:
+        return "NOT_INSTALLED"
+    return "UNKNOWN"
+
+
+def installation_state_label_zh(state: str) -> str:
+    """Return the required Chinese display label for an installation state."""
+
+    try:
+        return INSTALLATION_STATE_LABELS_ZH[state]
+    except KeyError as error:
+        raise ValueError(f"Unsupported installation state: {state}") from error
 
 
 def normalize_state(state: Iterable[str]) -> VisibilityState:

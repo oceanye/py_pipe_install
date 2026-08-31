@@ -13,6 +13,8 @@ M0 使用以下成套资产：
 
 M1 使用 `管道群2.3mf` 的 9 根前后分层管道，生成一组可重复的虚拟双目 RGB、精确 CAD 深度、稳定实例 ID、正交立面及有向遮挡图。`管道群2.mkv` 只是固定 Fusion 视口中的对象显隐参考，不含相机运动，也不作为深度或双目真值。合成输出验证的是投影、Z-buffer 所有权和遮挡拓扑；它不代表真实深度相机性能。
 
+每根 `pipe_id` 在一次左右目融合后只输出一个三态结果：`INSTALLED（安装）`、`NOT_INSTALLED（未安装）` 或 `UNKNOWN（不明）`。安装状态与逐视点的 `FULLY_VISIBLE/PARTIALLY_OCCLUDED/FULLY_OCCLUDED/OUT_OF_FRUSTUM` 相互独立；逐视点只保存证据类型，不另设管级安装状态。当前九根管的合成场景真值均为安装；基于精确合成实例掩码的双目参考判定为 ID 1～6、8、9“安装”，ID 7“不明”，没有“未安装”样本。正交立面不参与双目融合，因此立面中 ID 9 虽完全遮挡，仍可因左右目可见而在融合结果中判为安装。该结果不是对真实 RGB 识别算法或现场安装状态的验证。
+
 当前识别策略是“**颜色识别 + 投影直径二次校验**”：颜色用于生成管道身份候选，画面中的投影宽度/直径桶用于排除明显不一致的候选。录屏没有相机内参、外参或尺度标定，因此原始宽度 `diameter_px` 属于像素域的**非标定量测**。报告中的 `projected_diameter_estimate_mm` 只是结合模型标称长度得到的归一化分类特征，必须同时标记 `diameter_source=model_prior`、`metric_calibrated=false`；它不是现场毫米量测，也不得用来宣称管径测量精度。
 
 当前 M0 的逐管枚举为 `visibility=VISIBLE/NOT_OBSERVED`、`decision=MATCHED/UNKNOWN`，且 `installation_state` 恒为 `UNKNOWN`。候选冲突不会被强制匹配，但独立的 `AMBIGUOUS` 和无效帧状态仍是下一阶段契约。核心边界为：
@@ -35,7 +37,7 @@ not_observed != not_installed
 
 这组三维样件是当前算法回归资产，不替代后续实物目标。已提出的 D22/D50、约 1 m 相机距离仍需用真实双目原始帧、完整标定和可追溯尺度真值单独验收。
 
-管道群2把颜色和直径保留为两个独立属性，实例身份仅由 manifest 的 `instance_id/pipe_id` 决定。其正交立面真值包含 3 根前层和 6 根后层管道：后层实例 7、9 被前层完全覆盖，其余错位重叠形成可量化的部分遮挡关系。即使这两根管没有任何可见像素，设计存在状态仍为真，安装状态仍不得从画面推断。
+管道群2把颜色和直径保留为两个独立属性，实例身份仅由 manifest 的 `instance_id/pipe_id` 决定。其正交立面真值包含 3 根前层和 6 根后层管道：后层实例 7、9 被前层完全覆盖，其余错位重叠形成可量化的部分遮挡关系。单独依据该正交立面，ID 7、9 都不能形成安装正证据；加入合格的左右视点后，当前 ID 9 可评估为“安装”，ID 7 仍为“不明”。
 
 ## 仓库结构
 
@@ -120,7 +122,7 @@ python -m pipe_twin analyze --manifest test_model/manifest.json --output outputs
 python -m pipe_twin simulate-stereo --manifest test_model/pipe_group2_manifest.json --output-dir test_model/pipe_group2_synthetic_stereo
 ```
 
-核心输出包括平滑与人工纹理版左右 RGB、深度/实例预览、保存 `float32 depth_z_mm/disparity_px`、`uint16 instance_id` 和双向可对应 mask 的 `*_truth.npz`，以及 `camera.json`、逐视角遮挡 JSON、amodal 立面 PNG/SVG、有向拓扑 SVG、像素遮挡矩阵和连续几何重叠 CSV。深度/视差背景为 `NaN`，实例背景为 `0`；完整文件清单和 SHA-256 记录在 `dataset_manifest.json`。
+核心输出包括平滑与人工纹理版左右 RGB、深度/实例预览、保存 `float32 depth_z_mm/disparity_px`、`uint16 instance_id` 和双向可对应 mask 的 `*_truth.npz`，以及 `camera.json`、逐视角遮挡 JSON、`installation_status.json` 三态汇总、amodal 立面 PNG/SVG、有向拓扑 SVG、像素遮挡矩阵和连续几何重叠 CSV。深度/视差背景为 `NaN`，实例背景为 `0`；完整文件清单和 SHA-256 记录在 `dataset_manifest.json`。
 
 当前虚拟双目为 1920×1080、95 mm 水平基线、约 40° 水平视场，相机距前层表面约 1 m。参数是为了建立受控算法真值，不是对现有实体双目标定参数的确认。详细口径见[管道群2模拟双目与遮挡拓扑说明](doc/管道群2模拟双目与遮挡拓扑说明.md)。
 

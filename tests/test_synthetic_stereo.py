@@ -5,6 +5,7 @@ import hashlib
 import json
 import tempfile
 import unittest
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,7 @@ from pipe_twin.synthetic_stereo import (
     _procedural_textured_rgb,
     _stereo_correspondence_valid,
     _validate_rectified_rig,
+    build_installation_assessment,
     compute_view_topology,
     generate_synthetic_stereo,
     load_mesh_geometries,
@@ -30,6 +32,20 @@ from pipe_twin.synthetic_stereo import (
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_DIR = ROOT / "test_model"
 MANIFEST_PATH = FIXTURE_DIR / "pipe_group2_manifest.json"
+GENERATED_DIR = FIXTURE_DIR / "pipe_group2_synthetic_stereo"
+
+
+def _qualified_negative_gate() -> dict[str, object]:
+    return {
+        "calibration_validated": True,
+        "registration_validated": True,
+        "expected_region_in_frame": True,
+        "expected_region_unoccluded": True,
+        "sensor_health_validated": True,
+        "free_space_validated": True,
+        "repeated_absence_observations": 2,
+        "independent_evidence_sources": 2,
+    }
 
 
 def _sha256(path: Path) -> str:
@@ -88,6 +104,12 @@ class SyntheticStereoFixtureTests(unittest.TestCase):
             cls.instances,
             cls.elevation_camera,
             cls.elevation_render,
+        )
+        cls.left_topology = json.loads(
+            (GENERATED_DIR / "left_view_topology.json").read_text(encoding="utf-8")
+        )
+        cls.right_topology = json.loads(
+            (GENERATED_DIR / "right_view_topology.json").read_text(encoding="utf-8")
         )
 
     def test_manifest_loads_nine_bound_instances(self) -> None:
@@ -183,6 +205,7 @@ class SyntheticStereoFixtureTests(unittest.TestCase):
             layer_id="front",
             color_class="white",
             nominal_diameter_mm=1.0,
+            ground_truth_installation_state="INSTALLED",
             centerline_world_mm=mesh.measured_centerline_world_mm,
             mesh=mesh,
         )
@@ -247,6 +270,14 @@ class SyntheticStereoFixtureTests(unittest.TestCase):
         ]
         with self.assertRaisesRegex(ValueError, "only one"):
             _build_scene(duplicate, self.geometries)
+
+    def test_rendered_scene_rejects_non_installed_ground_truth_entries(self) -> None:
+        invalid = copy.deepcopy(self.manifest)
+        invalid["model"]["pipes"][0]["ground_truth_installation_state"] = (
+            "NOT_INSTALLED"
+        )
+        with self.assertRaisesRegex(ValueError, "current rendered scene"):
+            _build_scene(invalid, self.geometries)
 
     def test_generator_rejects_source_directory_and_reference_hash_mismatch(self) -> None:
         with self.assertRaisesRegex(ValueError, "dedicated output"):
@@ -345,6 +376,34 @@ class SyntheticStereoFixtureTests(unittest.TestCase):
         }
         self.assertEqual(actual_edges, expected_edges)
 
+        expected_installation_evidence = {
+            1: "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+            2: "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+            3: "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+            4: "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+            5: "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+            6: "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+            7: "INCONCLUSIVE",
+            8: "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+            9: "INCONCLUSIVE",
+        }
+        self.assertEqual(
+            {
+                instance_id: item["installation_evidence"]
+                for instance_id, item in records.items()
+            },
+            expected_installation_evidence,
+        )
+        self.assertTrue(
+            all(
+                item["ground_truth_installation_state"] == "INSTALLED"
+                for item in records.values()
+            )
+        )
+        self.assertTrue(
+            all(item["negative_evidence_gate"] is None for item in records.values())
+        )
+
         layer_by_id = {item.instance_id: item.layer_id for item in self.instances}
         for source, target in actual_edges:
             with self.subTest(edge=(source, target)):
@@ -372,6 +431,171 @@ class SyntheticStereoFixtureTests(unittest.TestCase):
             [item["occluder_instance_id"] for item in records[9]["occluders"]], [3]
         )
 
+    def test_installation_assessment_has_exactly_one_state_per_pipe(self) -> None:
+        assessment = build_installation_assessment(
+            self.instances,
+            {"left": self.left_topology, "right": self.right_topology},
+            self.elevation_topology,
+        )
+        pipes = assessment["pipes"]
+        instance_ids = [item["instance_id"] for item in pipes]
+        pipe_ids = [item["pipe_id"] for item in pipes]
+        states = [item["installation_state"] for item in pipes]
+
+        self.assertEqual(len(pipes), len(self.instances))
+        self.assertEqual(len(instance_ids), len(set(instance_ids)))
+        self.assertEqual(len(pipe_ids), len(set(pipe_ids)))
+        self.assertEqual(set(instance_ids), {item.instance_id for item in self.instances})
+        self.assertEqual(set(pipe_ids), {item.pipe_id for item in self.instances})
+        self.assertTrue(set(states).issubset({"INSTALLED", "NOT_INSTALLED", "UNKNOWN"}))
+        observed_counts = Counter(states)
+        self.assertEqual(
+            {state: observed_counts[state] for state in assessment["counts"]},
+            assessment["counts"],
+        )
+        self.assertEqual(assessment["fusion_view_ids"], ["left", "right"])
+        self.assertFalse(assessment["reference_elevation_included_in_fusion"])
+
+    def test_reference_elevation_cannot_enter_stereo_fusion(self) -> None:
+        reference = copy.deepcopy(self.elevation_topology)
+        record = next(item for item in reference["pipes"] if item["instance_id"] == 7)
+        record["installation_evidence"] = "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE"
+        record["assessable"] = True
+        record["visible_pixels"] = 100
+        record["occlusion_state"] = "FULLY_VISIBLE"
+        assessment = build_installation_assessment(
+            self.instances,
+            {"left": self.left_topology, "right": self.right_topology},
+            reference,
+        )
+        pipe7 = next(item for item in assessment["pipes"] if item["instance_id"] == 7)
+        self.assertEqual(pipe7["installation_state"], "UNKNOWN")
+
+        with self.assertRaisesRegex(ValueError, "exactly the left and right"):
+            build_installation_assessment(
+                self.instances,
+                {
+                    "left": self.left_topology,
+                    "right": self.right_topology,
+                    "reference_elevation": reference,
+                },
+                reference,
+            )
+
+    def test_installation_assessment_rejects_malformed_topology_identity(self) -> None:
+        corruptions = {}
+
+        duplicate = copy.deepcopy(self.left_topology)
+        duplicate["pipes"][1]["instance_id"] = duplicate["pipes"][0]["instance_id"]
+        corruptions["Duplicate instance_id"] = duplicate
+
+        extra = copy.deepcopy(self.left_topology)
+        extra_record = copy.deepcopy(extra["pipes"][0])
+        extra_record["instance_id"] = 999
+        extra_record["pipe_id"] = "EXTRA"
+        extra["pipes"].append(extra_record)
+        corruptions["Unexpected instance_id"] = extra
+
+        missing = copy.deepcopy(self.left_topology)
+        missing["pipes"].pop()
+        corruptions["Missing instance_id"] = missing
+
+        mismatched = copy.deepcopy(self.left_topology)
+        mismatched["pipes"][0]["pipe_id"] = "WRONG"
+        corruptions["pipe_id mismatch"] = mismatched
+
+        wrong_camera = copy.deepcopy(self.left_topology)
+        wrong_camera["camera_id"] = "reference_elevation"
+        corruptions["Expected topology camera_id"] = wrong_camera
+
+        for message, left in corruptions.items():
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    build_installation_assessment(
+                        self.instances,
+                        {"left": left, "right": self.right_topology},
+                        self.elevation_topology,
+                    )
+
+    def test_installation_assessment_fuses_qualified_negative_and_conflict(self) -> None:
+        left = copy.deepcopy(self.left_topology)
+        pipe7_left = next(item for item in left["pipes"] if item["instance_id"] == 7)
+        pipe7_left["installation_evidence"] = "NEGATIVE_EVIDENCE_CANDIDATE"
+        pipe7_left["negative_evidence_gate"] = _qualified_negative_gate()
+        assessment = build_installation_assessment(
+            self.instances,
+            {"left": left, "right": self.right_topology},
+            self.elevation_topology,
+        )
+        pipe7 = next(item for item in assessment["pipes"] if item["instance_id"] == 7)
+        self.assertEqual(pipe7["installation_state"], "UNKNOWN")
+        self.assertEqual(
+            pipe7["visibility_by_view"]["left"]["reason_codes"],
+            ["NEGATIVE_EVIDENCE_TOPOLOGY_CONFLICT"],
+        )
+
+        pipe7_left["occlusion_state"] = "NOT_OBSERVED"
+        pipe7_left["visible_pixels"] = 0
+        pipe7_left["occluded_pixels"] = 0
+        pipe7_left["occluders"] = []
+        pipe7_left["expected_region_assessable"] = True
+        pipe7_left["expected_region_occlusion_state"] = "UNOCCLUDED"
+        assessment = build_installation_assessment(
+            self.instances,
+            {"left": left, "right": self.right_topology},
+            self.elevation_topology,
+        )
+        pipe7 = next(item for item in assessment["pipes"] if item["instance_id"] == 7)
+        self.assertEqual(pipe7["installation_state"], "NOT_INSTALLED")
+
+        false_pixel_count = copy.deepcopy(left)
+        pipe7_false_count = next(
+            item for item in false_pixel_count["pipes"] if item["instance_id"] == 7
+        )
+        pipe7_false_count["visible_pixels"] = False
+        assessment = build_installation_assessment(
+            self.instances,
+            {"left": false_pixel_count, "right": self.right_topology},
+            self.elevation_topology,
+        )
+        pipe7 = next(item for item in assessment["pipes"] if item["instance_id"] == 7)
+        self.assertEqual(pipe7["installation_state"], "UNKNOWN")
+
+        unqualified = copy.deepcopy(left)
+        pipe7_unqualified = next(
+            item for item in unqualified["pipes"] if item["instance_id"] == 7
+        )
+        pipe7_unqualified["negative_evidence_gate"]["calibration_validated"] = False
+        assessment = build_installation_assessment(
+            self.instances,
+            {"left": unqualified, "right": self.right_topology},
+            self.elevation_topology,
+        )
+        pipe7 = next(item for item in assessment["pipes"] if item["instance_id"] == 7)
+        self.assertEqual(pipe7["installation_state"], "UNKNOWN")
+
+        right_conflict = copy.deepcopy(self.right_topology)
+        pipe1_right = next(
+            item for item in right_conflict["pipes"] if item["instance_id"] == 1
+        )
+        pipe1_right["installation_evidence"] = "NEGATIVE_EVIDENCE_CANDIDATE"
+        pipe1_right["negative_evidence_gate"] = _qualified_negative_gate()
+        pipe1_right["occlusion_state"] = "NOT_OBSERVED"
+        pipe1_right["assessable"] = False
+        pipe1_right["visible_pixels"] = 0
+        pipe1_right["occluded_pixels"] = 0
+        pipe1_right["occluders"] = []
+        pipe1_right["expected_region_assessable"] = True
+        pipe1_right["expected_region_occlusion_state"] = "UNOCCLUDED"
+        assessment = build_installation_assessment(
+            self.instances,
+            {"left": self.left_topology, "right": right_conflict},
+            self.elevation_topology,
+        )
+        pipe1 = next(item for item in assessment["pipes"] if item["instance_id"] == 1)
+        self.assertEqual(pipe1["installation_state"], "UNKNOWN")
+        self.assertEqual(pipe1["state_basis"], "CONFLICTING_EVIDENCE")
+
     def test_generator_writes_typed_truth_hash_catalog_and_safety_boundaries(self) -> None:
         manifest = _downsized_manifest(self.manifest)
         with tempfile.TemporaryDirectory() as temporary:
@@ -392,6 +616,11 @@ class SyntheticStereoFixtureTests(unittest.TestCase):
             self.assertEqual(len(generated["instance_catalog"]), 9)
             self.assertFalse(generated["truth_semantics"]["field_calibration_validated"])
             self.assertFalse(generated["truth_semantics"]["installation_state_inferred"])
+            self.assertTrue(
+                generated["truth_semantics"][
+                    "synthetic_installation_assessment_generated"
+                ]
+            )
             self.assertIn("never RGB color", generated["truth_semantics"]["identity_source"])
 
             records = []
@@ -403,6 +632,7 @@ class SyntheticStereoFixtureTests(unittest.TestCase):
                 )
             records.extend(generated["reference_elevation"].values())
             records.append(generated["calibration"])
+            records.append(generated["installation_assessment"])
             for record in records:
                 with self.subTest(product=record["path"]):
                     product_path = output / record["path"]
@@ -440,6 +670,89 @@ class SyntheticStereoFixtureTests(unittest.TestCase):
                     self.assertTrue(np.any(np.isnan(depth)), "fixture must retain background")
                     self.assertTrue(np.any(instance_id > 0), "fixture must contain pipe pixels")
                     self.assertTrue(set(np.unique(instance_id)).issubset(set(range(10))))
+
+            assessment = json.loads(
+                (output / "installation_status.json").read_text(encoding="utf-8")
+            )
+            pipes = assessment["pipes"]
+            instance_ids = [int(item["instance_id"]) for item in pipes]
+            pipe_ids = [item["pipe_id"] for item in pipes]
+            self.assertEqual(len(pipes), 9)
+            self.assertEqual(len(set(instance_ids)), 9)
+            self.assertEqual(len(set(pipe_ids)), 9)
+            self.assertEqual(set(instance_ids), set(range(1, 10)))
+            self.assertEqual(
+                set(pipe_ids),
+                {item["pipe_id"] for item in generated["instance_catalog"]},
+            )
+            states = {
+                int(item["instance_id"]): item["installation_state"]
+                for item in pipes
+            }
+            self.assertEqual(
+                states,
+                {
+                    1: "INSTALLED",
+                    2: "INSTALLED",
+                    3: "INSTALLED",
+                    4: "INSTALLED",
+                    5: "INSTALLED",
+                    6: "INSTALLED",
+                    7: "UNKNOWN",
+                    8: "INSTALLED",
+                    9: "INSTALLED",
+                },
+            )
+            self.assertEqual(
+                assessment["counts"],
+                {"INSTALLED": 8, "NOT_INSTALLED": 0, "UNKNOWN": 1},
+            )
+            observed_counts = Counter(states.values())
+            self.assertEqual(
+                {
+                    state: observed_counts[state]
+                    for state in ("INSTALLED", "NOT_INSTALLED", "UNKNOWN")
+                },
+                assessment["counts"],
+            )
+            labels = {
+                "INSTALLED": "安装",
+                "NOT_INSTALLED": "未安装",
+                "UNKNOWN": "不明",
+            }
+            for item in pipes:
+                with self.subTest(status_instance_id=item["instance_id"]):
+                    self.assertEqual(
+                        item["installation_state_zh"],
+                        labels[item["installation_state"]],
+                    )
+                    self.assertTrue(
+                        set(item["positive_evidence_view_ids"]).issubset(
+                            {"left", "right"}
+                        )
+                    )
+                    self.assertTrue(
+                        set(item["negative_evidence_view_ids"]).issubset(
+                            {"left", "right"}
+                        )
+                    )
+            by_id = {
+                int(item["instance_id"]): item for item in pipes
+            }
+            self.assertEqual(
+                by_id[9]["visibility_by_view"]["reference_elevation"][
+                    "installation_evidence"
+                ],
+                "INCONCLUSIVE",
+            )
+            self.assertEqual(
+                by_id[9]["visibility_by_view"]["left"]["installation_evidence"],
+                "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+            )
+            self.assertEqual(by_id[7]["ground_truth_installation_state"], "INSTALLED")
+            self.assertFalse(assessment["production_authority"])
+            self.assertFalse(assessment["field_installation_state_inferred"])
+            self.assertTrue(assessment["synthetic_reference_state_computed"])
 
             limitations = " ".join(generated["limitations"]).upper()
             self.assertIn("FULLY_OCCLUDED", limitations)

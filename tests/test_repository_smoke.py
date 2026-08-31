@@ -4,6 +4,7 @@ import hashlib
 import json
 import unittest
 import zipfile
+from collections import Counter
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -42,6 +43,7 @@ class RepositorySmokeTests(unittest.TestCase):
             "test_model/pipe_group2_synthetic_stereo/right_truth.npz",
             "test_model/pipe_group2_synthetic_stereo/elevation_amodal_overlay.png",
             "test_model/pipe_group2_synthetic_stereo/elevation_view_topology.json",
+            "test_model/pipe_group2_synthetic_stereo/installation_status.json",
             "test_model/pipe_group2_synthetic_stereo/dataset_manifest.json",
         )
 
@@ -101,6 +103,54 @@ class RepositorySmokeTests(unittest.TestCase):
         self.assertEqual(generated["source"]["manifest_sha256"], _sha256(GROUP2_MANIFEST_PATH))
         self.assertEqual(generated["source"]["model_sha256"], model["sha256"])
         self.assertEqual(len(generated["instance_catalog"]), 9)
+        status_record = generated["installation_assessment"]
+        self.assertEqual(status_record["path"], "installation_status.json")
+        status_path = generated_path.parent / status_record["path"]
+        self.assertEqual(status_path.stat().st_size, status_record["size_bytes"])
+        self.assertEqual(_sha256(status_path), status_record["sha256"])
+
+        status = json.loads(status_path.read_text(encoding="utf-8"))
+        pipes = status["pipes"]
+        instance_ids = [item["instance_id"] for item in pipes]
+        pipe_ids = [item["pipe_id"] for item in pipes]
+        self.assertEqual(len(pipes), 9)
+        self.assertEqual(len(set(instance_ids)), 9)
+        self.assertEqual(len(set(pipe_ids)), 9)
+        self.assertEqual(
+            set(instance_ids),
+            {item["instance_id"] for item in generated["instance_catalog"]},
+        )
+        self.assertEqual(
+            set(pipe_ids),
+            {item["pipe_id"] for item in generated["instance_catalog"]},
+        )
+        observed_counts = Counter(item["installation_state"] for item in pipes)
+        self.assertEqual(
+            {
+                state: observed_counts[state]
+                for state in ("INSTALLED", "NOT_INSTALLED", "UNKNOWN")
+            },
+            status["counts"],
+        )
+        labels = {
+            "INSTALLED": "安装",
+            "NOT_INSTALLED": "未安装",
+            "UNKNOWN": "不明",
+        }
+        for item in pipes:
+            with self.subTest(status_pipe_id=item["pipe_id"]):
+                self.assertIn(item["installation_state"], labels)
+                self.assertEqual(
+                    item["installation_state_zh"], labels[item["installation_state"]]
+                )
+                self.assertTrue(
+                    set(item["positive_evidence_view_ids"]).issubset({"left", "right"})
+                )
+                self.assertTrue(
+                    set(item["negative_evidence_view_ids"]).issubset({"left", "right"})
+                )
+        self.assertEqual(status["fusion_view_ids"], ["left", "right"])
+        self.assertFalse(status["reference_elevation_included_in_fusion"])
 
     def test_manifest_keeps_mvp_capability_boundaries_explicit(self) -> None:
         manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))

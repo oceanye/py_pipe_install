@@ -23,6 +23,7 @@
       {
         "instance_id": 1,
         "pipe_id": "PG2-F-RED-D40-Y260",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "7",
         "cad_uuid": "ab439689-684b-4bd8-b172-28bf31a8646e",
         "cad_name": "实体4",
@@ -35,6 +36,7 @@
       {
         "instance_id": 2,
         "pipe_id": "PG2-F-BLUE-D45-Y105",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "5",
         "cad_uuid": "23376a75-b798-4457-a9f0-1b3acfd5719d",
         "cad_name": "实体3",
@@ -47,6 +49,7 @@
       {
         "instance_id": 3,
         "pipe_id": "PG2-F-WHITE-D20-Y033",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "9",
         "cad_uuid": "cd0dc82f-b964-497a-97b8-c0a40d1a0ad4",
         "cad_name": "实体5",
@@ -59,6 +62,7 @@
       {
         "instance_id": 4,
         "pipe_id": "PG2-B-BLUE-D45-Y285",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "1",
         "cad_uuid": "55b5ef97-fec2-4c83-ace8-156403c7bba2",
         "cad_name": "实体10",
@@ -71,6 +75,7 @@
       {
         "instance_id": 5,
         "pipe_id": "PG2-B-RED-D40-Y223",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "11",
         "cad_uuid": "fa7e784a-3662-49e6-8f8b-4e5b65cc41d3",
         "cad_name": "实体6",
@@ -83,6 +88,7 @@
       {
         "instance_id": 6,
         "pipe_id": "PG2-B-BLUE-D45-Y145",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "13",
         "cad_uuid": "5682b102-1f66-4766-af2d-d703ef4a9a45",
         "cad_name": "实体7",
@@ -95,6 +101,7 @@
       {
         "instance_id": 7,
         "pipe_id": "PG2-B-WHITE-D20-Y103",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "3",
         "cad_uuid": "fdc46d2f-aa38-40a4-acb8-80a111c539aa",
         "cad_name": "实体11",
@@ -107,6 +114,7 @@
       {
         "instance_id": 8,
         "pipe_id": "PG2-B-WHITE-D20-Y073",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "17",
         "cad_uuid": "bf9c4780-ee4a-494a-92fa-0a1376ee7b78",
         "cad_name": "实体9",
@@ -119,6 +127,7 @@
       {
         "instance_id": 9,
         "pipe_id": "PG2-B-WHITE-D20-Y033",
+        "ground_truth_installation_state": "INSTALLED",
         "cad_object_id": "15",
         "cad_uuid": "26cd1040-975e-4769-8456-863a0cbca5f5",
         "cad_name": "实体8",
@@ -193,15 +202,22 @@
     "recommended_reference_frames_zero_based": [60, 510, 550, 590, 950, 1040, 1350, 1390, 1680, 1840]
   },
   "state_contract": {
+    "allowed_installation_states": ["INSTALLED", "NOT_INSTALLED", "UNKNOWN"],
+    "display_labels_zh": {
+      "INSTALLED": "安装",
+      "NOT_INSTALLED": "未安装",
+      "UNKNOWN": "不明"
+    },
     "design_presence": "All nine manifest instances exist and are active in this synthetic scene.",
     "observed_visibility": "Derived independently per camera from amodal and Z-buffer-visible masks.",
     "fully_occluded_meaning": "The pipe exists in CAD but contributes no owned pixel in this view.",
+    "not_installed_evidence": "Requires validated calibration, registration and sensor health, an in-frame unoccluded expected region, valid free-space/depth evidence, at least two repeated absence observations, at least two independent evidence sources, and no conflicting positive evidence.",
     "safety_rule": "FULLY_OCCLUDED or NOT_OBSERVED never means NOT_INSTALLED."
   },
   "limitations": [
     "This is exact CAD-derived synthetic truth, not measured depth-camera output.",
     "The virtual rig has no lens distortion, rolling shutter, exposure mismatch, material reflection, or sensor noise.",
-    "The current reference is a two-layer static scene; it does not validate field calibration, D22/D50 physical measurement, installation state, or 3DGS.",
+    "The current reference is a two-layer static scene; it does not validate field calibration, D22/D50 physical measurement, field installation-state recognition, or 3DGS.",
     "Color class and nominal diameter are independent attributes; instance identity comes only from instance_id/pipe_id.",
     "This fixture still correlates white/D20, red/D40, and blue/D45, so it cannot by itself prove that a recognizer has disentangled color from diameter."
   ]

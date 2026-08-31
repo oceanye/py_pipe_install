@@ -1,0 +1,544 @@
+{
+  "schema_version": "1.0",
+  "domain": "synthetic_cad_truth",
+  "assessment_kind": "synthetic_reference_oracle",
+  "assessment_scope": "synthetic_rectified_stereo_left_right",
+  "fusion_view_ids": [
+    "left",
+    "right"
+  ],
+  "reference_elevation_included_in_fusion": false,
+  "production_authority": false,
+  "field_calibration_validated": false,
+  "field_installation_state_inferred": false,
+  "synthetic_reference_state_computed": true,
+  "allowed_states": [
+    {
+      "code": "INSTALLED",
+      "label_zh": "安装"
+    },
+    {
+      "code": "NOT_INSTALLED",
+      "label_zh": "未安装"
+    },
+    {
+      "code": "UNKNOWN",
+      "label_zh": "不明"
+    }
+  ],
+  "policy": {
+    "installed": "At least one stereo view has exact synthetic instance-owned visible pixels and no qualified negative conflict.",
+    "not_installed": "Requires a structured gate bundle with validated calibration, registration, in-frame unoccluded expected region, sensor health, free space, at least two repeated absences, and at least two independent evidence sources.",
+    "unknown": "No qualified positive or negative evidence, or evidence is occluded, out of view, unhealthy, or conflicting.",
+    "safety_rule": "FULLY_OCCLUDED, OUT_OF_FRUSTUM, and NOT_OBSERVED never imply NOT_INSTALLED."
+  },
+  "counts": {
+    "INSTALLED": 8,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 1
+  },
+  "pipes": [
+    {
+      "instance_id": 1,
+      "pipe_id": "PG2-F-RED-D40-Y260",
+      "installation_state": "INSTALLED",
+      "installation_state_zh": "安装",
+      "state_basis": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "reason_codes": [
+        "VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"
+      ],
+      "positive_evidence_view_ids": [
+        "left",
+        "right"
+      ],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    },
+    {
+      "instance_id": 2,
+      "pipe_id": "PG2-F-BLUE-D45-Y105",
+      "installation_state": "INSTALLED",
+      "installation_state_zh": "安装",
+      "state_basis": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "reason_codes": [
+        "VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"
+      ],
+      "positive_evidence_view_ids": [
+        "left",
+        "right"
+      ],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    },
+    {
+      "instance_id": 3,
+      "pipe_id": "PG2-F-WHITE-D20-Y033",
+      "installation_state": "INSTALLED",
+      "installation_state_zh": "安装",
+      "state_basis": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "reason_codes": [
+        "VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"
+      ],
+      "positive_evidence_view_ids": [
+        "left",
+        "right"
+      ],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    },
+    {
+      "instance_id": 4,
+      "pipe_id": "PG2-B-BLUE-D45-Y285",
+      "installation_state": "INSTALLED",
+      "installation_state_zh": "安装",
+      "state_basis": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "reason_codes": [
+        "VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"
+      ],
+      "positive_evidence_view_ids": [
+        "left",
+        "right"
+      ],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    },
+    {
+      "instance_id": 5,
+      "pipe_id": "PG2-B-RED-D40-Y223",
+      "installation_state": "INSTALLED",
+      "installation_state_zh": "安装",
+      "state_basis": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "reason_codes": [
+        "VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"
+      ],
+      "positive_evidence_view_ids": [
+        "left",
+        "right"
+      ],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "FULLY_VISIBLE",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    },
+    {
+      "instance_id": 6,
+      "pipe_id": "PG2-B-BLUE-D45-Y145",
+      "installation_state": "INSTALLED",
+      "installation_state_zh": "安装",
+      "state_basis": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "reason_codes": [
+        "VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"
+      ],
+      "positive_evidence_view_ids": [
+        "left",
+        "right"
+      ],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    },
+    {
+      "instance_id": 7,
+      "pipe_id": "PG2-B-WHITE-D20-Y103",
+      "installation_state": "UNKNOWN",
+      "installation_state_zh": "不明",
+      "state_basis": "INSUFFICIENT_EVIDENCE",
+      "reason_codes": [
+        "NO_STEREO_VIEW_HAS_DIRECT_INSTANCE_EVIDENCE",
+        "NO_QUALIFIED_NEGATIVE_EVIDENCE"
+      ],
+      "positive_evidence_view_ids": [],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "FULLY_OCCLUDED",
+          "assessable": false,
+          "installation_evidence": "INCONCLUSIVE",
+          "reason_codes": [
+            "FULLY_OCCLUDED",
+            "NO_QUALIFIED_NEGATIVE_EVIDENCE"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "FULLY_OCCLUDED",
+          "assessable": false,
+          "installation_evidence": "INCONCLUSIVE",
+          "reason_codes": [
+            "FULLY_OCCLUDED",
+            "NO_QUALIFIED_NEGATIVE_EVIDENCE"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "FULLY_OCCLUDED",
+          "assessable": false,
+          "installation_evidence": "INCONCLUSIVE",
+          "reason_codes": [
+            "FULLY_OCCLUDED",
+            "NO_QUALIFIED_NEGATIVE_EVIDENCE"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    },
+    {
+      "instance_id": 8,
+      "pipe_id": "PG2-B-WHITE-D20-Y073",
+      "installation_state": "INSTALLED",
+      "installation_state_zh": "安装",
+      "state_basis": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "reason_codes": [
+        "VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"
+      ],
+      "positive_evidence_view_ids": [
+        "left",
+        "right"
+      ],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    },
+    {
+      "instance_id": 9,
+      "pipe_id": "PG2-B-WHITE-D20-Y033",
+      "installation_state": "INSTALLED",
+      "installation_state_zh": "安装",
+      "state_basis": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "reason_codes": [
+        "VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"
+      ],
+      "positive_evidence_view_ids": [
+        "left",
+        "right"
+      ],
+      "negative_evidence_view_ids": [],
+      "ground_truth_installation_state": "INSTALLED",
+      "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+      "visibility_by_view": {
+        "left": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "right": {
+          "occlusion_state": "PARTIALLY_OCCLUDED",
+          "assessable": true,
+          "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+          "reason_codes": [
+            "EXACT_MANIFEST_INSTANCE_BINDING",
+            "VISIBLE_INSTANCE_PIXELS"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED"
+        },
+        "reference_elevation": {
+          "occlusion_state": "FULLY_OCCLUDED",
+          "assessable": false,
+          "installation_evidence": "INCONCLUSIVE",
+          "reason_codes": [
+            "FULLY_OCCLUDED",
+            "NO_QUALIFIED_NEGATIVE_EVIDENCE"
+          ],
+          "negative_evidence_qualified": false,
+          "expected_region_assessable": null,
+          "expected_region_occlusion_state": "NOT_EVALUATED",
+          "included_in_stereo_fusion": false
+        }
+      }
+    }
+  ]
+}

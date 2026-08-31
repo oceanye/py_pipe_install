@@ -30,6 +30,12 @@ from .pipeline import (
     load_json_snapshot,
     sha256_file,
 )
+from .state import (
+    INSTALLATION_STATES,
+    NegativeInstallationEvidence,
+    classify_installation_state,
+    installation_state_label_zh,
+)
 
 
 _GENERATED_FILENAMES = (
@@ -53,7 +59,15 @@ _GENERATED_FILENAMES = (
     "occlusion_topology_graph.svg",
     "occlusion_matrix.csv",
     "elevation_continuous_overlap.csv",
+    "installation_status.json",
     "dataset_manifest.json",
+)
+
+_STEREO_FUSION_VIEW_IDS = ("left", "right")
+_VIEW_EVIDENCE_TYPES = (
+    "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+    "NEGATIVE_EVIDENCE_CANDIDATE",
+    "INCONCLUSIVE",
 )
 
 
@@ -76,6 +90,7 @@ class SceneInstance:
     layer_id: str
     color_class: str
     nominal_diameter_mm: float
+    ground_truth_installation_state: str
     centerline_world_mm: np.ndarray
     mesh: MeshGeometry
 
@@ -443,6 +458,19 @@ def compute_view_topology(
             )
             if component_count > 1:
                 component_pixels = int(np.max(stats[1:, cv2.CC_STAT_AREA]))
+        assessable = (
+            state in {"FULLY_VISIBLE", "PARTIALLY_OCCLUDED"}
+            and component_pixels >= 50
+        )
+        if assessable:
+            installation_evidence = "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE"
+            reason_codes = [
+                "EXACT_MANIFEST_INSTANCE_BINDING",
+                "VISIBLE_INSTANCE_PIXELS",
+            ]
+        else:
+            installation_evidence = "INCONCLUSIVE"
+            reason_codes = [state, "NO_QUALIFIED_NEGATIVE_EVIDENCE"]
         pipe_records.append(
             {
                 "instance_id": instance.instance_id,
@@ -460,8 +488,16 @@ def compute_view_topology(
                 "visible_axis_coverage": _axis_coverage(full_mask, visible_mask, axis_uv),
                 "largest_visible_component_pixels": component_pixels,
                 "occlusion_state": state,
-                "assessable": state in {"FULLY_VISIBLE", "PARTIALLY_OCCLUDED"}
-                and component_pixels >= 50,
+                "assessable": assessable,
+                "installation_evidence": installation_evidence,
+                "installation_reason_codes": reason_codes,
+                "negative_evidence_gate": None,
+                "expected_region_assessable": None,
+                "expected_region_occlusion_state": "NOT_EVALUATED",
+                "ground_truth_installation_state": (
+                    instance.ground_truth_installation_state
+                ),
+                "production_authority": False,
                 "occluders": sorted(
                     occluders,
                     key=lambda item: item["fraction_of_target_amodal"],
@@ -487,6 +523,289 @@ def compute_view_topology(
         full_masks,
         visible_masks,
     )
+
+
+def _negative_evidence_from_record(
+    record: dict[str, Any],
+    *,
+    view_id: str,
+) -> NegativeInstallationEvidence | None:
+    payload = record.get("negative_evidence_gate")
+    evidence_type = record.get("installation_evidence")
+    if payload is None:
+        if evidence_type == "NEGATIVE_EVIDENCE_CANDIDATE":
+            raise ValueError(
+                f"{view_id} instance {record.get('instance_id')} has a negative "
+                "candidate without a complete gate bundle"
+            )
+        return None
+    if evidence_type != "NEGATIVE_EVIDENCE_CANDIDATE":
+        raise ValueError(
+            f"{view_id} instance {record.get('instance_id')} has a negative gate "
+            "without NEGATIVE_EVIDENCE_CANDIDATE"
+        )
+    if not isinstance(payload, dict):
+        raise ValueError("negative_evidence_gate must be an object or null")
+    try:
+        return NegativeInstallationEvidence(**payload)
+    except TypeError as error:
+        raise ValueError(
+            f"Invalid negative evidence gate for {view_id} instance "
+            f"{record.get('instance_id')}"
+        ) from error
+
+
+def _index_topology_records(
+    topology: dict[str, Any],
+    *,
+    expected_camera_id: str,
+    instances: list[SceneInstance],
+) -> dict[int, dict[str, Any]]:
+    if topology.get("camera_id") != expected_camera_id:
+        raise ValueError(
+            f"Expected topology camera_id {expected_camera_id!r}, got "
+            f"{topology.get('camera_id')!r}"
+        )
+    records = topology.get("pipes")
+    if not isinstance(records, list):
+        raise ValueError(f"{expected_camera_id} topology pipes must be a list")
+
+    expected_by_id = {instance.instance_id: instance for instance in instances}
+    if len(expected_by_id) != len(instances):
+        raise ValueError("Scene instance_id values must be unique")
+    if len({instance.pipe_id for instance in instances}) != len(instances):
+        raise ValueError("Scene pipe_id values must be unique")
+
+    indexed: dict[int, dict[str, Any]] = {}
+    seen_pipe_ids: set[str] = set()
+    for record in records:
+        if not isinstance(record, dict):
+            raise ValueError(f"{expected_camera_id} topology records must be objects")
+        raw_instance_id = record.get("instance_id")
+        if type(raw_instance_id) is not int:
+            raise ValueError(f"{expected_camera_id} instance_id must be an integer")
+        instance_id = raw_instance_id
+        if instance_id in indexed:
+            raise ValueError(
+                f"Duplicate instance_id {instance_id} in {expected_camera_id} topology"
+            )
+        if instance_id not in expected_by_id:
+            raise ValueError(
+                f"Unexpected instance_id {instance_id} in {expected_camera_id} topology"
+            )
+        pipe_id = record.get("pipe_id")
+        if pipe_id != expected_by_id[instance_id].pipe_id:
+            raise ValueError(
+                f"pipe_id mismatch for {expected_camera_id} instance {instance_id}"
+            )
+        if pipe_id in seen_pipe_ids:
+            raise ValueError(
+                f"Duplicate pipe_id {pipe_id!r} in {expected_camera_id} topology"
+            )
+        evidence_type = record.get("installation_evidence")
+        if evidence_type not in _VIEW_EVIDENCE_TYPES:
+            raise ValueError(
+                f"Invalid installation evidence for {expected_camera_id} "
+                f"instance {instance_id}"
+            )
+        if evidence_type == "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE" and not (
+            record.get("assessable") is True
+            and type(record.get("visible_pixels")) is int
+            and record["visible_pixels"] > 0
+            and record.get("occlusion_state")
+            in {"FULLY_VISIBLE", "PARTIALLY_OCCLUDED"}
+        ):
+            raise ValueError(
+                f"Direct instance evidence is inconsistent for "
+                f"{expected_camera_id} instance {instance_id}"
+            )
+        _negative_evidence_from_record(record, view_id=expected_camera_id)
+        indexed[instance_id] = record
+        seen_pipe_ids.add(pipe_id)
+
+    missing_ids = set(expected_by_id) - set(indexed)
+    if missing_ids:
+        raise ValueError(
+            f"Missing instance_id values in {expected_camera_id} topology: "
+            f"{sorted(missing_ids)}"
+        )
+    if len(indexed) != len(expected_by_id):
+        raise ValueError(f"Unexpected record count in {expected_camera_id} topology")
+    return indexed
+
+
+def _view_evidence_summary(
+    record: dict[str, Any],
+    *,
+    view_id: str,
+) -> tuple[dict[str, Any], NegativeInstallationEvidence | None]:
+    negative = _negative_evidence_from_record(record, view_id=view_id)
+    evidence_type = str(record["installation_evidence"])
+    reason_codes = list(record["installation_reason_codes"])
+    expected_region_clear = (
+        record.get("expected_region_assessable") is True
+        and record.get("expected_region_occlusion_state") == "UNOCCLUDED"
+        and type(record.get("amodal_pixels_in_frame")) is int
+        and record["amodal_pixels_in_frame"] > 0
+        and type(record.get("visible_pixels")) is int
+        and record["visible_pixels"] == 0
+        and type(record.get("occluded_pixels")) is int
+        and record["occluded_pixels"] == 0
+        and isinstance(record.get("occluders"), list)
+        and not record["occluders"]
+        and record.get("occlusion_state") == "NOT_OBSERVED"
+    )
+    negative_qualified = bool(
+        negative is not None
+        and negative.is_qualified()
+        and expected_region_clear
+    )
+    if negative is not None:
+        if negative_qualified:
+            evidence_type = "QUALIFIED_NEGATIVE_EVIDENCE"
+            reason_codes = ["ALL_NEGATIVE_EVIDENCE_GATES_PASSED"]
+        else:
+            evidence_type = "UNQUALIFIED_NEGATIVE_CANDIDATE"
+            reason_codes = [
+                "NEGATIVE_EVIDENCE_GATE_INCOMPLETE"
+                if not negative.is_qualified()
+                else "NEGATIVE_EVIDENCE_TOPOLOGY_CONFLICT"
+            ]
+    return (
+        {
+            "occlusion_state": record["occlusion_state"],
+            "assessable": record["assessable"],
+            "installation_evidence": evidence_type,
+            "reason_codes": reason_codes,
+            "negative_evidence_qualified": negative_qualified,
+            "expected_region_assessable": record.get(
+                "expected_region_assessable"
+            ),
+            "expected_region_occlusion_state": record.get(
+                "expected_region_occlusion_state"
+            ),
+        },
+        negative if negative_qualified else None,
+    )
+
+
+def build_installation_assessment(
+    instances: list[SceneInstance],
+    stereo_topologies: dict[str, dict[str, Any]],
+    reference_topology: dict[str, Any],
+) -> dict[str, Any]:
+    """Fuse exact left/right synthetic evidence into one state per pipe."""
+
+    if set(stereo_topologies) != set(_STEREO_FUSION_VIEW_IDS):
+        raise ValueError("Stereo fusion requires exactly the left and right views")
+    stereo_records = {
+        view_id: _index_topology_records(
+            stereo_topologies[view_id],
+            expected_camera_id=view_id,
+            instances=instances,
+        )
+        for view_id in _STEREO_FUSION_VIEW_IDS
+    }
+    reference_records = _index_topology_records(
+        reference_topology,
+        expected_camera_id="reference_elevation",
+        instances=instances,
+    )
+    pipe_results: list[dict[str, Any]] = []
+    counts = {state: 0 for state in INSTALLATION_STATES}
+
+    for instance in instances:
+        per_view: dict[str, dict[str, Any]] = {}
+        installed_view_ids: list[str] = []
+        negative_view_ids: list[str] = []
+        qualified_negative_evidence: NegativeInstallationEvidence | None = None
+        for view_id in _STEREO_FUSION_VIEW_IDS:
+            record = stereo_records[view_id][instance.instance_id]
+            summary, negative = _view_evidence_summary(record, view_id=view_id)
+            per_view[view_id] = summary
+            if record["installation_evidence"] == "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE":
+                installed_view_ids.append(view_id)
+            if negative is not None and negative.is_qualified():
+                negative_view_ids.append(view_id)
+                qualified_negative_evidence = negative
+
+        reference_record = reference_records[instance.instance_id]
+        reference_summary, _ = _view_evidence_summary(
+            reference_record,
+            view_id="reference_elevation",
+        )
+        reference_summary["included_in_stereo_fusion"] = False
+        per_view["reference_elevation"] = reference_summary
+
+        evidence_conflict = bool(installed_view_ids and negative_view_ids)
+        installation_state = classify_installation_state(
+            direct_instance_evidence=bool(installed_view_ids),
+            negative_evidence=qualified_negative_evidence,
+            conflict=evidence_conflict,
+        )
+        counts[installation_state] += 1
+        if installation_state == "INSTALLED":
+            basis = "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE"
+            reasons = ["VISIBLE_INSTANCE_PIXELS_IN_STEREO_VIEW"]
+        elif installation_state == "NOT_INSTALLED":
+            basis = "QUALIFIED_NEGATIVE_EVIDENCE"
+            reasons = ["ALL_NEGATIVE_EVIDENCE_GATES_PASSED"]
+        elif evidence_conflict:
+            basis = "CONFLICTING_EVIDENCE"
+            reasons = ["POSITIVE_AND_QUALIFIED_NEGATIVE_EVIDENCE_CONFLICT"]
+        else:
+            basis = "INSUFFICIENT_EVIDENCE"
+            reasons = [
+                "NO_STEREO_VIEW_HAS_DIRECT_INSTANCE_EVIDENCE",
+                "NO_QUALIFIED_NEGATIVE_EVIDENCE",
+            ]
+        pipe_results.append(
+            {
+                "instance_id": instance.instance_id,
+                "pipe_id": instance.pipe_id,
+                "installation_state": installation_state,
+                "installation_state_zh": installation_state_label_zh(
+                    installation_state
+                ),
+                "state_basis": basis,
+                "reason_codes": reasons,
+                "positive_evidence_view_ids": installed_view_ids,
+                "negative_evidence_view_ids": negative_view_ids,
+                "ground_truth_installation_state": (
+                    instance.ground_truth_installation_state
+                ),
+                "ground_truth_source": "SYNTHETIC_SCENE_TRUTH",
+                "visibility_by_view": per_view,
+            }
+        )
+
+    return {
+        "schema_version": "1.0",
+        "domain": "synthetic_cad_truth",
+        "assessment_kind": "synthetic_reference_oracle",
+        "assessment_scope": "synthetic_rectified_stereo_left_right",
+        "fusion_view_ids": list(_STEREO_FUSION_VIEW_IDS),
+        "reference_elevation_included_in_fusion": False,
+        "production_authority": False,
+        "field_calibration_validated": False,
+        "field_installation_state_inferred": False,
+        "synthetic_reference_state_computed": True,
+        "allowed_states": [
+            {
+                "code": state,
+                "label_zh": installation_state_label_zh(state),
+            }
+            for state in INSTALLATION_STATES
+        ],
+        "policy": {
+            "installed": "At least one stereo view has exact synthetic instance-owned visible pixels and no qualified negative conflict.",
+            "not_installed": "Requires a structured gate bundle with validated calibration, registration, in-frame unoccluded expected region, sensor health, free space, at least two repeated absences, and at least two independent evidence sources.",
+            "unknown": "No qualified positive or negative evidence, or evidence is occluded, out of view, unhealthy, or conflicting.",
+            "safety_rule": "FULLY_OCCLUDED, OUT_OF_FRUSTUM, and NOT_OBSERVED never imply NOT_INSTALLED.",
+        },
+        "counts": counts,
+        "pipes": pipe_results,
+    }
 
 
 def _camera_from_dict(camera_id: str, config: dict[str, Any]) -> CameraModel:
@@ -556,6 +875,17 @@ def _build_scene(
             atol=0.05,
         ):
             raise ValueError(f"CAD centerline mismatch for {pipe['pipe_id']}")
+        ground_truth_state = str(pipe["ground_truth_installation_state"])
+        if ground_truth_state not in INSTALLATION_STATES:
+            raise ValueError(
+                f"Invalid ground-truth installation state for {pipe['pipe_id']}"
+            )
+        if ground_truth_state != "INSTALLED":
+            raise ValueError(
+                "Every entry in the current rendered scene must have "
+                "ground_truth_installation_state=INSTALLED; a future missing-pipe "
+                "fixture must separate the design catalog from active scene instances"
+            )
         instances.append(
             SceneInstance(
                 instance_id=instance_id,
@@ -563,6 +893,7 @@ def _build_scene(
                 layer_id=str(pipe["layer_id"]),
                 color_class=str(pipe["color_class"]),
                 nominal_diameter_mm=diameter,
+                ground_truth_installation_state=ground_truth_state,
                 centerline_world_mm=centerline,
                 mesh=mesh,
             )
@@ -1083,6 +1414,14 @@ def generate_synthetic_stereo(
     elevation_topology, elevation_full, elevation_visible = compute_view_topology(
         instances, elevation_camera, elevation
     )
+    installation_assessment = build_installation_assessment(
+        instances,
+        {
+            "left": left_topology,
+            "right": right_topology,
+        },
+        elevation_topology,
+    )
     expected_fully_occluded = set(
         int(value)
         for value in manifest["reference_elevation"].get(
@@ -1119,6 +1458,11 @@ def generate_synthetic_stereo(
     }
     camera_path = output_root / "camera.json"
     atomic_write_text(camera_path, json.dumps(camera_payload, indent=2) + "\n")
+    installation_status_path = output_root / "installation_status.json"
+    atomic_write_text(
+        installation_status_path,
+        json.dumps(installation_assessment, ensure_ascii=False, indent=2) + "\n",
+    )
 
     products: dict[str, dict[str, Any]] = {}
     for name, camera, render, topology, paired_camera, paired_render in (
@@ -1272,6 +1616,10 @@ def generate_synthetic_stereo(
             "identity_source": "manifest instance_id, never RGB color",
             "field_calibration_validated": False,
             "installation_state_inferred": False,
+            "installation_state_inferred_scope": "field_observation_only",
+            "field_installation_state_inferred": False,
+            "synthetic_installation_assessment_generated": True,
+            "synthetic_installation_assessment_production_authority": False,
         },
         "instance_catalog": [
             {
@@ -1284,6 +1632,9 @@ def generate_synthetic_stereo(
                 "color_srgb": item.mesh.color_srgb,
                 "nominal_diameter_mm": item.nominal_diameter_mm,
                 "cad_measured_diameter_mm": item.mesh.measured_diameter_mm,
+                "ground_truth_installation_state": (
+                    item.ground_truth_installation_state
+                ),
                 "centerline_world_mm": item.centerline_world_mm.tolist(),
             }
             for item in instances
@@ -1295,12 +1646,17 @@ def generate_synthetic_stereo(
             "products": products,
         },
         "reference_elevation": elevation_products,
+        "installation_assessment": _file_record(
+            installation_status_path, output_root
+        ),
         "limitations": [
             "This dataset validates CAD projection, stereo geometry, depth ownership, and occlusion topology only.",
             "It does not validate field camera calibration, reflective material response, sensor noise, D22/D50 physical accuracy, or installation state.",
             "Flat RGB is not suitable for validating dense stereo matching; *_rgb_textured.png adds deterministic artificial world-anchored texture for OpenCV matcher experiments.",
             "The rasterizer does not clip triangles crossing near/far planes; this fixture stays fully inside its clipping range.",
             "Occlusion matrices are per-render pixel truth; elevation_continuous_overlap.csv separately reports nominal continuous cross-section overlap.",
+            "Synthetic installation states are non-production reference assessments; NOT_INSTALLED requires qualified negative evidence that this all-active fixture does not contain.",
+            "The current renderer accepts only active INSTALLED scene instances; a missing-pipe fixture must separate the complete design catalog from the rendered active-instance set.",
             "FULLY_OCCLUDED and NOT_OBSERVED never imply NOT_INSTALLED.",
         ],
     }

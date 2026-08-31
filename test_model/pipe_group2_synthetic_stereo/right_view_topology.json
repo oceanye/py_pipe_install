@@ -42,6 +42,16 @@
       "largest_visible_component_pixels": 135155,
       "occlusion_state": "FULLY_VISIBLE",
       "assessable": true,
+      "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "installation_reason_codes": [
+        "EXACT_MANIFEST_INSTANCE_BINDING",
+        "VISIBLE_INSTANCE_PIXELS"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": []
     },
     {
@@ -83,6 +93,16 @@
       "largest_visible_component_pixels": 153566,
       "occlusion_state": "FULLY_VISIBLE",
       "assessable": true,
+      "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "installation_reason_codes": [
+        "EXACT_MANIFEST_INSTANCE_BINDING",
+        "VISIBLE_INSTANCE_PIXELS"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": []
     },
     {
@@ -124,6 +144,16 @@
       "largest_visible_component_pixels": 67645,
       "occlusion_state": "FULLY_VISIBLE",
       "assessable": true,
+      "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "installation_reason_codes": [
+        "EXACT_MANIFEST_INSTANCE_BINDING",
+        "VISIBLE_INSTANCE_PIXELS"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": []
     },
     {
@@ -165,6 +195,16 @@
       "largest_visible_component_pixels": 33656,
       "occlusion_state": "PARTIALLY_OCCLUDED",
       "assessable": true,
+      "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "installation_reason_codes": [
+        "EXACT_MANIFEST_INSTANCE_BINDING",
+        "VISIBLE_INSTANCE_PIXELS"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": [
         {
           "occluder_instance_id": 1,
@@ -213,6 +253,16 @@
       "largest_visible_component_pixels": 104805,
       "occlusion_state": "FULLY_VISIBLE",
       "assessable": true,
+      "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "installation_reason_codes": [
+        "EXACT_MANIFEST_INSTANCE_BINDING",
+        "VISIBLE_INSTANCE_PIXELS"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": []
     },
     {
@@ -254,6 +304,16 @@
       "largest_visible_component_pixels": 118563,
       "occlusion_state": "PARTIALLY_OCCLUDED",
       "assessable": true,
+      "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "installation_reason_codes": [
+        "EXACT_MANIFEST_INSTANCE_BINDING",
+        "VISIBLE_INSTANCE_PIXELS"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": [
         {
           "occluder_instance_id": 2,
@@ -297,6 +357,16 @@
       "largest_visible_component_pixels": 0,
       "occlusion_state": "FULLY_OCCLUDED",
       "assessable": false,
+      "installation_evidence": "INCONCLUSIVE",
+      "installation_reason_codes": [
+        "FULLY_OCCLUDED",
+        "NO_QUALIFIED_NEGATIVE_EVIDENCE"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": [
         {
           "occluder_instance_id": 2,
@@ -345,6 +415,16 @@
       "largest_visible_component_pixels": 23066,
       "occlusion_state": "PARTIALLY_OCCLUDED",
       "assessable": true,
+      "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "installation_reason_codes": [
+        "EXACT_MANIFEST_INSTANCE_BINDING",
+        "VISIBLE_INSTANCE_PIXELS"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": [
         {
           "occluder_instance_id": 2,
@@ -393,6 +473,16 @@
       "largest_visible_component_pixels": 40369,
       "occlusion_state": "PARTIALLY_OCCLUDED",
       "assessable": true,
+      "installation_evidence": "DIRECT_SYNTHETIC_INSTANCE_EVIDENCE",
+      "installation_reason_codes": [
+        "EXACT_MANIFEST_INSTANCE_BINDING",
+        "VISIBLE_INSTANCE_PIXELS"
+      ],
+      "negative_evidence_gate": null,
+      "expected_region_assessable": null,
+      "expected_region_occlusion_state": "NOT_EVALUATED",
+      "ground_truth_installation_state": "INSTALLED",
+      "production_authority": false,
       "occluders": [
         {
           "occluder_instance_id": 3,
