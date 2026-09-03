@@ -12,6 +12,7 @@ import copy
 import hashlib
 import json
 import math
+import os
 import queue
 import re
 import threading
@@ -1226,18 +1227,35 @@ def _empty_dashboard(
 
 
 def _safe_manifest_asset_path(manifest_path: Path, relative_path: object) -> Path | None:
+    """Resolve a manifest-relative asset while preserving its user-facing spelling.
+
+    ``Path.resolve()`` is useful for the containment check below, but on
+    Windows it may return an 8.3 short path (for example ``RUNNER~1``) even
+    when the caller supplied the long path.  Returning that canonical path
+    makes otherwise equal ``Path`` values compare unequal and is especially
+    surprising for the GUI preview API.  Keep a lexical absolute path for the
+    returned value, and use a separately canonicalized path only to reject
+    symlink/junction escapes.
+    """
     if not isinstance(relative_path, str) or not relative_path:
         return None
     candidate = Path(relative_path)
     if candidate.is_absolute():
         return None
-    root = manifest_path.resolve().parent
-    resolved = (root / candidate).resolve()
+    # ``abspath`` normalizes ``.``/``..`` without asking the filesystem for a
+    # final path, so it retains the long path spelling on Windows.  This is
+    # intentionally distinct from ``resolve(strict=False)`` used below.
+    root = Path(os.path.abspath(os.fspath(manifest_path))).parent
+    lexical = Path(
+        os.path.normpath(os.path.join(os.fspath(root), os.fspath(candidate)))
+    )
     try:
-        resolved.relative_to(root)
-    except ValueError:
+        canonical_root = root.resolve(strict=False)
+        canonical = lexical.resolve(strict=False)
+        canonical.relative_to(canonical_root)
+    except (OSError, RuntimeError, ValueError):
         return None
-    return resolved
+    return lexical
 
 
 def _first_manifest_stereo_paths(
