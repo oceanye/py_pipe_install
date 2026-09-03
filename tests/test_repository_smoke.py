@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MODEL_DIR = ROOT / "test_model"
 MANIFEST_PATH = MODEL_DIR / "manifest.json"
 GROUP2_MANIFEST_PATH = MODEL_DIR / "pipe_group2_manifest.json"
+FIELD_STEREO_MANIFEST_PATH = MODEL_DIR / "field_stereo_demo_manifest.json"
 
 
 def _sha256(path: Path) -> str:
@@ -34,12 +35,14 @@ class RepositorySmokeTests(unittest.TestCase):
             "doc/camera_contour_3d_pipe_migration_guide.md",
             "doc/管道数字孪生识别系统测试开发计划.md",
             "doc/管道群2模拟双目与遮挡拓扑说明.md",
+            "doc/现场双目识别与GUI使用说明.md",
             "test_model/管道群.3mf",
             "test_model/管道群.mkv",
             "test_model/manifest.json",
             "test_model/管道群2.3mf",
             "test_model/管道群2.mkv",
             "test_model/pipe_group2_manifest.json",
+            "test_model/field_stereo_demo_manifest.json",
             "test_model/pipe_group2_synthetic_stereo/camera.json",
             "test_model/pipe_group2_synthetic_stereo/left_truth.npz",
             "test_model/pipe_group2_synthetic_stereo/right_truth.npz",
@@ -47,6 +50,13 @@ class RepositorySmokeTests(unittest.TestCase):
             "test_model/pipe_group2_synthetic_stereo/elevation_view_topology.json",
             "test_model/pipe_group2_synthetic_stereo/installation_status.json",
             "test_model/pipe_group2_synthetic_stereo/dataset_manifest.json",
+            "pipe_twin/cad_model.py",
+            "pipe_twin/stereo_analyzer.py",
+            "pipe_twin/gui.py",
+            "tests/test_cad_model.py",
+            "tests/test_stereo_analyzer.py",
+            "tests/test_stereo_3dm_integration.py",
+            "tests/test_gui.py",
         )
 
         for relative_path in required:
@@ -169,6 +179,33 @@ class RepositorySmokeTests(unittest.TestCase):
         self.assertIn("not_observed", limitations)
         self.assertIn("unknown", limitations)
         self.assertIn("d22/d50", limitations)
+
+    def test_field_stereo_demo_manifest_binds_every_model_and_photo_asset(self) -> None:
+        manifest = json.loads(FIELD_STEREO_MANIFEST_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["schema_version"], "2.0")
+        self.assertEqual(manifest["validation_scope"], "SYNTHETIC_ONLY_NOT_FIELD_ACCEPTANCE")
+        model = manifest["model"]
+        model_path = MODEL_DIR / model["path"]
+        self.assertTrue(model_path.is_file())
+        self.assertEqual(_sha256(model_path), model["sha256"].lower())
+        pipes = model["pipes"]
+        self.assertEqual(len(pipes), 9)
+        self.assertEqual(len({item["pipe_id"] for item in pipes}), 9)
+        self.assertEqual(len({item["cad_object_id"] for item in pipes}), 9)
+
+        capture = manifest["capture"]
+        self.assertEqual(capture["kind"], "stereo_still_capture_set")
+        self.assertEqual(capture["camera_layout"], "stereo")
+        self.assertTrue(capture["capture_groups"])
+        for group in capture["capture_groups"]:
+            self.assertEqual(set(group["views"]), {"left", "right"})
+            for role, view in group["views"].items():
+                with self.subTest(capture_id=group["capture_id"], role=role):
+                    photo_path = MODEL_DIR / view["path"]
+                    self.assertTrue(photo_path.is_file())
+                    self.assertEqual(_sha256(photo_path), view["sha256"].lower())
+                    self.assertEqual(view["expected_width"], 1920)
+                    self.assertEqual(view["expected_height"], 1080)
 
 
 if __name__ == "__main__":

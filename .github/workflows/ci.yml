@@ -44,3 +44,8 @@ jobs:
           python -m pipe_twin simulate-stereo
           --manifest test_model/pipe_group2_manifest.json
           --output-dir outputs/pipe_group2_synthetic_stereo
+      - name: Analyze field stereo software demo
+        run: >-
+          python -m pipe_twin analyze-stereo
+          --manifest test_model/field_stereo_demo_manifest.json
+          --output outputs/field_stereo_demo_report.json

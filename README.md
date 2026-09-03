@@ -1,6 +1,6 @@
 # py_pipe_install
 
-基于 CAD 先验和视觉证据的管道安装状态识别与数字孪生项目。当前同时交付 **M0 单层离线演示基线**与 **M1 两层 CAD 合成双目/遮挡拓扑基线**；真实双目现场量测、多机位和 3DGS 属于后续阶段。
+基于 CAD 先验和视觉证据的管道安装状态识别与数字孪生项目。当前交付 **M0 单层离线演示基线**、**M1 两层 CAD 合成双目/遮挡拓扑基线**，以及 **M2 真实双目静态照片 + 3DM/3MF + 本地 GUI 软件候选版**。M2 已能输出逐管三态并完成合成回归；真实相机阈值、标定精度和现场验收仍要用到场实物确认。多机位和 3DGS 属于后续阶段。
 
 ## 生产采集主线：固定相机定时拍照
 
@@ -8,9 +8,9 @@
 
 每次定时触发形成一个 `CaptureGroup`：每个机位通常直接拍摄一张原始照片；需要抵抗偶发模糊、曝光波动或临时遮挡时，可在 2～5 秒窗口内进行少量重拍。组内数据始终是有限数量的离散照片，不得编码成连续视频后再作为生产权威输入。
 
-当前代码只实现 manifest 显式绑定的**单目照片**入口，即 `camera_layout=mono` 且每条记录只有 `views.mono`。入口校验照片原始字节的 SHA-256、解码宽高、带时区的 ISO-8601 拍摄时间，以及 `RAW_PIXELS_NO_EXIF_TRANSFORM` 原始像素方向策略；当前质量阈值尚未经过现场相机验收，安装状态仍保持 `UNKNOWN`。
+代码保留 manifest 显式绑定的 M0 **单目照片**入口，并新增 M2 **同步双目照片**入口。两条入口都校验照片原始字节的 SHA-256、解码宽高、带时区的 ISO-8601 拍摄时间，以及 `RAW_PIXELS_NO_EXIF_TRANSFORM` 原始像素方向策略。单目 M0 不推断安装状态；双目 M2 在 CAD 网格、模型哈希、对象绑定、标定、CAD 配准、同步、图像质量、左右一致视差、颜色和宽度门禁均满足时才输出确定状态。
 
-未来接入双目或多机位时，每张照片必须由 manifest 显式记录 `capture_group_id`、机位/相机 ID、左右角色、配对关系、曝光时间和同步健康。左右目仍须在每次 `CaptureGroup` 内同步，禁止依据文件名、目录顺序或时间邻近关系猜测配对。
+双目每张照片必须由 manifest 显式记录 `capture_group_id`、机位/相机 ID、左右角色、配对关系、时间戳和同步健康。左右目须在每次 `CaptureGroup` 内同步，禁止依据文件名、目录顺序或时间邻近关系猜测配对。后续多机位沿用这一显式绑定规则。
 
 ## 当前状态
 
@@ -23,7 +23,11 @@ M0 使用以下历史回归资产：
 
 M1 使用 `管道群2.3mf` 的 9 根前后分层管道，生成一组可重复的虚拟双目 RGB、精确 CAD 深度、稳定实例 ID、正交立面及有向遮挡图。`管道群2.mkv` 只是固定 Fusion 视口中的对象显隐参考，不含相机运动，也不作为深度或双目真值。合成输出验证的是投影、Z-buffer 所有权和遮挡拓扑；它不代表真实深度相机性能。
 
-每根 `pipe_id` 在一次左右目融合后只输出一个三态结果：`INSTALLED（安装）`、`NOT_INSTALLED（未安装）` 或 `UNKNOWN（不明）`。安装状态与逐视点的 `FULLY_VISIBLE/PARTIALLY_OCCLUDED/FULLY_OCCLUDED/OUT_OF_FRUSTUM` 相互独立；逐视点只保存证据类型，不另设管级安装状态。当前九根管的合成场景真值均为安装；基于精确合成实例掩码的双目参考判定为 ID 1～6、8、9“安装”，ID 7“不明”，没有“未安装”样本。正交立面不参与双目融合，因此立面中 ID 9 虽完全遮挡，仍可因左右目可见而在融合结果中判为安装。该结果不是对真实 RGB 识别算法或现场安装状态的验证。
+M2 新增统一 CAD 网格层：3MF 使用 object ID，3DM 使用 Rhino 对象 GUID；仅 manifest 绑定的管道参与现场分析，辅助 Curve/Point/Text 可保留。直接 Mesh 可以读取，Brep/Extrusion 必须在 3DM 中带完整 Render Mesh 缓存；Block 实例、绑定对象无网格或 GUID 缺失会明确失败。所有坐标统一换算为毫米。分析器从实际 CAD 三角网格生成逐相机 amodal 投影和设计遮挡关系，再将 OpenCV 左右一致视差、颜色和独立宽度指标与 CAD 证据融合。
+
+仓库中的 `field_stereo_demo_manifest.json` 把合成左右照片作为 M2 端到端回归：结果应为 8 根 `INSTALLED`、0 根 `NOT_INSTALLED`、1 根因左右目均完全遮挡而 `UNKNOWN`。这只证明软件链和安全状态机可运行，不是现场验收。
+
+每根 `pipe_id` 在一次左右目融合后只输出一个三态结果：`INSTALLED（安装）`、`NOT_INSTALLED（未安装）` 或 `UNKNOWN（不确定）`。GUI 统一显示“不确定”；历史 M0/M1 报告中的兼容字段 `installation_state_zh` 可能写作“不明”，英文枚举和状态语义不变。安装状态与逐视点的 `FULLY_VISIBLE/PARTIALLY_OCCLUDED/FULLY_OCCLUDED/OUT_OF_FRUSTUM` 相互独立；逐视点只保存证据类型，不另设管级安装状态。当前九根管的合成场景真值均为安装；基于精确合成实例掩码的双目参考判定为 ID 1～6、8、9“安装”，ID 7“不确定”，没有“未安装”样本。正交立面不参与双目融合，因此立面中 ID 9 虽完全遮挡，仍可因左右目可见而在融合结果中判为安装。该结果不是对真实 RGB 识别算法或现场安装状态的验证。
 
 当前 M0 识别策略是“**颜色识别 + 投影直径二次校验**”：颜色用于生成管道身份候选，画面中的投影宽度/直径桶用于排除明显不一致的候选。历史录屏没有相机内参、外参或尺度标定，因此原始宽度 `diameter_px` 属于像素域的**非标定量测**。报告中的 `projected_diameter_estimate_mm` 只是结合模型标称长度得到的归一化分类特征，必须同时标记 `diameter_source=model_prior`、`metric_calibrated=false`；它不是现场毫米量测，也不得用来宣称管径测量精度。
 
@@ -47,7 +51,7 @@ not_observed != not_installed
 
 这组三维样件是当前算法回归资产，不替代后续实物目标。已提出的 D22/D50、约 1 m 相机距离仍需用真实双目原始帧、完整标定和可追溯尺度真值单独验收。
 
-管道群2把颜色和直径保留为两个独立属性，实例身份仅由 manifest 的 `instance_id/pipe_id` 决定。其正交立面真值包含 3 根前层和 6 根后层管道：后层实例 7、9 被前层完全覆盖，其余错位重叠形成可量化的部分遮挡关系。单独依据该正交立面，ID 7、9 都不能形成安装正证据；加入合格的左右视点后，当前 ID 9 可评估为“安装”，ID 7 仍为“不明”。
+管道群2把颜色和直径保留为两个独立属性，实例身份仅由 manifest 的 `instance_id/pipe_id` 决定。其正交立面真值包含 3 根前层和 6 根后层管道：后层实例 7、9 被前层完全覆盖，其余错位重叠形成可量化的部分遮挡关系。单独依据该正交立面，ID 7、9 都不能形成安装正证据；加入合格的左右视点后，当前 ID 9 可评估为“安装”，ID 7 仍为“不确定”（报告枚举 `UNKNOWN`）。
 
 ## 仓库结构
 
@@ -56,10 +60,12 @@ doc/
   需求文档.txt
   camera_contour_3d_pipe_migration_guide.md
   管道数字孪生识别系统测试开发计划.md
+  现场双目识别与GUI使用说明.md
 test_model/
   manifest.json
   pipe_group2_manifest.json
   pipe_group2_synthetic_stereo/
+  field_stereo_demo_manifest.json
   管道群.3mf
   管道群.mkv
   管道群2.3mf
@@ -67,26 +73,33 @@ test_model/
 pipe_twin/
   __init__.py
   __main__.py
+  cad_model.py
   cli.py
   detector.py
+  gui.py
   model_3mf.py
   photo_capture.py
   pipeline.py
   state.py
+  stereo_analyzer.py
   synthetic_stereo.py
 tests/
+  test_cad_model.py
   test_detector.py
+  test_gui.py
   test_model_3mf.py
   test_photo_capture.py
   test_pipeline_safety.py
   test_repository_smoke.py
   test_state.py
+  test_stereo_3dm_integration.py
+  test_stereo_analyzer.py
   test_synthetic_stereo.py
 ```
 
 ## 干净环境安装
 
-当前 M0 运行时依赖为 `numpy` 和无 GUI 的 OpenCV 包 `opencv-python-headless`，版本由根目录 `requirements.txt` 固定。
+运行时依赖为 `numpy`、无 GUI 后端的 `opencv-python-headless` 和 McNeel `rhino3dm`，版本由根目录 `requirements.txt` 固定。桌面 GUI 使用 Python 标准库 Tkinter，不引入 Qt/VTK；Windows 官方 Python 通常自带 Tk，精简 Linux 环境若需打开 GUI 应另行安装系统 Tk 包。CI 只做无桌面测试。
 
 ### Windows PowerShell
 
@@ -166,7 +179,51 @@ Windows/Python 3.12 的验证锁文件为 `requirements-lock-windows-py312.txt`�
 python -m pipe_twin analyze --manifest path/to/capture_manifest.json --output outputs/photo_report.json --observations outputs/photo_observations.jsonl
 ```
 
-该入口当前只接受单目照片。把 `camera_layout` 改成 `stereo`，或同时放入 `video` 与 `capture`，都会被拒绝；双目/多机位需等显式配对和同步契约实现后再接入。
+`analyze` 是兼容入口，仍只接受单目照片或历史视频；双目必须使用下面独立的 `analyze-stereo` 命令，避免旧 M0 契约被误升级。
+
+## 运行 3DM/3MF + 双目安装状态识别
+
+先审计 CAD。3DM 报告会列出 GUID、对象名、图层、颜色、几何/网格来源、毫米包围盒和网格闭合性：
+
+```powershell
+python -m pipe_twin inspect-model path/to/pipes.3dm --output outputs/model_audit.json
+```
+
+如果 Rhino 文件还包含未网格化的 Curve/Point/Text 或辅助 BRep，未带过滤参数的审计会安全拒绝（不会静默漏掉对象）；可按 Rhino 中看到的 GUID 重复传入 `--object-id`，例如 `--object-id 1234... --object-id 5678...`。`analyze-stereo` 会直接从 manifest 的 `cad_object_id` 集合过滤绑定管道，并仍对每个绑定对象严格校验。
+
+现场 manifest 使用 `schema_version=2.0`，显式绑定模型哈希、每根管的 `pipe_id ↔ cad_object_id`、中心线/外径/颜色、双目标定与 CAD 外参，以及按时间排序的 `capture.capture_groups[].views.left/right`。当前 M2 的 SGBM 与 `Z=fx·B/d` 门禁只接收已经完成共同极线矫正的左右图（`stereo_calibration.rectified=true`）；若相机输出原始未矫正图，先用同一组内参/双目标定执行 `cv2.stereoRectify` 和 `initUndistortRectifyMap`，再把矫正后的图及其哈希写入 manifest。完整字段和实物采集清单见[现场双目识别与 GUI 使用说明](doc/现场双目识别与GUI使用说明.md)。运行分析：
+
+```powershell
+python -m pipe_twin analyze-stereo `
+  --manifest path/to/field_stereo_manifest.json `
+  --output outputs/installation_status.json `
+  --evidence-dir outputs/stereo_evidence
+```
+
+打开本地 GUI：
+
+```powershell
+python -m pipe_twin gui `
+  --manifest path/to/field_stereo_manifest.json `
+  --report outputs/installation_status.json
+```
+
+GUI 提供 CAD 状态立面/等轴示意、逐管清单、左右目当前照片和选中对象投影框。安装/未安装/不确定分别使用绿/红/琥珀，同时显示文字、英文枚举和原因码。手工载入报告时会核对模型字节哈希、manifest 哈希、model revision、采集批次、标定 ID、pipe ID 集合和 CAD 对象绑定；任一不符则全部安全降级为 `UNKNOWN`，避免用旧报告给新模型着色。
+
+仓库自带的软件回归可直接运行：
+
+```powershell
+python -m pipe_twin analyze-stereo `
+  --manifest test_model/field_stereo_demo_manifest.json `
+  --output outputs/field_stereo_demo_report.json `
+  --evidence-dir outputs/field_stereo_demo_evidence
+
+python -m pipe_twin gui `
+  --manifest test_model/field_stereo_demo_manifest.json `
+  --report outputs/field_stereo_demo_report.json
+```
+
+预期汇总为 `installed=8, not_installed=0, unknown=1`；`PG2-B-WHITE-D20-Y103` 被前层管道在左右目完全遮挡，必须保持不确定。示例只有一个拍摄时刻，所以不会产生“未安装”；该状态的自动测试使用两个不同内容、时间间隔合格且当前仍为自由空间的左右照片组验证。相同照片副本、同一时刻的快速重拍或历史缺失但当前不再缺失都不能累计成“未安装”。
 
 ## 运行 M0 历史视频回归
 
@@ -202,12 +259,12 @@ python -m pipe_twin simulate-stereo --manifest test_model/pipe_group2_manifest.j
 python -m unittest discover -s tests -v
 ```
 
-Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入校验、历史 3MF/MKV 回放、M1 合成几何/遮挡契约，以及人工纹理双目的 OpenCV StereoSGBM 可用性；不代表真实相机、标定、物理管径或业务状态指标已经验收。
+Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入校验、历史 3MF/MKV 回放、M1 合成几何/遮挡契约、3DM GUID/单位/缓存网格读取、M2 双目视差与三态安全门禁，以及 GUI 的报告绑定；不代表真实相机、标定、物理管径或业务状态指标已经验收。
 
 ## 后续能力边界
 
 - **多层**：M1 已建立两层 CAD 合成真值；真实图像阶段仍必须使用完整三维中心线、层标识、逐视点遮挡/可见性以及同色同径歧义处理，不能只靠颜色和投影直径确定身份。
-- **双目/真实相机**：必须补充定时拍摄的左右原始照片、显式配对关系、内参与畸变、基线、外参、同步和独立尺度真值后，才允许输出毫米级几何结论。
+- **双目/真实相机**：M2 已提供显式配对、内参/畸变、基线、CAD 外参、同步和 OpenCV 左右一致视差入口；仍必须用真实标定板、独立尺度真值和 D22/D50 实物完成现场阈值/精度验收，软件回归结果不能替代验收。
 - **多机位**：各机位先独立产生证据，再按标定健康、可见性和时间同步进行 late fusion；增加机位不得改变核心状态机。
 - **3DGS**：只作为冻结场景 epoch 的漫游、复核和覆盖分析派生资产，无权写入权威安装状态，也不得用于毫米级验收。
 - **LiDAR**：不纳入当前开发和采购范围。
@@ -217,6 +274,7 @@ Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入�
 - [需求文档](doc/需求文档.txt)
 - [CAD 轮廓与三维模型迁移指南](doc/camera_contour_3d_pipe_migration_guide.md)
 - [测试开发计划](doc/管道数字孪生识别系统测试开发计划.md)
+- [现场双目识别与 GUI 使用说明](doc/现场双目识别与GUI使用说明.md)
 - [管道群2模拟双目与遮挡拓扑说明](doc/管道群2模拟双目与遮挡拓扑说明.md)
 
 ## 数据与安全
