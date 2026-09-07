@@ -1364,6 +1364,7 @@ class _PipeTwinApplication:
         ttk.Button(toolbar, text="现场数据录入", command=self._input_capture).pack(side="left", padx=3)
         ttk.Button(toolbar, text="打开合成示例", command=self._open_demo).pack(side="left", padx=3)
         ttk.Button(toolbar, text="导入DXF侧立面", command=self._import_dxf).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="DXF自动建档", command=self._automate_dxf_setup).pack(side="left", padx=3)
         ttk.Button(toolbar, text="从DXF生成manifest草稿", command=self._create_dxf_manifest_draft).pack(side="left", padx=3)
         ttk.Button(toolbar, text="指定图层颜色", command=self._choose_dxf_layer_color).pack(side="left", padx=3)
         ttk.Button(toolbar, text="保存DXF颜色配置", command=self._save_dxf_colors).pack(side="left", padx=3)
@@ -1923,6 +1924,16 @@ class _PipeTwinApplication:
         self.projection_mode.set("dxf")
         self._draw_model()
         log_event(_LOGGER, "dxf_import_finished", path=document.source_path, entity_count=len(document.entities), layer_count=len(document.layers))
+
+    def _automate_dxf_setup(self) -> None:
+        """Run the common DXF import → numbering → manifest-draft workflow."""
+
+        if self.dxf_elevation is None:
+            self._import_dxf()
+        if self.dxf_elevation is None:
+            return
+        self._create_dxf_manifest_draft()
+        log_event(_LOGGER, "dxf_automated_setup_finished", path=self.dxf_elevation.source_path)
 
     def _choose_dxf_layer_color(self) -> None:
         if self.dxf_elevation is None:
