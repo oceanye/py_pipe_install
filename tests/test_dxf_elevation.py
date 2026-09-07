@@ -16,6 +16,7 @@ class DxfElevationTests(unittest.TestCase):
             document = read_dxf_elevation(path)
         self.assertEqual(document.layers["PIPES"], "#FF0000")
         self.assertEqual([entity.kind for entity in document.entities], ["LINE", "CIRCLE"])
+        self.assertEqual([entity.entity_id for entity in document.entities], ["P001", "P002"])
         self.assertEqual(document.entities[1].color, "#FF0000")
         self.assertGreaterEqual(len(arc_points(document.entities[1])), 2)
 

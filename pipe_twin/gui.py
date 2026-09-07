@@ -1866,6 +1866,10 @@ class _PipeTwinApplication:
             else:
                 vertices = arc_points(entity) if entity.kind == "ARC" else entity.points
                 canvas.create_line([coordinate for point in vertices for coordinate in xy(point)], fill=color, width=2, smooth=entity.kind == "ARC")
+            if entity.points:
+                middle = entity.points[len(entity.points) // 2]
+                label_x, label_y = xy(middle)
+                canvas.create_text(label_x + 4, label_y - 4, anchor="sw", text=entity.entity_id, fill=color, font=("Segoe UI", 8, "bold"))
         canvas.create_text(16, 38, anchor="nw", text=f"文件：{document.source_path.name} · 图层 {len(document.layers)} · 实体 {len(document.entities)}", fill="#455A64")
 
     def _import_dxf(self) -> None:
@@ -1915,6 +1919,7 @@ class _PipeTwinApplication:
         selected = self.filedialog.asksaveasfilename(
             title="保存 DXF 图层颜色配置",
             initialfile=f"{self.dxf_elevation.source_path.stem}.colors.json",
+            initialdir=str(self.dxf_elevation.source_path.parent),
             defaultextension=".json",
             filetypes=(("JSON", "*.json"), ("All files", "*.*")),
         )

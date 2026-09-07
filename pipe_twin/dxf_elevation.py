@@ -24,6 +24,7 @@ class DxfEntity:
     kind: str
     layer: str
     color: str
+    entity_id: str = ""
     points: tuple[tuple[float, float], ...] = ()
     radius: float | None = None
     start_angle: float = 0.0
@@ -172,6 +173,7 @@ def read_dxf_elevation(path: str | Path) -> DxfElevation:
         raise DxfError("DXF contains no supported 2-D side-elevation entities")
     if unit_scale != 1.0:
         entities = [_scale_entity(entity, unit_scale) for entity in entities]
+    entities = [_number_entity(entity, index) for index, entity in enumerate(entities, 1)]
     return DxfElevation(source, hashlib.sha256(raw).hexdigest(), source_unit, unit_scale, layers, tuple(entities))
 
 
@@ -216,11 +218,16 @@ def _read_with_ezdxf(source: Path, raw: bytes) -> DxfElevation:
     source_unit, unit_scale = {1: ("inch", 25.4), 2: ("foot", 304.8), 4: ("millimeter", 1.0), 5: ("centimeter", 10.0), 6: ("meter", 1000.0)}.get(unit_code, ("unitless", 1.0))
     if unit_scale != 1.0:
         entities = [_scale_entity(entity, unit_scale) for entity in entities]
+    entities = [_number_entity(entity, index) for index, entity in enumerate(entities, 1)]
     return DxfElevation(source, hashlib.sha256(raw).hexdigest(), source_unit, unit_scale, layers, tuple(entities))
 
 
 def _scale_entity(entity: DxfEntity, scale: float) -> DxfEntity:
-    return DxfEntity(entity.kind, entity.layer, entity.color, tuple((x * scale, y * scale) for x, y in entity.points), None if entity.radius is None else entity.radius * scale, entity.start_angle, entity.end_angle)
+    return DxfEntity(entity.kind, entity.layer, entity.color, entity.entity_id, tuple((x * scale, y * scale) for x, y in entity.points), None if entity.radius is None else entity.radius * scale, entity.start_angle, entity.end_angle)
+
+
+def _number_entity(entity: DxfEntity, index: int) -> DxfEntity:
+    return DxfEntity(entity.kind, entity.layer, entity.color, entity.entity_id or f"P{index:03d}", entity.points, entity.radius, entity.start_angle, entity.end_angle)
 
 
 def arc_points(entity: DxfEntity, segments: int = 48) -> tuple[tuple[float, float], ...]:
