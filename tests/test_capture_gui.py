@@ -11,6 +11,7 @@ from pathlib import Path
 from pipe_twin.capture_gui import (
     catalog_from_model,
     create_capture_dataset,
+    load_calibration_json,
     normalize_capture_time,
     photo_file_time,
 )
@@ -32,6 +33,18 @@ class CaptureInputTests(unittest.TestCase):
             pipes=self.manifest["model"]["pipes"], calibration=self.manifest["stereo_calibration"],
             left_path=MANIFEST.parent / group["views"]["left"]["path"], right_path=MANIFEST.parent / group["views"]["right"]["path"],
             left_time="2026-09-07T10:00:00.000+08:00", right_time="2026-09-07T10:00:00.001+08:00", pair_confirmed=True)
+
+    def test_calibration_loader_rejects_blank_or_directory_with_clear_message(self):
+        with self.assertRaisesRegex(ValueError, "请先选择真实双目标定 JSON"):
+            load_calibration_json("")
+        with self.assertRaisesRegex(ValueError, "不存在或不是文件"):
+            load_calibration_json(MANIFEST.parent)
+
+    def test_calibration_loader_accepts_a_full_manifest(self):
+        self.assertEqual(
+            load_calibration_json(MANIFEST),
+            self.manifest["stereo_calibration"],
+        )
 
     def test_gui_can_start_without_a_manifest(self):
         self.assertIsNone(build_parser().parse_args(["gui"]).manifest)

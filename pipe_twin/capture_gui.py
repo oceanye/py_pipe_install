@@ -106,6 +106,26 @@ def photo_file_time(path: str | Path) -> str:
     return datetime.fromtimestamp(timestamp).astimezone().isoformat(timespec="milliseconds")
 
 
+def load_calibration_json(path_value: str | Path) -> dict[str, Any]:
+    """Load a calibration object and reject blank/directory paths clearly."""
+    text = str(path_value).strip()
+    if not text:
+        raise ValueError("请先选择真实双目标定 JSON，再连接相机。")
+    path = Path(text)
+    if not path.is_file():
+        raise ValueError(f"双目标定 JSON 不存在或不是文件：{path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError as error:
+        raise ValueError(f"双目标定 JSON 格式无效：{error}") from error
+    if not isinstance(payload, dict):
+        raise ValueError("双目标定文件应为 JSON 对象。")
+    calibration = payload.get("stereo_calibration", payload)
+    if not isinstance(calibration, dict):
+        raise ValueError("双目标定 JSON 缺少 stereo_calibration 对象。")
+    return calibration
+
+
 def _capture_provenance(
     payload: dict[str, dict[str, Any]] | None,
     role: str,
@@ -799,24 +819,15 @@ class CaptureInputDialog:
 
     def camera_pose(self) -> None:
         try:
-            payload = json.loads(
-                Path(self.fields["calibration"].get()).read_text(encoding="utf-8-sig")
-            )
-            if not isinstance(payload, dict):
-                raise ValueError("标定文件应为 JSON 对象。")
-            calibration = payload.get("stereo_calibration", payload)
+            calibration = load_calibration_json(self.fields["calibration"].get())
             CameraPoseDialog(self, calibration)
         except (OSError, ValueError) as error:
             self.app.messagebox.showerror("标定载入失败", str(error), parent=self.window)
 
     def camera_capture(self) -> None:
         try:
-            payload = json.loads(
-                Path(self.fields["calibration"].get()).read_text(encoding="utf-8-sig")
-            )
-            if not isinstance(payload, dict):
-                raise ValueError("请先选择有效的双目标定 JSON。")
-            StereoCameraDialog(self, payload.get("stereo_calibration", payload))
+            calibration = load_calibration_json(self.fields["calibration"].get())
+            StereoCameraDialog(self, calibration)
         except (OSError, ValueError) as error:
             self.app.messagebox.showerror("标定载入失败", str(error), parent=self.window)
 
@@ -874,11 +885,8 @@ class CaptureInputDialog:
         try:
             from .measurement_gui import OUTPUT_ROOT
 
-            payload = json.loads(Path(self.fields["calibration"].get()).read_text(encoding="utf-8-sig"))
-            if not isinstance(payload, dict):
-                raise ValueError("标定文件应为 JSON 对象。")
             calibration = apply_camera_pose(
-                payload.get("stereo_calibration", payload),
+                load_calibration_json(self.fields["calibration"].get()),
                 self.pose_adjustment,
             )
             left_time, _ = normalize_capture_time(
