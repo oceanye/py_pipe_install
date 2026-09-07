@@ -101,11 +101,15 @@ tests/
 
 ## 干净环境安装
 
-运行时依赖为 `numpy`、无 GUI 后端的 `opencv-python-headless` 和 McNeel `rhino3dm`，版本由根目录 `requirements.txt` 固定。桌面 GUI 使用 Python 标准库 Tkinter，不引入 Qt/VTK；Windows 官方 Python 通常自带 Tk，精简 Linux 环境若需打开 GUI 应另行安装系统 Tk 包。CI 只做无桌面测试。
+运行时依赖为 `numpy`、无 GUI 后端的 `opencv-python-headless`、McNeel `rhino3dm` 和二进制 DXF 支持库 `ezdxf`，版本由根目录 `requirements.txt` 固定。桌面 GUI 使用 Python 标准库 Tkinter，不引入 Qt/VTK；Windows 官方 Python 通常自带 Tk，精简 Linux 环境若需打开 GUI 应另行安装系统 Tk 包。CI 只做无桌面测试。
 
 ### 运行日志
 
 CLI 和桌面 GUI 启动时会自动写入结构化 JSONL 日志，默认位置为项目根目录的 `logs/pipe_twin.log.jsonl`。日志包含运行 ID、命令、模型加载、GUI 数据载入、分析成功/失败和异常堆栈；文件按 10 MiB 轮转并保留 5 个备份。可通过 `PIPE_TWIN_LOG_DIR` 指定日志目录。日志会过滤疑似令牌、密码和连接字符串字段，不记录原始图像内容。
+
+### DXF 侧立面导入
+
+在 GUI 工具栏点击“导入DXF侧立面”，选择 DXF 文件后切换到 `dxf` 视图。支持 `LINE`、`LWPOLYLINE`、`ARC` 和 `CIRCLE`；其中 `CIRCLE`/`ARC` 会绘制侧立面外轮廓圆弧。实体默认采用 DXF 图层颜色（ACI 或 true color）；如需调整，点击“指定图层颜色”，再点击“保存DXF颜色配置”。颜色配置按 DXF 文件 SHA-256 绑定，下一次导入同一文件时自动恢复。当前导入用于侧立面显示和人工核对，管道业务 ID 仍需在 manifest 中维护。
 
 ### Windows PowerShell
 
