@@ -24,7 +24,7 @@ def main():
     from pipe_twin.gui import _PipeTwinApplication
     from pipe_twin.measurement_book import empty_book, load_book
     from pipe_twin.camera_pose import POSE_MODE_LABELS
-    from pipe_twin.capture_gui import CameraPoseDialog, CaptureInputDialog
+    from pipe_twin.capture_gui import CameraPoseDialog, CaptureInputDialog, StereoCameraDialog
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--show", action="store_true")
@@ -89,6 +89,11 @@ def main():
         assert wizard.model_toolbar.winfo_reqwidth() < 950
         assert wizard.action_toolbar.winfo_reqwidth() < 950
         calibration = json.loads(manifest.read_text(encoding="utf-8"))["stereo_calibration"]
+        camera = StereoCameraDialog(wizard, calibration)
+        root.update()
+        assert "并排双目流" in camera.mode.get()
+        assert "3840×1080" in camera.message.get()
+        camera.close()
         pose = CameraPoseDialog(wizard, calibration)
         pose.mode.set(POSE_MODE_LABELS["positive_z"])
         for variable, value in zip(pose.center, (250.0, 150.0, 2000.0)):
@@ -112,7 +117,7 @@ def main():
     root.destroy()
     print(json.dumps({"status": "PASS", "pipe_count": 9, "pair_count": 36,
                       "measured_count": len(measured), "export_directory": str(folder), "layout": layout,
-                      "checks": ["empty_start", "bound_report", "photo_zoom", "roi", "reference_save_reload", "pair_table", "detail", "capture_dialog", "camera_pose_dialog", "export"]}, ensure_ascii=True))
+                      "checks": ["empty_start", "bound_report", "photo_zoom", "roi", "reference_save_reload", "pair_table", "detail", "capture_dialog", "stereo_camera_dialog", "camera_pose_dialog", "export"]}, ensure_ascii=True))
 
 
 if __name__ == "__main__":

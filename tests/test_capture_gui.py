@@ -51,6 +51,34 @@ class CaptureInputTests(unittest.TestCase):
             self.assertEqual(manifest["stereo_calibration"], self.arguments["calibration"])
         self.assertEqual(hashlib.sha256(self.arguments["left_path"].read_bytes()).hexdigest(), before)
 
+    def test_direct_camera_timestamp_and_device_provenance_are_preserved(self):
+        provenance = {
+            role: {
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+            }
+            for role in ("left", "right")
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            path = create_capture_dataset(
+                output_root=Path(temp),
+                timestamp_sources={
+                    "left": "HOST_SYSTEM_CLOCK",
+                    "right": "HOST_SYSTEM_CLOCK",
+                },
+                camera_capture_provenance=provenance,
+                **self.arguments,
+            )
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            views = manifest["capture"]["capture_groups"][-1]["views"]
+            for role in ("left", "right"):
+                self.assertEqual(views[role]["timestamp_source"], "HOST_SYSTEM_CLOCK")
+                self.assertEqual(views[role]["capture_device_index"], 0)
+                self.assertEqual(views[role]["capture_sync_method"], "SAME_UVC_FRAME")
+
     def test_preserve_history_requires_identical_configuration(self):
         with tempfile.TemporaryDirectory() as temp:
             path = create_capture_dataset(output_root=Path(temp), previous_manifest=MANIFEST, **self.arguments)

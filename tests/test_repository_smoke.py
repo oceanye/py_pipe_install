@@ -52,9 +52,11 @@ class RepositorySmokeTests(unittest.TestCase):
             "test_model/pipe_group2_synthetic_stereo/dataset_manifest.json",
             "pipe_twin/cad_model.py",
             "pipe_twin/stereo_analyzer.py",
+            "pipe_twin/stereo_camera.py",
             "pipe_twin/gui.py",
             "tests/test_cad_model.py",
             "tests/test_stereo_analyzer.py",
+            "tests/test_stereo_camera.py",
             "tests/test_stereo_3dm_integration.py",
             "tests/test_gui.py",
         )

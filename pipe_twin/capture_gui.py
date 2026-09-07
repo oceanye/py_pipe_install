@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import copy
 import hashlib
 import json
@@ -17,6 +18,29 @@ import numpy as np
 from .cad_model import load_cad_scene
 from .camera_pose import POSE_MODE_LABELS, apply_camera_pose, calibration_pose
 from .pipeline import atomic_write_text, ensure_paths_distinct
+from .stereo_camera import (
+    LAYOUT_SEPARATE,
+    LAYOUT_SIDE_BY_SIDE_LR,
+    LAYOUT_SIDE_BY_SIDE_RL,
+    CapturedStereoPair,
+    StereoCameraError,
+    StereoCameraSession,
+    probe_video_devices,
+)
+
+
+_TIMESTAMP_SOURCES = {
+    "CAMERA_HARDWARE_CLOCK",
+    "HOST_SYSTEM_CLOCK",
+    "MANIFEST_OPERATOR_CONFIRMED",
+}
+_CAPTURE_PROVENANCE_KEYS = {
+    "capture_backend",
+    "capture_layout",
+    "capture_device_index",
+    "side_by_side_order",
+    "capture_sync_method",
+}
 
 
 def normalize_capture_time(value: str, *, field: str = "拍摄时间") -> tuple[str, bool]:
@@ -82,6 +106,30 @@ def photo_file_time(path: str | Path) -> str:
     return datetime.fromtimestamp(timestamp).astimezone().isoformat(timespec="milliseconds")
 
 
+def _capture_provenance(
+    payload: dict[str, dict[str, Any]] | None,
+    role: str,
+) -> dict[str, Any]:
+    if payload is None:
+        return {}
+    if not isinstance(payload, dict) or set(payload) - {"left", "right"}:
+        raise ValueError("camera_capture_provenance must contain only left/right records")
+    record = payload.get(role, {})
+    if not isinstance(record, dict) or set(record) - _CAPTURE_PROVENANCE_KEYS:
+        raise ValueError(f"camera_capture_provenance.{role} contains unsupported fields")
+    if "capture_device_index" in record and (
+        type(record["capture_device_index"]) is not int
+        or record["capture_device_index"] < 0
+    ):
+        raise ValueError(f"camera_capture_provenance.{role}.capture_device_index is invalid")
+    for key, value in record.items():
+        if key != "capture_device_index" and (
+            not isinstance(value, str) or not value.strip() or len(value) > 128
+        ):
+            raise ValueError(f"camera_capture_provenance.{role}.{key} is invalid")
+    return copy.deepcopy(record)
+
+
 def catalog_from_model(
     path: str | Path,
     *,
@@ -119,7 +167,9 @@ def catalog_from_model(
 def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[dict], calibration: dict,
                            left_path: Path, right_path: Path, left_time: str, right_time: str,
                            pair_confirmed: bool, previous_manifest: Path | None = None,
-                           stl_unit: str | None = None) -> Path:
+                           stl_unit: str | None = None,
+                           timestamp_sources: dict[str, str] | None = None,
+                           camera_capture_provenance: dict[str, dict[str, Any]] | None = None) -> Path:
     from .stereo_analyzer import _calibration_from_manifest, _capture_groups_from_manifest, _load_cad_scene, _pipe_from_manifest
 
     if not pair_confirmed:
@@ -141,6 +191,11 @@ def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[d
     model_hash = hashlib.sha256(model_bytes).hexdigest()
     if source_scene.source_sha256 != model_hash:
         raise ValueError("模型在读取过程中发生变化，请重新选择。")
+    if timestamp_sources is not None and (
+        not isinstance(timestamp_sources, dict)
+        or set(timestamp_sources) - {"left", "right"}
+    ):
+        raise ValueError("timestamp_sources must contain only left/right values")
     photos = {}
     for role, path, timestamp in (("left", left_path, left_time), ("right", right_path, right_time)):
         timestamp, assumed_local_zone = normalize_capture_time(
@@ -152,11 +207,18 @@ def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[d
         camera = getattr(calib, role)
         if image is None or image.shape[:2] != (camera.height, camera.width):
             raise ValueError(f"{role} 照片尺寸与标定尺寸不一致，不能缩放后直接使用原标定。")
-        photos[role] = (data, {"camera_id": camera.camera_id, "path": role + Path(path).suffix.lower(),
+        timestamp_source = (timestamp_sources or {}).get(
+            role, "MANIFEST_OPERATOR_CONFIRMED"
+        )
+        if timestamp_source not in _TIMESTAMP_SOURCES:
+            raise ValueError(f"{role} timestamp_source is unsupported")
+        view_record = {"camera_id": camera.camera_id, "path": role + Path(path).suffix.lower(),
             "sha256": hashlib.sha256(data).hexdigest(), "expected_width": camera.width, "expected_height": camera.height,
-            "captured_at": timestamp, "timestamp_source": "MANIFEST_OPERATOR_CONFIRMED",
+            "captured_at": timestamp, "timestamp_source": timestamp_source,
             "timestamp_timezone_assumed": assumed_local_zone,
-            "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM"})
+            "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM"}
+        view_record.update(_capture_provenance(camera_capture_provenance, role))
+        photos[role] = (data, view_record)
     if photos["left"][1]["sha256"] == photos["right"][1]["sha256"]:
         raise ValueError("左右照片内容相同，请选择各自相机的原始照片。")
     run_id = f"field-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
@@ -226,6 +288,271 @@ def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[d
     _load_cad_scene(manifest_path, manifest["model"])
     atomic_write_text(manifest_path, json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
     return manifest_path
+
+
+_CAMERA_LAYOUT_LABELS = {
+    LAYOUT_SIDE_BY_SIDE_LR: "单个并排双目流：左 | 右（推荐）",
+    LAYOUT_SIDE_BY_SIDE_RL: "单个并排双目流：右 | 左",
+    LAYOUT_SEPARATE: "两个独立相机设备",
+}
+
+
+class StereoCameraDialog:
+    """Preview a connected UVC stereo stream and fill the intake form."""
+
+    def __init__(self, owner: Any, calibration: dict) -> None:
+        from .stereo_analyzer import _calibration_from_manifest
+
+        self.owner = owner
+        self.app = owner.app
+        self.calibration = _calibration_from_manifest(calibration)
+        tk, ttk = self.app.tk, self.app.ttk
+        self.window = tk.Toplevel(owner.window)
+        self.window.title("连接双目相机并同步抓拍")
+        self.window.geometry("1020x700")
+        self.window.minsize(850, 600)
+        self.window.transient(owner.window)
+        self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.mode = tk.StringVar(value=_CAMERA_LAYOUT_LABELS[LAYOUT_SIDE_BY_SIDE_LR])
+        self.left_index = tk.StringVar(value="0")
+        self.right_index = tk.StringVar(value="1")
+        self.message = tk.StringVar(
+            value=(
+                f"当前标定要求每目 {self.calibration.left.width}×"
+                f"{self.calibration.left.height}；并排流应为 "
+                f"{self.calibration.left.width * 2}×{self.calibration.left.height}。"
+            )
+        )
+        self.session: StereoCameraSession | None = None
+        self.after_id: str | None = None
+        self.last_pair: CapturedStereoPair | None = None
+        self.preview_images: list[Any] = []
+
+        main = ttk.Frame(self.window, padding=12)
+        main.pack(fill="both", expand=True)
+        controls = ttk.Frame(main)
+        controls.pack(fill="x", pady=(0, 8))
+        ttk.Label(controls, text="采集方式：").pack(side="left")
+        ttk.Combobox(
+            controls,
+            textvariable=self.mode,
+            values=tuple(_CAMERA_LAYOUT_LABELS.values()),
+            state="readonly",
+            width=31,
+        ).pack(side="left", padx=(3, 12))
+        ttk.Label(controls, text="设备/左目索引：").pack(side="left")
+        ttk.Entry(controls, textvariable=self.left_index, width=5).pack(
+            side="left", padx=(3, 10)
+        )
+        ttk.Label(controls, text="右目索引：").pack(side="left")
+        ttk.Entry(controls, textvariable=self.right_index, width=5).pack(
+            side="left", padx=(3, 10)
+        )
+        ttk.Button(controls, text="检测设备", command=self.detect).pack(
+            side="left", padx=3
+        )
+        ttk.Button(controls, text="打开预览", command=self.start).pack(
+            side="left", padx=3
+        )
+        ttk.Button(controls, text="停止", command=self.stop).pack(side="left", padx=3)
+
+        ttk.Label(main, textvariable=self.message, foreground="#355371").pack(
+            fill="x", pady=(0, 8)
+        )
+        previews = ttk.Frame(main)
+        previews.pack(fill="both", expand=True)
+        previews.columnconfigure(0, weight=1)
+        previews.columnconfigure(1, weight=1)
+        previews.rowconfigure(1, weight=1)
+        ttk.Label(previews, text="左目相机输出").grid(row=0, column=0, pady=4)
+        ttk.Label(previews, text="右目相机输出").grid(row=0, column=1, pady=4)
+        self.left_preview = ttk.Label(previews, anchor="center")
+        self.right_preview = ttk.Label(previews, anchor="center")
+        self.left_preview.grid(row=1, column=0, sticky="nsew", padx=(0, 4))
+        self.right_preview.grid(row=1, column=1, sticky="nsew", padx=(4, 0))
+        bottom = ttk.Frame(main)
+        bottom.pack(fill="x", pady=(10, 0))
+        ttk.Label(
+            bottom,
+            text="抓拍保存相机输出分辨率；预览缩小不改变分析图像。设备输出须已完成极线矫正。",
+            foreground="#4A6178",
+        ).pack(side="left")
+        ttk.Button(bottom, text="取消", command=self.close).pack(side="right", padx=4)
+        ttk.Button(
+            bottom,
+            text="同步抓拍并使用",
+            command=self.capture,
+        ).pack(side="right", padx=4)
+
+    def _layout(self) -> str:
+        inverse = {label: layout for layout, label in _CAMERA_LAYOUT_LABELS.items()}
+        try:
+            return inverse[self.mode.get()]
+        except KeyError as error:
+            raise StereoCameraError("请选择有效的双目采集方式") from error
+
+    def _indices(self) -> tuple[int, int | None]:
+        try:
+            left = int(self.left_index.get())
+            right = int(self.right_index.get()) if self._layout() == LAYOUT_SEPARATE else None
+        except ValueError as error:
+            raise StereoCameraError("相机索引必须是非负整数") from error
+        if left < 0 or (right is not None and right < 0):
+            raise StereoCameraError("相机索引必须是非负整数")
+        return left, right
+
+    def detect(self) -> None:
+        self.stop()
+        try:
+            devices = probe_video_devices(maximum_index=5)
+            if not devices:
+                raise StereoCameraError("未检测到 OpenCV 可打开的视频设备")
+            self.left_index.set(str(devices[0]["index"]))
+            if len(devices) > 1:
+                self.right_index.set(str(devices[1]["index"]))
+            summary = "；".join(
+                f"索引 {item['index']}：{item['width']}×{item['height']}"
+                for item in devices
+            )
+            self.message.set(f"检测到 {len(devices)} 个视频设备：{summary}")
+        except (OSError, StereoCameraError) as error:
+            self.app.messagebox.showerror("相机检测失败", str(error), parent=self.window)
+
+    def start(self) -> bool:
+        try:
+            self.stop()
+            left, right = self._indices()
+            self.session = StereoCameraSession(
+                layout=self._layout(),
+                left_index=left,
+                right_index=right,
+                eye_width=self.calibration.left.width,
+                eye_height=self.calibration.left.height,
+            )
+            self.session.open()
+            self.message.set("相机已打开，正在显示左右目实时预览。")
+            self._update_preview()
+            return True
+        except (OSError, StereoCameraError) as error:
+            self.stop()
+            self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
+            return False
+
+    def _photo(self, frame: np.ndarray) -> Any:
+        height, width = frame.shape[:2]
+        scale = min(460 / width, 500 / height, 1.0)
+        shown = (
+            cv2.resize(
+                frame,
+                (max(1, round(width * scale)), max(1, round(height * scale))),
+                interpolation=cv2.INTER_AREA,
+            )
+            if scale < 1
+            else frame
+        )
+        ok, encoded = cv2.imencode(".png", shown)
+        if not ok:
+            raise StereoCameraError("无法生成相机预览")
+        return self.app.tk.PhotoImage(
+            data=base64.b64encode(encoded).decode("ascii"), format="png"
+        )
+
+    def _show_pair(self, pair: CapturedStereoPair) -> None:
+        self.preview_images = [self._photo(pair.left), self._photo(pair.right)]
+        self.left_preview.configure(image=self.preview_images[0])
+        self.right_preview.configure(image=self.preview_images[1])
+
+    def _update_preview(self) -> None:
+        if self.session is None:
+            return
+        try:
+            pair = self.session.read_pair()
+            self.last_pair = pair
+            self._show_pair(pair)
+            if np.array_equal(pair.left, pair.right):
+                self.message.set(
+                    "相机仍在预热，或左右画面完全相同；请等待出现两个不同视角后再抓拍。"
+                )
+            else:
+                self.message.set(
+                    f"实时预览：左右主机时间差 {pair.sync_delta_ms:.3f} ms；"
+                    "确认左右顺序正确后抓拍。"
+                )
+            self.after_id = self.window.after(80, self._update_preview)
+        except (OSError, StereoCameraError) as error:
+            self.stop()
+            self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
+
+    def stop(self) -> None:
+        if self.after_id is not None:
+            try:
+                self.window.after_cancel(self.after_id)
+            except Exception:
+                pass
+            self.after_id = None
+        if self.session is not None:
+            self.session.close()
+            self.session = None
+
+    def capture(self) -> None:
+        try:
+            if self.session is None and not self.start():
+                return
+            if self.session is None:
+                return
+            pair = self.session.read_pair()
+            if np.array_equal(pair.left, pair.right):
+                raise StereoCameraError(
+                    "左右画面完全相同，可能仍在预热或当前不是双目输出；"
+                    "请等待实时预览出现两个不同视角后重试。"
+                )
+            if pair.sync_delta_ms > self.calibration.max_sync_delta_ms:
+                raise StereoCameraError(
+                    f"本次左右抓拍时间差 {pair.sync_delta_ms:.3f} ms 超过标定允许的 "
+                    f"{self.calibration.max_sync_delta_ms:g} ms"
+                )
+            encoded: dict[str, bytes] = {}
+            for role, frame in (("left", pair.left), ("right", pair.right)):
+                ok, payload = cv2.imencode(".png", frame)
+                if not ok:
+                    raise StereoCameraError(f"无法编码{role}相机原始图像")
+                encoded[role] = payload.tobytes()
+            from .measurement_gui import OUTPUT_ROOT
+
+            capture_id = f"camera-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
+            directory = OUTPUT_ROOT / "camera_intake" / capture_id
+            directory.mkdir(parents=True, exist_ok=False)
+            paths = {
+                role: directory / f"{role}.png" for role in ("left", "right")
+            }
+            for role in ("left", "right"):
+                paths[role].write_bytes(encoded[role])
+            for role in ("left", "right"):
+                self.owner.fields[role].set(str(paths[role]))
+            self.owner.fields["left_time"].set(pair.left_captured_at)
+            self.owner.fields["right_time"].set(pair.right_captured_at)
+            self.owner.timestamp_sources = {
+                "left": pair.timestamp_source,
+                "right": pair.timestamp_source,
+            }
+            self.owner.camera_capture_provenance = pair.provenance
+            if self._layout() in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}:
+                self.owner.confirmed.set(True)
+                confirmation = "同一并排视频帧，已自动确认配对"
+            else:
+                self.owner.confirmed.set(False)
+                confirmation = "两个独立设备，请核对硬件同步后勾选配对确认"
+            self.owner.message.set(
+                f"已从相机直接抓拍：{pair.left.shape[1]}×{pair.left.shape[0]} 每目，"
+                f"时间差 {pair.sync_delta_ms:.3f} ms；{confirmation}。"
+            )
+            self.close()
+        except (OSError, StereoCameraError) as error:
+            self.app.messagebox.showerror("同步抓拍失败", str(error), parent=self.window)
+
+    def close(self) -> None:
+        self.stop()
+        self.window.destroy()
 
 
 class CameraPoseDialog:
@@ -350,12 +677,17 @@ class CaptureInputDialog:
         self.fields = {key: tk.StringVar() for key in ("model", "calibration", "left", "right", "left_time", "right_time")}
         self.stl_unit = tk.StringVar(value="millimeter")
         self.pose_adjustment: dict[str, Any] = {"mode": "keep"}
+        self.timestamp_sources = {
+            "left": "MANIFEST_OPERATOR_CONFIRMED",
+            "right": "MANIFEST_OPERATOR_CONFIRMED",
+        }
+        self.camera_capture_provenance: dict[str, dict[str, Any]] = {}
         self.confirmed, self.history = tk.BooleanVar(value=False), tk.BooleanVar(value=False)
-        self.message = tk.StringVar(value="导入已校正的双目照片与标定 JSON；标定须含 CAD 世界坐标配准。")
+        self.message = tk.StringVar(value="相机已连接时可直接同步抓拍；也可导入已有双目照片。标定须含 CAD 世界坐标配准。")
         main = ttk.Frame(self.window, padding=12)
         main.pack(fill="both", expand=True)
         main.columnconfigure(1, weight=1)
-        for row, (key, label) in enumerate((("model", "CAD 模型"), ("calibration", "双目标定 JSON"), ("left", "左目原始照片"), ("right", "右目原始照片"))):
+        for row, (key, label) in enumerate((("model", "CAD 模型"), ("calibration", "双目标定 JSON"), ("left", "左目照片（自动抓拍/文件）"), ("right", "右目照片（自动抓拍/文件）"))):
             ttk.Label(main, text=label).grid(row=row, column=0, sticky="w", padx=(0, 8), pady=4)
             ttk.Entry(main, textvariable=self.fields[key]).grid(row=row, column=1, sticky="ew", pady=4)
             ttk.Button(main, text="选择", command=lambda k=key: self.browse(k)).grid(row=row, column=2, padx=5)
@@ -379,6 +711,7 @@ class CaptureInputDialog:
         action_toolbar = ttk.Frame(main)
         self.action_toolbar = action_toolbar
         action_toolbar.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(2, 7))
+        ttk.Button(action_toolbar, text="连接双目相机抓拍", command=self.camera_capture).pack(side="left", padx=3)
         ttk.Button(action_toolbar, text="相机方向/倾斜校正", command=self.camera_pose).pack(side="left", padx=3)
         ttk.Button(action_toolbar, text="编辑所选管件", command=self.edit_pipe).pack(side="left", padx=3)
         ttk.Button(action_toolbar, text="移除所选管件", command=self.remove_pipe).pack(side="left", padx=3)
@@ -413,6 +746,9 @@ class CaptureInputDialog:
                 self.pose_adjustment = {"mode": "keep"}
             elif key in {"left", "right"}:
                 time_key = f"{key}_time"
+                self.timestamp_sources[key] = "MANIFEST_OPERATOR_CONFIRMED"
+                self.camera_capture_provenance.pop(key, None)
+                self.confirmed.set(False)
                 try:
                     self.fields[time_key].set(photo_file_time(selected))
                     self.message.set(
@@ -470,6 +806,17 @@ class CaptureInputDialog:
                 raise ValueError("标定文件应为 JSON 对象。")
             calibration = payload.get("stereo_calibration", payload)
             CameraPoseDialog(self, calibration)
+        except (OSError, ValueError) as error:
+            self.app.messagebox.showerror("标定载入失败", str(error), parent=self.window)
+
+    def camera_capture(self) -> None:
+        try:
+            payload = json.loads(
+                Path(self.fields["calibration"].get()).read_text(encoding="utf-8-sig")
+            )
+            if not isinstance(payload, dict):
+                raise ValueError("请先选择有效的双目标定 JSON。")
+            StereoCameraDialog(self, payload.get("stereo_calibration", payload))
         except (OSError, ValueError) as error:
             self.app.messagebox.showerror("标定载入失败", str(error), parent=self.window)
 
@@ -547,7 +894,9 @@ class CaptureInputDialog:
                 left_path=Path(self.fields["left"].get()), right_path=Path(self.fields["right"].get()),
                 left_time=left_time, right_time=right_time,
                 pair_confirmed=self.confirmed.get(), previous_manifest=self.app.manifest_path if self.history.get() else None,
-                stl_unit=self.stl_unit.get() if Path(self.fields["model"].get()).suffix.lower() == ".stl" else None)
+                stl_unit=self.stl_unit.get() if Path(self.fields["model"].get()).suffix.lower() == ".stl" else None,
+                timestamp_sources=self.timestamp_sources,
+                camera_capture_provenance=self.camera_capture_provenance)
             self.app._load_sources(path, None)
             self.app.main_tabs.select(0)
             self.window.destroy()
