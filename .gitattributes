@@ -9,5 +9,6 @@
 *.svg text eol=lf
 *.sat binary
 *.3mf binary
+*.stl binary
 *.mkv binary
 *.npz binary
