@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import struct
 import tempfile
 import unittest
 import uuid
@@ -11,6 +12,7 @@ from pipe_twin.cad_model import (
     load_3dm_scene,
     load_3mf_scene,
     load_cad_scene,
+    load_stl_scene,
 )
 
 try:
@@ -21,10 +23,43 @@ except ImportError:  # pragma: no cover - the CI dependency is installed by the 
 
 ROOT = Path(__file__).resolve().parents[1]
 THREEMF_PATH = ROOT / "test_model" / "管道群.3mf"
+STL_PATH = ROOT / "test_model" / "管道布置.stl"
 
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _tetrahedron(offset: float = 0.0) -> list[list[tuple[float, float, float]]]:
+    vertices = [
+        (offset + 0.0, 0.0, 0.0),
+        (offset + 1.0, 0.0, 0.0),
+        (offset + 0.0, 1.0, 0.0),
+        (offset + 0.0, 0.0, 1.0),
+    ]
+    return [
+        [vertices[a], vertices[b], vertices[c]]
+        for a, b, c in ((0, 2, 1), (0, 1, 3), (1, 2, 3), (2, 0, 3))
+    ]
+
+
+def _write_binary_stl(path: Path, triangles: list) -> None:
+    payload = bytearray(b"unit test STL".ljust(80, b"\0"))
+    payload.extend(struct.pack("<I", len(triangles)))
+    for triangle in triangles:
+        flat = [coordinate for point in triangle for coordinate in point]
+        payload.extend(struct.pack("<12fH", 0.0, 0.0, 0.0, *flat, 0))
+    path.write_bytes(payload)
+
+
+def _write_ascii_stl(path: Path, triangles: list) -> None:
+    lines = ["solid fixture"]
+    for triangle in triangles:
+        lines.extend(["facet normal 0 0 0", "outer loop"])
+        lines.extend(f"vertex {x} {y} {z}" for x, y, z in triangle)
+        lines.extend(["endloop", "endfacet"])
+    lines.append("endsolid fixture")
+    path.write_text("\n".join(lines) + "\n", encoding="ascii")
 
 
 def _write_rhino_mesh_model(
@@ -191,8 +226,71 @@ class UnifiedCadLoaderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "model.obj"
             path.write_text("not a supported CAD model", encoding="utf-8")
-            with self.assertRaisesRegex(CadModelError, "expected .3mf or .3dm"):
+            with self.assertRaisesRegex(CadModelError, "expected .3mf, .3dm, or .stl"):
                 load_cad_scene(path)
+
+
+class StlLoaderTests(unittest.TestCase):
+    def test_repository_binary_stl_splits_twelve_watertight_pipe_shells(self) -> None:
+        scene = load_stl_scene(STL_PATH, stl_unit="millimeter")
+        self.assertEqual(scene.source_format, "stl")
+        self.assertEqual(scene.source_unit, "millimeter")
+        self.assertEqual(scene.unit_scale_to_mm, 1.0)
+        self.assertEqual(scene.source_sha256, _sha256(STL_PATH))
+        self.assertEqual(scene.object_count, 12)
+        self.assertEqual(sum(item.vertex_count for item in scene.objects), 576)
+        self.assertEqual(sum(item.triangle_count for item in scene.objects), 1104)
+        self.assertTrue(all(item.watertight for item in scene.objects))
+        self.assertTrue(all(item.mesh_source == "stl_binary_connected_mesh" for item in scene.objects))
+        self.assertTrue(all(item.color_srgb == "#B0B0B0" for item in scene.objects))
+        self.assertEqual(len(set(scene.by_object_id)), 12)
+
+    def test_binary_component_ids_are_stable_and_filterable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "two-components.stl"
+            _write_binary_stl(path, _tetrahedron(10) + _tetrahedron(0))
+            first = load_stl_scene(path, stl_unit="mm")
+            second = load_stl_scene(path, stl_unit="millimeters")
+            self.assertEqual(list(first.by_object_id), list(second.by_object_id))
+            selected_id = first.objects[1].object_id
+            selected = load_cad_scene(
+                path,
+                stl_unit="millimeter",
+                required_object_ids={selected_id.upper()},
+            )
+            self.assertEqual([item.object_id for item in selected.objects], [selected_id])
+            with self.assertRaisesRegex(CadModelError, "missing required component IDs"):
+                load_stl_scene(path, stl_unit="millimeter", required_object_ids={"missing"})
+
+    def test_ascii_stl_and_explicit_unit_conversion(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "tetra-ascii.stl"
+            _write_ascii_stl(path, _tetrahedron())
+            scene = load_stl_scene(path, stl_unit="centimeter")
+            self.assertEqual(scene.source_unit, "centimeter")
+            self.assertEqual(scene.unit_scale_to_mm, 10.0)
+            self.assertEqual(scene.object_count, 1)
+            self.assertEqual(scene.objects[0].bbox_max_mm, (10.0, 10.0, 10.0))
+            self.assertEqual(scene.objects[0].mesh_source, "stl_ascii_connected_mesh")
+            self.assertTrue(scene.objects[0].watertight)
+
+    def test_stl_unit_is_mandatory_and_invalid_geometry_fails_closed(self) -> None:
+        with self.assertRaisesRegex(CadModelError, "do not store units"):
+            load_cad_scene(STL_PATH)
+        with self.assertRaisesRegex(CadModelError, "Unsupported STL unit"):
+            load_stl_scene(STL_PATH, stl_unit="foot")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            trailing = root / "trailing.stl"
+            _write_binary_stl(trailing, _tetrahedron())
+            trailing.write_bytes(trailing.read_bytes() + b"unexpected")
+            with self.assertRaises(CadModelError):
+                load_stl_scene(trailing, stl_unit="millimeter")
+            degenerate = root / "degenerate.stl"
+            triangle = [[(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (2.0, 0.0, 0.0)]]
+            _write_binary_stl(degenerate, triangle)
+            with self.assertRaisesRegex(CadModelError, "zero-area"):
+                load_stl_scene(degenerate, stl_unit="millimeter")
 
 
 if __name__ == "__main__":

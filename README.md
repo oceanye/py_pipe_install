@@ -2,7 +2,7 @@
 
 局部测量 GUI：双击 `run_gui.bat`，或运行 `.\.venv\Scripts\python.exe -m pipe_twin gui`。支持现场模型/照片录入、局部管径与位置测量、中心距/净距/前后关系、实测样本校正和逐管状态导出。操作步骤及测量口径见 [局部测量工作台使用说明](doc/局部测量工作台使用说明.md)。默认 ±1 mm 为对照阈值，真实相机精度需实测验证。
 
-基于 CAD 先验和视觉证据的管道安装状态识别与数字孪生项目。当前交付 **M0 单层离线演示基线**、**M1 两层 CAD 合成双目/遮挡拓扑基线**，以及 **M2 真实双目静态照片 + 3DM/3MF + 本地 GUI 软件候选版**。M2 已能输出逐管三态并完成合成回归；真实相机阈值、标定精度和现场验收仍要用到场实物确认。多机位和 3DGS 属于后续阶段。
+基于 CAD 先验和视觉证据的管道安装状态识别与数字孪生项目。当前交付 **M0 单层离线演示基线**、**M1 两层 CAD 合成双目/遮挡拓扑基线**，以及 **M2 真实双目静态照片 + 3DM/3MF/STL + 本地 GUI 软件候选版**。M2 已能输出逐管三态并完成合成回归；真实相机阈值、标定精度和现场验收仍要用到场实物确认。多机位和 3DGS 属于后续阶段。
 
 ## 生产采集主线：固定相机定时拍照
 
@@ -25,7 +25,7 @@ M0 使用以下历史回归资产：
 
 M1 使用 `管道群2.3mf` 的 9 根前后分层管道，生成一组可重复的虚拟双目 RGB、精确 CAD 深度、稳定实例 ID、正交立面及有向遮挡图。`管道群2.mkv` 只是固定 Fusion 视口中的对象显隐参考，不含相机运动，也不作为深度或双目真值。合成输出验证的是投影、Z-buffer 所有权和遮挡拓扑；它不代表真实深度相机性能。
 
-M2 新增统一 CAD 网格层：3MF 使用 object ID，3DM 使用 Rhino 对象 GUID；仅 manifest 绑定的管道参与现场分析，辅助 Curve/Point/Text 可保留。直接 Mesh 可以读取，Brep/Extrusion 必须在 3DM 中带完整 Render Mesh 缓存；Block 实例、绑定对象无网格或 GUID 缺失会明确失败。所有坐标统一换算为毫米。分析器从实际 CAD 三角网格生成逐相机 amodal 投影和设计遮挡关系，再将 OpenCV 左右一致视差、颜色和独立宽度指标与 CAD 证据融合。
+M2 新增统一 CAD 网格层：3MF 使用 object ID，3DM 使用 Rhino 对象 GUID，STL 使用按连通闭合网格计算的稳定组件 ID；仅 manifest 绑定的管道参与现场分析，辅助 Curve/Point/Text 可保留。直接 Mesh 可以读取，Brep/Extrusion 必须在 3DM 中带完整 Render Mesh 缓存；Block 实例、绑定对象无网格或 GUID 缺失会明确失败。STL 不保存单位、颜色和业务 ID，因此导入时必须明确选择原坐标单位，并逐管核对自动拆分的组件、设计外径、颜色和业务 ID；相接或共享顶点的多个实体会被视为同一组件。所有坐标统一换算为毫米。分析器从实际 CAD 三角网格生成逐相机 amodal 投影和设计遮挡关系，再将 OpenCV 左右一致视差、颜色和独立宽度指标与 CAD 证据融合。
 
 仓库中的 `field_stereo_demo_manifest.json` 把合成左右照片作为 M2 端到端回归：结果应为 8 根 `INSTALLED`、0 根 `NOT_INSTALLED`、1 根因左右目均完全遮挡而 `UNKNOWN`。这只证明软件链和安全状态机可运行，不是现场验收。
 
@@ -197,17 +197,22 @@ python -m pipe_twin analyze --manifest path/to/capture_manifest.json --output ou
 
 `analyze` 是兼容入口，仍只接受单目照片或历史视频；双目必须使用下面独立的 `analyze-stereo` 命令，避免旧 M0 契约被误升级。
 
-## 运行 3DM/3MF + 双目安装状态识别
+## 运行 3DM/3MF/STL + 双目安装状态识别
 
-先审计 CAD。3DM 报告会列出 GUID、对象名、图层、颜色、几何/网格来源、毫米包围盒和网格闭合性：
+先审计 CAD。报告会列出对象或组件 ID、网格来源、毫米包围盒和网格闭合性；3DM 还会列出 GUID、对象名、图层和颜色：
 
 ```powershell
 python -m pipe_twin inspect-model path/to/pipes.3dm --output outputs/model_audit.json
+python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millimeter --output outputs/stl_model_audit.json
 ```
+
+`--stl-unit` 是 STL 必填项，可选 `millimeter/centimeter/meter/inch`。仓库样例 `管道布置.stl` 的自动审计结果为 12 个闭合管件组件、576 个顶点和 1104 个三角面，自动目录识别出的设计外径约为 26、41、51 mm 三组。
 
 如果 Rhino 文件还包含未网格化的 Curve/Point/Text 或辅助 BRep，未带过滤参数的审计会安全拒绝（不会静默漏掉对象）；可按 Rhino 中看到的 GUID 重复传入 `--object-id`，例如 `--object-id 1234... --object-id 5678...`。`analyze-stereo` 会直接从 manifest 的 `cad_object_id` 集合过滤绑定管道，并仍对每个绑定对象严格校验。
 
 现场 manifest 使用 `schema_version=2.0`，显式绑定模型哈希、每根管的 `pipe_id ↔ cad_object_id`、中心线/外径/颜色、双目标定与 CAD 外参，以及按时间排序的 `capture.capture_groups[].views.left/right`。当前 M2 的 SGBM 与 `Z=fx·B/d` 门禁只接收已经完成共同极线矫正的左右图（`stereo_calibration.rectified=true`）；若相机输出原始未矫正图，先用同一组内参/双目标定执行 `cv2.stereoRectify` 和 `initUndistortRectifyMap`，再把矫正后的图及其哈希写入 manifest。完整字段和实物采集清单见[现场双目识别与 GUI 使用说明](doc/现场双目识别与GUI使用说明.md)。运行分析：
+
+现场数据录入窗口可选择相机位于 CAD 的 ±X/±Y/±Z 方向，也可沿用当前外参并输入双目组中心、yaw、pitch、roll；它们作为刚性相机—CAD 外参调整参与完整三维投影、管件定位、角度匹配和前后关系判定。修改后的外参应使用固定控制点再次验证，不能用角度输入替代双目图像的极线矫正。
 
 ```powershell
 python -m pipe_twin analyze-stereo `
@@ -275,7 +280,7 @@ python -m pipe_twin simulate-stereo --manifest test_model/pipe_group2_manifest.j
 python -m unittest discover -s tests -v
 ```
 
-Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入校验、历史 3MF/MKV 回放、M1 合成几何/遮挡契约、3DM GUID/单位/缓存网格读取、M2 双目视差与三态安全门禁，以及 GUI 的报告绑定；不代表真实相机、标定、物理管径或业务状态指标已经验收。
+Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入校验、历史 3MF/MKV 回放、M1 合成几何/遮挡契约、3DM GUID/单位/缓存网格读取、STL 单位/连通组件/稳定 ID、相机方向与倾斜外参、M2 双目视差与三态安全门禁，以及 GUI 的报告绑定；不代表真实相机、标定、物理管径或业务状态指标已经验收。
 
 ## 后续能力边界
 

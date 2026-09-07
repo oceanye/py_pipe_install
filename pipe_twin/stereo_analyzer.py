@@ -550,6 +550,7 @@ def _load_cad_scene(manifest_file: Path, model: object) -> CadScene:
         mesh_scene = load_mesh_cad_scene(
             model_path,
             required_object_ids={pipe.cad_object_id for pipe in pipes},
+            stl_unit=model.get("source_unit") if model_path.suffix.lower() == ".stl" else None,
         )
     except CadModelError as error:
         raise StereoAnalysisError(str(error)) from error
@@ -606,6 +607,8 @@ def _load_cad_scene(manifest_file: Path, model: object) -> CadScene:
     binding_validation = (
         "3DM_GUID_AND_MESH_VALIDATED"
         if mesh_scene.source_format == "3dm"
+        else "STL_COMPONENT_ID_AND_MESH_VALIDATED"
+        if mesh_scene.source_format == "stl"
         else "3MF_OBJECT_ID_AND_MESH_VALIDATED"
     )
     return CadScene(

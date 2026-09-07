@@ -24,13 +24,18 @@ def _inspect_model(
     path: str | Path,
     *,
     required_object_ids: list[str] | None = None,
+    stl_unit: str | None = None,
 ) -> dict:
-    """Return the established 3MF audit or a normalized 3DM mesh audit."""
+    """Return the established 3MF audit or a normalized 3DM/STL mesh audit."""
 
     model_path = Path(path)
     if model_path.suffix.lower() == ".3mf" and not required_object_ids:
         return inspect_3mf(model_path)
-    scene = load_cad_scene(model_path, required_object_ids=required_object_ids)
+    scene = load_cad_scene(
+        model_path,
+        required_object_ids=required_object_ids,
+        stl_unit=stl_unit,
+    )
     return {
         "format": "Rhino 3DM" if scene.source_format == "3dm" else scene.source_format,
         "source_path": str(scene.source_path),
@@ -71,16 +76,21 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     inspect_parser = subparsers.add_parser(
-        "inspect-model", help="inspect a mesh-backed 3MF or Rhino 3DM model"
+        "inspect-model", help="inspect a mesh-backed 3MF, Rhino 3DM, or STL model"
     )
-    inspect_parser.add_argument("model", help="path to the 3MF or 3DM file")
+    inspect_parser.add_argument("model", help="path to the 3MF, 3DM, or STL file")
+    inspect_parser.add_argument(
+        "--stl-unit",
+        choices=("millimeter", "centimeter", "meter", "inch"),
+        help="required source coordinate unit for STL, because STL stores no unit metadata",
+    )
     inspect_parser.add_argument(
         "--object-id",
         dest="object_ids",
         action="append",
         help=(
             "inspect only this manifest-bound CAD object identity; repeat for multiple "
-            "Rhino GUIDs or 3MF object IDs"
+            "Rhino GUIDs, 3MF object IDs, or STL component IDs"
         ),
     )
     inspect_parser.add_argument("--output", help="optional JSON output path")
@@ -136,7 +146,11 @@ def _main(argv: Sequence[str] | None = None) -> int:
     if args.command == "inspect-model":
         if args.output:
             ensure_paths_distinct(model=args.model, output=args.output)
-        result = _inspect_model(args.model, required_object_ids=args.object_ids)
+        result = _inspect_model(
+            args.model,
+            required_object_ids=args.object_ids,
+            stl_unit=args.stl_unit,
+        )
         if args.output:
             output = _write_json(args.output, result)
             print(f"CAD inspection written to {output}")

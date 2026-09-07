@@ -23,7 +23,8 @@ def main():
     import tkinter as tk
     from pipe_twin.gui import _PipeTwinApplication
     from pipe_twin.measurement_book import empty_book, load_book
-    from pipe_twin.capture_gui import CaptureInputDialog
+    from pipe_twin.camera_pose import POSE_MODE_LABELS
+    from pipe_twin.capture_gui import CameraPoseDialog, CaptureInputDialog
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--show", action="store_true")
@@ -85,6 +86,22 @@ def main():
         wizard = CaptureInputDialog(app)
         root.update()
         assert len(wizard.tree.get_children()) == 9
+        assert wizard.model_toolbar.winfo_reqwidth() < 950
+        assert wizard.action_toolbar.winfo_reqwidth() < 950
+        calibration = json.loads(manifest.read_text(encoding="utf-8"))["stereo_calibration"]
+        pose = CameraPoseDialog(wizard, calibration)
+        pose.mode.set(POSE_MODE_LABELS["positive_z"])
+        for variable, value in zip(pose.center, (250.0, 150.0, 2000.0)):
+            variable.set(str(value))
+        pose.yaw.set("3")
+        pose.pitch.set("-2")
+        pose.roll.set("1.5")
+        pose.validated.set(True)
+        pose.save()
+        root.update()
+        assert wizard.pose_adjustment["mode"] == "positive_z"
+        assert wizard.pose_adjustment["roll_deg"] == 1.5
+        assert wizard.pose_adjustment["registration_validated"] is True
         wizard.window.destroy()
         app.main_tabs.select(1)
         root.update()
@@ -95,7 +112,7 @@ def main():
     root.destroy()
     print(json.dumps({"status": "PASS", "pipe_count": 9, "pair_count": 36,
                       "measured_count": len(measured), "export_directory": str(folder), "layout": layout,
-                      "checks": ["empty_start", "bound_report", "photo_zoom", "roi", "reference_save_reload", "pair_table", "detail", "capture_dialog", "export"]}, ensure_ascii=True))
+                      "checks": ["empty_start", "bound_report", "photo_zoom", "roi", "reference_save_reload", "pair_table", "detail", "capture_dialog", "camera_pose_dialog", "export"]}, ensure_ascii=True))
 
 
 if __name__ == "__main__":

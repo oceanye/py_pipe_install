@@ -8,11 +8,14 @@ import unittest
 from pathlib import Path
 
 from pipe_twin.capture_gui import catalog_from_model, create_capture_dataset
+from pipe_twin.camera_pose import apply_camera_pose
 from pipe_twin.cli import build_parser
+from pipe_twin.stereo_analyzer import _load_cad_scene
 
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "test_model" / "field_stereo_demo_manifest.json"
+STL_MODEL = ROOT / "test_model" / "管道布置.stl"
 
 
 class CaptureInputTests(unittest.TestCase):
@@ -26,6 +29,10 @@ class CaptureInputTests(unittest.TestCase):
 
     def test_gui_can_start_without_a_manifest(self):
         self.assertIsNone(build_parser().parse_args(["gui"]).manifest)
+        parsed = build_parser().parse_args(
+            ["inspect-model", str(STL_MODEL), "--stl-unit", "millimeter"]
+        )
+        self.assertEqual(parsed.stl_unit, "millimeter")
 
     def test_create_copies_original_assets_and_keeps_model_mapping(self):
         before = hashlib.sha256(self.arguments["left_path"].read_bytes()).hexdigest()
@@ -64,6 +71,52 @@ class CaptureInputTests(unittest.TestCase):
         self.assertFalse(skipped)
         self.assertEqual(len({p["pipe_id"] for p in pipes}), 9)
         self.assertEqual(sorted(round(p["nominal_diameter_mm"]) for p in pipes), [20, 20, 20, 20, 40, 40, 45, 45, 45])
+
+    def test_repository_stl_catalog_finds_twelve_pipe_components(self):
+        pipes, skipped = catalog_from_model(STL_MODEL, stl_unit="millimeter")
+        self.assertEqual(len(pipes), 12, skipped)
+        self.assertFalse(skipped)
+        self.assertEqual(len({pipe["cad_object_id"] for pipe in pipes}), 12)
+        self.assertTrue(all(pipe["color_srgb"] == "#B0B0B0" for pipe in pipes))
+        self.assertTrue(all(pipe["nominal_diameter_mm"] > 0 for pipe in pipes))
+
+    def test_stl_camera_pose_and_capture_package_reload_end_to_end(self):
+        pipes, skipped = catalog_from_model(STL_MODEL, stl_unit="millimeter")
+        self.assertFalse(skipped)
+        calibration = apply_camera_pose(
+            self.arguments["calibration"],
+            {
+                "mode": "positive_z",
+                "center_world_mm": [2217.0, 1797.0, 2200.0],
+                "yaw_deg": 0.0,
+                "pitch_deg": 0.0,
+                "roll_deg": 2.5,
+                "registration_validated": True,
+            },
+        )
+        arguments = self.arguments | {
+            "model_path": STL_MODEL,
+            "pipes": pipes,
+            "calibration": calibration,
+            "stl_unit": "millimeter",
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            path = create_capture_dataset(output_root=Path(temp), **arguments)
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["model"]["path"], "model.stl")
+            self.assertEqual(manifest["model"]["unit"], "millimeter")
+            self.assertEqual(manifest["model"]["source_unit"], "millimeter")
+            self.assertEqual(
+                manifest["stereo_calibration"]["registration_adjustment"]["roll_deg"],
+                2.5,
+            )
+            scene = _load_cad_scene(path, manifest["model"])
+            self.assertEqual(scene.model_format, "stl")
+            self.assertEqual(len(scene.pipes), 12)
+            self.assertEqual(
+                scene.object_binding_validation,
+                "STL_COMPONENT_ID_AND_MESH_VALIDATED",
+            )
 
 
 if __name__ == "__main__":

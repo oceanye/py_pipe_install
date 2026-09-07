@@ -1,4 +1,4 @@
-"""Unified, read-only triangle-mesh access for 3MF and Rhino 3DM models.
+"""Unified, read-only triangle-mesh access for 3MF, Rhino 3DM, and STL models.
 
 The vision and GUI layers should consume :class:`CadScene` rather than depend
 on a CAD SDK directly.  Every coordinate exposed by this module is converted
@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+import struct
 import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -35,7 +36,15 @@ except ImportError:  # pragma: no cover - exercised through a patched dependency
 
 
 _MAX_CAD_BYTES = 512 * 1024 * 1024
+_MAX_STL_TRIANGLES = 2_000_000
+_MAX_STL_OBJECTS = 4096
 _NIL_GUID = uuid.UUID(int=0)
+_STL_UNIT_SCALES_TO_MM = {
+    "millimeter": 1.0,
+    "centimeter": 10.0,
+    "meter": 1000.0,
+    "inch": 25.4,
+}
 
 
 class CadModelError(ValueError):
@@ -357,6 +366,271 @@ def load_3mf_scene(
     )
 
 
+def _stl_source_unit(value: str | None) -> tuple[str, float]:
+    if value is None:
+        raise CadModelError(
+            "STL files do not store units; specify stl_unit as millimeter, "
+            "centimeter, meter, or inch"
+        )
+    if not isinstance(value, str):
+        raise CadModelError("stl_unit must be a unit name")
+    normalized = value.strip().lower()
+    aliases = {
+        "mm": "millimeter",
+        "millimeters": "millimeter",
+        "cm": "centimeter",
+        "centimeters": "centimeter",
+        "m": "meter",
+        "meters": "meter",
+        "in": "inch",
+        "inches": "inch",
+    }
+    normalized = aliases.get(normalized, normalized)
+    scale = _STL_UNIT_SCALES_TO_MM.get(normalized)
+    if scale is None:
+        raise CadModelError(
+            f"Unsupported STL unit {value!r}; expected millimeter, centimeter, meter, or inch"
+        )
+    return normalized, scale
+
+
+def _binary_stl_triangles(raw: bytes) -> np.ndarray | None:
+    if len(raw) < 84:
+        return None
+    triangle_count = struct.unpack_from("<I", raw, 80)[0]
+    expected_size = 84 + 50 * triangle_count
+    if expected_size != len(raw):
+        return None
+    if triangle_count > _MAX_STL_TRIANGLES:
+        raise CadModelError(
+            f"STL triangle count {triangle_count} exceeds {_MAX_STL_TRIANGLES}"
+        )
+    if triangle_count == 0:
+        raise CadModelError("Binary STL contains no triangles")
+    record_type = np.dtype(
+        [
+            ("normal", "<f4", (3,)),
+            ("vertices", "<f4", (3, 3)),
+            ("attribute", "<u2"),
+        ]
+    )
+    records = np.frombuffer(raw, dtype=record_type, count=triangle_count, offset=84)
+    return np.asarray(records["vertices"], dtype=np.float64)
+
+
+def _ascii_stl_triangles(raw: bytes) -> np.ndarray:
+    try:
+        text = raw.decode("ascii")
+    except UnicodeDecodeError as error:
+        raise CadModelError("STL is neither a size-valid binary file nor ASCII STL") from error
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines or not lines[0].lower().startswith("solid"):
+        raise CadModelError("ASCII STL must begin with a solid declaration")
+    triangles: list[list[list[float]]] = []
+    cursor = 0
+    open_solid = False
+
+    def expect(words: tuple[str, ...]) -> list[str]:
+        nonlocal cursor
+        if cursor >= len(lines):
+            raise CadModelError(f"ASCII STL ended before {' '.join(words)}")
+        tokens = lines[cursor].split()
+        cursor += 1
+        if len(tokens) < len(words) or tuple(token.lower() for token in tokens[: len(words)]) != words:
+            raise CadModelError(
+                f"Invalid ASCII STL line {cursor}: expected {' '.join(words)}"
+            )
+        return tokens
+
+    while cursor < len(lines):
+        tokens = lines[cursor].split()
+        first = tokens[0].lower()
+        if first == "solid":
+            if open_solid:
+                raise CadModelError(f"Nested solid declaration at ASCII STL line {cursor + 1}")
+            open_solid = True
+            cursor += 1
+            continue
+        if first == "endsolid":
+            if not open_solid:
+                raise CadModelError(f"Unexpected endsolid at ASCII STL line {cursor + 1}")
+            open_solid = False
+            cursor += 1
+            continue
+        if first != "facet" or not open_solid:
+            raise CadModelError(f"Unexpected ASCII STL content at line {cursor + 1}")
+        normal = expect(("facet", "normal"))
+        if len(normal) != 5:
+            raise CadModelError(f"Invalid facet normal at ASCII STL line {cursor}")
+        expect(("outer", "loop"))
+        vertices: list[list[float]] = []
+        for _ in range(3):
+            vertex = expect(("vertex",))
+            if len(vertex) != 4:
+                raise CadModelError(f"Invalid vertex at ASCII STL line {cursor}")
+            try:
+                point = [float(value) for value in vertex[1:]]
+            except ValueError as error:
+                raise CadModelError(f"Invalid vertex number at ASCII STL line {cursor}") from error
+            if not all(math.isfinite(value) for value in point):
+                raise CadModelError(f"Non-finite vertex at ASCII STL line {cursor}")
+            vertices.append(point)
+        end_loop = expect(("endloop",))
+        end_facet = expect(("endfacet",))
+        if len(end_loop) != 1 or len(end_facet) != 1:
+            raise CadModelError("ASCII STL endloop/endfacet lines contain unexpected data")
+        triangles.append(vertices)
+        if len(triangles) > _MAX_STL_TRIANGLES:
+            raise CadModelError(
+                f"STL triangle count exceeds {_MAX_STL_TRIANGLES}"
+            )
+    if open_solid:
+        raise CadModelError("ASCII STL is missing endsolid")
+    if not triangles:
+        raise CadModelError("ASCII STL contains no triangles")
+    return np.asarray(triangles, dtype=np.float64)
+
+
+def _stl_components(triangle_vertices: np.ndarray) -> list[tuple[np.ndarray, np.ndarray, str]]:
+    if triangle_vertices.ndim != 3 or triangle_vertices.shape[1:] != (3, 3):
+        raise CadModelError("STL triangle records have an invalid shape")
+    if not np.all(np.isfinite(triangle_vertices)):
+        raise CadModelError("STL contains non-finite vertices")
+    vertices, inverse = np.unique(
+        triangle_vertices.reshape(-1, 3), axis=0, return_inverse=True
+    )
+    faces = inverse.reshape(-1, 3).astype(np.int32)
+    if np.any(
+        (faces[:, 0] == faces[:, 1])
+        | (faces[:, 1] == faces[:, 2])
+        | (faces[:, 2] == faces[:, 0])
+    ):
+        raise CadModelError("STL contains a triangle with repeated vertices")
+    edges = np.cross(
+        vertices[faces[:, 1]] - vertices[faces[:, 0]],
+        vertices[faces[:, 2]] - vertices[faces[:, 0]],
+    )
+    if np.any(np.linalg.norm(edges, axis=1) == 0):
+        raise CadModelError("STL contains a zero-area triangle")
+
+    parent = np.arange(len(vertices), dtype=np.int32)
+
+    def root(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = int(parent[index])
+        return index
+
+    def join(first: int, second: int) -> None:
+        first_root, second_root = root(first), root(second)
+        if first_root != second_root:
+            if first_root > second_root:
+                first_root, second_root = second_root, first_root
+            parent[second_root] = first_root
+
+    for first, second, third in faces.tolist():
+        join(first, second)
+        join(first, third)
+    face_groups: dict[int, list[int]] = {}
+    for face_index, first in enumerate(faces[:, 0].tolist()):
+        face_groups.setdefault(root(first), []).append(face_index)
+    if len(face_groups) > _MAX_STL_OBJECTS:
+        raise CadModelError(
+            f"STL has {len(face_groups)} disconnected components; maximum is {_MAX_STL_OBJECTS}. "
+            "Weld coincident vertices or export separate supported CAD objects."
+        )
+
+    components: list[tuple[np.ndarray, np.ndarray, str]] = []
+    for face_indexes in face_groups.values():
+        component_faces = faces[np.asarray(face_indexes, dtype=np.int32)]
+        used = np.unique(component_faces)
+        local_faces = np.searchsorted(used, component_faces).astype(np.int32)
+        local_vertices = vertices[used]
+        canonical_faces = np.sort(local_faces, axis=1)
+        order = np.lexsort(
+            (canonical_faces[:, 2], canonical_faces[:, 1], canonical_faces[:, 0])
+        )
+        digest = hashlib.sha256(
+            np.ascontiguousarray(local_vertices, dtype="<f8").tobytes()
+            + np.ascontiguousarray(canonical_faces[order], dtype="<i4").tobytes()
+        ).hexdigest()
+        components.append((local_vertices, local_faces, digest))
+    components.sort(
+        key=lambda item: (
+            *item[0].min(axis=0).tolist(),
+            *item[0].max(axis=0).tolist(),
+            item[2],
+        )
+    )
+    return components
+
+
+def load_stl_scene(
+    path: str | Path,
+    *,
+    stl_unit: str | None,
+    required_object_ids: Iterable[str] | None = None,
+) -> CadScene:
+    """Load binary or ASCII STL shells as stable, disconnected mesh objects.
+
+    STL carries neither a unit nor reliable object identity.  The caller must
+    state the source unit.  Each exactly connected shell receives a stable ID
+    derived from its absolute vertices and topology; color remains neutral
+    until the operator maps the physical pipe in the capture GUI.
+    """
+
+    source_unit, unit_scale = _stl_source_unit(stl_unit)
+    required_ids = _required_object_ids(required_object_ids)
+    source_path, raw, source_sha256 = _read_cad_snapshot(path)
+    triangle_vertices = _binary_stl_triangles(raw)
+    encoding = "binary"
+    if triangle_vertices is None:
+        triangle_vertices = _ascii_stl_triangles(raw)
+        encoding = "ascii"
+    components = _stl_components(triangle_vertices)
+    objects: list[CadObject] = []
+    seen_ids: set[str] = set()
+    for index, (vertices, triangles, digest) in enumerate(components, start=1):
+        object_id = f"stl-{digest[:20]}"
+        if object_id in seen_ids:
+            raise CadModelError(
+                "STL contains duplicate overlapping components with no distinct identity"
+            )
+        seen_ids.add(object_id)
+        if required_ids is not None and object_id.casefold() not in required_ids:
+            continue
+        objects.append(
+            _cad_object(
+                object_id=object_id,
+                guid=None,
+                pipe_id=None,
+                name=f"{source_path.stem} component {index:03d}",
+                layer_path=None,
+                color_srgb="#B0B0B0",
+                geometry_type="Mesh",
+                mesh_source=f"stl_{encoding}_connected_mesh",
+                vertices_world_mm=vertices * unit_scale,
+                triangles=triangles,
+                context=f"STL component {index}",
+            )
+        )
+    if required_ids is not None:
+        missing = required_ids - {item.object_id.casefold() for item in objects}
+        if missing:
+            raise CadModelError(
+                f"STL scene is missing required component IDs: {sorted(missing)}"
+            )
+    _validate_scene_identity(objects, context="STL scene")
+    return CadScene(
+        source_path=source_path,
+        source_format="stl",
+        source_sha256=source_sha256,
+        source_unit=source_unit,
+        unit_scale_to_mm=unit_scale,
+        objects=tuple(objects),
+    )
+
+
 def _rhino_dependency() -> Any:
     if rhino3dm is None:
         raise CadModelError(
@@ -606,6 +880,7 @@ def load_cad_scene(
     path: str | Path,
     *,
     required_object_ids: Iterable[str] | None = None,
+    stl_unit: str | None = None,
 ) -> CadScene:
     """Load a supported CAD file into the common millimetre mesh contract.
 
@@ -623,9 +898,17 @@ def load_cad_scene(
         scene = load_3dm_scene(path, required_object_ids=required_object_ids)
         log_event(_LOGGER, "cad_load_finished", path=scene.source_path, format=scene.source_format, object_count=scene.object_count)
         return scene
+    if suffix == ".stl":
+        scene = load_stl_scene(
+            path,
+            stl_unit=stl_unit,
+            required_object_ids=required_object_ids,
+        )
+        log_event(_LOGGER, "cad_load_finished", path=scene.source_path, format=scene.source_format, object_count=scene.object_count)
+        return scene
     log_event(_LOGGER, "cad_load_rejected", path=Path(path), format=suffix or "<none>")
     raise CadModelError(
-        f"Unsupported CAD model extension {suffix or '<none>'!r}; expected .3mf or .3dm"
+        f"Unsupported CAD model extension {suffix or '<none>'!r}; expected .3mf, .3dm, or .stl"
     )
 
 
@@ -635,5 +918,6 @@ __all__ = [
     "CadScene",
     "load_3dm_scene",
     "load_3mf_scene",
+    "load_stl_scene",
     "load_cad_scene",
 ]
