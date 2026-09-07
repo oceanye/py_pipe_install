@@ -1966,10 +1966,14 @@ class _PipeTwinApplication:
             self.messagebox.showinfo("没有manifest", "请先载入或创建 manifest。")
             return
         try:
-            relative = os.path.relpath(self.dxf_elevation.source_path, self.manifest_path.parent).replace("\\", "/")
-            if relative.startswith("../") or relative == "..":
-                raise ValueError("DXF 文件必须位于 manifest 所在目录或其子目录内，才能写入相对路径。")
             updated = copy.deepcopy(self.manifest)
+            selected = self.filedialog.asksaveasfilename(title="保存带DXF映射的manifest", initialfile=self.manifest_path.name, initialdir=str(self.manifest_path.parent), defaultextension=".json", filetypes=(("JSON", "*.json"),))
+            if not selected:
+                return
+            selected_path = Path(selected).resolve()
+            relative = os.path.relpath(self.dxf_elevation.source_path, selected_path.parent).replace("\\", "/")
+            if relative.startswith("../") or relative == "..":
+                raise ValueError("DXF 文件必须位于要保存的 manifest 目录或其子目录内，才能写入相对路径。")
             updated["elevation"] = {
                 "format": "dxf",
                 "path": relative,
@@ -1977,10 +1981,7 @@ class _PipeTwinApplication:
                 "layer_colors": dict(self.dxf_layer_colors),
                 "entity_bindings": dict(self.dxf_bindings),
             }
-            selected = self.filedialog.asksaveasfilename(title="保存带DXF映射的manifest", initialfile=self.manifest_path.name, initialdir=str(self.manifest_path.parent), defaultextension=".json", filetypes=(("JSON", "*.json"),))
-            if not selected:
-                return
-            Path(selected).write_text(json.dumps(updated, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            selected_path.write_text(json.dumps(updated, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             log_event(_LOGGER, "dxf_bindings_saved", manifest=selected, binding_count=len(self.dxf_bindings))
             self.messagebox.showinfo("已保存", f"DXF 映射已写入：\n{selected}\n\n报告需重新分析以匹配新的 manifest 哈希。")
         except (OSError, ValueError) as error:
