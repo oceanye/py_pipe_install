@@ -60,6 +60,29 @@ def _aci_color(index: int) -> str:
     return f"#{round(red*255):02X}{round(green*255):02X}{round(blue*255):02X}"
 
 
+def _true_color(value: object) -> str | None:
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    if 0 <= number <= 0xFFFFFF:
+        return f"#{(number >> 16) & 255:02X}{(number >> 8) & 255:02X}{number & 255:02X}"
+    return None
+
+
+def _entity_color(record: list[tuple[int, str]], layer_color: str) -> str:
+    values = {code: value for code, value in record}
+    true = _true_color(values.get(420))
+    if true:
+        return true
+    try:
+        if 62 in values and int(values[62]) not in (0, 256):
+            return _aci_color(int(values[62]))
+    except ValueError:
+        pass
+    return layer_color
+
+
 def _pairs(raw: bytes) -> list[tuple[int, str]]:
     text = raw.decode("utf-8-sig", errors="replace")
     lines = [line.strip() for line in text.splitlines()]
@@ -145,7 +168,7 @@ def read_dxf_elevation(path: str | Path) -> DxfElevation:
                 break
             record.append((rcode, rvalue))
         layer = next((v for c, v in record if c == 8), "0")
-        color = layers.get(layer, "#FFFFFF")
+        color = _entity_color(record, layers.get(layer, "#FFFFFF"))
         values = {c: v for c, v in record}
         if kind == "LINE":
             entities.append(DxfEntity(kind="LINE", layer=layer, color=color, points=((_float(values, 10), _float(values, 20)), (_float(values, 11), _float(values, 21)))))
@@ -211,7 +234,13 @@ def _read_with_ezdxf(source: Path, raw: bytes) -> DxfElevation:
         if len(points) < 2 and radius is None:
             continue
         layer = str(getattr(entity.dxf, "layer", "0"))
-        entities.append(DxfEntity(kind=kind, layer=layer, color=layers.get(layer, "#FFFFFF"), points=points, radius=radius, start_angle=float(getattr(entity.dxf, "start_angle", 0.0)), end_angle=float(getattr(entity.dxf, "end_angle", 360.0))))
+        true_color = _true_color(getattr(entity.dxf, "true_color", None))
+        try:
+            aci = int(getattr(entity.dxf, "color", 256) or 256)
+        except (TypeError, ValueError):
+            aci = 256
+        entity_color = true_color or (_aci_color(aci) if aci not in (0, 256) else layers.get(layer, "#FFFFFF"))
+        entities.append(DxfEntity(kind=kind, layer=layer, color=entity_color, points=points, radius=radius, start_angle=float(getattr(entity.dxf, "start_angle", 0.0)), end_angle=float(getattr(entity.dxf, "end_angle", 360.0))))
     if not entities:
         raise DxfError("DXF contains no supported 2-D side-elevation entities")
     unit_code = int(getattr(document.header, "__getitem__", lambda key: 0)("$INSUNITS") or 0)

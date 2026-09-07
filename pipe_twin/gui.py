@@ -1330,6 +1330,7 @@ class _PipeTwinApplication:
         self._photo_geometry: dict[str, tuple[float, float, int, int]] = {}
         self.dxf_elevation: DxfElevation | None = None
         self.dxf_layer_colors: dict[str, str] = {}
+        self.dxf_diameter_colors: dict[str, str] = {}
         self.dxf_bindings: dict[str, str] = {}
         self.selected_dxf_entity_id: str | None = None
         self._manifest_sha256: str | None = None
@@ -1366,8 +1367,7 @@ class _PipeTwinApplication:
         ttk.Button(toolbar, text="导入DXF侧立面", command=self._import_dxf).pack(side="left", padx=3)
         ttk.Button(toolbar, text="DXF自动建档", command=self._automate_dxf_setup).pack(side="left", padx=3)
         ttk.Button(toolbar, text="从DXF生成manifest草稿", command=self._create_dxf_manifest_draft).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="指定图层颜色", command=self._choose_dxf_layer_color).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="保存DXF颜色配置", command=self._save_dxf_colors).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="管径颜色配置", command=self._configure_dxf_diameter_colors).pack(side="left", padx=3)
         ttk.Button(toolbar, text="绑定DXF图元", command=self._bind_dxf_entity).pack(side="left", padx=3)
         ttk.Button(toolbar, text="保存DXF映射到manifest", command=self._save_dxf_bindings).pack(side="left", padx=3)
         self.run_button = ttk.Button(toolbar, text="运行双目识别与测量", command=self._run_analysis)
@@ -1653,12 +1653,12 @@ class _PipeTwinApplication:
                 raise ValueError("DXF 文件哈希与 manifest 不一致")
             self.dxf_elevation = document
             self.dxf_layer_colors = dict(document.layers)
-            if isinstance(elevation.get("layer_colors"), Mapping):
-                self.dxf_layer_colors.update({str(k): str(v).upper() for k, v in elevation["layer_colors"].items()})
+            self.dxf_diameter_colors = {str(k): str(v).upper() for k, v in (elevation.get("diameter_colors") or {}).items()} if isinstance(elevation.get("diameter_colors"), Mapping) else {}
             self.dxf_bindings = {str(k): str(v) for k, v in (elevation.get("entity_bindings") or {}).items()} if isinstance(elevation.get("entity_bindings"), Mapping) else {}
         except (OSError, ValueError):
             self.dxf_elevation = None
             self.dxf_layer_colors = {}
+            self.dxf_diameter_colors = {}
             self.dxf_bindings = {}
 
     def _choose_manifest(self) -> None:
@@ -1885,7 +1885,8 @@ class _PipeTwinApplication:
             return (margin + (point[0] - min_x) * scale, height - margin - (point[1] - min_y) * scale)
         canvas.create_text(16, 14, anchor="nw", text="DXF 侧立面（图层颜色）", fill="#263238", font=("Segoe UI", 12, "bold"))
         for entity in document.entities:
-            color = self.dxf_layer_colors.get(entity.layer, entity.color)
+            diameter_key = self._dxf_entity_diameter_key(entity)
+            color = self.dxf_diameter_colors.get(diameter_key, entity.color)
             if entity.kind == "CIRCLE":
                 cx, cy = xy(entity.points[0]); radius = float(entity.radius or 0) * scale
                 item = canvas.create_oval(cx - radius, cy - radius, cx + radius, cy + radius, outline=color, width=2, tags=("dxf_entity", f"dxf::{entity.entity_id}"))
@@ -1913,14 +1914,7 @@ class _PipeTwinApplication:
             return
         self.dxf_elevation = document
         self.dxf_layer_colors = dict(document.layers)
-        color_config = document.source_path.with_suffix(".colors.json")
-        if color_config.is_file():
-            try:
-                saved = _read_json_object(color_config, "DXF color config")
-                if saved.get("dxf_sha256") == document.source_sha256 and isinstance(saved.get("layers"), Mapping):
-                    self.dxf_layer_colors.update({str(key): str(value).upper() for key, value in saved["layers"].items()})
-            except (OSError, ValueError, TypeError):
-                log_event(_LOGGER, "dxf_color_config_ignored", path=color_config)
+        self.dxf_diameter_colors = {}
         self.projection_mode.set("dxf")
         self._draw_model()
         log_event(_LOGGER, "dxf_import_finished", path=document.source_path, entity_count=len(document.entities), layer_count=len(document.layers))
@@ -1935,21 +1929,34 @@ class _PipeTwinApplication:
         self._create_dxf_manifest_draft()
         log_event(_LOGGER, "dxf_automated_setup_finished", path=self.dxf_elevation.source_path)
 
-    def _choose_dxf_layer_color(self) -> None:
+    @staticmethod
+    def _dxf_entity_diameter_key(entity: Any) -> str:
+        diameter = float(entity.radius or 0.0) * 2.0 if entity.kind in {"CIRCLE", "ARC"} and entity.radius is not None else 1.0
+        return f"{diameter:.6f}"
+
+    def _configure_dxf_diameter_colors(self) -> None:
         if self.dxf_elevation is None:
             self.messagebox.showinfo("未导入 DXF", "请先导入 DXF 侧立面。")
             return
-        from tkinter import colorchooser, simpledialog
-        layers = sorted(self.dxf_layer_colors)
-        layer = simpledialog.askstring("指定图层颜色", "输入图层名：\n" + ", ".join(layers), parent=self.root)
-        if not layer or layer not in self.dxf_layer_colors:
-            return
-        chosen = colorchooser.askcolor(color=self.dxf_layer_colors[layer], title=f"选择图层 {layer} 颜色", parent=self.root)[1]
-        if chosen:
-            self.dxf_layer_colors[layer] = chosen.upper()
+        from tkinter import colorchooser
+        window = self.tk.Toplevel(self.root)
+        window.title("按管径统一颜色")
+        window.transient(self.root)
+        keys = sorted({self._dxf_entity_diameter_key(entity) for entity in self.dxf_elevation.entities}, key=float)
+        variables: dict[str, Any] = {}
+        for row, key in enumerate(keys):
+            self.ttk.Label(window, text=f"管径 {float(key):g} mm").grid(row=row, column=0, padx=10, pady=5, sticky="w")
+            variable = self.tk.StringVar(value=self.dxf_diameter_colors.get(key, next((entity.color for entity in self.dxf_elevation.entities if self._dxf_entity_diameter_key(entity) == key), "#FFFFFF")))
+            variables[key] = variable
+            self.ttk.Entry(window, textvariable=variable, width=12).grid(row=row, column=1, padx=5, pady=5)
+            self.ttk.Button(window, text="选择", command=lambda var=variable: var.set(colorchooser.askcolor(color=var.get(), parent=window)[1] or var.get())).grid(row=row, column=2, padx=5, pady=5)
+        def save() -> None:
+            self.dxf_diameter_colors = {key: value.get().upper() for key, value in variables.items() if value.get()}
             self.projection_mode.set("dxf")
             self._draw_model()
-            log_event(_LOGGER, "dxf_layer_color_changed", layer=layer, color=chosen.upper())
+            log_event(_LOGGER, "dxf_diameter_colors_changed", diameter_count=len(self.dxf_diameter_colors))
+            window.destroy()
+        self.ttk.Button(window, text="应用", command=save).grid(row=len(keys), column=0, columnspan=3, pady=10)
 
     def _create_dxf_manifest_draft(self) -> None:
         if self.dxf_elevation is None:
@@ -1958,7 +1965,7 @@ class _PipeTwinApplication:
         pipes: list[dict[str, Any]] = []
         for index, entity in enumerate(self.dxf_elevation.entities, 1):
             points = arc_points(entity) if entity.kind == "ARC" else entity.points
-            if entity.kind == "CIRCLE" and entity.radius is not None:
+            if entity.kind in {"CIRCLE", "ARC"} and entity.radius is not None:
                 cx, cy = entity.points[0]
                 centerline = [[cx - entity.radius, cy, 0.0], [cx + entity.radius, cy, 0.0]]
                 diameter = entity.radius * 2.0
@@ -1968,7 +1975,7 @@ class _PipeTwinApplication:
             else:
                 continue
             entity_id = entity.entity_id or f"P{index:03d}"
-            pipes.append({"instance_id": index, "pipe_id": entity_id, "cad_object_id": entity_id, "layer_id": entity.layer, "color_class": entity.layer, "color_srgb": self.dxf_layer_colors.get(entity.layer, entity.color), "nominal_diameter_mm": round(float(diameter), 6), "centerline_world_mm": centerline})
+            pipes.append({"instance_id": index, "pipe_id": entity_id, "cad_object_id": entity_id, "layer_id": entity.layer, "color_class": entity.layer, "color_srgb": self.dxf_diameter_colors.get(self._dxf_entity_diameter_key(entity), entity.color), "nominal_diameter_mm": round(float(diameter), 6), "centerline_world_mm": centerline})
         if not pipes:
             self.messagebox.showerror("无法生成草稿", "DXF 中没有可转换为管道目录的图元。")
             return
@@ -1980,7 +1987,7 @@ class _PipeTwinApplication:
         if relative.startswith("../") or relative == "..":
             self.messagebox.showerror("保存失败", "DXF 文件必须位于 manifest 草稿目录或其子目录内。")
             return
-        payload = {"schema_version": "dxf-elevation-draft-v1", "dataset_id": f"dxf-draft-{self.dxf_elevation.source_sha256[:12]}", "model_revision": self.dxf_elevation.source_sha256[:16], "validation_scope": "DXF_ELEVATION_DRAFT", "scope": {"layer_model": "elevation", "layer_id": "DXF", "identity_features": ["dxf_entity_id", "layer_id"], "metric_calibrated": False, "supports_stereo": False, "supports_occlusion_reasoning": False}, "model": {"path": relative, "sha256": self.dxf_elevation.source_sha256, "unit": "millimeter", "pipes": pipes}, "elevation": {"format": "dxf", "path": relative, "sha256": self.dxf_elevation.source_sha256, "layer_colors": dict(self.dxf_layer_colors), "entity_bindings": {entity["pipe_id"]: entity["pipe_id"] for entity in pipes}}}
+        payload = {"schema_version": "dxf-elevation-draft-v1", "dataset_id": f"dxf-draft-{self.dxf_elevation.source_sha256[:12]}", "model_revision": self.dxf_elevation.source_sha256[:16], "validation_scope": "DXF_ELEVATION_DRAFT", "scope": {"layer_model": "elevation", "layer_id": "DXF", "identity_features": ["dxf_entity_id", "layer_id"], "metric_calibrated": False, "supports_stereo": False, "supports_occlusion_reasoning": False}, "model": {"path": relative, "sha256": self.dxf_elevation.source_sha256, "unit": "millimeter", "pipes": pipes}, "elevation": {"format": "dxf", "path": relative, "sha256": self.dxf_elevation.source_sha256, "diameter_colors": dict(self.dxf_diameter_colors), "entity_bindings": {entity["pipe_id"]: entity["pipe_id"] for entity in pipes}}}
         selected_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         self._load_sources(selected_path, None)
         self.projection_mode.set("dxf")
@@ -2026,7 +2033,7 @@ class _PipeTwinApplication:
                 "format": "dxf",
                 "path": relative,
                 "sha256": self.dxf_elevation.source_sha256,
-                "layer_colors": dict(self.dxf_layer_colors),
+                "diameter_colors": dict(self.dxf_diameter_colors),
                 "entity_bindings": dict(self.dxf_bindings),
             }
             selected_path.write_text(json.dumps(updated, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -2034,29 +2041,6 @@ class _PipeTwinApplication:
             self.messagebox.showinfo("已保存", f"DXF 映射已写入：\n{selected}\n\n报告需重新分析以匹配新的 manifest 哈希。")
         except (OSError, ValueError) as error:
             self.messagebox.showerror("保存映射失败", str(error))
-
-    def _save_dxf_colors(self) -> None:
-        if self.dxf_elevation is None:
-            self.messagebox.showinfo("未导入 DXF", "请先导入 DXF 侧立面。")
-            return
-        selected = self.filedialog.asksaveasfilename(
-            title="保存 DXF 图层颜色配置",
-            initialfile=f"{self.dxf_elevation.source_path.stem}.colors.json",
-            initialdir=str(self.dxf_elevation.source_path.parent),
-            defaultextension=".json",
-            filetypes=(("JSON", "*.json"), ("All files", "*.*")),
-        )
-        if not selected:
-            return
-        payload = {
-            "format": "pipe_twin_dxf_layer_colors_v1",
-            "dxf_path": str(self.dxf_elevation.source_path),
-            "dxf_sha256": self.dxf_elevation.source_sha256,
-            "layers": dict(self.dxf_layer_colors),
-        }
-        Path(selected).write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        log_event(_LOGGER, "dxf_layer_colors_saved", path=selected, layer_count=len(self.dxf_layer_colors))
-        self.messagebox.showinfo("已保存", f"图层颜色配置已保存到：\n{selected}")
 
     def _select_canvas_pipe(self, event: Any) -> None:
         items = self.model_canvas.find_overlapping(
