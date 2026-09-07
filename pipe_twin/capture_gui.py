@@ -18,6 +18,14 @@ import numpy as np
 from .cad_model import load_cad_scene
 from .camera_pose import POSE_MODE_LABELS, apply_camera_pose, calibration_pose
 from .pipeline import atomic_write_text, ensure_paths_distinct
+from .qr_registration import (
+    QrRegistrationError,
+    WORLD_DIRECTIONS,
+    detect_qr_pose,
+    qr_payload,
+    register_calibration_from_qr,
+    write_printable_qr_svg,
+)
 from .stereo_camera import (
     LAYOUT_SEPARATE,
     LAYOUT_SIDE_BY_SIDE_LR,
@@ -575,6 +583,229 @@ class StereoCameraDialog:
         self.window.destroy()
 
 
+class QrRegistrationDialog:
+    """Generate a physical QR target and register the camera rig from it."""
+
+    def __init__(self, owner: Any) -> None:
+        self.owner = owner
+        app = owner.app
+        tk, ttk = app.tk, app.ttk
+        stored = owner.qr_settings
+        self.window = tk.Toplevel(owner.window)
+        self.window.title("1:1 二维码距离、方向与倾斜校正")
+        self.window.geometry("760x650")
+        self.window.resizable(False, False)
+        self.window.transient(owner.window)
+        self.marker_id = tk.StringVar(value=str(stored.get("marker_id", "PIPE-TWIN-QR-001")))
+        self.marker_edge = tk.StringVar(value=str(stored.get("marker_edge_mm", 120.0)))
+        self.center = [
+            tk.StringVar(value=str(value))
+            for value in stored.get("marker_center_world_mm", [0.0, 0.0, 0.0])
+        ]
+        self.print_right = tk.StringVar(value=str(stored.get("print_right_world", "+X")))
+        self.print_up = tk.StringVar(value=str(stored.get("print_up_world", "+Y")))
+        self.max_rms = tk.StringVar(value=str(stored.get("max_reprojection_rms_px", 2.0)))
+        self.print_measured = tk.BooleanVar(value=False)
+        self.cad_confirmed = tk.BooleanVar(value=False)
+        self.message = tk.StringVar(
+            value="先生成并按 100% 打印；量具复核尺寸后，将二维码固定在已知 CAD 位置。"
+        )
+
+        frame = ttk.Frame(self.window, padding=14)
+        frame.pack(fill="both", expand=True)
+        frame.columnconfigure(1, weight=1)
+        ttk.Label(
+            frame,
+            text=(
+                "二维码用于恢复相机到 CAD 的距离、方向和画面倾斜。"
+                "检测使用左目已极线矫正图，双目基线作为刚体同步更新。"
+            ),
+            wraplength=710,
+        ).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 12))
+        ttk.Label(frame, text="二维码编号").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Entry(frame, textvariable=self.marker_id, width=34).grid(
+            row=1, column=1, sticky="w", pady=5
+        )
+        ttk.Label(frame, text="编码区边长 / mm").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Entry(frame, textvariable=self.marker_edge, width=16).grid(
+            row=2, column=1, sticky="w", pady=5
+        )
+        ttk.Button(
+            frame,
+            text="生成 A4 1:1 打印 SVG",
+            command=self.export_marker,
+        ).grid(row=1, column=2, rowspan=2, columnspan=2, padx=8, pady=5)
+
+        ttk.Separator(frame).grid(row=3, column=0, columnspan=4, sticky="ew", pady=12)
+        ttk.Label(frame, text="二维码中心 CAD 坐标 / mm").grid(
+            row=4, column=0, columnspan=4, sticky="w", pady=(0, 5)
+        )
+        center_frame = ttk.Frame(frame)
+        center_frame.grid(row=5, column=0, columnspan=4, sticky="w")
+        for axis, variable in zip("XYZ", self.center):
+            ttk.Label(center_frame, text=axis).pack(side="left", padx=(0, 3))
+            ttk.Entry(center_frame, textvariable=variable, width=15).pack(
+                side="left", padx=(0, 12)
+            )
+        ttk.Label(frame, text="纸面 RIGHT 对应 CAD").grid(row=6, column=0, sticky="w", pady=8)
+        ttk.Combobox(
+            frame,
+            textvariable=self.print_right,
+            values=tuple(WORLD_DIRECTIONS),
+            state="readonly",
+            width=8,
+        ).grid(row=6, column=1, sticky="w", pady=8)
+        ttk.Label(frame, text="纸面 UP 对应 CAD").grid(row=6, column=2, sticky="e", pady=8)
+        ttk.Combobox(
+            frame,
+            textvariable=self.print_up,
+            values=tuple(WORLD_DIRECTIONS),
+            state="readonly",
+            width=8,
+        ).grid(row=6, column=3, sticky="w", padx=(8, 0), pady=8)
+        ttk.Label(frame, text="允许的最大重投影 RMS / px").grid(
+            row=7, column=0, sticky="w", pady=5
+        )
+        ttk.Entry(frame, textvariable=self.max_rms, width=12).grid(
+            row=7, column=1, sticky="w", pady=5
+        )
+        ttk.Label(
+            frame,
+            text="建议 ≤ 2 px；数值越小，角点与位姿拟合越一致。",
+            foreground="#4A6178",
+        ).grid(row=7, column=2, columnspan=2, sticky="w", pady=5)
+        ttk.Checkbutton(
+            frame,
+            text="已按 100% 打印，并用量具复核 100 mm 校验线及二维码编码区实测边长",
+            variable=self.print_measured,
+        ).grid(row=8, column=0, columnspan=4, sticky="w", pady=(14, 5))
+        ttk.Checkbutton(
+            frame,
+            text="已确认二维码中心 CAD 坐标以及纸面 RIGHT / UP 的实际安装方向",
+            variable=self.cad_confirmed,
+        ).grid(row=9, column=0, columnspan=4, sticky="w", pady=5)
+        ttk.Label(
+            frame,
+            textvariable=self.message,
+            wraplength=710,
+            foreground="#355371",
+        ).grid(row=10, column=0, columnspan=4, sticky="w", pady=(16, 8))
+        ttk.Label(
+            frame,
+            text=(
+                "实测建议：二维码尽量占左目画面 250 像素以上，保持平整、无反光。"
+                "完成定位后固定相机；可移走二维码并重新同步抓拍管件。"
+            ),
+            wraplength=710,
+            foreground="#8A4E00",
+        ).grid(row=11, column=0, columnspan=4, sticky="w", pady=8)
+        buttons = ttk.Frame(frame)
+        buttons.grid(row=12, column=0, columnspan=4, sticky="e", pady=12)
+        ttk.Button(buttons, text="关闭", command=self.window.destroy).pack(
+            side="left", padx=4
+        )
+        ttk.Button(
+            buttons,
+            text="识别当前左目图并应用定位",
+            command=self.apply,
+        ).pack(side="left", padx=4)
+
+    def _values(self) -> tuple[str, float, list[float], float]:
+        marker_id = self.marker_id.get().strip()
+        edge = float(self.marker_edge.get())
+        payload = qr_payload(marker_id, edge)
+        center = [float(value.get()) for value in self.center]
+        max_rms = float(self.max_rms.get())
+        return payload, edge, center, max_rms
+
+    def _remember(self, edge: float, center: list[float], max_rms: float) -> None:
+        self.owner.qr_settings = {
+            "marker_id": self.marker_id.get().strip(),
+            "marker_edge_mm": edge,
+            "marker_center_world_mm": center,
+            "print_right_world": self.print_right.get(),
+            "print_up_world": self.print_up.get(),
+            "max_reprojection_rms_px": max_rms,
+        }
+
+    def export_marker(self) -> None:
+        try:
+            _payload, edge, center, max_rms = self._values()
+            initial = f"{self.marker_id.get().strip()}_{edge:g}mm_1to1.svg"
+            selected = self.owner.app.filedialog.asksaveasfilename(
+                parent=self.window,
+                title="保存 1:1 二维码定位板",
+                initialfile=initial,
+                defaultextension=".svg",
+                filetypes=(("SVG", "*.svg"),),
+            )
+            if not selected:
+                return
+            self.owner.app.measurement_panel._protect_output(Path(selected))
+            path = write_printable_qr_svg(
+                selected,
+                marker_id=self.marker_id.get(),
+                marker_edge_mm=edge,
+            )
+            self._remember(edge, center, max_rms)
+            self.message.set(
+                f"打印文件已保存：{path}。打印选择 100%/实际大小，之后用量具复核。"
+            )
+        except (OSError, ValueError) as error:
+            self.owner.app.messagebox.showerror(
+                "二维码生成失败", str(error), parent=self.window
+            )
+
+    def apply(self) -> None:
+        try:
+            if not self.print_measured.get():
+                raise QrRegistrationError("请先确认打印比例并用量具复核打印尺寸")
+            if not self.cad_confirmed.get():
+                raise QrRegistrationError("请先确认二维码的 CAD 坐标和纸面方向")
+            payload, edge, center, max_rms = self._values()
+            calibration = load_calibration_json(
+                self.owner.fields["calibration"].get()
+            )
+            from .stereo_analyzer import _calibration_from_manifest
+
+            parsed = _calibration_from_manifest(calibration)
+            if not parsed.validated:
+                raise QrRegistrationError("双目标定尚未标记 validated=true，不能进行毫米定位")
+            estimate = detect_qr_pose(
+                self.owner.fields["left"].get(),
+                expected_payload=payload,
+                marker_edge_mm=edge,
+                intrinsic=parsed.left.intrinsic,
+                expected_size=(parsed.left.width, parsed.left.height),
+            )
+            adjusted = register_calibration_from_qr(
+                calibration,
+                estimate,
+                marker_center_world_mm=center,
+                print_right_world=self.print_right.get(),
+                print_up_world=self.print_up.get(),
+                registration_validated=True,
+                max_reprojection_rms_px=max_rms,
+            )
+            pose = calibration_pose(adjusted)
+            self.owner.calibration_override = adjusted
+            self.owner.pose_adjustment = {"mode": "keep"}
+            self._remember(edge, center, max_rms)
+            rig_center = ", ".join(f"{value:.2f}" for value in pose["center_world_mm"])
+            forward = ", ".join(f"{value:.4f}" for value in pose["forward_world"])
+            result = (
+                f"定位已应用：左目到二维码中心 {estimate.camera_distance_mm:.2f} mm；"
+                f"重投影 RMS {estimate.reprojection_rms_px:.3f} px；"
+                f"双目中心 CAD [{rig_center}] mm；观察方向 [{forward}]。"
+            )
+            self.message.set(result)
+            self.owner.message.set(result + " 固定相机后可移走二维码并重新抓拍管件。")
+        except (OSError, ValueError) as error:
+            self.owner.app.messagebox.showerror(
+                "二维码定位失败", str(error), parent=self.window
+            )
+
+
 class CameraPoseDialog:
     """Collect one rigid camera-to-CAD pose adjustment without editing source calibration."""
 
@@ -697,6 +928,8 @@ class CaptureInputDialog:
         self.fields = {key: tk.StringVar() for key in ("model", "calibration", "left", "right", "left_time", "right_time")}
         self.stl_unit = tk.StringVar(value="millimeter")
         self.pose_adjustment: dict[str, Any] = {"mode": "keep"}
+        self.calibration_override: dict[str, Any] | None = None
+        self.qr_settings: dict[str, Any] = {}
         self.timestamp_sources = {
             "left": "MANIFEST_OPERATOR_CONFIRMED",
             "right": "MANIFEST_OPERATOR_CONFIRMED",
@@ -732,6 +965,7 @@ class CaptureInputDialog:
         self.action_toolbar = action_toolbar
         action_toolbar.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(2, 7))
         ttk.Button(action_toolbar, text="连接双目相机抓拍", command=self.camera_capture).pack(side="left", padx=3)
+        ttk.Button(action_toolbar, text="二维码定位", command=self.qr_registration).pack(side="left", padx=3)
         ttk.Button(action_toolbar, text="相机方向/倾斜校正", command=self.camera_pose).pack(side="left", padx=3)
         ttk.Button(action_toolbar, text="编辑所选管件", command=self.edit_pipe).pack(side="left", padx=3)
         ttk.Button(action_toolbar, text="移除所选管件", command=self.remove_pipe).pack(side="left", padx=3)
@@ -764,6 +998,7 @@ class CaptureInputDialog:
             self.fields[key].set(selected)
             if key == "calibration":
                 self.pose_adjustment = {"mode": "keep"}
+                self.calibration_override = None
             elif key in {"left", "right"}:
                 time_key = f"{key}_time"
                 self.timestamp_sources[key] = "MANIFEST_OPERATOR_CONFIRMED"
@@ -819,7 +1054,9 @@ class CaptureInputDialog:
 
     def camera_pose(self) -> None:
         try:
-            calibration = load_calibration_json(self.fields["calibration"].get())
+            calibration = self.calibration_override or load_calibration_json(
+                self.fields["calibration"].get()
+            )
             CameraPoseDialog(self, calibration)
         except (OSError, ValueError) as error:
             self.app.messagebox.showerror("标定载入失败", str(error), parent=self.window)
@@ -830,6 +1067,9 @@ class CaptureInputDialog:
             StereoCameraDialog(self, calibration)
         except (OSError, ValueError) as error:
             self.app.messagebox.showerror("标定载入失败", str(error), parent=self.window)
+
+    def qr_registration(self) -> None:
+        QrRegistrationDialog(self)
 
     def edit_pipe(self) -> None:
         selected = self.tree.selection()
@@ -886,7 +1126,8 @@ class CaptureInputDialog:
             from .measurement_gui import OUTPUT_ROOT
 
             calibration = apply_camera_pose(
-                load_calibration_json(self.fields["calibration"].get()),
+                self.calibration_override
+                or load_calibration_json(self.fields["calibration"].get()),
                 self.pose_adjustment,
             )
             left_time, _ = normalize_capture_time(

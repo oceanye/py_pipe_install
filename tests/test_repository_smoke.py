@@ -53,10 +53,12 @@ class RepositorySmokeTests(unittest.TestCase):
             "pipe_twin/cad_model.py",
             "pipe_twin/stereo_analyzer.py",
             "pipe_twin/stereo_camera.py",
+            "pipe_twin/qr_registration.py",
             "pipe_twin/gui.py",
             "tests/test_cad_model.py",
             "tests/test_stereo_analyzer.py",
             "tests/test_stereo_camera.py",
+            "tests/test_qr_registration.py",
             "tests/test_stereo_3dm_integration.py",
             "tests/test_gui.py",
         )
