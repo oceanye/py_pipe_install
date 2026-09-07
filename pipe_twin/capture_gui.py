@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,69 @@ import numpy as np
 from .cad_model import load_cad_scene
 from .camera_pose import POSE_MODE_LABELS, apply_camera_pose, calibration_pose
 from .pipeline import atomic_write_text, ensure_paths_distinct
+
+
+def normalize_capture_time(value: str, *, field: str = "拍摄时间") -> tuple[str, bool]:
+    """Accept common operator input and return millisecond ISO-8601 with an offset.
+
+    The boolean indicates that the workstation's local time zone was added.
+    A date without a clock time is never sufficient for stereo synchronization.
+    """
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field}不能为空；请选择照片后核对自动填写的时间。")
+    text = value.strip()
+    text = (
+        text.replace("年", "-")
+        .replace("月", "-")
+        .replace("日", " ")
+        .replace("时", ":")
+        .replace("分", ":")
+        .replace("秒", "")
+        .replace("/", "-")
+        .strip()
+        .rstrip(":")
+    )
+    text = re.sub(r"\s+", " ", text)
+    if not re.search(r"[T ]\d{1,2}:\d{1,2}", text):
+        raise ValueError(f"{field}必须包含时、分，例如 2026-09-07 15:30:20。")
+    # ``fromisoformat`` requires zero-padded calendar and clock fields.  Pad
+    # the common hand-entered variant while leaving fractions and offsets intact.
+    match = re.fullmatch(
+        r"(\d{4})-(\d{1,2})-(\d{1,2})([T ])(\d{1,2}):(\d{1,2})"
+        r"(?::(\d{1,2})(\.\d{1,6})?)?([+-]\d{2}:?\d{2}|[Zz])?",
+        text,
+    )
+    if match:
+        year, month, day, separator, hour, minute, second, fraction, offset = match.groups()
+        second = second or "00"
+        if offset and offset.lower() == "z":
+            offset = "+00:00"
+        elif offset and ":" not in offset:
+            offset = offset[:3] + ":" + offset[3:]
+        text = (
+            f"{int(year):04d}-{int(month):02d}-{int(day):02d}{separator}"
+            f"{int(hour):02d}:{int(minute):02d}:{int(second):02d}"
+            f"{fraction or ''}{offset or ''}"
+        )
+    elif text.endswith(("Z", "z")):
+        text = text[:-1] + "+00:00"
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError as error:
+        raise ValueError(
+            f"{field}格式无法识别；可输入 2026-09-07 15:30:20 或 "
+            "2026-09-07T15:30:20.000+08:00。"
+        ) from error
+    assumed_local_zone = parsed.tzinfo is None or parsed.utcoffset() is None
+    if assumed_local_zone:
+        parsed = parsed.astimezone()
+    return parsed.isoformat(timespec="milliseconds"), assumed_local_zone
+
+
+def photo_file_time(path: str | Path) -> str:
+    """Return a photo file's modification time in the workstation time zone."""
+    timestamp = Path(path).stat().st_mtime
+    return datetime.fromtimestamp(timestamp).astimezone().isoformat(timespec="milliseconds")
 
 
 def catalog_from_model(
@@ -79,12 +143,10 @@ def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[d
         raise ValueError("模型在读取过程中发生变化，请重新选择。")
     photos = {}
     for role, path, timestamp in (("left", left_path, left_time), ("right", right_path, right_time)):
-        try:
-            parsed = datetime.fromisoformat(timestamp)
-        except ValueError as error:
-            raise ValueError("拍摄时间需要 ISO 8601 格式，例如 2026-09-07T10:00:00.000+08:00") from error
-        if parsed.tzinfo is None:
-            raise ValueError("拍摄时间必须包含时区，例如 +08:00。")
+        timestamp, assumed_local_zone = normalize_capture_time(
+            timestamp,
+            field="左目拍摄时间" if role == "left" else "右目拍摄时间",
+        )
         data = Path(path).read_bytes()
         image = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
         camera = getattr(calib, role)
@@ -92,7 +154,9 @@ def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[d
             raise ValueError(f"{role} 照片尺寸与标定尺寸不一致，不能缩放后直接使用原标定。")
         photos[role] = (data, {"camera_id": camera.camera_id, "path": role + Path(path).suffix.lower(),
             "sha256": hashlib.sha256(data).hexdigest(), "expected_width": camera.width, "expected_height": camera.height,
-            "captured_at": timestamp, "timestamp_source": "MANIFEST_OPERATOR_CONFIRMED", "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM"})
+            "captured_at": timestamp, "timestamp_source": "MANIFEST_OPERATOR_CONFIRMED",
+            "timestamp_timezone_assumed": assumed_local_zone,
+            "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM"})
     if photos["left"][1]["sha256"] == photos["right"][1]["sha256"]:
         raise ValueError("左右照片内容相同，请选择各自相机的原始照片。")
     run_id = f"field-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
@@ -298,7 +362,7 @@ class CaptureInputDialog:
         for row, key in ((4, "left_time"), (5, "right_time")):
             ttk.Label(main, text="左目拍摄时间" if key == "left_time" else "右目拍摄时间").grid(row=row, column=0, sticky="w", pady=4)
             ttk.Entry(main, textvariable=self.fields[key]).grid(row=row, column=1, sticky="ew", pady=4)
-        ttk.Label(main, text="时间示例：2026-09-07T10:00:00.000+08:00；填写实际拍摄时间，左右时间差会校验。").grid(row=6, column=0, columnspan=3, sticky="w", pady=4)
+        ttk.Label(main, text="选择照片后自动填写文件时间，请核对实际拍摄时间；支持 2026-09-07 10:00:00，未写时区时使用本机时区。").grid(row=6, column=0, columnspan=3, sticky="w", pady=4)
         model_toolbar = ttk.Frame(main)
         self.model_toolbar = model_toolbar
         model_toolbar.grid(row=7, column=0, columnspan=3, sticky="ew", pady=(7, 2))
@@ -347,6 +411,18 @@ class CaptureInputDialog:
             self.fields[key].set(selected)
             if key == "calibration":
                 self.pose_adjustment = {"mode": "keep"}
+            elif key in {"left", "right"}:
+                time_key = f"{key}_time"
+                try:
+                    self.fields[time_key].set(photo_file_time(selected))
+                    self.message.set(
+                        "已按本机时区带入照片文件修改时间；请核对为实际曝光时间，"
+                        "左右目仍需满足标定文件的同步时间差。"
+                    )
+                except OSError as error:
+                    self.app.messagebox.showerror(
+                        "照片时间读取失败", str(error), parent=self.window
+                    )
 
     def refresh(self) -> None:
         self.tree.delete(*self.tree.get_children())
@@ -458,10 +534,18 @@ class CaptureInputDialog:
                 payload.get("stereo_calibration", payload),
                 self.pose_adjustment,
             )
+            left_time, _ = normalize_capture_time(
+                self.fields["left_time"].get(), field="左目拍摄时间"
+            )
+            right_time, _ = normalize_capture_time(
+                self.fields["right_time"].get(), field="右目拍摄时间"
+            )
+            self.fields["left_time"].set(left_time)
+            self.fields["right_time"].set(right_time)
             path = create_capture_dataset(output_root=OUTPUT_ROOT / "captures",
                 model_path=Path(self.fields["model"].get()), pipes=self.pipes, calibration=calibration,
                 left_path=Path(self.fields["left"].get()), right_path=Path(self.fields["right"].get()),
-                left_time=self.fields["left_time"].get().strip(), right_time=self.fields["right_time"].get().strip(),
+                left_time=left_time, right_time=right_time,
                 pair_confirmed=self.confirmed.get(), previous_manifest=self.app.manifest_path if self.history.get() else None,
                 stl_unit=self.stl_unit.get() if Path(self.fields["model"].get()).suffix.lower() == ".stl" else None)
             self.app._load_sources(path, None)

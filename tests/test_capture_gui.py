@@ -5,9 +5,15 @@ import hashlib
 import json
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
-from pipe_twin.capture_gui import catalog_from_model, create_capture_dataset
+from pipe_twin.capture_gui import (
+    catalog_from_model,
+    create_capture_dataset,
+    normalize_capture_time,
+    photo_file_time,
+)
 from pipe_twin.camera_pose import apply_camera_pose
 from pipe_twin.cli import build_parser
 from pipe_twin.stereo_analyzer import _load_cad_scene
@@ -58,12 +64,41 @@ class CaptureInputTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "同一模型"):
                 create_capture_dataset(output_root=Path(temp), previous_manifest=MANIFEST, **changed)
 
-    def test_same_image_unconfirmed_pair_and_naive_time_are_rejected(self):
+    def test_same_image_unconfirmed_pair_and_date_without_clock_are_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
-            for changed in ({"right_path": self.arguments["left_path"]}, {"pair_confirmed": False}, {"left_time": "2026-09-07T10:00:00"}):
+            for changed in ({"right_path": self.arguments["left_path"]}, {"pair_confirmed": False}, {"left_time": "2026-09-07"}):
                 with self.subTest(changed=changed), self.assertRaises(ValueError):
                     create_capture_dataset(output_root=Path(temp), **(self.arguments | changed))
             self.assertEqual(list(Path(temp).iterdir()), [])
+
+    def test_common_local_time_formats_are_normalized_with_a_zone(self):
+        local, assumed = normalize_capture_time("2026/9/7 10:00")
+        self.assertTrue(assumed)
+        parsed = datetime.fromisoformat(local)
+        self.assertEqual((parsed.year, parsed.month, parsed.day, parsed.hour), (2026, 9, 7, 10))
+        self.assertIsNotNone(parsed.utcoffset())
+        explicit, assumed = normalize_capture_time("2026-09-07T10:00:00Z")
+        self.assertFalse(assumed)
+        self.assertTrue(explicit.endswith("+00:00"))
+        self.assertIsNotNone(datetime.fromisoformat(photo_file_time(self.arguments["left_path"])).utcoffset())
+
+        with tempfile.TemporaryDirectory() as temp:
+            path = create_capture_dataset(
+                output_root=Path(temp),
+                **(
+                    self.arguments
+                    | {
+                        "left_time": "2026/9/7 10:00:00",
+                        "right_time": "2026年9月7日 10时00分00.001秒",
+                    }
+                ),
+            )
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+            views = manifest["capture"]["capture_groups"][-1]["views"]
+            self.assertEqual(views["left"]["captured_at"][:23], "2026-09-07T10:00:00.000")
+            self.assertEqual(views["right"]["captured_at"][:23], "2026-09-07T10:00:00.001")
+            self.assertTrue(views["left"]["timestamp_timezone_assumed"])
+            self.assertTrue(views["right"]["timestamp_timezone_assumed"])
 
     def test_model_catalog_design_only_preserves_all_nine_cylinders(self):
         pipes, skipped = catalog_from_model(self.arguments["model_path"])
