@@ -113,6 +113,8 @@ CLI 和桌面 GUI 启动时会自动写入结构化 JSONL 日志，默认位置�
 
 如果 DXF 图元没有业务编号，界面会显示 `P001`、`P002` 等默认流水号。先点击 DXF 图元，再在右侧管道列表选择目标管道，点击“绑定DXF图元”，最后点击“保存DXF映射到manifest”；映射会写入 manifest 的 `elevation.entity_bindings`，并绑定 DXF SHA-256。保存后的 manifest 报告需要重新分析。
 
+没有现场清单时，导入 DXF 后可点击“从DXF生成manifest草稿”。程序会用图元流水号生成可编辑的管道目录；直线/折线的设计外径先用示意值 `1 mm`，圆的直径由半径计算，需在“现场数据录入”中核对并修改。该草稿用于建立身份和颜色映射，不能直接作为现场双目分析清单，仍需补充真实 CAD 模型、标定和照片。
+
 ### Windows PowerShell
 
 ```powershell

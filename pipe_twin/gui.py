@@ -1364,6 +1364,7 @@ class _PipeTwinApplication:
         ttk.Button(toolbar, text="现场数据录入", command=self._input_capture).pack(side="left", padx=3)
         ttk.Button(toolbar, text="打开合成示例", command=self._open_demo).pack(side="left", padx=3)
         ttk.Button(toolbar, text="导入DXF侧立面", command=self._import_dxf).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="从DXF生成manifest草稿", command=self._create_dxf_manifest_draft).pack(side="left", padx=3)
         ttk.Button(toolbar, text="指定图层颜色", command=self._choose_dxf_layer_color).pack(side="left", padx=3)
         ttk.Button(toolbar, text="保存DXF颜色配置", command=self._save_dxf_colors).pack(side="left", padx=3)
         ttk.Button(toolbar, text="绑定DXF图元", command=self._bind_dxf_entity).pack(side="left", padx=3)
@@ -1938,6 +1939,42 @@ class _PipeTwinApplication:
             self.projection_mode.set("dxf")
             self._draw_model()
             log_event(_LOGGER, "dxf_layer_color_changed", layer=layer, color=chosen.upper())
+
+    def _create_dxf_manifest_draft(self) -> None:
+        if self.dxf_elevation is None:
+            self.messagebox.showinfo("未导入 DXF", "请先导入 DXF 侧立面。")
+            return
+        pipes: list[dict[str, Any]] = []
+        for index, entity in enumerate(self.dxf_elevation.entities, 1):
+            points = arc_points(entity) if entity.kind == "ARC" else entity.points
+            if entity.kind == "CIRCLE" and entity.radius is not None:
+                cx, cy = entity.points[0]
+                centerline = [[cx - entity.radius, cy, 0.0], [cx + entity.radius, cy, 0.0]]
+                diameter = entity.radius * 2.0
+            elif len(points) >= 2:
+                centerline = [[points[0][0], points[0][1], 0.0], [points[-1][0], points[-1][1], 0.0]]
+                diameter = 1.0
+            else:
+                continue
+            entity_id = entity.entity_id or f"P{index:03d}"
+            pipes.append({"instance_id": index, "pipe_id": entity_id, "cad_object_id": entity_id, "layer_id": entity.layer, "color_class": entity.layer, "color_srgb": self.dxf_layer_colors.get(entity.layer, entity.color), "nominal_diameter_mm": round(float(diameter), 6), "centerline_world_mm": centerline})
+        if not pipes:
+            self.messagebox.showerror("无法生成草稿", "DXF 中没有可转换为管道目录的图元。")
+            return
+        selected = self.filedialog.asksaveasfilename(title="保存 DXF manifest 草稿", initialfile=f"{self.dxf_elevation.source_path.stem}.manifest.json", initialdir=str(self.dxf_elevation.source_path.parent), defaultextension=".json", filetypes=(("JSON", "*.json"),))
+        if not selected:
+            return
+        selected_path = Path(selected).resolve()
+        relative = os.path.relpath(self.dxf_elevation.source_path, selected_path.parent).replace("\\", "/")
+        if relative.startswith("../") or relative == "..":
+            self.messagebox.showerror("保存失败", "DXF 文件必须位于 manifest 草稿目录或其子目录内。")
+            return
+        payload = {"schema_version": "dxf-elevation-draft-v1", "dataset_id": f"dxf-draft-{self.dxf_elevation.source_sha256[:12]}", "model_revision": self.dxf_elevation.source_sha256[:16], "validation_scope": "DXF_ELEVATION_DRAFT", "model": {"path": relative, "sha256": self.dxf_elevation.source_sha256, "unit": "millimeter", "pipes": pipes}, "elevation": {"format": "dxf", "path": relative, "sha256": self.dxf_elevation.source_sha256, "layer_colors": dict(self.dxf_layer_colors), "entity_bindings": {entity["pipe_id"]: entity["pipe_id"] for entity in pipes}}}
+        selected_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        self._load_sources(selected_path, None)
+        self.projection_mode.set("dxf")
+        self._draw_model()
+        log_event(_LOGGER, "dxf_manifest_draft_created", manifest=selected_path, pipe_count=len(pipes))
 
     def _select_dxf_entity(self, entity_id: str) -> None:
         self.selected_dxf_entity_id = entity_id
