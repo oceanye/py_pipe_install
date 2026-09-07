@@ -6,8 +6,10 @@ import copy
 import hashlib
 import json
 import math
+from pathlib import Path
 from typing import Any, Mapping
 
+import cv2
 import numpy as np
 
 
@@ -16,20 +18,47 @@ POSE_MODE_LABELS = {
     "adjust_current": "当前位姿 + 角度/位置修正",
     "positive_z": "相机位于 +Z，朝向 -Z",
     "negative_z": "相机位于 -Z，朝向 +Z",
-    "positive_x": "相机位于 +X，朝向 -X",
-    "negative_x": "相机位于 -X，朝向 +X",
-    "positive_y": "相机位于 +Y，朝向 -Y（俯视）",
-    "negative_y": "相机位于 -Y，朝向 +Y（仰视）",
+    "positive_x": "侧立面：从右往左（CAD +X → -X）",
+    "negative_x": "侧立面：从左往右（CAD -X → +X）",
+    "positive_y": "侧立面：从上往下（CAD +Y → -Y）",
+    "negative_y": "侧立面：从下往上（CAD -Y → +Y）",
+}
+
+
+SIDE_ELEVATION_VIEWS = {
+    "top_down": {
+        "label": "从上往下",
+        "mode": "positive_y",
+        "outward_world": [0.0, 1.0, 0.0],
+    },
+    "bottom_up": {
+        "label": "从下往上",
+        "mode": "negative_y",
+        "outward_world": [0.0, -1.0, 0.0],
+    },
+    "left_right": {
+        "label": "从左往右",
+        "mode": "negative_x",
+        "outward_world": [-1.0, 0.0, 0.0],
+    },
+    "right_left": {
+        "label": "从右往左",
+        "mode": "positive_x",
+        "outward_world": [1.0, 0.0, 0.0],
+    },
 }
 
 
 _PRESET_FORWARD_UP = {
     "positive_z": ([0.0, 0.0, -1.0], [0.0, 1.0, 0.0]),
     "negative_z": ([0.0, 0.0, 1.0], [0.0, 1.0, 0.0]),
+    # Side-elevation presets keep CAD +Z (the pipe longitudinal direction in
+    # the supplied STL) horizontal in the image. The opposite view naturally
+    # reverses it while preserving a proper right-handed camera frame.
     "positive_x": ([-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]),
     "negative_x": ([1.0, 0.0, 0.0], [0.0, 1.0, 0.0]),
-    "positive_y": ([0.0, -1.0, 0.0], [0.0, 0.0, 1.0]),
-    "negative_y": ([0.0, 1.0, 0.0], [0.0, 0.0, 1.0]),
+    "positive_y": ([0.0, -1.0, 0.0], [1.0, 0.0, 0.0]),
+    "negative_y": ([0.0, 1.0, 0.0], [1.0, 0.0, 0.0]),
 }
 
 
@@ -78,6 +107,154 @@ def calibration_pose(calibration: Mapping[str, Any]) -> dict[str, Any]:
         "rotation_world_to_camera": parsed.left.rotation_world_to_camera.tolist(),
         "baseline_mm": parsed.baseline_mm,
         "registration_validated": parsed.registration_validated,
+    }
+
+
+def model_center_from_pipes(pipes: Any) -> np.ndarray:
+    """Return the axis-aligned centre of all catalogued pipe centreline ends."""
+    if not isinstance(pipes, list) or not pipes:
+        raise ValueError("请先从 CAD 模型读取管件目录")
+    try:
+        points = np.asarray(
+            [point for pipe in pipes for point in pipe["centerline_world_mm"]],
+            dtype=np.float64,
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("管件目录缺少有效的 CAD 中心线") from error
+    if points.ndim != 2 or points.shape[1] != 3 or not np.all(np.isfinite(points)):
+        raise ValueError("管件目录缺少有效的 CAD 中心线")
+    return (points.min(axis=0) + points.max(axis=0)) / 2.0
+
+
+def suggested_side_view(
+    pipes: Any,
+    view_key: str,
+    distance_mm: float,
+) -> dict[str, Any]:
+    """Aim one named side-elevation view at the CAD pipe group centre."""
+    if view_key not in SIDE_ELEVATION_VIEWS:
+        raise ValueError("请选择有效的 CAD 侧立面观察方向")
+    distance = _finite(distance_mm, "camera_distance_mm", bound=1_000_000)
+    if distance <= 0:
+        raise ValueError("相机到模型中心距离必须为正数")
+    target = model_center_from_pipes(pipes)
+    definition = SIDE_ELEVATION_VIEWS[view_key]
+    center = target + distance * np.asarray(definition["outward_world"])
+    return {
+        "view_key": view_key,
+        "view_label": definition["label"],
+        "mode": definition["mode"],
+        "target_world_mm": target.tolist(),
+        "center_world_mm": center.tolist(),
+        "distance_mm": distance,
+    }
+
+
+def _dominant_axis_degrees(
+    angles_degrees: np.ndarray,
+    weights: np.ndarray,
+) -> tuple[float, float]:
+    angles = np.mod(np.asarray(angles_degrees, dtype=np.float64), 180.0)
+    weights = np.asarray(weights, dtype=np.float64)
+    if angles.ndim != 1 or weights.shape != angles.shape or len(angles) < 2:
+        raise ValueError("没有足够的直线用于自动倾斜校正")
+    bins = np.zeros(180, dtype=np.float64)
+    for angle, weight in zip(angles, weights):
+        bins[int(round(angle)) % 180] += max(float(weight), 0.0)
+    smoothed = sum(np.roll(bins, offset) for offset in range(-7, 8))
+    peak = float(np.argmax(smoothed))
+    delta = (angles - peak + 90.0) % 180.0 - 90.0
+    selected = np.abs(delta) <= 10.0
+    if np.count_nonzero(selected) < 2 or float(np.sum(weights[selected])) <= 0:
+        raise ValueError("画面直线方向不集中，无法可靠自动校正倾斜")
+    radians = np.deg2rad(angles[selected] * 2.0)
+    vector = np.sum(weights[selected] * np.exp(1j * radians))
+    angle = math.degrees(math.atan2(vector.imag, vector.real)) / 2.0
+    angle %= 180.0
+    concentration = float(np.sum(weights[selected]) / max(np.sum(weights), 1e-9))
+    return angle, concentration
+
+
+def estimate_pipe_roll_correction(
+    image_path: str | Path,
+    pipes: Any,
+    calibration: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Match the dominant observed pipe line to the CAD projection using roll."""
+    from .stereo_analyzer import _calibration_from_manifest
+
+    path = Path(image_path)
+    if not path.is_file():
+        raise ValueError("请先同步抓拍包含管件的左目图")
+    image = cv2.imdecode(
+        np.frombuffer(path.read_bytes(), dtype=np.uint8),
+        cv2.IMREAD_COLOR,
+    )
+    if image is None:
+        raise ValueError("左目图无法解码")
+    parsed = _calibration_from_manifest(calibration)
+    if (image.shape[1], image.shape[0]) != (parsed.left.width, parsed.left.height):
+        raise ValueError("左目图尺寸与当前标定不一致")
+
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    saturated = cv2.inRange(hsv, (0, 55, 35), (179, 255, 255))
+    saturated = cv2.morphologyEx(
+        saturated, cv2.MORPH_OPEN, np.ones((3, 3), dtype=np.uint8)
+    )
+    edges = cv2.Canny(saturated, 40, 120)
+    lines = cv2.HoughLinesP(
+        edges,
+        1,
+        np.pi / 1800.0,
+        threshold=max(30, image.shape[1] // 50),
+        minLineLength=max(80, image.shape[1] // 12),
+        maxLineGap=max(20, image.shape[1] // 40),
+    )
+    if lines is None or len(lines) < 2:
+        raise ValueError("未检测到足够的彩色管件直线，无法自动校正倾斜")
+    observed_angles: list[float] = []
+    observed_weights: list[float] = []
+    for x1, y1, x2, y2 in lines.reshape(-1, 4):
+        dx, dy = float(x2 - x1), float(y2 - y1)
+        length = math.hypot(dx, dy)
+        if length > 0:
+            observed_angles.append(math.degrees(math.atan2(dy, dx)))
+            observed_weights.append(length)
+    observed, concentration = _dominant_axis_degrees(
+        np.asarray(observed_angles), np.asarray(observed_weights)
+    )
+    if concentration < 0.30:
+        raise ValueError("彩色管件直线方向不集中，无法可靠自动校正倾斜")
+
+    model_angles: list[float] = []
+    model_weights: list[float] = []
+    for pipe in pipes:
+        line = np.asarray(pipe.get("centerline_world_mm"), dtype=np.float64)
+        if line.shape != (2, 3) or not np.all(np.isfinite(line)):
+            continue
+        world_vector = line[1] - line[0]
+        camera_vector = parsed.left.rotation_world_to_camera @ world_vector
+        projected_length = float(np.linalg.norm(camera_vector[:2]))
+        if projected_length > 1e-6:
+            model_angles.append(
+                math.degrees(math.atan2(camera_vector[1], camera_vector[0]))
+            )
+            model_weights.append(projected_length)
+    expected, _model_concentration = _dominant_axis_degrees(
+        np.asarray(model_angles), np.asarray(model_weights)
+    )
+    correction = (observed - expected + 90.0) % 180.0 - 90.0
+    if abs(correction) > 20.0:
+        raise ValueError(
+            f"自动估计需要修正 {correction:.2f}°，超过轻微倾斜的 ±20° 范围；"
+            "请先选择正确的侧立面观察方向"
+        )
+    return {
+        "roll_correction_deg": float(correction),
+        "observed_pipe_angle_deg": float(observed),
+        "expected_cad_angle_deg": float(expected),
+        "line_count": int(len(observed_angles)),
+        "direction_concentration": concentration,
     }
 
 
@@ -169,6 +346,10 @@ def apply_camera_pose(
 
 __all__ = [
     "POSE_MODE_LABELS",
+    "SIDE_ELEVATION_VIEWS",
     "apply_camera_pose",
     "calibration_pose",
+    "estimate_pipe_roll_correction",
+    "model_center_from_pipes",
+    "suggested_side_view",
 ]

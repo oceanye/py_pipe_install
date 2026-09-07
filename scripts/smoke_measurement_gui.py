@@ -105,6 +105,10 @@ def main():
         assert qr.marker_edge.get() == "120.0"
         qr.window.destroy()
         pose = CameraPoseDialog(wizard, calibration)
+        pose.distance.set("1000")
+        pose.select_side_view("top_down")
+        assert pose.mode.get() == POSE_MODE_LABELS["positive_y"]
+        assert pose.roll.get() == "0"
         pose.mode.set(POSE_MODE_LABELS["positive_z"])
         for variable, value in zip(pose.center, (250.0, 150.0, 2000.0)):
             variable.set(str(value))
@@ -127,7 +131,7 @@ def main():
     root.destroy()
     print(json.dumps({"status": "PASS", "pipe_count": 9, "pair_count": 36,
                       "measured_count": len(measured), "export_directory": str(folder), "layout": layout,
-                      "checks": ["empty_start", "bound_report", "photo_zoom", "roi", "reference_save_reload", "pair_table", "detail", "capture_dialog", "stereo_camera_dialog", "qr_registration_dialog", "camera_pose_dialog", "export"]}, ensure_ascii=True))
+                      "checks": ["empty_start", "bound_report", "photo_zoom", "roi", "reference_save_reload", "pair_table", "detail", "capture_dialog", "stereo_camera_dialog", "qr_registration_dialog", "side_view_pose", "camera_pose_dialog", "export"]}, ensure_ascii=True))
 
 
 if __name__ == "__main__":

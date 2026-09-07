@@ -156,6 +156,32 @@ class CaptureInputTests(unittest.TestCase):
         self.assertTrue(all(pipe["color_srgb"] == "#B0B0B0" for pipe in pipes))
         self.assertTrue(all(pipe["nominal_diameter_mm"] > 0 for pipe in pipes))
 
+    def test_high_resolution_capture_allows_more_than_512_disparities(self):
+        pipes, skipped = catalog_from_model(STL_MODEL, stl_unit="millimeter")
+        self.assertFalse(skipped)
+        with tempfile.TemporaryDirectory() as temp:
+            path = create_capture_dataset(
+                output_root=Path(temp),
+                **(
+                    self.arguments
+                    | {
+                        "model_path": STL_MODEL,
+                        "pipes": pipes,
+                        "stl_unit": "millimeter",
+                    }
+                ),
+            )
+            manifest = json.loads(path.read_text(encoding="utf-8"))
+        selected = manifest["analysis"]["stereo_matching"]["num_disparities"]
+        self.assertGreater(selected, 512)
+        self.assertLess(selected, 1920)
+        self.assertEqual(
+            manifest["analysis"]["intake_disparity_estimate"][
+                "selected_num_disparities"
+            ],
+            selected,
+        )
+
     def test_stl_camera_pose_and_capture_package_reload_end_to_end(self):
         pipes, skipped = catalog_from_model(STL_MODEL, stl_unit="millimeter")
         self.assertFalse(skipped)

@@ -3,12 +3,20 @@ from __future__ import annotations
 import copy
 import json
 import math
+import tempfile
 import unittest
 from pathlib import Path
 
+import cv2
 import numpy as np
 
-from pipe_twin.camera_pose import apply_camera_pose, calibration_pose
+from pipe_twin.camera_pose import (
+    apply_camera_pose,
+    calibration_pose,
+    estimate_pipe_roll_correction,
+    model_center_from_pipes,
+    suggested_side_view,
+)
 from pipe_twin.stereo_analyzer import _calibration_from_manifest
 
 
@@ -83,6 +91,54 @@ class CameraPoseTests(unittest.TestCase):
                 self.assertTrue(np.allclose(pose["center_world_mm"], [100, 200, 300]))
                 self.assertTrue(np.allclose(pose["forward_world"], forward, atol=1e-9))
                 self.assertTrue(pose["registration_validated"])
+
+    def test_side_elevation_buttons_target_model_center_from_four_directions(self):
+        pipes = [
+            {"centerline_world_mm": [[10, 20, 30], [10, 20, 130]]},
+            {"centerline_world_mm": [[30, 60, 30], [30, 60, 130]]},
+        ]
+        self.assertTrue(np.allclose(model_center_from_pipes(pipes), [20, 40, 80]))
+        expected = {
+            "top_down": ("positive_y", [20, 1040, 80]),
+            "bottom_up": ("negative_y", [20, -960, 80]),
+            "left_right": ("negative_x", [-980, 40, 80]),
+            "right_left": ("positive_x", [1020, 40, 80]),
+        }
+        for key, (mode, center) in expected.items():
+            with self.subTest(key=key):
+                result = suggested_side_view(pipes, key, 1000.0)
+                self.assertEqual(result["mode"], mode)
+                self.assertTrue(np.allclose(result["center_world_mm"], center))
+
+    def test_automatic_pipe_roll_matches_a_small_image_tilt(self):
+        pipes = [
+            {"centerline_world_mm": [[0, 0, 0], [0, 0, 700]]},
+            {"centerline_world_mm": [[50, 0, 0], [50, 0, 700]]},
+        ]
+        calibration = apply_camera_pose(
+            self.calibration,
+            {
+                "mode": "positive_y",
+                "center_world_mm": [0, 1000, 350],
+                "registration_validated": False,
+            },
+        )
+        image = np.zeros((1080, 1920, 3), dtype=np.uint8)
+        angle = math.radians(4.0)
+        for y, color in ((350, (0, 0, 255)), (650, (255, 0, 0))):
+            x1, x2 = 200, 1720
+            y2 = round(y + math.tan(angle) * (x2 - x1))
+            cv2.line(image, (x1, y), (x2, y2), color, 45)
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "tilted.png"
+            self.assertTrue(cv2.imwrite(str(path), image))
+            estimate = estimate_pipe_roll_correction(
+                path,
+                pipes,
+                calibration,
+            )
+        self.assertAlmostEqual(estimate["roll_correction_deg"], 4.0, delta=0.5)
+        self.assertGreater(estimate["line_count"], 2)
 
     def test_invalid_adjustments_fail_closed(self):
         cases = (

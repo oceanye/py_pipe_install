@@ -16,7 +16,15 @@ import cv2
 import numpy as np
 
 from .cad_model import load_cad_scene
-from .camera_pose import POSE_MODE_LABELS, apply_camera_pose, calibration_pose
+from .camera_pose import (
+    POSE_MODE_LABELS,
+    SIDE_ELEVATION_VIEWS,
+    apply_camera_pose,
+    calibration_pose,
+    estimate_pipe_roll_correction,
+    model_center_from_pipes,
+    suggested_side_view,
+)
 from .pipeline import atomic_write_text, ensure_paths_distinct
 from .qr_registration import (
     QrRegistrationError,
@@ -295,12 +303,30 @@ def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[d
         positive_z = camera_points[:, 2][camera_points[:, 2] > 0]
         if not len(positive_z):
             raise ValueError("模型在相机后方，请检查 CAD 与相机的配准。")
-        count = int(np.ceil((calib.left.fx * calib.baseline_mm / np.min(positive_z) + 48) / 16) * 16)
-        if count >= calib.left.width or count > 512:
-            raise ValueError("当前相机距离/基线所需视差范围过大，请检查标定和配准或用已有清单配置。")
+        nearest_depth_mm = float(np.min(positive_z))
+        expected_max_disparity_px = (
+            calib.left.fx * calib.baseline_mm / nearest_depth_mm
+        )
+        count = int(np.ceil((expected_max_disparity_px + 48) / 16) * 16)
+        if count >= calib.left.width:
+            raise ValueError(
+                "当前标定与 CAD 位姿需要的视差搜索范围已达到整幅图宽，"
+                "左右目没有足够重叠区域。"
+                f"最近 CAD 深度={nearest_depth_mm:.1f} mm，"
+                f"焦距={calib.left.fx:.1f} px，基线={calib.baseline_mm:.1f} mm，"
+                f"预计最大视差={expected_max_disparity_px:.1f} px，"
+                f"搜索宽度={count} px，图像宽度={calib.left.width} px。"
+                "请检查 STL 单位、二维码 CAD 坐标和纸面方向，或适当增加相机距离。"
+            )
         manifest["analysis"] = {"stereo_matching": {"num_disparities": max(16, count)},
                                 "minimum_focus_laplacian_variance": 5.0,
-                                "minimum_luminance_p05": 1.0, "maximum_luminance_p95": 254.0}
+                                "minimum_luminance_p05": 1.0, "maximum_luminance_p95": 254.0,
+                                "intake_disparity_estimate": {
+                                    "nearest_registered_cad_depth_mm": nearest_depth_mm,
+                                    "expected_max_disparity_px": expected_max_disparity_px,
+                                    "selected_num_disparities": max(16, count),
+                                    "image_width_px": calib.left.width,
+                                }}
     manifest["capture"]["capture_groups"].append({"capture_id": run_id,
         "views": {role: record for role, (_, record) in photos.items()}})
     root = Path(output_root).resolve() / run_id
@@ -818,7 +844,7 @@ class CameraPoseDialog:
         self.calibration = calibration
         self.window = tk.Toplevel(owner.window)
         self.window.title("双目相机方向与倾斜校正")
-        self.window.geometry("650x520")
+        self.window.geometry("760x720")
         self.window.resizable(False, False)
         self.window.transient(owner.window)
         self.mode = tk.StringVar(value=POSE_MODE_LABELS.get(stored.get("mode", "keep"), POSE_MODE_LABELS["keep"]))
@@ -830,61 +856,166 @@ class CameraPoseDialog:
         self.validated = tk.BooleanVar(
             value=bool(stored.get("registration_validated", False))
         )
+        self.distance = tk.StringVar(value=str(owner.side_view_distance_mm))
+        self.auto_message = tk.StringVar(value="")
+        try:
+            target = model_center_from_pipes(owner.pipes)
+            target_text = ", ".join(f"{value:.2f}" for value in target)
+            self.target_text = f"管件组 CAD 中心 [{target_text}] mm"
+        except ValueError as error:
+            self.target_text = str(error)
         frame = ttk.Frame(self.window, padding=14)
         frame.pack(fill="both", expand=True)
         ttk.Label(
             frame,
             text="调整的是双目相机整体相对 CAD 的位置和方向。左右相机始终保持刚性基线，原图不会被二次旋转。",
-            wraplength=600,
+            wraplength=700,
         ).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 12))
-        ttk.Label(frame, text="相机所在方向").grid(row=1, column=0, sticky="w", pady=5)
+        side = ttk.LabelFrame(frame, text="CAD 侧立面快速方向", padding=9)
+        side.grid(row=1, column=0, columnspan=4, sticky="ew", pady=(0, 10))
+        ttk.Label(side, text=self.target_text, foreground="#355371").grid(
+            row=0, column=0, columnspan=4, sticky="w", pady=(0, 7)
+        )
+        ttk.Label(side, text="相机到模型中心距离 / mm").grid(
+            row=1, column=0, sticky="w", pady=4
+        )
+        ttk.Entry(side, textvariable=self.distance, width=14).grid(
+            row=1, column=1, sticky="w", padx=(6, 12), pady=4
+        )
+        for column, (view_key, definition) in enumerate(SIDE_ELEVATION_VIEWS.items()):
+            ttk.Button(
+                side,
+                text=definition["label"],
+                command=lambda key=view_key: self.select_side_view(key),
+            ).grid(row=2, column=column, padx=4, pady=(7, 2), sticky="ew")
+            side.columnconfigure(column, weight=1)
+        ttk.Label(frame, text="当前/高级方向").grid(row=2, column=0, sticky="w", pady=5)
         ttk.Combobox(
             frame,
             textvariable=self.mode,
             values=tuple(POSE_MODE_LABELS.values()),
             state="readonly",
             width=39,
-        ).grid(row=1, column=1, columnspan=3, sticky="ew", pady=5)
+        ).grid(row=2, column=1, columnspan=3, sticky="ew", pady=5)
         ttk.Label(frame, text="双目基线中点（CAD 世界坐标 / mm）").grid(
-            row=2, column=0, columnspan=4, sticky="w", pady=(12, 3)
+            row=3, column=0, columnspan=4, sticky="w", pady=(12, 3)
         )
         center_frame = ttk.Frame(frame)
-        center_frame.grid(row=3, column=0, columnspan=4, sticky="w")
+        center_frame.grid(row=4, column=0, columnspan=4, sticky="w")
         for axis, variable in zip("XYZ", self.center):
             ttk.Label(center_frame, text=axis).pack(side="left", padx=(0, 3))
             ttk.Entry(center_frame, textvariable=variable, width=14).pack(
                 side="left", padx=(0, 12)
             )
         ttk.Label(frame, text="相对所选方向的角度修正（度）").grid(
-            row=4, column=0, columnspan=4, sticky="w", pady=(14, 3)
+            row=5, column=0, columnspan=2, sticky="w", pady=(14, 3)
         )
+        ttk.Button(
+            frame,
+            text="自动轻微倾斜（roll）",
+            command=self.auto_tilt,
+        ).grid(row=5, column=2, sticky="e", padx=4, pady=(10, 3))
+        ttk.Button(
+            frame,
+            text="二维码自动完整位姿",
+            command=self.open_qr,
+        ).grid(row=5, column=3, sticky="e", padx=4, pady=(10, 3))
         angle_fields = (
             ("水平偏航 yaw", self.yaw, "让投影管轴左右转动"),
             ("上下俯仰 pitch", self.pitch, "修正相机抬头/低头"),
             ("画面滚转 roll", self.roll, "修正相机画面倾斜"),
         )
-        for row, (label, variable, hint) in enumerate(angle_fields, start=5):
+        for row, (label, variable, hint) in enumerate(angle_fields, start=6):
             ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", pady=5)
             ttk.Entry(frame, textvariable=variable, width=14).grid(row=row, column=1, sticky="w", pady=5)
             ttk.Label(frame, text=hint, foreground="#4A6178").grid(row=row, column=2, columnspan=2, sticky="w", pady=5)
+        ttk.Label(
+            frame,
+            textvariable=self.auto_message,
+            foreground="#355371",
+            wraplength=700,
+        ).grid(row=9, column=0, columnspan=4, sticky="w", pady=(7, 0))
         ttk.Checkbutton(
             frame,
             text="已使用固定控制点验证调整后的相机—CAD 配准",
             variable=self.validated,
-        ).grid(row=8, column=0, columnspan=4, sticky="w", pady=(14, 5))
+        ).grid(row=10, column=0, columnspan=4, sticky="w", pady=(10, 5))
         ttk.Label(
             frame,
             text=(
                 "如果选择“沿用标定文件位姿”，下方位置和角度不生效。选择其他模式后，未勾选控制点验证时仍可保存数据，"
                 "但自动安装与尺寸状态会保持待确认。管件不需要正对相机；完整三维旋转会用于 CAD 投影、点云和前后关系。"
             ),
-            wraplength=600,
+            wraplength=700,
             foreground="#8A4E00",
-        ).grid(row=9, column=0, columnspan=4, sticky="w", pady=8)
+        ).grid(row=11, column=0, columnspan=4, sticky="w", pady=8)
         buttons = ttk.Frame(frame)
-        buttons.grid(row=10, column=0, columnspan=4, sticky="e", pady=10)
+        buttons.grid(row=12, column=0, columnspan=4, sticky="e", pady=10)
         ttk.Button(buttons, text="取消", command=self.window.destroy).pack(side="left", padx=4)
         ttk.Button(buttons, text="应用方向与倾斜", command=self.save).pack(side="left", padx=4)
+
+    def select_side_view(self, view_key: str) -> None:
+        try:
+            suggestion = suggested_side_view(
+                self.owner.pipes,
+                view_key,
+                float(self.distance.get()),
+            )
+            self.mode.set(POSE_MODE_LABELS[suggestion["mode"]])
+            for variable, value in zip(self.center, suggestion["center_world_mm"]):
+                variable.set(f"{value:.6g}")
+            self.yaw.set("0")
+            self.pitch.set("0")
+            self.roll.set("0")
+            self.validated.set(False)
+            self.owner.side_view_distance_mm = suggestion["distance_mm"]
+            self.auto_message.set(
+                f"已选择“{suggestion['view_label']}”，相机自动对准管件组 CAD 中心；"
+                "可抓拍后运行自动轻微倾斜。"
+            )
+        except ValueError as error:
+            self.owner.app.messagebox.showerror(
+                "侧立面方向无效", str(error), parent=self.window
+            )
+
+    def auto_tilt(self) -> None:
+        try:
+            inverse_labels = {label: mode for mode, label in POSE_MODE_LABELS.items()}
+            mode = inverse_labels[self.mode.get()]
+            if mode == "keep":
+                raise ValueError("请先选择一个 CAD 侧立面观察方向")
+            candidate = apply_camera_pose(
+                self.calibration,
+                {
+                    "mode": mode,
+                    "center_world_mm": [float(value.get()) for value in self.center],
+                    "yaw_deg": float(self.yaw.get()),
+                    "pitch_deg": float(self.pitch.get()),
+                    "roll_deg": 0.0,
+                    "registration_validated": False,
+                },
+            )
+            estimate = estimate_pipe_roll_correction(
+                self.owner.fields["left"].get(),
+                self.owner.pipes,
+                candidate,
+            )
+            self.roll.set(f"{estimate['roll_correction_deg']:.6g}")
+            self.validated.set(False)
+            self.auto_message.set(
+                f"自动倾斜：画面管轴 {estimate['observed_pipe_angle_deg']:.2f}°，"
+                f"CAD 投影 {estimate['expected_cad_angle_deg']:.2f}°，"
+                f"已填写 roll={estimate['roll_correction_deg']:.2f}°；"
+                f"使用 {estimate['line_count']} 条线段。"
+            )
+        except (KeyError, ValueError) as error:
+            self.owner.app.messagebox.showerror(
+                "自动倾斜失败", str(error), parent=self.window
+            )
+
+    def open_qr(self) -> None:
+        self.window.destroy()
+        self.owner.qr_registration()
 
     def save(self) -> None:
         try:
@@ -900,6 +1031,10 @@ class CameraPoseDialog:
             adjusted = apply_camera_pose(self.calibration, adjustment)
             pose = calibration_pose(adjusted)
             self.owner.pose_adjustment = adjustment
+            try:
+                self.owner.side_view_distance_mm = float(self.distance.get())
+            except ValueError:
+                pass
             if adjustment["mode"] == "keep":
                 self.owner.message.set("将沿用标定文件中的相机位置和方向。")
             else:
@@ -930,6 +1065,7 @@ class CaptureInputDialog:
         self.pose_adjustment: dict[str, Any] = {"mode": "keep"}
         self.calibration_override: dict[str, Any] | None = None
         self.qr_settings: dict[str, Any] = {}
+        self.side_view_distance_mm = 1000.0
         self.timestamp_sources = {
             "left": "MANIFEST_OPERATOR_CONFIRMED",
             "right": "MANIFEST_OPERATOR_CONFIRMED",
