@@ -1297,7 +1297,7 @@ class _PipeTwinApplication:
     def __init__(
         self,
         root: Any,
-        manifest_path: str | Path,
+        manifest_path: str | Path | None,
         report_path: str | Path | None,
     ) -> None:
         import tkinter as tk
@@ -1308,11 +1308,11 @@ class _PipeTwinApplication:
         self.filedialog = filedialog
         self.messagebox = messagebox
         self.root = root
-        self.manifest_path = Path(manifest_path).resolve()
+        self.manifest_path = Path(manifest_path).resolve() if manifest_path else None
         self.report_path = Path(report_path).resolve() if report_path else None
         self.manifest: dict[str, Any] = {}
         self.report: dict[str, Any] | None = None
-        self.dashboard: dict[str, Any] = {}
+        self.dashboard: dict[str, Any] = _empty_dashboard(message="载入现场清单，或打开合成示例开始使用。")
         self.selected_pipe_id: str | None = None
         self.projection_mode = tk.StringVar(value="elevation")
         self.banner_text = tk.StringVar(value="正在载入……")
@@ -1327,11 +1327,19 @@ class _PipeTwinApplication:
         self._model_actual_sha256: str | None = None
         self._photo_actual_sha256: dict[str, str] = {}
 
-        self.root.title("管道数字孪生双目识别")
+        self.root.title("管件测量工作台 · 外径 / 中心距 / 净距 / 前后状态")
         self.root.geometry("1480x900")
-        self.root.minsize(1100, 680)
+        self.root.minsize(1180, 780)
+        style = ttk.Style(self.root)
+        if "clam" in style.theme_names():
+            style.theme_use("clam")
+        style.configure(".", font=("Microsoft YaHei UI", 10))
+        style.configure("Treeview", rowheight=28)
         self._build_widgets()
-        self._load_sources(self.manifest_path, self.report_path)
+        if self.manifest_path:
+            self._load_sources(self.manifest_path, self.report_path)
+        else:
+            self._refresh_dashboard()
         self.root.after(80, self._poll_worker)
 
     def _build_widgets(self) -> None:
@@ -1344,13 +1352,9 @@ class _PipeTwinApplication:
         ttk.Button(toolbar, text="载入识别结果", command=self._choose_report).pack(
             side="left", padx=3
         )
-        ttk.Button(toolbar, text="选择左图预览", command=lambda: self._choose_photo("left")).pack(
-            side="left", padx=3
-        )
-        ttk.Button(toolbar, text="选择右图预览", command=lambda: self._choose_photo("right")).pack(
-            side="left", padx=3
-        )
-        self.run_button = ttk.Button(toolbar, text="运行双目识别", command=self._run_analysis)
+        ttk.Button(toolbar, text="现场数据录入", command=self._input_capture).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="打开合成示例", command=self._open_demo).pack(side="left", padx=3)
+        self.run_button = ttk.Button(toolbar, text="运行双目识别与测量", command=self._run_analysis)
         self.run_button.pack(side="left", padx=(14, 3))
         ttk.Label(toolbar, text="模型视图：").pack(side="left", padx=(18, 2))
         projection = ttk.Combobox(
@@ -1374,7 +1378,16 @@ class _PipeTwinApplication:
         )
         self.banner.pack(fill="x")
 
-        panes = ttk.Panedwindow(self.root, orient="horizontal")
+        self.main_tabs = ttk.Notebook(self.root)
+        self.main_tabs.pack(fill="both", expand=True)
+        measurement_tab = ttk.Frame(self.main_tabs)
+        cad_tab = ttk.Frame(self.main_tabs)
+        self.main_tabs.add(measurement_tab, text="测量工作台")
+        self.main_tabs.add(cad_tab, text="CAD 与识别证据")
+        from .measurement_gui import MeasurementPanel
+
+        self.measurement_panel = MeasurementPanel(measurement_tab, self)
+        panes = ttk.Panedwindow(cad_tab, orient="horizontal")
         panes.pack(fill="both", expand=True, padx=8, pady=8)
         left = ttk.Frame(panes)
         right = ttk.Frame(panes, width=560)
@@ -1387,6 +1400,10 @@ class _PipeTwinApplication:
         stereo_tab = ttk.Frame(notebook)
         notebook.add(model_tab, text="CAD 状态视图")
         notebook.add(stereo_tab, text="左右照片")
+        preview_toolbar = ttk.Frame(stereo_tab)
+        preview_toolbar.pack(fill="x")
+        for role, label in (("left", "左"), ("right", "右")):
+            ttk.Button(preview_toolbar, text=f"选择{label}图（仅预览）", command=lambda r=role: self._choose_photo(r)).pack(side="left", padx=3)
 
         self.model_canvas = tk.Canvas(model_tab, bg="#F4F6F8", highlightthickness=0)
         self.model_canvas.pack(fill="both", expand=True)
@@ -1418,7 +1435,7 @@ class _PipeTwinApplication:
         self.tree = ttk.Treeview(right, columns=columns, show="tree headings", selectmode="browse")
         self.tree.heading("#0", text="pipe_id")
         self.tree.heading("state", text="状态")
-        self.tree.heading("diameter", text="直径/mm")
+        self.tree.heading("diameter", text="设计外径/mm")
         self.tree.heading("layer", text="层")
         self.tree.heading("left", text="左目")
         self.tree.heading("right", text="右目")
@@ -1439,7 +1456,7 @@ class _PipeTwinApplication:
         self.tree.bind("<<TreeviewSelect>>", self._select_tree_pipe)
 
         detail = ttk.Label(
-            self.root,
+            cad_tab,
             textvariable=self.detail_text,
             anchor="w",
             justify="left",
@@ -1608,6 +1625,9 @@ class _PipeTwinApplication:
             self._load_sources(Path(selected), None)
 
     def _choose_report(self) -> None:
+        if not self.manifest:
+            self.messagebox.showinfo("先载入清单", "请先载入现场清单或打开示例，再载入对应识别结果。")
+            return
         selected = self.filedialog.askopenfilename(
             title="选择识别结果",
             filetypes=(("JSON", "*.json"), ("All files", "*.*")),
@@ -1698,6 +1718,12 @@ class _PipeTwinApplication:
             self.banner_text.set(f"安全降级：全部管道显示为不确定。{messages}")
         self._draw_model()
         self._update_detail()
+        if hasattr(self, "measurement_panel"):
+            self.measurement_panel.refresh()
+        if not self.manifest:
+            self.banner_text.set("开始：载入现场清单 / 现场数据录入；也可打开合成示例熟悉操作。")
+        elif "SYNTHETIC" in self.manifest.get("validation_scope", ""):
+            self.banner_text.set("合成示例数据 · 可用于软件操作与算法回归；现场精度需要真实双目照片与实测样本验证。")
 
     @staticmethod
     def _view_label(record: object) -> str:
@@ -1818,6 +1844,9 @@ class _PipeTwinApplication:
         for role in ("left", "right"):
             self._render_photo(role)
         self._update_detail()
+        if hasattr(self, "measurement_panel"):
+            self.measurement_panel.pipe_id.set(pipe_id)
+            self.measurement_panel.selection_changed()
 
     def _selected_pipe(self) -> Mapping[str, Any] | None:
         return next(
@@ -1955,28 +1984,38 @@ class _PipeTwinApplication:
     def _run_analysis(self) -> None:
         if self._analysis_running:
             return
+        if not self.manifest_path:
+            self.messagebox.showinfo("尚未载入数据", "请先载入现场清单或打开合成示例。")
+            return
+        try:
+            options = self.measurement_panel.analysis_options()
+        except ValueError as error:
+            self.messagebox.showerror("测量设置无效", str(error))
+            return
+        self._analysis_request = (self.manifest_path, copy.deepcopy(self.manifest), options, self._manifest_sha256)
         self._analysis_running = True
         self.run_button.configure(state="disabled")
         self.banner.configure(bg="#DCEBFA", fg="#164B75")
-        self.banner_text.set("正在后台运行双目识别……")
+        self.banner_text.set("正在分析双目照片、局部管径、中心距、净距与前后关系……")
         thread = threading.Thread(target=self._analysis_worker, daemon=True)
         thread.start()
 
     def _analysis_worker(self) -> None:
         try:
-            capture = self.manifest.get("capture")
+            manifest_path, manifest, options, _digest = self._analysis_request
+            capture = manifest.get("capture")
             capture_kind = capture.get("kind") if isinstance(capture, Mapping) else None
             if (
-                self.manifest.get("schema_version") == "2.0"
+                manifest.get("schema_version") == "2.0"
                 or capture_kind == "stereo_still_capture_set"
             ):
                 from .stereo_analyzer import analyze_stereo_capture
 
-                report = analyze_stereo_capture(self.manifest_path)
+                report = analyze_stereo_capture(manifest_path, measurement_options=options)
             else:
                 from .pipeline import analyze_manifest
 
-                report = analyze_manifest(self.manifest_path)
+                report = analyze_manifest(manifest_path)
             self._worker_messages.put(("ok", report))
         except Exception as error:
             self._worker_messages.put(("error", error))
@@ -1989,6 +2028,11 @@ class _PipeTwinApplication:
             return
         self._analysis_running = False
         self.run_button.configure(state="normal")
+        if (self._analysis_request[0] != self.manifest_path
+                or self._analysis_request[3] != self._manifest_sha256):
+            self.measurement_panel.notice.set("上一次分析完成；当前数据已切换，请分析当前照片。")
+            self.root.after(80, self._poll_worker)
+            return
         if kind == "error":
             # A failed rerun must not leave the previous decisive report on
             # screen.  The manifest remains available for diagnostics, but
@@ -2029,11 +2073,22 @@ class _PipeTwinApplication:
                 self.dashboard = dashboard
                 self.selected_pipe_id = None
                 self._refresh_dashboard()
+                self.measurement_panel.notice.set("分析完成。查看逐管状态和间距/前后关系，可录入实测样本或导出报告。")
         self.root.after(80, self._poll_worker)
+
+    def _open_demo(self) -> None:
+        path = Path(__file__).resolve().parents[1] / "test_model" / "field_stereo_demo_manifest.json"
+        self._load_sources(path, None)
+        self.main_tabs.select(0)
+
+    def _input_capture(self) -> None:
+        from .capture_gui import CaptureInputDialog
+
+        CaptureInputDialog(self)
 
 
 def launch_gui(
-    manifest_path: str | Path,
+    manifest_path: str | Path | None = None,
     report_path: str | Path | None = None,
 ) -> None:
     """Launch the Windows-friendly local desktop dashboard.

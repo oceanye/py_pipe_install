@@ -122,7 +122,7 @@ def build_parser() -> argparse.ArgumentParser:
     gui_parser = subparsers.add_parser(
         "gui", help="open the local CAD-bound pipe status dashboard"
     )
-    gui_parser.add_argument("--manifest", required=True, help="manifest JSON")
+    gui_parser.add_argument("--manifest", help="optional manifest JSON; omit for an empty measurement workbench")
     gui_parser.add_argument("--report", help="optional recognition report JSON")
     return parser
 

@@ -962,7 +962,10 @@ def _compute_stereo_depth(
     minimum_depth = config["minimum_depth_mm"]
     maximum_depth = config["maximum_depth_mm"]
     left_candidate = left_disparity > max(float(matching["min_disparity"]), 0.0)
-    right_candidate = right_disparity < 0.0
+    right_minimum = -matching["min_disparity"] - matching["num_disparities"]
+    # OpenCV encodes an invalid match as minDisparity - 1.  For the
+    # right matcher this is negative too, so a sign check is insufficient.
+    right_candidate = (right_disparity >= right_minimum) & (right_disparity < 0.0)
 
     # A one-way disparity can be a false match, especially on smooth pipes.
     # Only mutually consistent left/right samples are allowed to become depth
@@ -982,6 +985,7 @@ def _compute_stereo_depth(
         left_in_bounds
         & np.isfinite(sampled_right)
         & (sampled_right < 0)
+        & (sampled_right >= right_minimum)
         & (np.abs(left_disparity + sampled_right) <= consistency_limit)
     )
 
@@ -1761,6 +1765,8 @@ def analyze_stereo_capture(
     manifest_path: str | Path,
     report_output_path: str | Path | None = None,
     evidence_dir: str | Path | None = None,
+    *,
+    measurement_options: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Analyze explicitly paired stereo photographs and return per-pipe states.
 
@@ -1783,6 +1789,11 @@ def analyze_stereo_capture(
             "The calibrated image and pipe count exceed the projection memory budget"
         )
     config = _analysis_config(manifest.get("analysis"))
+    from .metrology import analyze_local_geometry, measurement_settings
+
+    metric_config = measurement_settings(
+        measurement_options if measurement_options is not None else manifest.get("measurement_settings")
+    )
     run_id, interval_minutes, groups = _capture_groups_from_manifest(
         manifest_file, manifest.get("capture"), calibration
     )
@@ -1801,7 +1812,7 @@ def analyze_stereo_capture(
     }
     group_results: list[dict[str, Any]] = []
     photo_hashes: dict[str, str] = {}
-    for group in groups:
+    for group_index, group in enumerate(groups):
         images: dict[str, np.ndarray] = {}
         integrities: dict[str, dict[str, Any]] = {}
         qualities: dict[str, dict[str, Any]] = {}
@@ -1862,11 +1873,25 @@ def analyze_stereo_capture(
                 "rectified_images": images,
             }
         )
+        if group_index == len(groups) - 1:
+            local_geometry = analyze_local_geometry(
+                scene.pipes, projections, images, depth, calibration, pair_healthy,
+                metric_config, config["color_delta_e76_tolerance"],
+            )
+            local_geometry["capture_id"] = group["capture_id"]
+            local_geometry["calibration_id"] = calibration.calibration_id
 
     pipe_results = [
         _pipe_result(pipe, group_results, calibration, config, interval_minutes)
         for pipe in scene.pipes
     ]
+    ambiguous_ids = {row["pipe_id"] for row in local_geometry["pipes"]
+                     if any("AMBIGUOUS_LOCAL_PIPE_IDENTITY" in code or "SHARED_OR_OVERLAPPING_OBSERVATION" in code
+                            for code in row["reason_codes"])}
+    for row in pipe_results:
+        if row["pipe_id"] in ambiguous_ids:
+            row.update(installation_state="UNKNOWN", installation_state_zh=installation_state_label_zh("UNKNOWN"),
+                       state_basis="AMBIGUOUS_LOCAL_GEOMETRY", reason_codes=["LOCAL_OBSERVATION_IDENTITY_AMBIGUOUS"])
     counts_counter = Counter(item["installation_state"] for item in pipe_results)
     counts = {state: int(counts_counter[state]) for state in INSTALLATION_STATES}
 
@@ -1954,6 +1979,7 @@ def analyze_stereo_capture(
         },
         "counts": counts,
         "pipes": pipe_results,
+        "local_measurements": local_geometry,
         "state_semantics": {
             "INSTALLED": "Current paired images contain qualified CAD-registered color, width, and depth evidence.",
             "NOT_INSTALLED": "At least two independent paired captures show qualified, unoccluded free space at the designed pipe location.",
