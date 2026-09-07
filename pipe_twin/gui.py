@@ -21,6 +21,10 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
+from .logging_config import get_logger, log_event
+
+_LOGGER = get_logger("gui")
+
 
 INSTALLATION_STATES = ("INSTALLED", "NOT_INSTALLED", "UNKNOWN")
 STATE_PRESENTATION: dict[str, dict[str, str]] = {
@@ -1572,6 +1576,7 @@ class _PipeTwinApplication:
     def _load_sources(self, manifest_path: Path, report_path: Path | None) -> None:
         manifest_path = Path(manifest_path).resolve()
         report_path = Path(report_path).resolve() if report_path is not None else None
+        log_event(_LOGGER, "gui_sources_load_start", manifest=manifest_path, report=report_path)
         try:
             manifest = _read_json_object(manifest_path, "manifest")
             report = _read_json_object(report_path, "report") if report_path else None
@@ -1613,6 +1618,14 @@ class _PipeTwinApplication:
         self._photo_images.clear()
         self._photo_geometry.clear()
         self._refresh_dashboard()
+        log_event(
+            _LOGGER,
+            "gui_sources_loaded",
+            manifest=manifest_path,
+            report=report_path,
+            pipe_count=len(self.dashboard.get("pipes", [])),
+            binding_valid=self.dashboard.get("binding_valid"),
+        )
         for role in ("left", "right"):
             self._render_photo(role)
 
@@ -1997,6 +2010,7 @@ class _PipeTwinApplication:
         self.run_button.configure(state="disabled")
         self.banner.configure(bg="#DCEBFA", fg="#164B75")
         self.banner_text.set("正在分析双目照片、局部管径、中心距、净距与前后关系……")
+        log_event(_LOGGER, "gui_analysis_start", manifest=self.manifest_path)
         thread = threading.Thread(target=self._analysis_worker, daemon=True)
         thread.start()
 
@@ -2034,6 +2048,7 @@ class _PipeTwinApplication:
             self.root.after(80, self._poll_worker)
             return
         if kind == "error":
+            log_event(_LOGGER, "gui_analysis_failed", error=str(payload))
             # A failed rerun must not leave the previous decisive report on
             # screen.  The manifest remains available for diagnostics, but
             # all pipe states are rebuilt as UNKNOWN before showing the error.
@@ -2074,6 +2089,7 @@ class _PipeTwinApplication:
                 self.selected_pipe_id = None
                 self._refresh_dashboard()
                 self.measurement_panel.notice.set("分析完成。查看逐管状态和间距/前后关系，可录入实测样本或导出报告。")
+                log_event(_LOGGER, "gui_analysis_finished", pipe_count=len(self.dashboard.get("pipes", [])), counts=self.dashboard.get("counts"))
         self.root.after(80, self._poll_worker)
 
     def _open_demo(self) -> None:
@@ -2099,6 +2115,7 @@ def launch_gui(
     replace the manifest-bound stereo pair used by the analyzer.
     """
 
+    log_event(_LOGGER, "gui_launch", manifest=manifest_path, report=report_path)
     import tkinter as tk
 
     try:

@@ -103,6 +103,10 @@ tests/
 
 运行时依赖为 `numpy`、无 GUI 后端的 `opencv-python-headless` 和 McNeel `rhino3dm`，版本由根目录 `requirements.txt` 固定。桌面 GUI 使用 Python 标准库 Tkinter，不引入 Qt/VTK；Windows 官方 Python 通常自带 Tk，精简 Linux 环境若需打开 GUI 应另行安装系统 Tk 包。CI 只做无桌面测试。
 
+### 运行日志
+
+CLI 和桌面 GUI 启动时会自动写入结构化 JSONL 日志，默认位置为项目根目录的 `logs/pipe_twin.log.jsonl`。日志包含运行 ID、命令、模型加载、GUI 数据载入、分析成功/失败和异常堆栈；文件按 10 MiB 轮转并保留 5 个备份。可通过 `PIPE_TWIN_LOG_DIR` 指定日志目录。日志会过滤疑似令牌、密码和连接字符串字段，不记录原始图像内容。
+
 ### Windows PowerShell
 
 ```powershell

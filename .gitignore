@@ -27,6 +27,7 @@ Desktop.ini
 
 # Logs and generated outputs
 *.log
+/logs/
 /artifacts/
 /outputs/
 /runs/

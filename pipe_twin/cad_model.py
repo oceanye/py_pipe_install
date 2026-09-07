@@ -24,6 +24,9 @@ from zipfile import BadZipFile, ZipFile
 import numpy as np
 
 from .model_3mf import MODEL_PART, ThreeMFError, inspect_3mf
+from .logging_config import get_logger, log_event
+
+_LOGGER = get_logger("cad_model")
 
 try:  # Keep legacy 3MF users importable until the optional dependency is installed.
     import rhino3dm  # type: ignore[import-not-found]
@@ -611,10 +614,16 @@ def load_cad_scene(
     """
 
     suffix = Path(path).suffix.lower()
+    log_event(_LOGGER, "cad_load_start", path=Path(path), format=suffix or "<none>")
     if suffix == ".3mf":
-        return load_3mf_scene(path, required_object_ids=required_object_ids)
+        scene = load_3mf_scene(path, required_object_ids=required_object_ids)
+        log_event(_LOGGER, "cad_load_finished", path=scene.source_path, format=scene.source_format, object_count=scene.object_count)
+        return scene
     if suffix == ".3dm":
-        return load_3dm_scene(path, required_object_ids=required_object_ids)
+        scene = load_3dm_scene(path, required_object_ids=required_object_ids)
+        log_event(_LOGGER, "cad_load_finished", path=scene.source_path, format=scene.source_format, object_count=scene.object_count)
+        return scene
+    log_event(_LOGGER, "cad_load_rejected", path=Path(path), format=suffix or "<none>")
     raise CadModelError(
         f"Unsupported CAD model extension {suffix or '<none>'!r}; expected .3mf or .3dm"
     )

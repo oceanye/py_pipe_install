@@ -42,6 +42,9 @@ from .state import (
     classify_installation_state,
     installation_state_label_zh,
 )
+from .logging_config import get_logger, log_event
+
+_LOGGER = get_logger("stereo_analyzer")
 
 
 _SHA256_PATTERN = frozenset("0123456789abcdefABCDEF")
@@ -1776,6 +1779,7 @@ def analyze_stereo_capture(
     """
 
     manifest_file = Path(manifest_path).resolve()
+    log_event(_LOGGER, "analysis_start", mode="stereo", manifest=manifest_file)
     manifest, manifest_sha256 = _read_json_snapshot(manifest_file)
     if manifest.get("schema_version") != "2.0":
         raise StereoAnalysisError("Stereo manifests require schema_version='2.0'")
@@ -2001,6 +2005,13 @@ def analyze_stereo_capture(
     if report_output_path is not None:
         content = (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         _atomic_write(Path(report_output_path).resolve(), content)
+    log_event(
+        _LOGGER,
+        "analysis_finished",
+        mode="stereo",
+        dataset_id=report.get("dataset_id"),
+        counts=report.get("counts"),
+    )
     return report
 
 

@@ -19,6 +19,9 @@ from .detector import ColorDiameterDetector, validate_m0_manifest
 from .model_3mf import inspect_3mf
 from .photo_capture import load_photo_snapshot, resolve_photo_path
 from .state import confirmed_intervals, debounce_states, normalize_state
+from .logging_config import get_logger, log_event
+
+_LOGGER = get_logger("pipeline")
 
 
 class AssetIntegrityError(ValueError):
@@ -873,16 +876,20 @@ def analyze_manifest(
 ) -> dict[str, Any]:
     """Analyze a manifest-bound legacy video or scheduled still capture set."""
 
+    log_event(_LOGGER, "analysis_start", mode="m0", manifest=Path(manifest_path))
     manifest, _ = load_json_snapshot(Path(manifest_path).resolve())
     validate_m0_manifest(manifest)
     if "video" in manifest:
-        return _analyze_video_manifest(
+        report = _analyze_video_manifest(
             manifest_path,
             observations_path,
             report_output_path,
         )
-    return _analyze_still_capture_manifest(
-        manifest_path,
-        observations_path,
-        report_output_path,
-    )
+    else:
+        report = _analyze_still_capture_manifest(
+            manifest_path,
+            observations_path,
+            report_output_path,
+        )
+    log_event(_LOGGER, "analysis_finished", mode="m0", report_type=report.get("report_type"), passed=report.get("passed"))
+    return report

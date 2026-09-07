@@ -11,6 +11,9 @@ from .cad_model import load_cad_scene
 from .model_3mf import inspect_3mf
 from .pipeline import analyze_manifest, atomic_write_text, ensure_paths_distinct
 from .synthetic_stereo import generate_synthetic_stereo
+from .logging_config import get_logger, log_event
+
+_LOGGER = get_logger("cli")
 
 
 def _write_json(path: str | Path, payload: dict) -> Path:
@@ -127,8 +130,9 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def _main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    log_event(_LOGGER, "command_start", command=args.command)
     if args.command == "inspect-model":
         if args.output:
             ensure_paths_distinct(model=args.model, output=args.output)
@@ -205,3 +209,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.observations:
         print(f"Image evidence written to {Path(args.observations).resolve()}")
     return 1 if report["passed"] is False else 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    try:
+        result = _main(argv)
+    except Exception:
+        _LOGGER.exception("command_failed", extra={"event": "command_failed", "fields": {}})
+        raise
+    log_event(_LOGGER, "command_finished", exit_code=result)
+    return result
