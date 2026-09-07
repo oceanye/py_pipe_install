@@ -1980,7 +1980,7 @@ class _PipeTwinApplication:
         if relative.startswith("../") or relative == "..":
             self.messagebox.showerror("保存失败", "DXF 文件必须位于 manifest 草稿目录或其子目录内。")
             return
-        payload = {"schema_version": "dxf-elevation-draft-v1", "dataset_id": f"dxf-draft-{self.dxf_elevation.source_sha256[:12]}", "model_revision": self.dxf_elevation.source_sha256[:16], "validation_scope": "DXF_ELEVATION_DRAFT", "model": {"path": relative, "sha256": self.dxf_elevation.source_sha256, "unit": "millimeter", "pipes": pipes}, "elevation": {"format": "dxf", "path": relative, "sha256": self.dxf_elevation.source_sha256, "layer_colors": dict(self.dxf_layer_colors), "entity_bindings": {entity["pipe_id"]: entity["pipe_id"] for entity in pipes}}}
+        payload = {"schema_version": "dxf-elevation-draft-v1", "dataset_id": f"dxf-draft-{self.dxf_elevation.source_sha256[:12]}", "model_revision": self.dxf_elevation.source_sha256[:16], "validation_scope": "DXF_ELEVATION_DRAFT", "scope": {"layer_model": "elevation", "layer_id": "DXF", "identity_features": ["dxf_entity_id", "layer_id"], "metric_calibrated": False, "supports_stereo": False, "supports_occlusion_reasoning": False}, "model": {"path": relative, "sha256": self.dxf_elevation.source_sha256, "unit": "millimeter", "pipes": pipes}, "elevation": {"format": "dxf", "path": relative, "sha256": self.dxf_elevation.source_sha256, "layer_colors": dict(self.dxf_layer_colors), "entity_bindings": {entity["pipe_id"]: entity["pipe_id"] for entity in pipes}}}
         selected_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         self._load_sources(selected_path, None)
         self.projection_mode.set("dxf")
@@ -2224,6 +2224,9 @@ class _PipeTwinApplication:
             return
         if not self.manifest_path:
             self.messagebox.showinfo("尚未载入数据", "请先载入现场清单或打开合成示例。")
+            return
+        if self.manifest.get("validation_scope") == "DXF_ELEVATION_DRAFT":
+            self.messagebox.showinfo("DXF 草稿不能直接双目分析", "请先在现场数据录入中补充真实 3DM/3MF 模型、双目标定和左右照片。")
             return
         try:
             options = self.measurement_panel.analysis_options()
