@@ -1330,6 +1330,8 @@ class _PipeTwinApplication:
         self._photo_geometry: dict[str, tuple[float, float, int, int]] = {}
         self.dxf_elevation: DxfElevation | None = None
         self.dxf_layer_colors: dict[str, str] = {}
+        self.dxf_bindings: dict[str, str] = {}
+        self.selected_dxf_entity_id: str | None = None
         self._manifest_sha256: str | None = None
         self._model_actual_sha256: str | None = None
         self._photo_actual_sha256: dict[str, str] = {}
@@ -1364,6 +1366,8 @@ class _PipeTwinApplication:
         ttk.Button(toolbar, text="导入DXF侧立面", command=self._import_dxf).pack(side="left", padx=3)
         ttk.Button(toolbar, text="指定图层颜色", command=self._choose_dxf_layer_color).pack(side="left", padx=3)
         ttk.Button(toolbar, text="保存DXF颜色配置", command=self._save_dxf_colors).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="绑定DXF图元", command=self._bind_dxf_entity).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="保存DXF映射到manifest", command=self._save_dxf_bindings).pack(side="left", padx=3)
         self.run_button = ttk.Button(toolbar, text="运行双目识别与测量", command=self._run_analysis)
         self.run_button.pack(side="left", padx=(14, 3))
         ttk.Label(toolbar, text="模型视图：").pack(side="left", padx=(18, 2))
@@ -1616,6 +1620,7 @@ class _PipeTwinApplication:
         self.manifest = manifest
         self.report = report
         self.dashboard = dashboard
+        self._restore_dxf_from_manifest(manifest_path, manifest)
         self._manifest_sha256 = manifest_sha256
         self._model_actual_sha256 = model_actual_sha256
         self._photo_actual_sha256 = photo_actual_sha256
@@ -1634,6 +1639,25 @@ class _PipeTwinApplication:
         )
         for role in ("left", "right"):
             self._render_photo(role)
+
+    def _restore_dxf_from_manifest(self, manifest_path: Path, manifest: Mapping[str, Any]) -> None:
+        elevation = manifest.get("elevation")
+        if not isinstance(elevation, Mapping) or elevation.get("format") != "dxf":
+            return
+        path = _safe_manifest_asset_path(manifest_path, elevation.get("path"))
+        try:
+            document = read_dxf_elevation(path) if path is not None else None
+            if document is None or str(elevation.get("sha256", "")).lower() != document.source_sha256:
+                raise ValueError("DXF 文件哈希与 manifest 不一致")
+            self.dxf_elevation = document
+            self.dxf_layer_colors = dict(document.layers)
+            if isinstance(elevation.get("layer_colors"), Mapping):
+                self.dxf_layer_colors.update({str(k): str(v).upper() for k, v in elevation["layer_colors"].items()})
+            self.dxf_bindings = {str(k): str(v) for k, v in (elevation.get("entity_bindings") or {}).items()} if isinstance(elevation.get("entity_bindings"), Mapping) else {}
+        except (OSError, ValueError):
+            self.dxf_elevation = None
+            self.dxf_layer_colors = {}
+            self.dxf_bindings = {}
 
     def _choose_manifest(self) -> None:
         selected = self.filedialog.askopenfilename(
@@ -1862,14 +1886,17 @@ class _PipeTwinApplication:
             color = self.dxf_layer_colors.get(entity.layer, entity.color)
             if entity.kind == "CIRCLE":
                 cx, cy = xy(entity.points[0]); radius = float(entity.radius or 0) * scale
-                canvas.create_oval(cx - radius, cy - radius, cx + radius, cy + radius, outline=color, width=2)
+                item = canvas.create_oval(cx - radius, cy - radius, cx + radius, cy + radius, outline=color, width=2, tags=("dxf_entity", f"dxf::{entity.entity_id}"))
             else:
                 vertices = arc_points(entity) if entity.kind == "ARC" else entity.points
-                canvas.create_line([coordinate for point in vertices for coordinate in xy(point)], fill=color, width=2, smooth=entity.kind == "ARC")
+                item = canvas.create_line([coordinate for point in vertices for coordinate in xy(point)], fill=color, width=2, smooth=entity.kind == "ARC", tags=("dxf_entity", f"dxf::{entity.entity_id}"))
+            canvas.tag_bind(item, "<Button-1>", lambda _event, entity_id=entity.entity_id: self._select_dxf_entity(entity_id))
             if entity.points:
                 middle = entity.points[len(entity.points) // 2]
                 label_x, label_y = xy(middle)
-                canvas.create_text(label_x + 4, label_y - 4, anchor="sw", text=entity.entity_id, fill=color, font=("Segoe UI", 8, "bold"))
+                binding = self.dxf_bindings.get(entity.entity_id)
+                label = f"{entity.entity_id} → {binding}" if binding else entity.entity_id
+                canvas.create_text(label_x + 4, label_y - 4, anchor="sw", text=label, fill=color, font=("Segoe UI", 8, "bold"), tags=("dxf_entity", f"dxf::{entity.entity_id}"))
         canvas.create_text(16, 38, anchor="nw", text=f"文件：{document.source_path.name} · 图层 {len(document.layers)} · 实体 {len(document.entities)}", fill="#455A64")
 
     def _import_dxf(self) -> None:
@@ -1911,6 +1938,53 @@ class _PipeTwinApplication:
             self.projection_mode.set("dxf")
             self._draw_model()
             log_event(_LOGGER, "dxf_layer_color_changed", layer=layer, color=chosen.upper())
+
+    def _select_dxf_entity(self, entity_id: str) -> None:
+        self.selected_dxf_entity_id = entity_id
+        self.projection_mode.set("dxf")
+        self._draw_model()
+        log_event(_LOGGER, "dxf_entity_selected", entity_id=entity_id)
+
+    def _bind_dxf_entity(self) -> None:
+        if self.dxf_elevation is None or not self.selected_dxf_entity_id:
+            self.messagebox.showinfo("未选择DXF图元", "请先在 DXF 侧立面中点击一条线、圆弧或外轮廓圆。")
+            return
+        selected = self.tree.selection()
+        if not selected:
+            self.messagebox.showinfo("未选择管道", "请先在右侧管道列表中选择目标管道。")
+            return
+        pipe_id = str(selected[0])
+        self.dxf_bindings[self.selected_dxf_entity_id] = pipe_id
+        self._draw_model()
+        log_event(_LOGGER, "dxf_entity_bound", entity_id=self.selected_dxf_entity_id, pipe_id=pipe_id)
+
+    def _save_dxf_bindings(self) -> None:
+        if self.dxf_elevation is None or not self.dxf_bindings:
+            self.messagebox.showinfo("没有DXF映射", "请先导入 DXF 并至少绑定一个图元。")
+            return
+        if not self.manifest_path or not self.manifest:
+            self.messagebox.showinfo("没有manifest", "请先载入或创建 manifest。")
+            return
+        try:
+            relative = os.path.relpath(self.dxf_elevation.source_path, self.manifest_path.parent).replace("\\", "/")
+            if relative.startswith("../") or relative == "..":
+                raise ValueError("DXF 文件必须位于 manifest 所在目录或其子目录内，才能写入相对路径。")
+            updated = copy.deepcopy(self.manifest)
+            updated["elevation"] = {
+                "format": "dxf",
+                "path": relative,
+                "sha256": self.dxf_elevation.source_sha256,
+                "layer_colors": dict(self.dxf_layer_colors),
+                "entity_bindings": dict(self.dxf_bindings),
+            }
+            selected = self.filedialog.asksaveasfilename(title="保存带DXF映射的manifest", initialfile=self.manifest_path.name, initialdir=str(self.manifest_path.parent), defaultextension=".json", filetypes=(("JSON", "*.json"),))
+            if not selected:
+                return
+            Path(selected).write_text(json.dumps(updated, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            log_event(_LOGGER, "dxf_bindings_saved", manifest=selected, binding_count=len(self.dxf_bindings))
+            self.messagebox.showinfo("已保存", f"DXF 映射已写入：\n{selected}\n\n报告需重新分析以匹配新的 manifest 哈希。")
+        except (OSError, ValueError) as error:
+            self.messagebox.showerror("保存映射失败", str(error))
 
     def _save_dxf_colors(self) -> None:
         if self.dxf_elevation is None:

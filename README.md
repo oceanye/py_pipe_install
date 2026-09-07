@@ -111,6 +111,8 @@ CLI 和桌面 GUI 启动时会自动写入结构化 JSONL 日志，默认位置�
 
 在 GUI 工具栏点击“导入DXF侧立面”，选择 DXF 文件后切换到 `dxf` 视图。支持 `LINE`、`LWPOLYLINE`、`ARC` 和 `CIRCLE`；其中 `CIRCLE`/`ARC` 会绘制侧立面外轮廓圆弧。实体默认采用 DXF 图层颜色（ACI 或 true color）；如需调整，点击“指定图层颜色”，再点击“保存DXF颜色配置”。颜色配置按 DXF 文件 SHA-256 绑定，下一次导入同一文件时自动恢复。当前导入用于侧立面显示和人工核对，管道业务 ID 仍需在 manifest 中维护。
 
+如果 DXF 图元没有业务编号，界面会显示 `P001`、`P002` 等默认流水号。先点击 DXF 图元，再在右侧管道列表选择目标管道，点击“绑定DXF图元”，最后点击“保存DXF映射到manifest”；映射会写入 manifest 的 `elevation.entity_bindings`，并绑定 DXF SHA-256。保存后的 manifest 报告需要重新分析。
+
 ### Windows PowerShell
 
 ```powershell
