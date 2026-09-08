@@ -115,6 +115,80 @@ def probe_video_devices(
     return devices
 
 
+STEREO_MODE_CANDIDATES: tuple[tuple[int, int], ...] = (
+    # Side-by-side stereo rigs expose their two-eye stream only at specific
+    # (usually 2:1) resolutions; the rest are ordinary single-eye modes.
+    # The 2:1 entries come first so a failed device probe still leaves them
+    # selectable by hand.
+    (2560, 720),
+    (1280, 480),
+    (3840, 1080),
+    (640, 480),
+    (1280, 720),
+    (1920, 1080),
+)
+
+
+def probe_video_modes(
+    *,
+    index: int,
+    candidates: list[tuple[int, int]] | None = None,
+    backend: int | None = None,
+    capture_factory: Callable[..., Any] = cv2.VideoCapture,
+    per_mode_timeout_s: float = 6.0,
+) -> list[tuple[int, int]]:
+    """Return stream sizes ``index`` actually delivers, best stereo first.
+
+    Each candidate resolution is requested in turn (MJPG, like the capture
+    session uses); the driver switches modes asynchronously, so a few warm-up
+    frames are read before trusting the delivered size.  A hung driver is
+    bounded by ``per_mode_timeout_s`` per candidate.  Some UVC drivers stop
+    cooperating after many rapid open/close cycles — callers must keep the
+    static candidate list selectable even when this probe returns nothing.
+    """
+    selected_backend = _default_backend() if backend is None else backend
+    sizes: list[tuple[int, int]] = []
+    for width, height in candidates or list(STEREO_MODE_CANDIDATES):
+        if sizes:
+            time.sleep(0.3)
+
+        def _task(w: int = width, h: int = height) -> tuple[int, int] | None:
+            capture = capture_factory(index, selected_backend)
+            try:
+                if not capture.isOpened():
+                    return None
+                capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+                capture.set(cv2.CAP_PROP_FRAME_WIDTH, w)
+                capture.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
+                # The driver switches modes asynchronously: the first frames
+                # after the request may still be in the previous mode, so warm
+                # up before trusting the delivered size.
+                frame: np.ndarray | None = None
+                for _ in range(6):
+                    ok, frame = capture.read()
+                    if not ok or not isinstance(frame, np.ndarray) or frame.ndim != 3:
+                        return None
+                if frame is None:
+                    return None
+                return int(frame.shape[1]), int(frame.shape[0])
+            except Exception:
+                return None
+            finally:
+                capture.release()
+
+        outcome: dict[str, Any] = {}
+        worker = threading.Thread(
+            target=lambda task=_task: outcome.setdefault("size", task()),
+            daemon=True,
+        )
+        worker.start()
+        worker.join(per_mode_timeout_s)
+        size = outcome.get("size")
+        if size is not None and size not in sizes:
+            sizes.append(size)
+    return sizes
+
+
 def run_in_background(
     task: Callable[[], Any],
     on_result: Callable[[Any, Exception | None], None],
@@ -320,8 +394,10 @@ __all__ = [
     "LAYOUT_SEPARATE",
     "LAYOUT_SIDE_BY_SIDE_LR",
     "LAYOUT_SIDE_BY_SIDE_RL",
+    "STEREO_MODE_CANDIDATES",
     "StereoCameraError",
     "StereoCameraSession",
     "probe_video_devices",
+    "probe_video_modes",
     "run_in_background",
 ]

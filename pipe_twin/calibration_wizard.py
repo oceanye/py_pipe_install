@@ -788,6 +788,7 @@ class ChessboardWizardDialog:
         self.open_after_id: str | None = None
         self._opening = False
         self._closing = False
+        self._probing_modes = False
         self._probe_cancelled = threading.Event()
         self._tick = 0
         self.preview_images: list[Any] = []
@@ -855,9 +856,33 @@ class ChessboardWizardDialog:
         ttk.Button(camera_row, text="检测设备", command=self.detect).pack(side="left", padx=3)
         ttk.Button(camera_row, text="打开预览", command=self.start).pack(side="left", padx=3)
         ttk.Button(camera_row, text="停止", command=self.stop).pack(side="left", padx=3)
+        mode_row = ttk.Frame(camera_row)
+        mode_row.pack(fill="x", pady=(6, 0))
+        ttk.Label(mode_row, text="流分辨率：").pack(side="left")
+        from .stereo_camera import STEREO_MODE_CANDIDATES
+
+        self._mode_sizes: list[tuple[int, int]] = list(STEREO_MODE_CANDIDATES)
+        self._mode_labels: list[str] = [
+            self._mode_label(width, height) for width, height in self._mode_sizes
+        ]
+        self.stream_mode = tk.StringVar(value=self._mode_labels[0])
+        self.stream_combo = ttk.Combobox(
+            mode_row,
+            textvariable=self.stream_mode,
+            values=tuple(self._mode_labels),
+            state="readonly",
+            width=30,
+        )
+        self.stream_combo.pack(side="left", padx=(3, 10))
+        self.stream_combo.bind("<<ComboboxSelected>>", lambda _e: self._apply_stream_mode())
+        ttk.Label(
+            mode_row,
+            text="并排双目只在特定分辨率输出；选错会只看到单目画面。",
+            foreground="#8A4E00",
+        ).pack(side="left")
         self.sync_gate_label = tk.StringVar(value="标定阶段为静态棋盘，同步容差只用于记录。")
         ttk.Label(camera_row, textvariable=self.sync_gate_label, foreground="#4A6178").pack(
-            side="left", padx=(10, 0)
+            anchor="w", pady=(2, 0)
         )
 
         previews = ttk.Frame(main)
@@ -1071,18 +1096,95 @@ class ChessboardWizardDialog:
                 f"索引 {item['index']}：{item['width']}×{item['height']}" for item in devices
             )
             prefix = "检测已停止；" if cancelled else ""
-            self.message.set(f"{prefix}检测到 {len(devices)} 个可用设备：{summary}")
+            self.message.set(
+                f"{prefix}检测到 {len(devices)} 个可用设备：{summary}；正在探测支持的分辨率…"
+            )
             self.left_status.set("左目：未打开预览")
             self.right_status.set("右目：未打开预览")
+            if not cancelled:
+                self._probe_modes(int(devices[0]["index"]))
         except Exception as error:  # surfaced to the operator, never silent
             self.app.messagebox.showerror("相机检测失败", str(error), parent=self.window)
             self.message.set(f"相机检测失败：{error}")
+
+    def _mode_label(self, width: int, height: int) -> str:
+        if self._layout() != "separate_devices" and width % 2 == 0:
+            return f"{width}×{height}（每目 {width // 2}×{height}）"
+        return f"{width}×{height}"
+
+    def _probe_modes(self, index: int) -> None:
+        from .stereo_camera import probe_video_modes, run_in_background
+
+        self._probing_modes = True
+        self._mode_sizes = []
+        self.stream_mode.set("正在探测相机支持的分辨率（数秒）…")
+        outcome: dict[str, Any] = {}
+        run_in_background(
+            lambda: probe_video_modes(index=index),
+            lambda result, error: outcome.setdefault("done", (result, error)),
+        )
+        self._poll_modes(outcome)
+
+    def _poll_modes(self, outcome: dict[str, Any]) -> None:
+        if self._closing:
+            return
+        if "done" not in outcome:
+            self.open_after_id = self.window.after(200, lambda: self._poll_modes(outcome))
+            return
+        self.open_after_id = None
+        self._probing_modes = False
+        sizes, error = outcome["done"]
+        if error is not None or not sizes:
+            # Keep the static candidate list selectable; some drivers refuse
+            # to reopen after many rapid cycles, which is not an error the
+            # operator can act on.
+            self.message.set(
+                "自动分辨率探测未成功（部分驱动多次开关后会暂时拒绝打开）；"
+                "已预置常见并排分辨率，可直接从下拉框选择，或手动输入每目宽×高。"
+            )
+            return
+        self._mode_sizes = list(sizes)
+        self._mode_labels = [
+            self._mode_label(width, height) for width, height in self._mode_sizes
+        ]
+
+        def _score(size: tuple[int, int]) -> tuple[int, int]:
+            stream_width, stream_height = size
+            if size == (2560, 720):
+                return (3, stream_width * stream_height)
+            if stream_width == 2 * stream_height:
+                return (2, stream_width * stream_height)
+            return (1, stream_width * stream_height)
+
+        best = max(range(len(sizes)), key=lambda position: _score(self._mode_sizes[position]))
+        self.stream_combo.configure(values=tuple(self._mode_labels))
+        self.stream_mode.set(self._mode_labels[best])
+        self._apply_stream_mode()
+        self.message.set(
+            f"相机实测支持 {len(sizes)} 种流分辨率，已选 {self.stream_mode.get()}。"
+        )
+
+    def _apply_stream_mode(self) -> None:
+        label = self.stream_mode.get()
+        if label not in getattr(self, "_mode_labels", []):
+            return
+        width, height = self._mode_sizes[self._mode_labels.index(label)]
+        if self._layout() != "separate_devices" and width % 2 == 0:
+            self.eye_width.set(str(width // 2))
+            self.eye_height.set(str(height))
+        else:
+            self.eye_width.set(str(width))
+            self.eye_height.set(str(height))
+        self.message.set(
+            f"已选流分辨率 {width}×{height}；每目按 "
+            f"{self.eye_width.get()}×{self.eye_height.get()} 打开。"
+        )
 
     def start(self) -> bool:
         from .logging_config import get_logger, log_event
         from .stereo_camera import StereoCameraSession, run_in_background
 
-        if self._opening or self.open_after_id is not None:
+        if self._opening or self._probing_modes or self.open_after_id is not None:
             self.message.set("正在处理上一个相机任务，请稍候…")
             return False
         try:
