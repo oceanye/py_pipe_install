@@ -740,6 +740,7 @@ _MAX_AUTO_PAIRS = 30
 _AUTO_CAPTURE_COOLDOWN_S = 1.0
 _NOVEL_POSE_RATIO = 0.06
 _MIN_COVERED_ZONES = 6
+_DEFAULT_SHARPNESS_GATE = 60.0
 
 _ZONE_NAMES: dict[tuple[int, int], str] = {
     (0, 0): "左上",
@@ -852,6 +853,7 @@ class ChessboardWizardDialog:
         self.max_rms = tk.StringVar(value=str(wizard.get("max_reprojection_rms_px", 0.5)))
         self.min_pairs = tk.StringVar(value=str(wizard.get("min_pairs", 10)))
         self.max_sync = tk.StringVar(value="1.0")
+        self.sharpness_gate = tk.StringVar(value="60")
         self.eye_width = tk.StringVar(value="1280")
         self.eye_height = tk.StringVar(value="720")
         self.mode = tk.StringVar(value=str(camera.get("layout", "side_by_side_left_right")))
@@ -891,6 +893,7 @@ class ChessboardWizardDialog:
             ("允许RMS/px", self.max_rms, 6),
             ("最少组数", self.min_pairs, 5),
             ("同步容差/ms", self.max_sync, 7),
+            ("清晰度门限", self.sharpness_gate, 6),
         )):
             column *= 2
             ttk.Label(params, text=label).grid(row=0, column=column, padx=(8, 2), sticky="w")
@@ -1419,6 +1422,22 @@ class ChessboardWizardDialog:
         if now - self._last_auto_time < _AUTO_CAPTURE_COOLDOWN_S:
             return
         left_obs = observations["left"]
+        right_obs = observations["right"]
+        # Motion blur (long exposure while the board moves) inflates the
+        # reprojection RMS without being visible in the pair count, so blurred
+        # frames are skipped before they can enter the solve.
+        try:
+            threshold = float(self.sharpness_gate.get())
+        except ValueError:
+            threshold = _DEFAULT_SHARPNESS_GATE
+        if not math.isfinite(threshold) or threshold < 0:
+            threshold = _DEFAULT_SHARPNESS_GATE
+        if threshold > 0 and min(left_obs.sharpness, right_obs.sharpness) < threshold:
+            self.message.set(
+                f"清晰度不足（左 {left_obs.sharpness:.0f} / 右 {right_obs.sharpness:.0f}"
+                f" < {threshold:g}），已跳过自动抓拍；请放慢移动或增加光照。"
+            )
+            return
         if not pose_is_novel(
             self._last_left_centroid,
             left_obs.centroid_px,
@@ -1505,6 +1524,18 @@ class ChessboardWizardDialog:
                         f"{role} 目未检出完整棋盘格；请让整个棋盘格平整进入画面后重试。"
                     )
                 observations.append(observation)
+            try:
+                threshold = float(self.sharpness_gate.get())
+            except ValueError:
+                threshold = _DEFAULT_SHARPNESS_GATE
+            if threshold > 0 and min(
+                observations[0].sharpness, observations[1].sharpness
+            ) < threshold:
+                raise ChessboardCalibrationError(
+                    f"清晰度不足（左 {observations[0].sharpness:.0f} / "
+                    f"右 {observations[1].sharpness:.0f} < {threshold:g}）；"
+                    "请增加光照或放慢移动；确要忽略请把“清晰度门限”改为 0。"
+                )
             self._accept_pair(observations[0], observations[1], automatic=False)
         except Exception as error:  # native cv2 errors included, never silent
             from .logging_config import get_logger, log_event
