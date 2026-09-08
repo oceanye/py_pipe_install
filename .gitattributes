@@ -10,5 +10,6 @@
 *.sat binary
 *.3mf binary
 *.stl binary
+*.dwg binary
 *.mkv binary
 *.npz binary
