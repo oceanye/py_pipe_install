@@ -784,6 +784,9 @@ class ChessboardWizardDialog:
         self.right_index = tk.StringVar(value=str(camera.get("right_index", 1)))
         self.session: Any | None = None
         self.after_id: str | None = None
+        self.open_after_id: str | None = None
+        self._opening = False
+        self._closing = False
         self._tick = 0
         self.preview_images: list[Any] = []
         self.pairs: list[tuple[BoardObservation, BoardObservation]] = []
@@ -1001,11 +1004,36 @@ class ChessboardWizardDialog:
             self.app.messagebox.showerror("棋盘格生成失败", str(error), parent=self.window)
 
     def detect(self) -> None:
-        from .stereo_camera import probe_video_devices
+        from .logging_config import get_logger, log_event
+        from .stereo_camera import probe_video_devices, run_in_background
 
         self.stop()
+        if self.open_after_id is not None or self._opening:
+            self.message.set("正在处理上一个相机任务，请稍候…")
+            return
+        self.message.set("正在检测视频设备；每个设备都要试开一次，可能需要数秒…")
+        self.left_status.set("左目：检测设备中…")
+        self.right_status.set("右目：检测设备中…")
+        log_event(get_logger("calibration_wizard"), "wizard_device_probe_start")
+        outcome: dict[str, Any] = {}
+        run_in_background(
+            lambda: probe_video_devices(maximum_index=5),
+            lambda result, error: outcome.setdefault("done", (result, error)),
+        )
+        self._poll_detect(outcome)
+
+    def _poll_detect(self, outcome: dict[str, Any]) -> None:
+        if self._closing:
+            return
+        if "done" not in outcome:
+            self.open_after_id = self.window.after(200, lambda: self._poll_detect(outcome))
+            return
+        self.open_after_id = None
+        result, error = outcome["done"]
         try:
-            devices = probe_video_devices(maximum_index=5)
+            if error is not None:
+                raise error
+            devices = result or []
             if not devices:
                 raise ChessboardCalibrationError("未检测到 OpenCV 可打开的视频设备")
             self.left_index.set(str(devices[0]["index"]))
@@ -1021,31 +1049,92 @@ class ChessboardWizardDialog:
                 f"索引 {item['index']}：{item['width']}×{item['height']}" for item in devices
             )
             self.message.set(f"检测到 {len(devices)} 个视频设备：{summary}")
-        except (OSError, ValueError) as error:
+            self.left_status.set("左目：未打开预览")
+            self.right_status.set("右目：未打开预览")
+        except Exception as error:  # surfaced to the operator, never silent
             self.app.messagebox.showerror("相机检测失败", str(error), parent=self.window)
+            self.message.set(f"相机检测失败：{error}")
 
     def start(self) -> bool:
-        from .stereo_camera import StereoCameraSession
+        from .logging_config import get_logger, log_event
+        from .stereo_camera import StereoCameraSession, run_in_background
 
+        if self._opening or self.open_after_id is not None:
+            self.message.set("正在处理上一个相机任务，请稍候…")
+            return False
         try:
-            self.stop()
+            layout = self._layout()
             left, right = self._indices()
             eye_width, eye_height = self._eye_size()
-            self.session = StereoCameraSession(
-                layout=self._layout(),
+        except ValueError as error:
+            self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
+            return False
+        self.stop()
+        self._opening = True
+        self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
+        self.left_status.set("左目：正在打开相机…")
+        self.right_status.set("右目：正在打开相机…")
+        logger = get_logger("calibration_wizard")
+        log_event(
+            logger,
+            "wizard_camera_open_start",
+            layout=layout,
+            left_index=left,
+            right_index=right,
+            eye_width=eye_width,
+            eye_height=eye_height,
+        )
+        outcome: dict[str, Any] = {}
+
+        def _task() -> StereoCameraSession:
+            session = StereoCameraSession(
+                layout=layout,
                 left_index=left,
                 right_index=right,
                 eye_width=eye_width,
                 eye_height=eye_height,
             )
-            self.session.open()
-            self.message.set("相机已打开；持棋盘格覆盖画面各区域，点击“抓拍一组”。")
-            self._update_preview()
-            return True
-        except (OSError, ValueError) as error:
-            self.stop()
+            session.open()
+            return session
+
+        def _on_result(result: Any, error: Exception | None) -> None:
+            if error is not None and result is None:
+                outcome["done"] = (None, error)
+                return
+            if self._closing:
+                result.close()
+                outcome["done"] = (None, ChessboardCalibrationError("窗口已关闭"))
+                return
+            outcome["done"] = (result, None)
+
+        run_in_background(_task, _on_result)
+        self._poll_open(outcome)
+        return True
+
+    def _poll_open(self, outcome: dict[str, Any]) -> None:
+        if self._closing:
+            return
+        if "done" not in outcome:
+            self.open_after_id = self.window.after(200, lambda: self._poll_open(outcome))
+            return
+        self.open_after_id = None
+        self._opening = False
+        session, error = outcome["done"]
+        from .logging_config import get_logger, log_event
+
+        logger = get_logger("calibration_wizard")
+        if error is not None:
+            log_event(logger, "wizard_camera_open_failed", error=str(error))
+            self.message.set(f"相机打开失败：{error}")
+            self.left_status.set("左目：未打开")
+            self.right_status.set("右目：未打开")
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
-            return False
+            return
+        self.session = session
+        log_event(logger, "wizard_camera_open_finished")
+        self.message.set("相机已打开；持棋盘格覆盖画面各区域，点击“抓拍一组”。")
+        self._tick = 0
+        self._update_preview()
 
     def _photo(self, frame: np.ndarray) -> Any:
         import base64
@@ -1098,7 +1187,10 @@ class ChessboardWizardDialog:
             self.right_status.set(f"右目：{status['right']}")
             self._tick += 1
             self.after_id = self.window.after(120, self._update_preview)
-        except (OSError, ValueError) as error:
+        except Exception as error:  # native cv2 errors included, never silent
+            from .logging_config import get_logger, log_event
+
+            log_event(get_logger("calibration_wizard"), "wizard_preview_failed", error=str(error))
             self.stop()
             self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
 
@@ -1115,9 +1207,13 @@ class ChessboardWizardDialog:
 
     def capture_pair(self) -> None:
         try:
-            if self.session is None and not self.start():
+            if self._opening:
+                self.message.set("相机仍在后台打开，请稍候…")
                 return
             if self.session is None:
+                self.start()
+                if self.session is None:
+                    self.message.set("相机正在后台打开；打开后请再次点击“抓拍一组”。")
                 return
             pair = self.session.read_pair()
             if np.array_equal(pair.left, pair.right):
@@ -1145,7 +1241,15 @@ class ChessboardWizardDialog:
                 "请继续更换棋盘格位置、角度和距离，覆盖画面四角与中心。"
             )
             self._refresh_pairs()
-        except (OSError, ValueError) as error:
+        except Exception as error:  # native cv2 errors included, never silent
+            from .logging_config import get_logger, log_event
+
+            log_event(
+                get_logger("calibration_wizard"),
+                "wizard_pair_rejected",
+                pairs=len(self.pairs),
+                error=str(error),
+            )
             self.app.messagebox.showerror("抓拍失败", str(error), parent=self.window)
 
     def _refresh_pairs(self) -> None:
@@ -1225,11 +1329,31 @@ class ChessboardWizardDialog:
                 self.owner.message.set(
                     "棋盘格标定已保存并选中；请继续“二维码定位”完成 CAD 配准。"
                 )
-        except (OSError, ValueError) as error:
+            from .logging_config import get_logger, log_event
+
+            log_event(
+                get_logger("calibration_wizard"),
+                "wizard_calibration_saved",
+                calibration_id=result.calibration["calibration_id"],
+                stereo_rms_px=result.stereo_rms_px,
+                baseline_mm=result.calibration["baseline_mm"],
+                pair_count=result.pair_count,
+            )
+        except Exception as error:  # native cv2 errors included, never silent
+            from .logging_config import get_logger, log_event
+
+            log_event(get_logger("calibration_wizard"), "wizard_solve_failed", error=str(error))
             self.app.messagebox.showerror("标定失败", str(error), parent=self.window)
 
     def close(self) -> None:
+        self._closing = True
         self.stop()
+        if self.open_after_id is not None:
+            try:
+                self.window.after_cancel(self.open_after_id)
+            except Exception:
+                pass
+            self.open_after_id = None
         self.window.destroy()
 
 

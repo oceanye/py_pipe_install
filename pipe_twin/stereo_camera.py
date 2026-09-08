@@ -78,6 +78,30 @@ def probe_video_devices(
     return devices
 
 
+def run_in_background(
+    task: Callable[[], Any],
+    on_result: Callable[[Any, Exception | None], None],
+) -> None:
+    """Run ``task`` on a daemon thread and deliver its outcome once.
+
+    Opening a UVC device or probing indices can block for seconds on
+    DirectShow, so GUI callers must not run it on the Tk thread.  ``on_result``
+    executes on the worker thread and must not touch Tk widgets — store the
+    outcome and let the UI thread poll for it.  Native ``cv2.error`` exceptions
+    are reported here instead of escaping into the Tk callback.
+    """
+
+    def _worker() -> None:
+        try:
+            result = task()
+        except Exception as error:  # noqa: BLE001 - reported to the caller
+            on_result(None, error)
+            return
+        on_result(result, None)
+
+    threading.Thread(target=_worker, daemon=True).start()
+
+
 class StereoCameraSession:
     """Own live camera handles and produce paired, unmodified BGR frames."""
 
@@ -262,4 +286,5 @@ __all__ = [
     "StereoCameraError",
     "StereoCameraSession",
     "probe_video_devices",
+    "run_in_background",
 ]

@@ -2534,6 +2534,9 @@ class QuickCaptureDialog:
         self.window.protocol("WM_DELETE_WINDOW", self.close)
         self.session: Any | None = None
         self.after_id: str | None = None
+        self.open_after_id: str | None = None
+        self._opening = False
+        self._closing = False
         self.preview_images: list[Any] = []
         self.message = tk.StringVar(value=self._reminder())
 
@@ -2604,23 +2607,71 @@ class QuickCaptureDialog:
         )
 
     def start(self) -> None:
-        from .stereo_camera import StereoCameraSession
+        from .logging_config import get_logger, log_event
+        from .stereo_camera import StereoCameraSession, run_in_background
 
-        try:
-            self.stop()
-            self.session = StereoCameraSession(
-                layout=self.camera["layout"],
-                left_index=self.camera["left_index"],
-                right_index=None if self.separate_devices else self.camera["right_index"],
+        if self._opening or self.open_after_id is not None:
+            self.message.set("正在处理上一个相机任务，请稍候…")
+            return
+        self.stop()
+        self._opening = True
+        self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
+        layout = self.camera["layout"]
+        left_index = self.camera["left_index"]
+        right_index = None if self.separate_devices else self.camera["right_index"]
+        log_event(
+            get_logger("gui.quick_capture"),
+            "quick_capture_camera_open_start",
+            layout=layout,
+            left_index=left_index,
+            right_index=right_index,
+        )
+        outcome: dict[str, Any] = {}
+
+        def _task() -> Any:
+            session = StereoCameraSession(
+                layout=layout,
+                left_index=left_index,
+                right_index=right_index,
                 eye_width=int(self.calibration["left_camera"]["width"]),
                 eye_height=int(self.calibration["left_camera"]["height"]),
             )
-            self.session.open()
-            self.message.set("相机已打开，正在显示实时预览。")
-            self._update_preview()
-        except (OSError, ValueError) as error:
-            self.stop()
+            session.open()
+            return session
+
+        def _on_result(result: Any, error: Exception | None) -> None:
+            if error is not None:
+                outcome["done"] = (None, error)
+                return
+            if self._closing:
+                result.close()
+                outcome["done"] = (None, ValueError("窗口已关闭"))
+                return
+            outcome["done"] = (result, None)
+
+        run_in_background(_task, _on_result)
+        self._poll_open(outcome)
+
+    def _poll_open(self, outcome: dict[str, Any]) -> None:
+        if self._closing:
+            return
+        if "done" not in outcome:
+            self.open_after_id = self.window.after(200, lambda: self._poll_open(outcome))
+            return
+        self.open_after_id = None
+        self._opening = False
+        session, error = outcome["done"]
+        from .logging_config import get_logger, log_event
+
+        if error is not None:
+            log_event(get_logger("gui.quick_capture"), "quick_capture_camera_open_failed", error=str(error))
+            self.message.set(f"相机打开失败：{error}")
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
+            return
+        self.session = session
+        log_event(get_logger("gui.quick_capture"), "quick_capture_camera_open_finished")
+        self.message.set("相机已打开，正在显示实时预览。")
+        self._update_preview()
 
     def _update_preview(self) -> None:
         import numpy as np
@@ -2649,7 +2700,7 @@ class QuickCaptureDialog:
                     "确认左右顺序正确后点击抓拍并分析。"
                 )
             self.after_id = self.window.after(80, self._update_preview)
-        except (OSError, ValueError) as error:
+        except Exception as error:  # native cv2 errors included, never silent
             self.stop()
             self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
 
@@ -2665,7 +2716,14 @@ class QuickCaptureDialog:
             self.session = None
 
     def close(self) -> None:
+        self._closing = True
         self.stop()
+        if self.open_after_id is not None:
+            try:
+                self.window.after_cancel(self.open_after_id)
+            except Exception:
+                pass
+            self.open_after_id = None
         self.window.destroy()
 
     def _intake_directory(self) -> Path:
@@ -2690,10 +2748,12 @@ class QuickCaptureDialog:
         import cv2
         import numpy as np
 
+        if self._opening:
+            self.message.set("相机仍在后台打开；打开后请再点击“抓拍并分析”。")
+            return
         if self.session is None:
-            self.app.messagebox.showinfo(
-                "一键抓拍", "请先打开预览，确认画面与左右顺序后再抓拍。", parent=self.window
-            )
+            self.start()
+            self.message.set("相机正在后台打开；打开后请点击“抓拍并分析”。")
             return
         try:
             pair = self.session.read_pair()
@@ -2756,9 +2816,10 @@ class QuickCaptureDialog:
                 },
                 camera_capture_provenance=pair.provenance,
             )
-        except (OSError, ValueError) as error:
+        except Exception as error:
             # Keep the dialog (and its camera session) open so the operator can
             # retry; a dataset is mandatory before any analysis may run.
+            # Native cv2 errors are included — they must surface, not vanish.
             self.app.messagebox.showerror("一键抓拍失败", str(error), parent=self.window)
             return
         self.stop()

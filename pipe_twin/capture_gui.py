@@ -42,6 +42,7 @@ from .stereo_camera import (
     StereoCameraError,
     StereoCameraSession,
     probe_video_devices,
+    run_in_background,
 )
 
 
@@ -423,6 +424,10 @@ class StereoCameraDialog:
         )
         self.session: StereoCameraSession | None = None
         self.after_id: str | None = None
+        self.open_after_id: str | None = None
+        self._opening = False
+        self._closing = False
+        self._pending_capture = False
         self.last_pair: CapturedStereoPair | None = None
         self.preview_images: list[Any] = []
 
@@ -501,8 +506,28 @@ class StereoCameraDialog:
 
     def detect(self) -> None:
         self.stop()
+        if self.open_after_id is not None or self._opening:
+            self.message.set("正在处理上一个相机任务，请稍候…")
+            return
+        self.message.set("正在检测视频设备；每个设备都要试开一次，可能需要数秒…")
+        outcome: dict[str, Any] = {}
+        run_in_background(
+            lambda: probe_video_devices(maximum_index=5),
+            lambda result, error: outcome.setdefault("done", (result, error)),
+        )
+        self._poll_detect(outcome)
+
+    def _poll_detect(self, outcome: dict[str, Any]) -> None:
+        if self._closing:
+            return
+        if "done" not in outcome:
+            self.open_after_id = self.window.after(200, lambda: self._poll_detect(outcome))
+            return
+        self.open_after_id = None
+        devices, error = outcome["done"]
         try:
-            devices = probe_video_devices(maximum_index=5)
+            if error is not None:
+                raise error
             if not devices:
                 raise StereoCameraError("未检测到 OpenCV 可打开的视频设备")
             self.left_index.set(str(devices[0]["index"]))
@@ -513,28 +538,75 @@ class StereoCameraDialog:
                 for item in devices
             )
             self.message.set(f"检测到 {len(devices)} 个视频设备：{summary}")
-        except (OSError, StereoCameraError) as error:
+        except Exception as error:  # native cv2 errors included, never silent
             self.app.messagebox.showerror("相机检测失败", str(error), parent=self.window)
 
-    def start(self) -> bool:
+    def start(self, *, auto_capture: bool = False) -> bool:
+        """Open the camera on a worker thread; the UI stays responsive.
+
+        DirectShow device opens can block for several seconds, so the open
+        runs in the background and ``_poll_open`` adopts the session when it
+        is ready, optionally chaining straight into ``capture``.
+        """
+        if self._opening or self.open_after_id is not None:
+            self.message.set("正在处理上一个相机任务，请稍候…")
+            return False
         try:
-            self.stop()
             left, right = self._indices()
-            self.session = StereoCameraSession(
-                layout=self._layout(),
+            layout = self._layout()
+        except StereoCameraError as error:
+            self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
+            return False
+        self.stop()
+        self._opening = True
+        self._pending_capture = auto_capture
+        self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
+        outcome: dict[str, Any] = {}
+
+        def _task() -> StereoCameraSession:
+            session = StereoCameraSession(
+                layout=layout,
                 left_index=left,
                 right_index=right,
                 eye_width=self.calibration.left.width,
                 eye_height=self.calibration.left.height,
             )
-            self.session.open()
-            self.message.set("相机已打开，正在显示左右目实时预览。")
-            self._update_preview()
-            return True
-        except (OSError, StereoCameraError) as error:
-            self.stop()
+            session.open()
+            return session
+
+        def _on_result(result: Any, error: Exception | None) -> None:
+            if error is not None:
+                outcome["done"] = (None, error)
+                return
+            if self._closing:
+                result.close()
+                outcome["done"] = (None, StereoCameraError("窗口已关闭"))
+                return
+            outcome["done"] = (result, None)
+
+        run_in_background(_task, _on_result)
+        self._poll_open(outcome)
+        return True
+
+    def _poll_open(self, outcome: dict[str, Any]) -> None:
+        if self._closing:
+            return
+        if "done" not in outcome:
+            self.open_after_id = self.window.after(200, lambda: self._poll_open(outcome))
+            return
+        self.open_after_id = None
+        self._opening = False
+        session, error = outcome["done"]
+        if error is not None:
+            self.message.set(f"相机打开失败：{error}")
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
-            return False
+            return
+        self.session = session
+        self.message.set("相机已打开，正在显示左右目实时预览。")
+        self._update_preview()
+        if self._pending_capture:
+            self._pending_capture = False
+            self.capture()
 
     def _photo(self, frame: np.ndarray) -> Any:
         height, width = frame.shape[:2]
@@ -577,7 +649,7 @@ class StereoCameraDialog:
                     "确认左右顺序正确后抓拍。"
                 )
             self.after_id = self.window.after(80, self._update_preview)
-        except (OSError, StereoCameraError) as error:
+        except Exception as error:  # native cv2 errors included, never silent
             self.stop()
             self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
 
@@ -594,9 +666,12 @@ class StereoCameraDialog:
 
     def capture(self) -> None:
         try:
-            if self.session is None and not self.start():
+            if self._opening:
+                self._pending_capture = True
+                self.message.set("相机仍在后台打开；打开后将自动完成本次抓拍。")
                 return
             if self.session is None:
+                self.start(auto_capture=True)
                 return
             pair = self.session.read_pair()
             if np.array_equal(pair.left, pair.right):
@@ -678,11 +753,18 @@ class StereoCameraDialog:
                 f"时间差 {pair.sync_delta_ms:.3f} ms；{confirmation}。"
             )
             self.close()
-        except (OSError, ValueError) as error:
+        except Exception as error:  # native cv2 errors included, never silent
             self.app.messagebox.showerror("同步抓拍失败", str(error), parent=self.window)
 
     def close(self) -> None:
+        self._closing = True
         self.stop()
+        if self.open_after_id is not None:
+            try:
+                self.window.after_cancel(self.open_after_id)
+            except Exception:
+                pass
+            self.open_after_id = None
         self.window.destroy()
 
 
