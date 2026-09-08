@@ -651,11 +651,14 @@ class QrRegistrationDialog:
         stored = owner.qr_settings
         self.window = tk.Toplevel(owner.window)
         self.window.title("1:1 二维码距离、方向与倾斜校正")
-        self.window.geometry("760x650")
+        self.window.geometry("760x670")
         self.window.resizable(False, False)
         self.window.transient(owner.window)
         self.marker_id = tk.StringVar(value=str(stored.get("marker_id", "PIPE-TWIN-QR-001")))
         self.marker_edge = tk.StringVar(value=str(stored.get("marker_edge_mm", 120.0)))
+        self.measured_edge = tk.StringVar(
+            value=str(stored.get("measured_marker_edge_mm", self.marker_edge.get()))
+        )
         self.center = [
             tk.StringVar(value=str(value))
             for value in stored.get("marker_center_world_mm", [0.0, 0.0, 0.0])
@@ -684,15 +687,21 @@ class QrRegistrationDialog:
         ttk.Entry(frame, textvariable=self.marker_id, width=34).grid(
             row=1, column=1, sticky="w", pady=5
         )
-        ttk.Label(frame, text="编码区边长 / mm").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Label(frame, text="文件标称边长 / mm").grid(row=2, column=0, sticky="w", pady=5)
         ttk.Entry(frame, textvariable=self.marker_edge, width=16).grid(
             row=2, column=1, sticky="w", pady=5
+        )
+        ttk.Label(frame, text="打印后实测边长 / mm").grid(
+            row=2, column=2, sticky="e", pady=5
+        )
+        ttk.Entry(frame, textvariable=self.measured_edge, width=12).grid(
+            row=2, column=3, sticky="w", padx=(8, 0), pady=5
         )
         ttk.Button(
             frame,
             text="生成 A4 300DPI 打印 PNG",
             command=self.export_marker,
-        ).grid(row=1, column=2, rowspan=2, columnspan=2, padx=8, pady=5)
+        ).grid(row=1, column=2, columnspan=2, padx=8, pady=5)
 
         ttk.Separator(frame).grid(row=3, column=0, columnspan=4, sticky="ew", pady=12)
         ttk.Label(frame, text="二维码中心 CAD 坐标 / mm").grid(
@@ -768,18 +777,28 @@ class QrRegistrationDialog:
             command=self.apply,
         ).pack(side="left", padx=4)
 
-    def _values(self) -> tuple[str, float, list[float], float]:
+    def _values(self) -> tuple[str, float, float, list[float], float]:
         marker_id = self.marker_id.get().strip()
-        edge = float(self.marker_edge.get())
-        payload = qr_payload(marker_id, edge)
+        nominal_edge = float(self.marker_edge.get())
+        measured_edge = float(self.measured_edge.get())
+        payload = qr_payload(marker_id, nominal_edge)
+        if not np.isfinite(measured_edge) or not 30.0 <= measured_edge <= 160.0:
+            raise QrRegistrationError("打印后实测边长应在 30 到 160 mm 之间")
         center = [float(value.get()) for value in self.center]
         max_rms = float(self.max_rms.get())
-        return payload, edge, center, max_rms
+        return payload, nominal_edge, measured_edge, center, max_rms
 
-    def _remember(self, edge: float, center: list[float], max_rms: float) -> None:
+    def _remember(
+        self,
+        nominal_edge: float,
+        measured_edge: float,
+        center: list[float],
+        max_rms: float,
+    ) -> None:
         self.owner.qr_settings = {
             "marker_id": self.marker_id.get().strip(),
-            "marker_edge_mm": edge,
+            "marker_edge_mm": nominal_edge,
+            "measured_marker_edge_mm": measured_edge,
             "marker_center_world_mm": center,
             "print_right_world": self.print_right.get(),
             "print_up_world": self.print_up.get(),
@@ -788,8 +807,8 @@ class QrRegistrationDialog:
 
     def export_marker(self) -> None:
         try:
-            _payload, edge, center, max_rms = self._values()
-            initial = f"{self.marker_id.get().strip()}_{edge:g}mm_300dpi_1to1.png"
+            _payload, nominal_edge, _measured_edge, center, max_rms = self._values()
+            initial = f"{self.marker_id.get().strip()}_{nominal_edge:g}mm_300dpi_1to1.png"
             selected = self.owner.app.filedialog.asksaveasfilename(
                 parent=self.window,
                 title="保存 1:1 二维码定位板",
@@ -803,9 +822,10 @@ class QrRegistrationDialog:
             path = write_printable_qr_png(
                 selected,
                 marker_id=self.marker_id.get(),
-                marker_edge_mm=edge,
+                marker_edge_mm=nominal_edge,
             )
-            self._remember(edge, center, max_rms)
+            self.measured_edge.set(f"{nominal_edge:g}")
+            self._remember(nominal_edge, nominal_edge, center, max_rms)
             self.message.set(
                 f"打印文件已保存：{path}。打印选择 100%/实际大小，之后用量具复核。"
             )
@@ -820,7 +840,7 @@ class QrRegistrationDialog:
                 raise QrRegistrationError("请先确认打印比例并用量具复核打印尺寸")
             if not self.cad_confirmed.get():
                 raise QrRegistrationError("请先确认二维码的 CAD 坐标和纸面方向")
-            payload, edge, center, max_rms = self._values()
+            payload, nominal_edge, measured_edge, center, max_rms = self._values()
             calibration = load_calibration_json(
                 self.owner.fields["calibration"].get()
             )
@@ -832,7 +852,7 @@ class QrRegistrationDialog:
             estimate = detect_qr_pose(
                 self.owner.fields["left"].get(),
                 expected_payload=payload,
-                marker_edge_mm=edge,
+                marker_edge_mm=measured_edge,
                 intrinsic=parsed.left.intrinsic,
                 expected_size=(parsed.left.width, parsed.left.height),
             )
@@ -848,11 +868,12 @@ class QrRegistrationDialog:
             pose = calibration_pose(adjusted)
             self.owner.calibration_override = adjusted
             self.owner.pose_adjustment = {"mode": "keep"}
-            self._remember(edge, center, max_rms)
+            self._remember(nominal_edge, measured_edge, center, max_rms)
             rig_center = ", ".join(f"{value:.2f}" for value in pose["center_world_mm"])
             forward = ", ".join(f"{value:.4f}" for value in pose["forward_world"])
             result = (
-                f"定位已应用：左目到二维码中心 {estimate.camera_distance_mm:.2f} mm；"
+                f"定位已应用：二维码实测边长 {measured_edge:.2f} mm；"
+                f"左目到二维码中心 {estimate.camera_distance_mm:.2f} mm；"
                 f"重投影 RMS {estimate.reprojection_rms_px:.3f} px；"
                 f"双目中心 CAD [{rig_center}] mm；观察方向 [{forward}]。"
             )

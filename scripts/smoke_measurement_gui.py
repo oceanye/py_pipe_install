@@ -103,6 +103,7 @@ def main():
         root.update()
         assert qr.marker_id.get() == "PIPE-TWIN-QR-001"
         assert qr.marker_edge.get() == "120.0"
+        assert qr.measured_edge.get() == "120.0"
         qr.window.destroy()
         pose = CameraPoseDialog(wizard, calibration)
         assert not pose.advanced_visible

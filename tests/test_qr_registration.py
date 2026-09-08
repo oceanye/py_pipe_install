@@ -147,11 +147,12 @@ class QrRegistrationTests(unittest.TestCase):
             estimate = detect_qr_pose(
                 path,
                 expected_payload=payload,
-                marker_edge_mm=120.0,
+                marker_edge_mm=114.5,
                 intrinsic=intrinsic,
                 expected_size=(marker.shape[1], marker.shape[0]),
             )
         self.assertEqual(estimate.decoded_payload, payload)
+        self.assertEqual(estimate.marker_edge_mm, 114.5)
         self.assertLess(estimate.reprojection_rms_px, 2.0)
 
     def test_invalid_orientation_or_reprojection_is_rejected(self):
