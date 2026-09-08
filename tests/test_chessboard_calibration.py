@@ -263,6 +263,26 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertFalse(result.validated)
         self.assertTrue(any("姿态太单一" in reason for reason in result.rejection_reasons))
 
+    def test_detection_overlay_draws_canonicalized_corners_without_error(self):
+        # Regression: canonicalized corners are float64 while
+        # cv2.drawChessboardCorners requires CV_32FC2; the overlay must
+        # degrade to the plain frame instead of killing the preview.
+        from pipe_twin.calibration_wizard import draw_detection_overlay
+
+        square = 40
+        board = np.full(((7 + 4) * square, (9 + 4) * square), 255, np.uint8)
+        for row in range(7):
+            for column in range(9):
+                if (row + column) % 2 == 0:
+                    board[(row + 2) * square : (row + 3) * square, (column + 2) * square : (column + 3) * square] = 0
+        scene = cv2.cvtColor(board, cv2.COLOR_GRAY2BGR)
+        observation = detect_board_corners(scene, pattern=PATTERN)
+        self.assertIsNotNone(observation)
+        self.assertEqual(observation.corners_px.dtype, np.float64)
+        overlay = draw_detection_overlay(scene, observation, PATTERN)
+        self.assertEqual(overlay.shape, scene.shape)
+        self.assertTrue(np.any(overlay != scene))
+
     def test_save_wizard_result_persists_calibration_recipe_and_profile(self):
         from pipe_twin.workbench_profile import load_profile
 

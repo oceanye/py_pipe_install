@@ -735,6 +735,28 @@ def save_wizard_result(
     return calibration_path
 
 
+def draw_detection_overlay(
+    frame: np.ndarray, observation: BoardObservation, pattern: tuple[int, int]
+) -> np.ndarray:
+    """Return ``frame`` with the detected corners drawn on a copy.
+
+    The overlay is purely cosmetic and must never take the preview down:
+    canonicalized corners are float64 while OpenCV requires CV_32FC2, and a
+    drawing failure degrades to the plain frame.
+    """
+    display = frame.copy()
+    try:
+        cv2.drawChessboardCorners(
+            display,
+            pattern,
+            observation.corners_px.astype(np.float32).reshape(-1, 1, 2),
+            True,
+        )
+    except cv2.error:
+        return frame
+    return display
+
+
 class ChessboardWizardDialog:
     """Print a chessboard, grab pose-diverse pairs, calibrate, and save.
 
@@ -1295,11 +1317,7 @@ class ChessboardWizardDialog:
                 for role, frame in (("left", pair.left), ("right", pair.right)):
                     observation = detect_board_corners(frame, pattern=pattern)
                     if observation is not None:
-                        display = frame.copy()
-                        cv2.drawChessboardCorners(
-                            display, pattern, observation.corners_px.reshape(-1, 1, 2), True
-                        )
-                        displays[role] = display
+                        displays[role] = draw_detection_overlay(frame, observation, pattern)
                         status[role] = (
                             f"已检出，清晰度 {observation.sharpness:.0f}，"
                             f"区域 {observation.centroid_zone}"
