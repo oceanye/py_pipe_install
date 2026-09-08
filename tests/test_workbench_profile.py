@@ -8,10 +8,12 @@ from pathlib import Path
 
 from pipe_twin.workbench_profile import (
     default_profile,
+    load_camera_calibration_bundle,
     load_profile,
     profile_sections_from_state,
     reset_profile,
     save_profile,
+    save_camera_calibration_bundle,
     update_profile,
     calibration_ids_match,
     capture_state_from_profile,
@@ -231,6 +233,33 @@ class WorkbenchProfileTests(unittest.TestCase):
             payload = json.loads(path.read_text(encoding="utf-8"))
             self.assertIn("note", payload)
             self.assertEqual(payload["stereo_calibration"]["calibration_id"], "FIELD-CHESS-TEST-001")
+
+    def test_portable_calibration_bundle_preserves_recipe_and_qr_settings(self):
+        calibration = _calibration()
+        calibration["calibration_id"] += "-qr-registration"
+        calibration["registration_validated"] = True
+        settings = _profile()["qr_settings"]
+        with tempfile.TemporaryDirectory() as temp:
+            path = save_camera_calibration_bundle(
+                Path(temp) / "camera-result.json",
+                calibration,
+                rectification_recipe=_recipe(),
+                qr_settings=settings,
+            )
+            loaded = load_camera_calibration_bundle(path)
+        self.assertEqual(
+            loaded["stereo_calibration"]["calibration_id"],
+            calibration["calibration_id"],
+        )
+        self.assertEqual(loaded["qr_settings"]["measured_marker_edge_mm"], 114.5)
+        self.assertEqual(loaded["rectification_recipe"]["calibration_id"], "FIELD-CHESS-TEST-001")
+
+    def test_chessboard_bundle_without_rectification_recipe_is_rejected(self):
+        calibration = _calibration()
+        with self.assertRaisesRegex(ValueError, "极线矫正配方"):
+            save_camera_calibration_bundle(
+                "unused.json", calibration, rectification_recipe=None
+            )
 
 
 if __name__ == "__main__":

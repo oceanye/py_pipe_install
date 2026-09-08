@@ -19,6 +19,7 @@ from pipe_twin.calibration_wizard import (
     build_rectification_recipe,
     detect_board_corners,
     pose_diversity_report,
+    preferred_stream_mode,
     printable_chessboard_png,
     rectifier_for_calibration,
     solve_stereo_calibration,
@@ -188,6 +189,43 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertLess(result.stereo_rms_px, 0.5)
         self.assertTrue(result.audit["p1_p2_k_identical"])
 
+    def test_joint_solve_uses_the_joint_intrinsics_for_rectification(self):
+        rng = np.random.default_rng(42)
+        noisy = []
+        for left, right in _synthetic_pairs():
+            noisy.append(
+                (
+                    BoardObservation(
+                        left.corners_px + rng.normal(0.0, 0.5, left.corners_px.shape),
+                        left.sharpness,
+                        left.centroid_zone,
+                    ),
+                    BoardObservation(
+                        right.corners_px + rng.normal(0.0, 0.5, right.corners_px.shape),
+                        right.sharpness,
+                        right.centroid_zone,
+                    ),
+                )
+            )
+        object_lists = [_object_points().astype(np.float32)] * len(noisy)
+        left_points = [
+            pair[0].corners_px.reshape(-1, 1, 2).astype(np.float32)
+            for pair in noisy
+        ]
+        _rms, separate_k, _d, _rvecs, _tvecs = cv2.calibrateCamera(
+            object_lists,
+            left_points,
+            SIZE,
+            None,
+            None,
+            flags=cv2.CALIB_FIX_K3,
+        )
+        result = _solve(pairs=noisy, max_reprojection_rms_px=0.01)
+        self.assertEqual(result.audit["solve_mode"], "joint_intrinsics")
+        self.assertFalse(
+            np.allclose(np.asarray(result.recipe["K1"]), separate_k, atol=1e-5)
+        )
+
     def test_wizard_calibration_satisfies_contract_and_field_gate(self):
         result = _solve()
         _calibration_from_manifest(result.calibration)
@@ -292,6 +330,17 @@ class ChessboardWizardTests(unittest.TestCase):
         # 6% of the diagonal is the threshold: 48 px on a 800 px diagonal.
         self.assertFalse(pose_is_novel((320.0, 240.0), (360.0, 240.0), SIZE))
         self.assertTrue(pose_is_novel((320.0, 240.0), (370.0, 240.0), SIZE))
+
+    def test_native_high_resolution_stereo_stream_is_preferred(self):
+        sizes = [(2560, 720), (1280, 480), (3840, 1080), (1920, 1080)]
+        self.assertEqual(
+            preferred_stream_mode(sizes, layout="side_by_side_left_right"),
+            (3840, 1080),
+        )
+        self.assertEqual(
+            preferred_stream_mode(sizes, layout="separate_devices"),
+            (3840, 1080),
+        )
 
     def test_zone_coverage_report_names_missing_areas(self):
         from pipe_twin.calibration_wizard import zone_coverage_report

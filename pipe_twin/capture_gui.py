@@ -777,7 +777,7 @@ class QrRegistrationDialog:
         tk, ttk = app.tk, app.ttk
         stored = owner.qr_settings
         self.window = tk.Toplevel(owner.window)
-        self.window.title("1:1 二维码距离、方向与倾斜校正")
+        self.window.title("相机二维码标定 · 距离、方向与倾斜")
         self.window.geometry("760x670")
         self.window.resizable(False, False)
         self.window.transient(owner.window)
@@ -900,7 +900,7 @@ class QrRegistrationDialog:
         )
         ttk.Button(
             buttons,
-            text="识别当前左目图并应用定位",
+            text="识别并完成相机二维码标定",
             command=self.apply,
         ).pack(side="left", padx=4)
 
@@ -962,12 +962,25 @@ class QrRegistrationDialog:
             )
 
     def apply(self) -> None:
+        from .logging_config import get_logger, log_event
+
+        logger = get_logger("qr_registration")
         try:
             if not self.print_measured.get():
                 raise QrRegistrationError("请先确认打印比例并用量具复核打印尺寸")
             if not self.cad_confirmed.get():
                 raise QrRegistrationError("请先确认二维码的 CAD 坐标和纸面方向")
             payload, nominal_edge, measured_edge, center, max_rms = self._values()
+            log_event(
+                logger,
+                "qr_registration_start",
+                marker_id=self.marker_id.get().strip(),
+                nominal_edge_mm=nominal_edge,
+                measured_edge_mm=measured_edge,
+                marker_center_world_mm=center,
+                print_right_world=self.print_right.get(),
+                print_up_world=self.print_up.get(),
+            )
             calibration = load_calibration_json(
                 self.owner.fields["calibration"].get()
             )
@@ -1010,7 +1023,19 @@ class QrRegistrationDialog:
                 ("calibration_current", "qr_settings", "calibration_path"),
                 calibration=adjusted,
             )
+            self.owner.refresh_calibration_status()
+            log_event(
+                logger,
+                "qr_registration_finished",
+                calibration_id=adjusted.get("calibration_id"),
+                measured_edge_mm=measured_edge,
+                camera_distance_mm=estimate.camera_distance_mm,
+                reprojection_rms_px=estimate.reprojection_rms_px,
+                rig_center_world_mm=pose["center_world_mm"],
+                forward_world=pose["forward_world"],
+            )
         except (OSError, ValueError) as error:
+            log_event(logger, "qr_registration_failed", error=str(error))
             self.owner.app.messagebox.showerror(
                 "二维码定位失败", str(error), parent=self.window
             )
@@ -1289,8 +1314,8 @@ class CaptureInputDialog:
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
         self.window.title("现场数据录入 · 模型、双目照片与标定")
-        self.window.geometry("990x740")
-        self.window.minsize(900, 690)
+        self.window.geometry("1080x840")
+        self.window.minsize(960, 740)
         self.window.transient(app.root)
         self.pipes = copy.deepcopy(app.manifest.get("model", {}).get("pipes", []))
         self.fields = {key: tk.StringVar() for key in ("model", "calibration", "left", "right", "left_time", "right_time")}
@@ -1306,6 +1331,9 @@ class CaptureInputDialog:
         self.camera_capture_provenance: dict[str, dict[str, Any]] = {}
         self.confirmed, self.history = tk.BooleanVar(value=False), tk.BooleanVar(value=False)
         self.message = tk.StringVar(value="相机已连接时可直接同步抓拍；也可导入已有双目照片。标定须含 CAD 世界坐标配准。")
+        self.calibration_status = tk.StringVar(value="相机标定：尚未选择")
+        self.manual_capture_visible = False
+        self.manual_capture_button_text = tk.StringVar(value="导入已有照片/时间…")
         # Restore the persistent workbench profile before the form is built so a
         # new session opens in the previously saved operator state.
         from .workbench_profile import capture_state_from_profile, load_profile
@@ -1329,20 +1357,26 @@ class CaptureInputDialog:
                 self.calibration_override = state["calibration_current"]
             self._profile_used = True
             self.message.set("已恢复上次工作台配置；" + self.message.get())
-        main = ttk.Frame(self.window, padding=12)
+        main = ttk.Frame(self.window, padding=10)
         main.pack(fill="both", expand=True)
-        main.columnconfigure(1, weight=1)
-        for row, (key, label) in enumerate((("model", "CAD 模型"), ("calibration", "双目标定 JSON"), ("left", "左目照片（自动抓拍/文件）"), ("right", "右目照片（自动抓拍/文件）"))):
-            ttk.Label(main, text=label).grid(row=row, column=0, sticky="w", padx=(0, 8), pady=4)
-            ttk.Entry(main, textvariable=self.fields[key]).grid(row=row, column=1, sticky="ew", pady=4)
-            ttk.Button(main, text="选择", command=lambda k=key: self.browse(k)).grid(row=row, column=2, padx=5)
-        for row, key in ((4, "left_time"), (5, "right_time")):
-            ttk.Label(main, text="左目拍摄时间" if key == "left_time" else "右目拍摄时间").grid(row=row, column=0, sticky="w", pady=4)
-            ttk.Entry(main, textvariable=self.fields[key]).grid(row=row, column=1, sticky="ew", pady=4)
-        ttk.Label(main, text="选择照片后自动填写文件时间，请核对实际拍摄时间；支持 2026-09-07 10:00:00，未写时区时使用本机时区。").grid(row=6, column=0, columnspan=3, sticky="w", pady=4)
-        model_toolbar = ttk.Frame(main)
+        main.columnconfigure(0, weight=1)
+        main.rowconfigure(2, weight=1)
+
+        model_group = ttk.LabelFrame(main, text="1. CAD 模型", padding=8)
+        model_group.grid(row=0, column=0, sticky="ew", pady=(0, 7))
+        model_group.columnconfigure(1, weight=1)
+        ttk.Label(model_group, text="模型文件").grid(
+            row=0, column=0, sticky="w", padx=(0, 8), pady=3
+        )
+        ttk.Entry(model_group, textvariable=self.fields["model"]).grid(
+            row=0, column=1, sticky="ew", pady=3
+        )
+        ttk.Button(
+            model_group, text="选择 3DM / 3MF / STL", command=lambda: self.browse("model")
+        ).grid(row=0, column=2, padx=(6, 0), pady=3)
+        model_toolbar = ttk.Frame(model_group)
         self.model_toolbar = model_toolbar
-        model_toolbar.grid(row=7, column=0, columnspan=3, sticky="ew", pady=(7, 2))
+        model_toolbar.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(5, 0))
         ttk.Label(model_toolbar, text="STL 坐标单位：").pack(side="left", padx=(0, 3))
         ttk.Combobox(
             model_toolbar,
@@ -1353,38 +1387,112 @@ class CaptureInputDialog:
         ).pack(side="left", padx=(0, 8))
         ttk.Button(model_toolbar, text="从模型读取直管目录", command=self.scan).pack(side="left", padx=3)
         ttk.Button(model_toolbar, text="导入管件目录", command=self.import_catalog).pack(side="left", padx=3)
-        action_toolbar = ttk.Frame(main)
-        self.action_toolbar = action_toolbar
-        action_toolbar.grid(row=8, column=0, columnspan=3, sticky="ew", pady=(2, 7))
-        ttk.Button(action_toolbar, text="连接双目相机抓拍", command=self.camera_capture).pack(side="left", padx=3)
-        ttk.Button(action_toolbar, text="二维码定位", command=self.qr_registration).pack(side="left", padx=3)
-        ttk.Button(action_toolbar, text="相机方向/倾斜校正", command=self.camera_pose).pack(side="left", padx=3)
-        ttk.Button(action_toolbar, text="编辑所选管件", command=self.edit_pipe).pack(side="left", padx=3)
-        ttk.Button(action_toolbar, text="移除所选管件", command=self.remove_pipe).pack(side="left", padx=3)
-        ttk.Button(action_toolbar, text="导出标定格式示例", command=self.calibration_example).pack(side="left", padx=3)
-        ttk.Button(action_toolbar, text="从照片取色", command=self.pick_color).pack(side="left", padx=3)
-        ttk.Button(action_toolbar, text="棋盘格标定向导", command=self.open_calibration_wizard).pack(side="left", padx=3)
+
+        camera_group = ttk.LabelFrame(main, text="2. 双目相机、棋盘格内参与二维码定位", padding=8)
+        camera_group.grid(row=1, column=0, sticky="ew", pady=(0, 7))
+        camera_group.columnconfigure(1, weight=1)
+        ttk.Label(camera_group, text="当前标定").grid(
+            row=0, column=0, sticky="w", padx=(0, 8), pady=3
+        )
+        ttk.Entry(camera_group, textvariable=self.fields["calibration"]).grid(
+            row=0, column=1, sticky="ew", pady=3
+        )
         ttk.Button(
-            action_toolbar,
-            text="保存工作台配置",
+            camera_group, text="选择标定 JSON", command=lambda: self.browse("calibration")
+        ).grid(row=0, column=2, padx=(6, 0), pady=3)
+        action_toolbar = ttk.Frame(camera_group)
+        self.action_toolbar = action_toolbar
+        action_toolbar.grid(row=1, column=0, columnspan=3, sticky="ew", pady=(6, 2))
+        workflow_actions = ttk.Frame(action_toolbar)
+        workflow_actions.pack(fill="x", pady=(0, 3))
+        ttk.Button(workflow_actions, text="① 棋盘格双目标定", command=self.open_calibration_wizard).pack(side="left", padx=3)
+        ttk.Button(workflow_actions, text="② 连接相机并同步抓拍", command=self.camera_capture).pack(side="left", padx=3)
+        ttk.Button(workflow_actions, text="③ 相机二维码定位", command=self.qr_registration).pack(side="left", padx=3)
+        ttk.Button(workflow_actions, text="④ 自动倾斜微调", command=self.camera_pose).pack(side="left", padx=3)
+        result_actions = ttk.Frame(action_toolbar)
+        result_actions.pack(fill="x")
+        ttk.Button(result_actions, text="读取标定结果", command=self.load_calibration_result).pack(side="left", padx=3)
+        ttk.Button(result_actions, text="保存标定结果", command=self.save_calibration_result).pack(side="left", padx=3)
+        ttk.Button(result_actions, text="查看完整日志", command=self.show_log).pack(side="left", padx=3)
+        ttk.Button(
+            result_actions,
+            textvariable=self.manual_capture_button_text,
+            command=self.toggle_manual_capture,
+        ).pack(side="right", padx=3)
+        ttk.Label(
+            camera_group,
+            textvariable=self.calibration_status,
+            foreground="#355371",
+        ).grid(row=2, column=0, columnspan=3, sticky="w", pady=(4, 1))
+
+        self.manual_capture_frame = ttk.LabelFrame(
+            camera_group, text="可选：导入已有左右目照片", padding=7
+        )
+        self.manual_capture_frame.grid(row=3, column=0, columnspan=3, sticky="ew", pady=(6, 0))
+        self.manual_capture_frame.columnconfigure(1, weight=1)
+        for row, (key, label) in enumerate((("left", "左目照片"), ("right", "右目照片"))):
+            ttk.Label(self.manual_capture_frame, text=label).grid(
+                row=row, column=0, sticky="w", padx=(0, 8), pady=3
+            )
+            ttk.Entry(self.manual_capture_frame, textvariable=self.fields[key]).grid(
+                row=row, column=1, sticky="ew", pady=3
+            )
+            ttk.Button(
+                self.manual_capture_frame,
+                text="选择",
+                command=lambda k=key: self.browse(k),
+            ).grid(row=row, column=2, padx=(6, 0), pady=3)
+        for row, key in ((2, "left_time"), (3, "right_time")):
+            ttk.Label(
+                self.manual_capture_frame,
+                text="左目拍摄时间" if key == "left_time" else "右目拍摄时间",
+            ).grid(row=row, column=0, sticky="w", padx=(0, 8), pady=3)
+            ttk.Entry(self.manual_capture_frame, textvariable=self.fields[key]).grid(
+                row=row, column=1, sticky="ew", pady=3
+            )
+        ttk.Label(
+            self.manual_capture_frame,
+            text="直接连接相机时会自动填写照片和时间；这里只用于历史照片回放。",
+            foreground="#4A6178",
+        ).grid(row=4, column=0, columnspan=3, sticky="w", pady=(3, 0))
+        self.manual_capture_frame.grid_remove()
+
+        catalog_group = ttk.LabelFrame(main, text="3. 管件目录", padding=8)
+        catalog_group.grid(row=2, column=0, sticky="nsew", pady=(0, 7))
+        catalog_group.columnconfigure(0, weight=1)
+        catalog_group.rowconfigure(1, weight=1)
+        catalog_toolbar = ttk.Frame(catalog_group)
+        catalog_toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 5))
+        ttk.Button(catalog_toolbar, text="编辑所选管件", command=self.edit_pipe).pack(side="left", padx=3)
+        ttk.Button(catalog_toolbar, text="移除所选管件", command=self.remove_pipe).pack(side="left", padx=3)
+        ttk.Button(catalog_toolbar, text="从左目照片取色", command=self.pick_color).pack(side="left", padx=3)
+        ttk.Label(catalog_toolbar, text="双击表格也可编辑", foreground="#4A6178").pack(side="right")
+        self.tree = ttk.Treeview(catalog_group, columns=("id", "object", "diameter", "color", "layer"), show="headings", height=7)
+        for key, title in (("id", "管件 ID"), ("object", "CAD 对象 ID"), ("diameter", "设计外径/mm"), ("color", "物体颜色"), ("layer", "设计层")):
+            self.tree.heading(key, text=title)
+            self.tree.column(key, width=140 if key != "object" else 250)
+        self.tree.grid(row=1, column=0, sticky="nsew")
+        self.tree.bind("<Double-1>", lambda _e: self.edit_pipe())
+
+        finish_group = ttk.LabelFrame(main, text="4. 创建现场数据", padding=8)
+        finish_group.grid(row=3, column=0, sticky="ew")
+        finish_group.columnconfigure(0, weight=1)
+        ttk.Checkbutton(finish_group, text="确认左右图来自同一次同步拍摄（相机并排流会自动确认）", variable=self.confirmed).grid(row=0, column=0, sticky="w", pady=2)
+        ttk.Checkbutton(finish_group, text="保留历史拍摄组，用于连续缺失证据判断", variable=self.history).grid(row=1, column=0, sticky="w", pady=2)
+        ttk.Label(finish_group, textvariable=self.message, wraplength=820, foreground="#355371").grid(row=2, column=0, sticky="w", pady=(5, 2))
+        finish_actions = ttk.Frame(finish_group)
+        finish_actions.grid(row=0, column=1, rowspan=3, sticky="e", padx=(8, 0))
+        ttk.Button(
+            finish_actions,
+            text="保存全部配置",
             command=lambda: self._persist_profile(
                 ("model_path", "stl_unit", "pipes", "calibration_path", "calibration_current",
                  "qr_settings", "pose_adjustment", "side_view_distance_mm", "last_manifest_path",
                  "capture_history")
             ),
-        ).pack(side="left", padx=3)
-        ttk.Button(action_toolbar, text="重置工作台配置", command=self.reset_profile).pack(side="left", padx=3)
-        self.tree = ttk.Treeview(main, columns=("id", "object", "diameter", "color", "layer"), show="headings", height=8)
-        for key, title in (("id", "管件 ID"), ("object", "CAD 对象 ID"), ("diameter", "设计外径/mm"), ("color", "物体颜色"), ("layer", "设计层")):
-            self.tree.heading(key, text=title)
-            self.tree.column(key, width=140 if key != "object" else 250)
-        self.tree.grid(row=9, column=0, columnspan=3, sticky="nsew")
-        main.rowconfigure(9, weight=1)
-        self.tree.bind("<Double-1>", lambda _e: self.edit_pipe())
-        ttk.Checkbutton(main, text="确认左右图来自同一次同步拍摄（不能用同一张照片代替双目）", variable=self.confirmed).grid(row=10, column=0, columnspan=3, sticky="w", pady=6)
-        ttk.Checkbutton(main, text="保留当前清单的历史拍摄组，用于连续缺失证据判断（要求配置完全一致）", variable=self.history).grid(row=11, column=0, columnspan=3, sticky="w", pady=3)
-        ttk.Label(main, textvariable=self.message, wraplength=910, foreground="#355371").grid(row=12, column=0, columnspan=3, sticky="w", pady=8)
-        ttk.Button(main, text="创建现场数据并载入", command=self.create).grid(row=13, column=0, columnspan=3, sticky="e", pady=7)
+        ).pack(fill="x", pady=2)
+        ttk.Button(finish_actions, text="重置配置", command=self.reset_profile).pack(fill="x", pady=2)
+        ttk.Button(finish_actions, text="创建现场数据并载入", command=self.create).pack(fill="x", pady=(8, 2))
         if not self._profile_used and app.manifest_path:
             from .gui import _safe_manifest_asset_path
 
@@ -1405,6 +1513,156 @@ class CaptureInputDialog:
         if self.profile_problem:
             self.message.set(self.profile_problem + "请重新配置后点击“保存工作台配置”。")
         self.refresh()
+        self.refresh_calibration_status()
+
+    def toggle_manual_capture(self) -> None:
+        self.manual_capture_visible = not self.manual_capture_visible
+        if self.manual_capture_visible:
+            self.manual_capture_frame.grid()
+            self.manual_capture_button_text.set("收起照片/时间")
+            self.window.geometry("1080x880")
+        else:
+            self.manual_capture_frame.grid_remove()
+            self.manual_capture_button_text.set("导入已有照片/时间…")
+            self.window.geometry("1080x840")
+
+    def refresh_calibration_status(self) -> None:
+        try:
+            calibration = self.calibration_override or load_calibration_json(
+                self.fields["calibration"].get()
+            )
+            problem = field_calibration_problem(calibration)
+            if problem:
+                self.calibration_status.set(f"相机标定：不可用于现场 · {problem}")
+                return
+            from .stereo_analyzer import _calibration_from_manifest
+
+            parsed = _calibration_from_manifest(calibration)
+            registration = calibration.get("registration_adjustment", {})
+            if (
+                calibration.get("registration_validated") is True
+                and registration.get("mode") == "qr_single_planar_control"
+            ):
+                location = "二维码定位已完成"
+            elif calibration.get("registration_validated") is True:
+                location = "CAD 定位已确认"
+            else:
+                location = "尚未完成 CAD 定位"
+            self.calibration_status.set(
+                f"相机标定：已通过 · 每目 {parsed.left.width}×{parsed.left.height} · "
+                f"基线 {parsed.baseline_mm:.2f} mm · {location}"
+            )
+        except (OSError, ValueError) as error:
+            text = str(error)
+            if not self.fields["calibration"].get().strip() and self.calibration_override is None:
+                text = "尚未选择；请先运行棋盘格双目标定或读取标定结果"
+            self.calibration_status.set(f"相机标定：{text}")
+
+    def show_log(self) -> None:
+        from .log_viewer import LogViewerDialog
+
+        LogViewerDialog(self.app, parent=self.window)
+
+    def save_calibration_result(self) -> bool:
+        try:
+            from .workbench_profile import (
+                calibration_ids_match,
+                load_profile,
+                save_camera_calibration_bundle,
+                update_profile,
+            )
+
+            calibration = apply_camera_pose(
+                self.calibration_override
+                or load_calibration_json(self.fields["calibration"].get()),
+                self.pose_adjustment,
+            )
+            profile, _problem = load_profile()
+            recipe = (profile or {}).get("rectification_recipe")
+            if recipe is not None and not calibration_ids_match(
+                str(calibration.get("calibration_id", "")),
+                str(recipe.get("calibration_id", "")),
+            ):
+                recipe = None
+            safe_id = re.sub(
+                r"[^A-Za-z0-9._-]+", "_", str(calibration.get("calibration_id", "camera"))
+            )
+            selected = self.app.filedialog.asksaveasfilename(
+                parent=self.window,
+                title="保存相机标定结果",
+                initialfile=f"相机标定_{safe_id}.json",
+                defaultextension=".json",
+                filetypes=(("相机标定 JSON", "*.json"),),
+            )
+            if not selected:
+                return False
+            self.app.measurement_panel._protect_output(Path(selected))
+            path = save_camera_calibration_bundle(
+                selected,
+                calibration,
+                rectification_recipe=recipe,
+                qr_settings=self.qr_settings,
+            )
+            self.fields["calibration"].set(str(path))
+            self.calibration_override = calibration
+            self.pose_adjustment = {"mode": "keep"}
+            update_profile(
+                {
+                    "calibration_path": str(path),
+                    "calibration_current": calibration,
+                    "rectification_recipe": recipe,
+                    "qr_settings": self.qr_settings,
+                    "pose_adjustment": {"mode": "keep"},
+                }
+            )
+            self.profile, self.profile_problem = load_profile()
+            self.refresh_calibration_status()
+            self.message.set(f"相机标定结果已保存：{path}")
+            return True
+        except (OSError, ValueError) as error:
+            self.app.messagebox.showerror("标定结果保存失败", str(error), parent=self.window)
+            return False
+
+    def _apply_calibration_bundle(self, selected: str | Path) -> None:
+        from .workbench_profile import (
+            load_camera_calibration_bundle,
+            load_profile,
+            update_profile,
+        )
+
+        bundle = load_camera_calibration_bundle(selected)
+        calibration = bundle["stereo_calibration"]
+        self.fields["calibration"].set(str(Path(selected)))
+        self.calibration_override = calibration
+        self.pose_adjustment = {"mode": "keep"}
+        self.qr_settings = bundle["qr_settings"]
+        update_profile(
+            {
+                "calibration_path": str(Path(selected)),
+                "calibration_current": calibration,
+                "rectification_recipe": bundle["rectification_recipe"],
+                "qr_settings": self.qr_settings,
+                "pose_adjustment": {"mode": "keep"},
+            }
+        )
+        self.profile, self.profile_problem = load_profile()
+        self.refresh_calibration_status()
+
+    def load_calibration_result(self) -> bool:
+        selected = self.app.filedialog.askopenfilename(
+            parent=self.window,
+            title="读取相机标定结果",
+            filetypes=(("相机标定 JSON", "*.json"),),
+        )
+        if not selected:
+            return False
+        try:
+            self._apply_calibration_bundle(selected)
+            self.message.set(f"相机标定结果已读取并应用：{selected}")
+            return True
+        except (OSError, ValueError) as error:
+            self.app.messagebox.showerror("标定结果读取失败", str(error), parent=self.window)
+            return False
 
     def _persist_profile(
         self,
@@ -1466,15 +1724,36 @@ class CaptureInputDialog:
                 self.message.set("已保存工作台配置。")
         except Exception:
             pass
+        try:
+            from .workbench_profile import load_profile
+
+            self.profile, self.profile_problem = load_profile()
+        except (OSError, ValueError):
+            pass
 
     def browse(self, key: str) -> None:
         types = (("CAD", "*.3dm *.3mf *.stl"),) if key == "model" else (("JSON", "*.json"),) if key == "calibration" else (("照片", "*.png *.jpg *.jpeg *.bmp *.tif *.tiff"),)
         selected = self.app.filedialog.askopenfilename(parent=self.window, filetypes=types)
         if selected:
+            if key == "calibration":
+                try:
+                    payload = json.loads(Path(selected).read_text(encoding="utf-8-sig"))
+                except (OSError, ValueError, json.JSONDecodeError):
+                    payload = None
+                if isinstance(payload, dict) and payload.get("kind") == "pipe-twin-camera-calibration":
+                    try:
+                        self._apply_calibration_bundle(selected)
+                        self.message.set(f"相机标定结果已读取并应用：{selected}")
+                    except (OSError, ValueError) as error:
+                        self.app.messagebox.showerror(
+                            "标定结果读取失败", str(error), parent=self.window
+                        )
+                    return
             self.fields[key].set(selected)
             if key == "calibration":
                 self.pose_adjustment = {"mode": "keep"}
                 self.calibration_override = None
+                self.refresh_calibration_status()
             elif key in {"left", "right"}:
                 time_key = f"{key}_time"
                 self.timestamp_sources[key] = "MANIFEST_OPERATOR_CONFIRMED"

@@ -572,7 +572,19 @@ def solve_stereo_calibration(
             criteria=criteria,
         )
         if joint_rms < stereo_rms:
-            stereo_rms, R, T, per_view, solve_mode = joint_rms, Rj, Tj, per_view_j, "joint_intrinsics"
+            # The joint solve owns its updated intrinsics and distortion as
+            # well as R/T.  Keeping the earlier monocular K/D here mixed two
+            # different solutions and could make stereoRectify report an
+            # absurd focal length or a principal point outside the image even
+            # when the joint RMS had improved.
+            stereo_rms, R, T, per_view, solve_mode = (
+                joint_rms,
+                Rj,
+                Tj,
+                per_view_j,
+                "joint_intrinsics",
+            )
+            K1, D1, K2, D2 = _K1j, _D1j, _K2j, _D2j
 
     R1, R2, P1, P2, _Q, _roi1, _roi2 = cv2.stereoRectify(
         K1,
@@ -755,6 +767,30 @@ _ZONE_NAMES: dict[tuple[int, int], str] = {
 }
 
 
+def preferred_stream_mode(
+    sizes: list[tuple[int, int]], *, layout: str
+) -> tuple[int, int]:
+    """Choose the highest-resolution plausible stereo stream.
+
+    A side-by-side frame contains two landscape eye images.  The old chooser
+    hard-coded 2560×720 ahead of 3840×1080, forcing this camera to calibrate
+    from rescaled 1280×720 eyes even when its native 1920×1080 pair was
+    available.  Native resolution gives corner fitting and RMS gates the best
+    evidence.
+    """
+    if not sizes:
+        raise ChessboardCalibrationError("相机没有返回可选流分辨率")
+    if layout == "separate_devices":
+        return max(sizes, key=lambda size: size[0] * size[1])
+    plausible = [
+        size
+        for size in sizes
+        if size[0] % 2 == 0
+        and 1.2 <= (size[0] / 2) / max(1, size[1]) <= 2.0
+    ]
+    return max(plausible or sizes, key=lambda size: size[0] * size[1])
+
+
 def zone_coverage_report(zones: Any) -> dict[str, Any]:
     """Map the 3×3 zones actually swept to operator-facing coverage info."""
     covered = {zone for zone in zones if zone in _ZONE_NAMES}
@@ -854,8 +890,8 @@ class ChessboardWizardDialog:
         self.min_pairs = tk.StringVar(value=str(wizard.get("min_pairs", 10)))
         self.max_sync = tk.StringVar(value="1.0")
         self.sharpness_gate = tk.StringVar(value="60")
-        self.eye_width = tk.StringVar(value="1280")
-        self.eye_height = tk.StringVar(value="720")
+        self.eye_width = tk.StringVar(value="1920")
+        self.eye_height = tk.StringVar(value="1080")
         self.mode = tk.StringVar(value=str(camera.get("layout", "side_by_side_left_right")))
         self.left_index = tk.StringVar(value=str(camera.get("left_index", 0)))
         self.right_index = tk.StringVar(value=str(camera.get("right_index", 1)))
@@ -945,7 +981,10 @@ class ChessboardWizardDialog:
         self._mode_labels: list[str] = [
             self._mode_label(width, height) for width, height in self._mode_sizes
         ]
-        self.stream_mode = tk.StringVar(value=self._mode_labels[0])
+        default_mode = preferred_stream_mode(self._mode_sizes, layout=self._layout())
+        self.stream_mode = tk.StringVar(
+            value=self._mode_labels[self._mode_sizes.index(default_mode)]
+        )
         self.stream_combo = ttk.Combobox(
             mode_row,
             textvariable=self.stream_mode,
@@ -1007,6 +1046,7 @@ class ChessboardWizardDialog:
         ttk.Button(actions, text="抓拍一组", command=self.capture_pair).pack(fill="x", pady=3)
         ttk.Button(actions, text="移除上一组", command=self.remove_last).pack(fill="x", pady=3)
         ttk.Button(actions, text="完成标定并保存", command=self.finish).pack(fill="x", pady=(14, 3))
+        ttk.Button(actions, text="查看完整日志", command=self.show_log).pack(fill="x", pady=3)
         ttk.Button(actions, text="关闭", command=self.close).pack(fill="x", pady=3)
 
         ttk.Label(main, textvariable=self.message, wraplength=1040, foreground="#355371").pack(
@@ -1233,15 +1273,8 @@ class ChessboardWizardDialog:
             self._mode_label(width, height) for width, height in self._mode_sizes
         ]
 
-        def _score(size: tuple[int, int]) -> tuple[int, int]:
-            stream_width, stream_height = size
-            if size == (2560, 720):
-                return (3, stream_width * stream_height)
-            if stream_width == 2 * stream_height:
-                return (2, stream_width * stream_height)
-            return (1, stream_width * stream_height)
-
-        best = max(range(len(sizes)), key=lambda position: _score(self._mode_sizes[position]))
+        preferred = preferred_stream_mode(self._mode_sizes, layout=self._layout())
+        best = self._mode_sizes.index(preferred)
         self.stream_combo.configure(values=tuple(self._mode_labels))
         self.stream_mode.set(self._mode_labels[best])
         self._apply_stream_mode()
@@ -1564,6 +1597,11 @@ class ChessboardWizardDialog:
             self._refresh_pairs()
             self.message.set(f"已移除上一组，剩余 {len(self.pairs)} 组。")
 
+    def show_log(self) -> None:
+        from .log_viewer import LogViewerDialog
+
+        LogViewerDialog(self.app, parent=self.window)
+
     def finish(self) -> None:
         try:
             operator = str(self.operator.get()).strip()
@@ -1596,6 +1634,11 @@ class ChessboardWizardDialog:
                     left_rms_px=result.left_rms_px,
                     right_rms_px=result.right_rms_px,
                     zones=sorted(zone.centroid_zone for zone, _right in self.pairs),
+                    solve_audit=result.audit,
+                    image_size_px=list(eye_size),
+                    pattern_inner_corners=list(self._pattern()),
+                    measured_square_mm=square_mm,
+                    maximum_rms_px=maximum_rms,
                 )
                 self.message.set(
                     "标定未通过门禁，未保存：\n· " + "\n· ".join(result.rejection_reasons)
@@ -1637,6 +1680,11 @@ class ChessboardWizardDialog:
                 self.owner.message.set(
                     "棋盘格标定已保存并选中；请继续“二维码定位”完成 CAD 配准。"
                 )
+                if hasattr(self.owner, "refresh_calibration_status"):
+                    from .workbench_profile import load_profile
+
+                    self.owner.profile, self.owner.profile_problem = load_profile()
+                    self.owner.refresh_calibration_status()
             from .logging_config import get_logger, log_event
 
             log_event(
@@ -1676,6 +1724,7 @@ __all__ = [
     "build_rectification_recipe",
     "detect_board_corners",
     "pose_diversity_report",
+    "preferred_stream_mode",
     "printable_chessboard_png",
     "rectifier_for_calibration",
     "save_wizard_result",

@@ -30,6 +30,8 @@ from .pipeline import atomic_write_text
 
 KIND = "pipe-twin-workbench-profile"
 SCHEMA_VERSION = "1.0"
+CALIBRATION_BUNDLE_KIND = "pipe-twin-camera-calibration"
+CALIBRATION_BUNDLE_SCHEMA_VERSION = "1.0"
 
 # Keep in sync with measurement_gui.OUTPUT_ROOT; duplicated here so this data
 # module does not pull in a Tk panel module.
@@ -518,23 +520,131 @@ def write_standalone_calibration(
     )
 
 
+def camera_calibration_bundle(
+    calibration: Mapping,
+    *,
+    rectification_recipe: Mapping | None = None,
+    qr_settings: Mapping | None = None,
+) -> dict:
+    """Build a portable camera calibration result with its remap recipe."""
+    from .stereo_analyzer import _calibration_from_manifest
+
+    calibration_copy = copy.deepcopy(dict(calibration))
+    parsed = _calibration_from_manifest(calibration_copy)
+    recipe = (
+        None
+        if rectification_recipe is None
+        else validate_rectification_recipe(
+            rectification_recipe, calibration=calibration_copy
+        )
+    )
+    if recipe is not None and not calibration_ids_match(
+        parsed.calibration_id, str(recipe.get("calibration_id", ""))
+    ):
+        raise ValueError("极线矫正配方不属于当前相机标定")
+    if "-chess-" in parsed.calibration_id.casefold() and recipe is None:
+        raise ValueError("棋盘格向导标定必须连同极线矫正配方一起保存")
+    settings = _validate_qr_settings(dict(qr_settings or {}))
+    return {
+        "kind": CALIBRATION_BUNDLE_KIND,
+        "schema_version": CALIBRATION_BUNDLE_SCHEMA_VERSION,
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+        "stereo_calibration": calibration_copy,
+        "rectification_recipe": recipe,
+        "qr_settings": settings,
+    }
+
+
+def validate_camera_calibration_bundle(payload: Any) -> dict:
+    """Validate a saved calibration bundle and normalize its JSON values."""
+    if not isinstance(payload, dict):
+        raise ValueError("相机标定结果必须是 JSON 对象")
+    if payload.get("kind") != CALIBRATION_BUNDLE_KIND or payload.get(
+        "schema_version"
+    ) != CALIBRATION_BUNDLE_SCHEMA_VERSION:
+        raise ValueError(
+            f"请选择 {CALIBRATION_BUNDLE_KIND} 版本 "
+            f"{CALIBRATION_BUNDLE_SCHEMA_VERSION} 的标定结果"
+        )
+    expected = {
+        "kind",
+        "schema_version",
+        "saved_at",
+        "stereo_calibration",
+        "rectification_recipe",
+        "qr_settings",
+    }
+    if set(payload) != expected:
+        raise ValueError("相机标定结果字段不完整或包含未知字段")
+    try:
+        datetime.fromisoformat(str(payload.get("saved_at", "")))
+    except ValueError as error:
+        raise ValueError("相机标定结果缺少有效保存时间") from error
+    normalized = camera_calibration_bundle(
+        payload["stereo_calibration"],
+        rectification_recipe=payload["rectification_recipe"],
+        qr_settings=payload["qr_settings"],
+    )
+    normalized["saved_at"] = str(payload["saved_at"])
+    return normalized
+
+
+def save_camera_calibration_bundle(
+    path: str | Path,
+    calibration: Mapping,
+    *,
+    rectification_recipe: Mapping | None = None,
+    qr_settings: Mapping | None = None,
+) -> Path:
+    """Atomically save a portable intrinsic + QR registration result."""
+    target = Path(path)
+    if target.suffix.lower() != ".json":
+        target = target.with_suffix(".json")
+    payload = camera_calibration_bundle(
+        calibration,
+        rectification_recipe=rectification_recipe,
+        qr_settings=qr_settings,
+    )
+    return atomic_write_text(
+        target, json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
+    )
+
+
+def load_camera_calibration_bundle(path: str | Path) -> dict:
+    """Read a saved portable camera calibration result."""
+    source = Path(path)
+    if not source.is_file():
+        raise ValueError(f"相机标定结果不存在或不是文件：{source}")
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8-sig"))
+    except (json.JSONDecodeError, UnicodeDecodeError) as error:
+        raise ValueError(f"相机标定结果 JSON 无效：{error}") from error
+    return validate_camera_calibration_bundle(payload)
+
+
 __all__ = [
+    "CALIBRATION_BUNDLE_KIND",
+    "CALIBRATION_BUNDLE_SCHEMA_VERSION",
     "CALIBRATION_NAME",
     "KIND",
     "PROFILE_NAME",
     "SCHEMA_VERSION",
     "STL_UNITS",
     "calibration_ids_match",
+    "camera_calibration_bundle",
     "capture_state_from_profile",
     "default_calibration_path",
     "default_profile",
     "default_profile_path",
     "load_profile",
+    "load_camera_calibration_bundle",
     "profile_sections_from_state",
     "reset_profile",
     "save_profile",
+    "save_camera_calibration_bundle",
     "update_profile",
     "validate_profile",
+    "validate_camera_calibration_bundle",
     "validate_rectification_recipe",
     "write_standalone_calibration",
 ]

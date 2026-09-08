@@ -120,6 +120,15 @@ def main():
         wizard = CaptureInputDialog(app)
         root.update()
         assert len(wizard.tree.get_children()) == 9
+        assert wizard.model_toolbar.winfo_reqwidth() < 950
+        assert wizard.action_toolbar.winfo_reqwidth() < 950
+        assert not wizard.manual_capture_visible
+        wizard.toggle_manual_capture()
+        root.update()
+        assert wizard.manual_capture_visible
+        wizard.toggle_manual_capture()
+        assert not wizard.manual_capture_visible
+        assert "相机标定" in wizard.calibration_status.get()
         calibration = json.loads(manifest.read_text(encoding="utf-8"))["stereo_calibration"]
         camera = StereoCameraDialog(wizard, calibration)
         root.update()
@@ -155,6 +164,8 @@ def main():
         board = ChessboardWizardDialog(app, owner=wizard)
         root.update()
         assert board.columns.get() == "9" and board.rows.get() == "7"
+        assert "3840×1080" in board.stream_mode.get()
+        assert (board.eye_width.get(), board.eye_height.get()) == ("1920", "1080")
         assert "180×140" in board.fit_hint.get() and "可打印" in board.fit_hint.get()
         board.columns.set("12")
         root.update()
