@@ -151,6 +151,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     validate_parser.add_argument("--output", help="optional JSON diagnostics output")
 
+    calibrate_parser = subparsers.add_parser(
+        "calibrate-stereo",
+        help="automatically calibrate a stereo rig from paired chessboard photo folders",
+    )
+    calibrate_parser.add_argument("--left-dir", required=True, help="left-camera chessboard photos")
+    calibrate_parser.add_argument("--right-dir", required=True, help="right-camera chessboard photos")
+    calibrate_parser.add_argument("--output", required=True, help="generated calibration JSON")
+    calibrate_parser.add_argument("--calibration-id", default="FIELD-AUTO-STEREO")
+    calibrate_parser.add_argument("--board-columns", type=int, default=9, help="inner corners (default: 9)")
+    calibrate_parser.add_argument("--board-rows", type=int, default=6, help="inner corners (default: 6)")
+    calibrate_parser.add_argument("--square-size-mm", type=float, default=25.0, help="checker square edge in mm (default: 25)")
+    calibrate_parser.add_argument("--min-pairs", type=int, default=8, help="minimum usable pairs (default: 8)")
+    calibrate_parser.add_argument(
+        "--max-rms-px", type=float, default=1.5,
+        help="reject poor calibration above this RMS reprojection error; 0 disables the gate",
+    )
+
     gui_parser = subparsers.add_parser(
         "gui", help="open the local CAD-bound pipe status dashboard"
     )
@@ -184,6 +201,34 @@ def _main(argv: Sequence[str] | None = None) -> int:
             _write_json(args.output, diagnostics)
         print(json.dumps(diagnostics, ensure_ascii=False, indent=2))
         return 0 if diagnostics["valid"] else 1
+    if args.command == "calibrate-stereo":
+        from .calibration_wizard import (
+            CalibrationWizardError,
+            calibrate_stereo_from_folders,
+            write_calibration,
+        )
+
+        try:
+            calibration = calibrate_stereo_from_folders(
+                args.left_dir,
+                args.right_dir,
+                board_columns=args.board_columns,
+                board_rows=args.board_rows,
+                square_size_mm=args.square_size_mm,
+                calibration_id=args.calibration_id,
+                min_pairs=args.min_pairs,
+                max_rms_px=None if args.max_rms_px <= 0 else args.max_rms_px,
+            )
+        except CalibrationWizardError as error:
+            raise SystemExit(f"自动双目标定失败：{error}") from error
+        output = write_calibration(args.output, calibration)
+        quality = calibration["source_audit"]["auto_calibration"]
+        print(
+            f"自动双目标定完成：有效 {quality['accepted_pairs']}/{quality['candidate_pairs']} 对，"
+            f"RMS={quality['rms_stereo_px']:.3f}px"
+        )
+        print(f"标定 JSON 已写入 {output.resolve()}；下一步请用 QR/位姿完成 CAD 配准。")
+        return 0
     if args.command == "inspect-model":
         if args.output:
             ensure_paths_distinct(model=args.model, output=args.output)

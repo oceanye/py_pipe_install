@@ -222,10 +222,14 @@ python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millime
 现场 manifest 使用 `schema_version=2.0`，显式绑定模型哈希、每根管的 `pipe_id ↔ cad_object_id`、中心线/外径/颜色、双目标定与 CAD 外参，以及按时间排序的 `capture.capture_groups[].views.left/right`。当前 M2 的 SGBM 与 `Z=fx·B/d` 门禁只接收已经完成共同极线矫正的左右图（`stereo_calibration.rectified=true`）；若相机输出原始未矫正图，先用同一组内参/双目标定执行 `cv2.stereoRectify` 和 `initUndistortRectifyMap`，再把矫正后的图及其哈希写入 manifest。完整字段和实物采集清单见[现场双目识别与 GUI 使用说明](doc/现场双目识别与GUI使用说明.md)。先把 GLM/OpenCV 的原始标定转换为 manifest 标定（必须显式提供 translation_unit 和 left_camera_pose，适配器不会猜单位或 CAD 外参）。
 
 命令：
+  # 自动棋盘格标定：左右目录按排序后一一配对，默认 9×6 内角点、25 mm 方格、至少 8 对
+  python -m pipe_twin calibrate-stereo --left-dir calibration/left --right-dir calibration/right --output calibration/auto_stereo.json
   python -m pipe_twin adapt-calibration --source calibration/opencv_stereo.json --output calibration/manifest_stereo_calibration.json --calibration-id field-rig-202609 --validated --registration-validated
   python -m pipe_twin validate-calibration --calibration calibration/manifest_stereo_calibration.json
 
-适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。validated 和 registration-validated 只有在独立重投影/配准检查通过后才应打开；valid=true 只表示格式和几何契约通过，不代表现场精度验收。
+`calibrate-stereo` 会自动检测棋盘角点、剔除未检测到的照片、执行两目内参/外参求解和 `stereoRectify`，并输出统一格式的 JSON。只有在棋盘照片质量不足或左右数量不一致时才需要补拍；需要不同规格时再显式传 `--board-columns/--board-rows/--square-size-mm`。输出会在 RMS 质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘重投影质量通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
+
+建议的自动标定顺序是：打印一张已知方格边长的棋盘格；让棋盘在近/中/远距离、画面四角和不同倾角各拍一组左右同步照片（建议 8–15 组）；把左目照片放入 `calibration/left`、右目照片放入 `calibration/right`，两边按同一序号命名；运行上面的命令后，在快速双目评估窗口使用二维码配准。程序会报告每一组被接受或剔除的原因和 RMS 重投影误差，失败时只需补拍提示的照片。
 运行分析：
 
 现场数据录入窗口可选择相机位于 CAD 的 ±X/±Y/±Z 方向，也可沿用当前外参并输入双目组中心、yaw、pitch、roll；它们作为刚性相机—CAD 外参调整参与完整三维投影、管件定位、角度匹配和前后关系判定。修改后的外参应使用固定控制点再次验证，不能用角度输入替代双目图像的极线矫正。

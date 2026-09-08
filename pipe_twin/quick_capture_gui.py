@@ -77,7 +77,7 @@ class QuickCaptureDialog:
             row=6, column=0, columnspan=3, sticky="w", pady=(3, 10)
         )
 
-        self._path_row(main, 7, "双目标定", "calibration", "选择 JSON", self.browse_calibration)
+        self._calibration_row(main, 7)
         self._path_row(main, 8, "左目已矫正照片", "left", "选择照片", lambda: self.browse_photo("left"))
         self._path_row(main, 9, "右目已矫正照片", "right", "选择照片", lambda: self.browse_photo("right"))
         ttk.Label(main, text="拍摄时间").grid(row=10, column=0, sticky="w", pady=5)
@@ -106,6 +106,16 @@ class QuickCaptureDialog:
         ttk.Entry(parent, textvariable=self.fields[key]).grid(row=row, column=1, sticky="ew", pady=5)
         ttk.Button(parent, text=button, command=command).grid(row=row, column=2, sticky="e", pady=5)
 
+    def _calibration_row(self, parent: Any, row: int) -> None:
+        """Show the existing file picker plus a one-click chessboard wizard."""
+        ttk = self.app.ttk
+        ttk.Label(parent, text="双目标定").grid(row=row, column=0, sticky="w", pady=5)
+        ttk.Entry(parent, textvariable=self.fields["calibration"]).grid(row=row, column=1, sticky="ew", pady=5)
+        buttons = ttk.Frame(parent)
+        buttons.grid(row=row, column=2, sticky="e", pady=5)
+        ttk.Button(buttons, text="选择 JSON", command=self.browse_calibration).pack(side="left")
+        ttk.Button(buttons, text="自动标定向导", command=self.auto_calibrate).pack(side="left", padx=(4, 0))
+
     def browse_model(self) -> None:
         selected = self.app.filedialog.askopenfilename(
             parent=self.window, filetypes=(("STL", "*.stl"), ("CAD", "*.3dm *.3mf"))
@@ -118,6 +128,44 @@ class QuickCaptureDialog:
         selected = self.app.filedialog.askopenfilename(parent=self.window, filetypes=(("JSON", "*.json"),))
         if selected:
             self.fields["calibration"].set(selected)
+
+    def auto_calibrate(self) -> None:
+        """Collect two folders and run the default checkerboard calibration."""
+        try:
+            left_dir = self.app.filedialog.askdirectory(parent=self.window, title="选择左目棋盘照片目录")
+            if not left_dir:
+                return
+            right_dir = self.app.filedialog.askdirectory(parent=self.window, title="选择右目棋盘照片目录")
+            if not right_dir:
+                return
+            from tkinter import simpledialog
+
+            columns = simpledialog.askinteger("棋盘规格", "横向内角点数（默认 9）", initialvalue=9, minvalue=3, parent=self.window)
+            rows = simpledialog.askinteger("棋盘规格", "纵向内角点数（默认 6）", initialvalue=6, minvalue=3, parent=self.window)
+            square = simpledialog.askfloat("棋盘规格", "棋盘格边长（mm，默认 25）", initialvalue=25.0, minvalue=0.001, parent=self.window)
+            if columns is None or rows is None or square is None:
+                return
+            from .calibration_wizard import calibrate_stereo_from_folders, write_calibration
+
+            calibration = calibrate_stereo_from_folders(
+                left_dir, right_dir, board_columns=columns, board_rows=rows,
+                square_size_mm=square, calibration_id="FIELD-AUTO-STEREO",
+            )
+            destination = self.app.filedialog.asksaveasfilename(
+                parent=self.window, title="保存自动生成的标定 JSON", defaultextension=".json",
+                filetypes=(("JSON", "*.json"),), initialfile="stereo_calibration_auto.json",
+            )
+            if not destination:
+                return
+            write_calibration(destination, calibration)
+            self.fields["calibration"].set(destination)
+            quality = calibration["source_audit"]["auto_calibration"]
+            self.message.set(
+                f"自动标定完成：有效 {quality['accepted_pairs']}/{quality['candidate_pairs']} 对，"
+                f"双目 RMS {quality['rms_stereo_px']:.3f}px。请继续用 QR 完成 CAD 配准。"
+            )
+        except (OSError, ValueError) as error:
+            self.app.messagebox.showerror("自动标定失败", str(error), parent=self.window)
 
     def browse_photo(self, role: str) -> None:
         selected = self.app.filedialog.askopenfilename(
