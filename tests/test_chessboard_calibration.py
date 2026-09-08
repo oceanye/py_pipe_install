@@ -283,6 +283,16 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertEqual(overlay.shape, scene.shape)
         self.assertTrue(np.any(overlay != scene))
 
+    def test_pose_novelty_gate_for_automatic_capture(self):
+        from pipe_twin.calibration_wizard import pose_is_novel
+
+        self.assertTrue(pose_is_novel(None, (100.0, 100.0), SIZE))
+        self.assertFalse(pose_is_novel((320.0, 240.0), (326.0, 244.0), SIZE))
+        self.assertTrue(pose_is_novel((320.0, 240.0), (420.0, 240.0), SIZE))
+        # 6% of the diagonal is the threshold: 48 px on a 800 px diagonal.
+        self.assertFalse(pose_is_novel((320.0, 240.0), (360.0, 240.0), SIZE))
+        self.assertTrue(pose_is_novel((320.0, 240.0), (370.0, 240.0), SIZE))
+
     def test_save_wizard_result_persists_calibration_recipe_and_profile(self):
         from pipe_twin.workbench_profile import load_profile
 

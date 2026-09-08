@@ -25,6 +25,7 @@ import math
 import re
 import struct
 import threading
+import time
 import zlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -735,6 +736,32 @@ def save_wizard_result(
     return calibration_path
 
 
+_MAX_AUTO_PAIRS = 30
+_AUTO_CAPTURE_COOLDOWN_S = 1.0
+_NOVEL_POSE_RATIO = 0.06
+
+
+def pose_is_novel(
+    previous_xy: Any,
+    new_xy: Any,
+    image_size: tuple[int, int],
+    *,
+    min_ratio: float = _NOVEL_POSE_RATIO,
+) -> bool:
+    """Require real pose change before an automatic capture is accepted.
+
+    Without this, sweeping the board slowly would stack many near-identical
+    pairs that look numerous but add no calibration information.
+    """
+    if previous_xy is None:
+        return True
+    diagonal = float(math.hypot(image_size[0], image_size[1]))
+    if diagonal <= 0:
+        return True
+    delta = float(np.linalg.norm(np.asarray(new_xy, dtype=float) - np.asarray(previous_xy, dtype=float)))
+    return delta >= min_ratio * diagonal
+
+
 def draw_detection_overlay(
     frame: np.ndarray, observation: BoardObservation, pattern: tuple[int, int]
 ) -> np.ndarray:
@@ -814,7 +841,10 @@ class ChessboardWizardDialog:
         self._probe_cancelled = threading.Event()
         self._tick = 0
         self.preview_images: list[Any] = []
+        self._last_auto_time = 0.0
+        self._last_left_centroid: Any = None
         self.pairs: list[tuple[BoardObservation, BoardObservation]] = []
+        self.continuous = tk.BooleanVar(value=True)
         self.message = tk.StringVar(
             value=(
                 "步骤：生成并 100% 打印棋盘格 → 量取实测格边长 → 打开预览，"
@@ -941,6 +971,11 @@ class ChessboardWizardDialog:
         self.tree.pack(side="left", fill="both", expand=True)
         actions = ttk.Frame(bottom)
         actions.pack(side="left", fill="y", padx=(8, 0))
+        ttk.Checkbutton(
+            actions,
+            text="连续抓拍（移动棋盘格自动采集）",
+            variable=self.continuous,
+        ).pack(fill="x", pady=(0, 3))
         ttk.Button(actions, text="抓拍一组", command=self.capture_pair).pack(fill="x", pady=3)
         ttk.Button(actions, text="移除上一组", command=self.remove_last).pack(fill="x", pady=3)
         ttk.Button(actions, text="完成标定并保存", command=self.finish).pack(fill="x", pady=(14, 3))
@@ -1313,10 +1348,12 @@ class ChessboardWizardDialog:
             pattern = self._pattern()
             status = {role: "未检出" for role, _frame in (("left", pair.left), ("right", pair.right))}
             displays = {"left": pair.left, "right": pair.right}
+            observations: dict[str, BoardObservation] = {}
             if self._tick % 3 == 0:
                 for role, frame in (("left", pair.left), ("right", pair.right)):
                     observation = detect_board_corners(frame, pattern=pattern)
                     if observation is not None:
+                        observations[role] = observation
                         displays[role] = draw_detection_overlay(frame, observation, pattern)
                         status[role] = (
                             f"已检出，清晰度 {observation.sharpness:.0f}，"
@@ -1324,6 +1361,7 @@ class ChessboardWizardDialog:
                         )
                     else:
                         status[role] = "未检出，请让整个棋盘格进入画面"
+                self._maybe_auto_capture(pair, observations)
             self.preview_images = [self._photo(displays["left"]), self._photo(displays["right"])]
             self.left_preview.configure(image=self.preview_images[0])
             self.right_preview.configure(image=self.preview_images[1])
@@ -1337,6 +1375,60 @@ class ChessboardWizardDialog:
             log_event(get_logger("calibration_wizard"), "wizard_preview_failed", error=str(error))
             self.stop()
             self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
+
+    def _maybe_auto_capture(
+        self, pair: Any, observations: dict[str, BoardObservation]
+    ) -> None:
+        """Accept a pair automatically when the pose really changed.
+
+        Continuously sweeping the board replaces per-pose button clicks; the
+        novelty gate keeps near-identical frames from padding the count.
+        """
+        if not self.continuous.get() or len(observations) < 2:
+            return
+        if len(self.pairs) >= _MAX_AUTO_PAIRS:
+            self.continuous.set(False)
+            self.message.set(f"已达自动采集上限 {_MAX_AUTO_PAIRS} 组，请点击“完成标定并保存”。")
+            return
+        now = time.monotonic()
+        if now - self._last_auto_time < _AUTO_CAPTURE_COOLDOWN_S:
+            return
+        left_obs = observations["left"]
+        if not pose_is_novel(
+            self._last_left_centroid,
+            left_obs.centroid_px,
+            (pair.left.shape[1], pair.left.shape[0]),
+        ):
+            return
+        self._accept_pair(left_obs, observations["right"], automatic=True)
+        self._last_auto_time = now
+        self._last_left_centroid = left_obs.centroid_px
+
+    def _accept_pair(
+        self, left_obs: BoardObservation, right_obs: BoardObservation, *, automatic: bool
+    ) -> None:
+        from .logging_config import get_logger, log_event
+
+        self.pairs.append((left_obs, right_obs))
+        minimum = self._int_value(self.min_pairs, "最少组数", minimum=3)
+        count = len(self.pairs)
+        self._refresh_pairs()
+        summary = f"{'自动' if automatic else '手动'}接受第 {count} 组（建议 ≥ {minimum} 组）"
+        if count >= minimum:
+            summary += "；已达到建议组数，可点击“完成标定并保存”，也可继续补充远近与角度。"
+        else:
+            summary += "；继续移动棋盘格，覆盖画面四角与中心，并变换远近和倾斜角。"
+        if count >= _MAX_AUTO_PAIRS:
+            self.continuous.set(False)
+            summary += f" 已达自动采集上限 {_MAX_AUTO_PAIRS} 组。"
+        self.message.set(summary)
+        log_event(
+            get_logger("calibration_wizard"),
+            "wizard_pair_accepted",
+            count=count,
+            automatic=automatic,
+            left_zone=left_obs.centroid_zone,
+        )
 
     def stop(self) -> None:
         # Also interrupts a running device sweep between indices.
@@ -1380,13 +1472,7 @@ class ChessboardWizardDialog:
                         f"{role} 目未检出完整棋盘格；请让整个棋盘格平整进入画面后重试。"
                     )
                 observations.append(observation)
-            self.pairs.append((observations[0], observations[1]))
-            minimum = self._int_value(self.min_pairs, "最少组数", minimum=3)
-            self.message.set(
-                f"已接受 {len(self.pairs)} 组（建议 ≥ {minimum} 组）；"
-                "请继续更换棋盘格位置、角度和距离，覆盖画面四角与中心。"
-            )
-            self._refresh_pairs()
+            self._accept_pair(observations[0], observations[1], automatic=False)
         except Exception as error:  # native cv2 errors included, never silent
             from .logging_config import get_logger, log_event
 
