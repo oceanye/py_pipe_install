@@ -739,6 +739,31 @@ def save_wizard_result(
 _MAX_AUTO_PAIRS = 30
 _AUTO_CAPTURE_COOLDOWN_S = 1.0
 _NOVEL_POSE_RATIO = 0.06
+_MIN_COVERED_ZONES = 6
+
+_ZONE_NAMES: dict[tuple[int, int], str] = {
+    (0, 0): "左上",
+    (1, 0): "上中",
+    (2, 0): "右上",
+    (0, 1): "左中",
+    (1, 1): "中心",
+    (2, 1): "右中",
+    (0, 2): "左下",
+    (1, 2): "下中",
+    (2, 2): "右下",
+}
+
+
+def zone_coverage_report(zones: Any) -> dict[str, Any]:
+    """Map the 3×3 zones actually swept to operator-facing coverage info."""
+    covered = {zone for zone in zones if zone in _ZONE_NAMES}
+    missing = [name for zone, name in _ZONE_NAMES.items() if zone not in covered]
+    return {
+        "covered": len(covered),
+        "total": len(_ZONE_NAMES),
+        "required": _MIN_COVERED_ZONES,
+        "missing": missing,
+    }
 
 
 def pose_is_novel(
@@ -1413,11 +1438,19 @@ class ChessboardWizardDialog:
         minimum = self._int_value(self.min_pairs, "最少组数", minimum=3)
         count = len(self.pairs)
         self._refresh_pairs()
+        coverage = zone_coverage_report(
+            left.centroid_zone for left, _right in self.pairs
+        )
         summary = f"{'自动' if automatic else '手动'}接受第 {count} 组（建议 ≥ {minimum} 组）"
-        if count >= minimum:
-            summary += "；已达到建议组数，可点击“完成标定并保存”，也可继续补充远近与角度。"
+        if coverage["missing"]:
+            summary += (
+                f"；区域覆盖 {coverage['covered']}/9（要求 ≥{coverage['required']}），"
+                f"尚缺：{'、'.join(coverage['missing'])}"
+            )
         else:
-            summary += "；继续移动棋盘格，覆盖画面四角与中心，并变换远近和倾斜角。"
+            summary += "；区域覆盖 9/9。"
+        if count >= minimum and coverage["covered"] >= coverage["required"]:
+            summary += " 已满足组数与区域要求，可点击“完成标定并保存”，或继续补充远近与角度。"
         if count >= _MAX_AUTO_PAIRS:
             self.continuous.set(False)
             summary += f" 已达自动采集上限 {_MAX_AUTO_PAIRS} 组。"
@@ -1521,6 +1554,18 @@ class ChessboardWizardDialog:
                 layout=layout,
             )
             if not result.validated:
+                from .logging_config import get_logger, log_event
+
+                log_event(
+                    get_logger("calibration_wizard"),
+                    "wizard_solve_rejected",
+                    reasons=result.rejection_reasons,
+                    pair_count=result.pair_count,
+                    stereo_rms_px=result.stereo_rms_px,
+                    left_rms_px=result.left_rms_px,
+                    right_rms_px=result.right_rms_px,
+                    zones=sorted(zone.centroid_zone for zone, _right in self.pairs),
+                )
                 self.message.set(
                     "标定未通过门禁，未保存：\n· " + "\n· ".join(result.rejection_reasons)
                 )

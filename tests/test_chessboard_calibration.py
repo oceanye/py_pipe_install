@@ -293,6 +293,20 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertFalse(pose_is_novel((320.0, 240.0), (360.0, 240.0), SIZE))
         self.assertTrue(pose_is_novel((320.0, 240.0), (370.0, 240.0), SIZE))
 
+    def test_zone_coverage_report_names_missing_areas(self):
+        from pipe_twin.calibration_wizard import zone_coverage_report
+
+        report = zone_coverage_report({(1, 1), (2, 1), (1, 2)})
+        self.assertEqual(report["covered"], 3)
+        self.assertEqual(report["required"], 6)
+        self.assertIn("左上", report["missing"])
+        self.assertNotIn("中心", report["missing"])
+        self.assertEqual(zone_coverage_report(set())["covered"], 0)
+        full = zone_coverage_report(
+            {(col, row) for col in range(3) for row in range(3)}
+        )
+        self.assertEqual((full["covered"], full["missing"]), (9, []))
+
     def test_save_wizard_result_persists_calibration_recipe_and_profile(self):
         from pipe_twin.workbench_profile import load_profile
 
