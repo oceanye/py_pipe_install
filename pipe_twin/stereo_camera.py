@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -54,27 +55,63 @@ def probe_video_devices(
     maximum_index: int = 7,
     backend: int | None = None,
     capture_factory: Callable[..., Any] = cv2.VideoCapture,
+    per_index_timeout_s: float = 5.0,
+    progress: Callable[[int, str], None] | None = None,
+    cancelled: Callable[[], bool] | None = None,
 ) -> list[dict[str, Any]]:
-    """Return OpenCV camera indices that can be opened, without retaining them."""
+    """Return OpenCV camera indices that can be opened, without retaining them.
+
+    A single misbehaving capture driver (commonly a virtual camera) can block
+    inside ``VideoCapture`` forever, so every index is probed on a worker
+    thread bounded by ``per_index_timeout_s``.  A timed-out index is skipped
+    and reported via ``progress``; its worker keeps running as a daemon and
+    releases the device whenever the driver finally answers.  ``cancelled``
+    is polled between indices so the UI can abort a long sweep.
+    """
     if type(maximum_index) is not int or not 0 <= maximum_index <= 32:
         raise StereoCameraError("maximum_index must be an integer between 0 and 32")
     selected_backend = _default_backend() if backend is None else backend
     devices: list[dict[str, Any]] = []
-    for index in range(maximum_index + 1):
+
+    def _probe_one(index: int) -> dict[str, Any] | None:
         capture = capture_factory(index, selected_backend)
         try:
-            if capture.isOpened():
-                devices.append(
-                    {
-                        "index": index,
-                        "width": int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                        "height": int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-                        "fps": float(capture.get(cv2.CAP_PROP_FPS)),
-                        "backend": int(selected_backend),
-                    }
-                )
+            if not capture.isOpened():
+                return None
+            return {
+                "index": index,
+                "width": int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                "height": int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+                "fps": float(capture.get(cv2.CAP_PROP_FPS)),
+                "backend": int(selected_backend),
+            }
+        except Exception:
+            # Driver errors behave like "no device here"; never kill the worker.
+            return None
         finally:
             capture.release()
+
+    for index in range(maximum_index + 1):
+        if cancelled is not None and cancelled():
+            break
+        if progress is not None:
+            progress(index, "opening")
+        outcome: dict[str, Any] = {}
+        worker = threading.Thread(
+            target=lambda i=index: outcome.setdefault("device", _probe_one(i)),
+            daemon=True,
+        )
+        worker.start()
+        worker.join(per_index_timeout_s)
+        if worker.is_alive() and "device" not in outcome:
+            if progress is not None:
+                progress(index, "timeout")
+            continue
+        device = outcome.get("device")
+        if device is not None:
+            devices.append(device)
+        elif progress is not None:
+            progress(index, "empty")
     return devices
 
 

@@ -24,6 +24,7 @@ import json
 import math
 import re
 import struct
+import threading
 import zlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -787,6 +788,7 @@ class ChessboardWizardDialog:
         self.open_after_id: str | None = None
         self._opening = False
         self._closing = False
+        self._probe_cancelled = threading.Event()
         self._tick = 0
         self.preview_images: list[Any] = []
         self.pairs: list[tuple[BoardObservation, BoardObservation]] = []
@@ -1011,31 +1013,51 @@ class ChessboardWizardDialog:
         if self.open_after_id is not None or self._opening:
             self.message.set("正在处理上一个相机任务，请稍候…")
             return
-        self.message.set("正在检测视频设备；每个设备都要试开一次，可能需要数秒…")
+        self._probe_cancelled.clear()
+        self.message.set("正在检测视频设备索引 0 / 5…（打开超时的设备会自动跳过；点“停止”可中断）")
         self.left_status.set("左目：检测设备中…")
         self.right_status.set("右目：检测设备中…")
         log_event(get_logger("calibration_wizard"), "wizard_device_probe_start")
         outcome: dict[str, Any] = {}
+        progress_state: dict[str, Any] = {"index": -1, "status": ""}
         run_in_background(
-            lambda: probe_video_devices(maximum_index=5),
+            lambda: probe_video_devices(
+                maximum_index=5,
+                per_index_timeout_s=5.0,
+                progress=lambda index, status: progress_state.update(index=index, status=status),
+                cancelled=self._probe_cancelled.is_set,
+            ),
             lambda result, error: outcome.setdefault("done", (result, error)),
         )
-        self._poll_detect(outcome)
+        self._poll_detect(outcome, progress_state)
 
-    def _poll_detect(self, outcome: dict[str, Any]) -> None:
+    def _poll_detect(self, outcome: dict[str, Any], progress_state: dict[str, Any]) -> None:
         if self._closing:
             return
         if "done" not in outcome:
-            self.open_after_id = self.window.after(200, lambda: self._poll_detect(outcome))
+            index, status = progress_state["index"], progress_state["status"]
+            if index >= 0 and status == "timeout":
+                self.message.set(
+                    f"索引 {index} 打开超时（多为虚拟摄像头驱动），已跳过；继续检测后续索引…"
+                )
+            elif index >= 0:
+                self.message.set(f"正在检测视频设备索引 {index} / 5…")
+            self.open_after_id = self.window.after(
+                200, lambda: self._poll_detect(outcome, progress_state)
+            )
             return
         self.open_after_id = None
         result, error = outcome["done"]
+        cancelled = self._probe_cancelled.is_set()
         try:
             if error is not None:
                 raise error
             devices = result or []
             if not devices:
-                raise ChessboardCalibrationError("未检测到 OpenCV 可打开的视频设备")
+                detail = "检测已停止，未得到完整结果。" if cancelled else ""
+                raise ChessboardCalibrationError(
+                    f"未检测到 OpenCV 可打开的视频设备。{detail}"
+                )
             self.left_index.set(str(devices[0]["index"]))
             if len(devices) > 1:
                 self.right_index.set(str(devices[1]["index"]))
@@ -1048,7 +1070,8 @@ class ChessboardWizardDialog:
             summary = "；".join(
                 f"索引 {item['index']}：{item['width']}×{item['height']}" for item in devices
             )
-            self.message.set(f"检测到 {len(devices)} 个视频设备：{summary}")
+            prefix = "检测已停止；" if cancelled else ""
+            self.message.set(f"{prefix}检测到 {len(devices)} 个可用设备：{summary}")
             self.left_status.set("左目：未打开预览")
             self.right_status.set("右目：未打开预览")
         except Exception as error:  # surfaced to the operator, never silent
@@ -1070,6 +1093,7 @@ class ChessboardWizardDialog:
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
             return False
         self.stop()
+        self._probe_cancelled.clear()
         self._opening = True
         self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
         self.left_status.set("左目：正在打开相机…")
@@ -1195,6 +1219,8 @@ class ChessboardWizardDialog:
             self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
 
     def stop(self) -> None:
+        # Also interrupts a running device sweep between indices.
+        self._probe_cancelled.set()
         if self.after_id is not None:
             try:
                 self.window.after_cancel(self.after_id)
