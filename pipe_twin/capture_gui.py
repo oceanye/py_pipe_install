@@ -142,6 +142,34 @@ def load_calibration_json(path_value: str | Path) -> dict[str, Any]:
     return calibration
 
 
+_NON_FIELD_CALIBRATION_MARKERS = (
+    "SYNTHETIC",
+    "DEMO",
+    "EXAMPLE",
+    "REPLACE_WITH_REAL",
+)
+
+
+def field_calibration_problem(calibration: Any) -> str | None:
+    """Explain why a calibration must not be used for a live field capture."""
+    if not isinstance(calibration, dict):
+        return "双目标定内容不是有效对象。"
+    calibration_id = str(calibration.get("calibration_id", "")).strip()
+    upper_id = calibration_id.upper()
+    if not calibration_id:
+        return "双目标定缺少 calibration_id，无法确认其来源。"
+    if any(marker in upper_id for marker in _NON_FIELD_CALIBRATION_MARKERS):
+        return (
+            f"当前标定 ID“{calibration_id}”属于合成演示或格式示例，不能用于现场 USB 双目相机。"
+            "请选择这台相机的真实标定 JSON；每目应为实际分辨率，并包含实测内参、畸变、毫米基线和极线校正状态。"
+        )
+    if calibration.get("validated") is not True:
+        return "当前双目标定尚未标记为已验证（validated=true），不能用于现场测量。"
+    if calibration.get("rectified") is not True:
+        return "当前输入未声明为已极线校正（rectified=true），不能直接进行现场双目匹配。"
+    return None
+
+
 def _capture_provenance(
     payload: dict[str, dict[str, Any]] | None,
     role: str,
@@ -211,6 +239,10 @@ def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[d
     if not pair_confirmed:
         raise ValueError("请确认左右图来自同一次同步拍摄；程序不会根据文件名自动配对。")
     calib = _calibration_from_manifest(calibration)
+    if camera_capture_provenance:
+        calibration_problem = field_calibration_problem(calibration)
+        if calibration_problem:
+            raise ValueError(calibration_problem)
     if not pipes:
         raise ValueError("管件目录为空，请读取模型或载入管件目录。")
     for index, pipe in enumerate(pipes):
@@ -1122,7 +1154,16 @@ class CaptureInputDialog:
 
             model = _safe_manifest_asset_path(app.manifest_path, app.manifest.get("model", {}).get("path"))
             self.fields["model"].set(str(model or ""))
-            self.fields["calibration"].set(str(app.manifest_path))
+            current_calibration = app.manifest.get("stereo_calibration")
+            calibration_problem = field_calibration_problem(current_calibration)
+            if calibration_problem:
+                self.fields["calibration"].set("")
+                self.message.set(
+                    "当前已载入清单使用的是演示或未完成的标定，已取消自动沿用。"
+                    "请在“双目标定 JSON”选择这台 USB 双目相机的真实标定文件。"
+                )
+            else:
+                self.fields["calibration"].set(str(app.manifest_path))
             if app.manifest.get("model", {}).get("source_unit"):
                 self.stl_unit.set(app.manifest["model"]["source_unit"])
         self.refresh()
@@ -1200,6 +1241,9 @@ class CaptureInputDialog:
     def camera_capture(self) -> None:
         try:
             calibration = load_calibration_json(self.fields["calibration"].get())
+            calibration_problem = field_calibration_problem(calibration)
+            if calibration_problem:
+                raise ValueError(calibration_problem)
             StereoCameraDialog(self, calibration)
         except (OSError, ValueError) as error:
             self.app.messagebox.showerror("标定载入失败", str(error), parent=self.window)

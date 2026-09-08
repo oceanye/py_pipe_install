@@ -49,6 +49,80 @@ STATE_PRESENTATION: dict[str, dict[str, str]] = {
     },
 }
 
+_FIELD_CALIBRATION_ID_MARKERS = (
+    "SYNTHETIC",
+    "DEMO",
+    "EXAMPLE",
+    "REPLACE_WITH_REAL",
+)
+
+
+def summarize_stereo_diagnostics(
+    manifest: Mapping[str, Any], report: Mapping[str, Any]
+) -> str | None:
+    """Explain an all-UNKNOWN stereo result in terms an operator can act on."""
+    pipes = report.get("pipes")
+    counts = report.get("counts")
+    if not isinstance(pipes, list) or not pipes or not isinstance(counts, Mapping):
+        return None
+    if counts.get("UNKNOWN") != len(pipes):
+        return None
+
+    reasons: list[str] = []
+    calibration = manifest.get("stereo_calibration")
+    calibration = calibration if isinstance(calibration, Mapping) else {}
+    calibration_id = str(calibration.get("calibration_id", ""))
+    if any(marker in calibration_id.upper() for marker in _FIELD_CALIBRATION_ID_MARKERS):
+        reasons.append(f"当前使用合成演示标定“{calibration_id}”，不是现场相机标定")
+
+    calibration_audit = report.get("calibration_audit")
+    if (
+        isinstance(calibration_audit, Mapping)
+        and calibration_audit.get("registration_validated") is not True
+    ):
+        reasons.append("相机—CAD 位姿尚未验证")
+
+    reason_codes: set[str] = set()
+    valid_fractions: list[float] = []
+    capture_audit = report.get("capture_audit")
+    groups = capture_audit.get("groups", []) if isinstance(capture_audit, Mapping) else []
+    for group in groups if isinstance(groups, list) else []:
+        if not isinstance(group, Mapping):
+            continue
+        depth_audit = group.get("depth_audit")
+        if isinstance(depth_audit, Mapping):
+            for key in ("valid_left_fraction", "valid_right_fraction"):
+                value = depth_audit.get(key)
+                if type(value) in (int, float) and math.isfinite(value):
+                    valid_fractions.append(float(value))
+        evidence = group.get("pipe_evidence")
+        if not isinstance(evidence, Mapping):
+            continue
+        for views in evidence.values():
+            if not isinstance(views, Mapping):
+                continue
+            for view in views.values():
+                if not isinstance(view, Mapping):
+                    continue
+                codes = view.get("reason_codes")
+                if isinstance(codes, list):
+                    reason_codes.update(str(code) for code in codes)
+
+    if "INSUFFICIENT_VALID_DEPTH" in reason_codes:
+        if valid_fractions:
+            fraction = 100.0 * sum(valid_fractions) / len(valid_fractions)
+            reasons.append(f"有效双目视差约 {fraction:.1f}%，CAD 目标区域深度不足")
+        else:
+            reasons.append("CAD 目标区域有效双目深度不足")
+    if "TARGET_COLOR_INTERSECTION_GATE_FAILED" in reason_codes:
+        reasons.append("深度与管件颜色没有在 CAD 投影区域内重合")
+    if "WIDTH_GATE_FAILED" in reason_codes:
+        reasons.append("观测管径与 CAD 投影管径不一致")
+
+    if not reasons:
+        reasons.append("当前照片没有形成满足阈值的管件证据")
+    return f"识别完成，但 {len(pipes)} 根管件全部不确定。" + "；".join(reasons) + "。"
+
 _SHA256_RE = re.compile(r"[0-9a-fA-F]{64}\Z")
 _UNASSESSABLE_VIEW_STATES = {"FULLY_OCCLUDED", "OUT_OF_FRUSTUM"}
 _STEREO_VIEW_ROLES = ("left", "right")
@@ -2300,8 +2374,20 @@ class _PipeTwinApplication:
                 self.dashboard = dashboard
                 self.selected_pipe_id = None
                 self._refresh_dashboard()
-                self.measurement_panel.notice.set("分析完成。查看逐管状态和间距/前后关系，可录入实测样本或导出报告。")
-                log_event(_LOGGER, "gui_analysis_finished", pipe_count=len(self.dashboard.get("pipes", [])), counts=self.dashboard.get("counts"))
+                diagnostic = summarize_stereo_diagnostics(self.manifest, payload)
+                if diagnostic:
+                    self.banner.configure(bg="#FFF3CD", fg="#5F4500")
+                    self.banner_text.set(diagnostic)
+                    self.measurement_panel.notice.set(diagnostic)
+                else:
+                    self.measurement_panel.notice.set("分析完成。查看逐管状态和间距/前后关系，可录入实测样本或导出报告。")
+                log_event(
+                    _LOGGER,
+                    "gui_analysis_finished",
+                    pipe_count=len(self.dashboard.get("pipes", [])),
+                    counts=self.dashboard.get("counts"),
+                    diagnostic=diagnostic,
+                )
         self.root.after(80, self._poll_worker)
 
     def _open_demo(self) -> None:

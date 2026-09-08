@@ -12,6 +12,46 @@ from unittest.mock import Mock
 MODEL_HASH = "a" * 64
 
 
+class AnalysisDiagnosticTests(unittest.TestCase):
+    def test_all_unknown_field_run_explains_calibration_and_depth(self):
+        from pipe_twin.gui import summarize_stereo_diagnostics
+
+        manifest = {
+            "stereo_calibration": {
+                "calibration_id": "PG2-SYNTHETIC-EXACT-V1",
+            }
+        }
+        report = {
+            "counts": {"INSTALLED": 0, "NOT_INSTALLED": 0, "UNKNOWN": 1},
+            "pipes": [{"pipe_id": "P001", "installation_state": "UNKNOWN"}],
+            "calibration_audit": {"registration_validated": False},
+            "capture_audit": {
+                "groups": [
+                    {
+                        "depth_audit": {
+                            "valid_left_fraction": 0.09,
+                            "valid_right_fraction": 0.11,
+                        },
+                        "pipe_evidence": {
+                            "P001": {
+                                "left": {
+                                    "reason_codes": [
+                                        "INSUFFICIENT_VALID_DEPTH",
+                                        "TARGET_COLOR_INTERSECTION_GATE_FAILED",
+                                    ]
+                                }
+                            }
+                        },
+                    }
+                ]
+            },
+        }
+        message = summarize_stereo_diagnostics(manifest, report)
+        self.assertIn("全部不确定", message)
+        self.assertIn("合成演示标定", message)
+        self.assertIn("10.0%", message)
+
+
 def _manifest() -> dict:
     return {
         "model": {

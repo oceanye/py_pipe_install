@@ -11,6 +11,7 @@ from pathlib import Path
 from pipe_twin.capture_gui import (
     catalog_from_model,
     create_capture_dataset,
+    field_calibration_problem,
     load_calibration_json,
     normalize_capture_time,
     photo_file_time,
@@ -46,6 +47,15 @@ class CaptureInputTests(unittest.TestCase):
             self.manifest["stereo_calibration"],
         )
 
+    def test_field_capture_rejects_demo_or_unvalidated_calibration(self):
+        self.assertIn("合成演示", field_calibration_problem(self.arguments["calibration"]))
+        real = copy.deepcopy(self.arguments["calibration"])
+        real["calibration_id"] = "FIELD-USB-STEREO-001"
+        real["validated"] = False
+        self.assertIn("validated=true", field_calibration_problem(real))
+        real["validated"] = True
+        self.assertIsNone(field_calibration_problem(real))
+
     def test_gui_can_start_without_a_manifest(self):
         self.assertIsNone(build_parser().parse_args(["gui"]).manifest)
         parsed = build_parser().parse_args(
@@ -75,6 +85,8 @@ class CaptureInputTests(unittest.TestCase):
             }
             for role in ("left", "right")
         }
+        field_arguments = copy.deepcopy(self.arguments)
+        field_arguments["calibration"]["calibration_id"] = "FIELD-USB-STEREO-001"
         with tempfile.TemporaryDirectory() as temp:
             path = create_capture_dataset(
                 output_root=Path(temp),
@@ -83,7 +95,7 @@ class CaptureInputTests(unittest.TestCase):
                     "right": "HOST_SYSTEM_CLOCK",
                 },
                 camera_capture_provenance=provenance,
-                **self.arguments,
+                **field_arguments,
             )
             manifest = json.loads(path.read_text(encoding="utf-8"))
             views = manifest["capture"]["capture_groups"][-1]["views"]
@@ -91,6 +103,14 @@ class CaptureInputTests(unittest.TestCase):
                 self.assertEqual(views[role]["timestamp_source"], "HOST_SYSTEM_CLOCK")
                 self.assertEqual(views[role]["capture_device_index"], 0)
                 self.assertEqual(views[role]["capture_sync_method"], "SAME_UVC_FRAME")
+
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(ValueError, "合成演示"):
+                create_capture_dataset(
+                    output_root=Path(temp),
+                    camera_capture_provenance=provenance,
+                    **self.arguments,
+                )
 
     def test_preserve_history_requires_identical_configuration(self):
         with tempfile.TemporaryDirectory() as temp:
