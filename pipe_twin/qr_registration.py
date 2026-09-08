@@ -8,6 +8,8 @@ import html
 import json
 import math
 import re
+import struct
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -184,6 +186,116 @@ def write_printable_qr_svg(
     destination.write_text(
         printable_qr_svg(marker_id=marker_id, marker_edge_mm=marker_edge_mm),
         encoding="utf-8",
+    )
+    return destination
+
+
+def _png_chunk(kind: bytes, data: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(data))
+        + kind
+        + data
+        + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+    )
+
+
+def printable_qr_png(
+    *,
+    marker_id: str,
+    marker_edge_mm: float,
+    dpi: int = 300,
+) -> bytes:
+    """Return an A4 PNG with an explicit DPI and a metric QR data square."""
+    payload = qr_payload(marker_id, marker_edge_mm)
+    if type(dpi) is not int or not 150 <= dpi <= 1200:
+        raise QrRegistrationError("PNG 打印分辨率应为 150 到 1200 DPI 的整数")
+    matrix = _qr_data_matrix(payload)
+    pixels_per_mm = dpi / 25.4
+    page_width = round(210.0 * pixels_per_mm)
+    page_height = round(297.0 * pixels_per_mm)
+    data_edge = round(float(marker_edge_mm) * pixels_per_mm)
+    modules = int(matrix.shape[0])
+    quiet = round(4 * data_edge / modules)
+    if data_edge + 2 * quiet > page_width - round(20 * pixels_per_mm):
+        raise QrRegistrationError("当前二维码内容与边长超出 A4 PNG 可打印范围")
+
+    page = np.full((page_height, page_width), 255, dtype=np.uint8)
+    data_left = (page_width - data_edge) // 2
+    data_top = round(48.0 * pixels_per_mm)
+    for row in range(modules):
+        y1 = data_top + round(row * data_edge / modules)
+        y2 = data_top + round((row + 1) * data_edge / modules)
+        for column in range(modules):
+            if int(matrix[row, column]) != 0:
+                continue
+            x1 = data_left + round(column * data_edge / modules)
+            x2 = data_left + round((column + 1) * data_edge / modules)
+            page[y1:y2, x1:x2] = 0
+
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(page, "PIPE TWIN QR REGISTRATION", (round(29 * pixels_per_mm), round(12 * pixels_per_mm)), font, 1.25, 0, 3, cv2.LINE_AA)
+    cv2.putText(page, "A4 / 300 DPI / PRINT 100% ACTUAL SIZE", (round(25 * pixels_per_mm), round(22 * pixels_per_mm)), font, 0.78, 0, 2, cv2.LINE_AA)
+    cv2.putText(page, f"ID: {marker_id}", (round(25 * pixels_per_mm), round(30 * pixels_per_mm)), font, 0.68, 0, 2, cv2.LINE_AA)
+    cv2.putText(page, f"QR DATA SQUARE: {float(marker_edge_mm):.3f} mm", (round(25 * pixels_per_mm), round(37 * pixels_per_mm)), font, 0.68, 0, 2, cv2.LINE_AA)
+
+    dimension_y = data_top + data_edge + round(10 * pixels_per_mm)
+    cv2.line(page, (data_left, dimension_y), (data_left + data_edge, dimension_y), 70, 2)
+    tick = round(3 * pixels_per_mm)
+    cv2.line(page, (data_left, dimension_y - tick), (data_left, dimension_y + tick), 70, 2)
+    cv2.line(page, (data_left + data_edge, dimension_y - tick), (data_left + data_edge, dimension_y + tick), 70, 2)
+
+    arrow_origin = (round(65 * pixels_per_mm), dimension_y + round(23 * pixels_per_mm))
+    cv2.arrowedLine(page, arrow_origin, (arrow_origin[0] + round(42 * pixels_per_mm), arrow_origin[1]), 70, 3, tipLength=0.08)
+    cv2.arrowedLine(page, arrow_origin, (arrow_origin[0], arrow_origin[1] - round(17 * pixels_per_mm)), 70, 3, tipLength=0.13)
+    cv2.putText(page, "RIGHT", (arrow_origin[0] + round(45 * pixels_per_mm), arrow_origin[1] + 8), font, 0.72, 40, 2, cv2.LINE_AA)
+    cv2.putText(page, "UP", (arrow_origin[0] + 12, arrow_origin[1] - round(17 * pixels_per_mm)), font, 0.72, 40, 2, cv2.LINE_AA)
+
+    scale_length = round(100.0 * pixels_per_mm)
+    scale_left = (page_width - scale_length) // 2
+    scale_y = page_height - round(25 * pixels_per_mm)
+    cv2.line(page, (scale_left, scale_y), (scale_left + scale_length, scale_y), 0, 3)
+    cv2.line(page, (scale_left, scale_y - tick), (scale_left, scale_y + tick), 0, 3)
+    cv2.line(page, (scale_left + scale_length, scale_y - tick), (scale_left + scale_length, scale_y + tick), 0, 3)
+    cv2.putText(page, "CHECK LINE: 100.000 mm", (scale_left + round(19 * pixels_per_mm), scale_y - round(5 * pixels_per_mm)), font, 0.72, 0, 2, cv2.LINE_AA)
+
+    ok, encoded = cv2.imencode(".png", page, [cv2.IMWRITE_PNG_COMPRESSION, 9])
+    if not ok:
+        raise QrRegistrationError("OpenCV 无法编码二维码 PNG")
+    png = bytes(encoded)
+    # PNG pHYs stores pixels per metre. Insert it immediately after IHDR so
+    # print software can map pixels to physical A4 dimensions at 100%.
+    pixels_per_metre = round(dpi / 0.0254)
+    physical = _png_chunk(
+        b"pHYs",
+        struct.pack(">IIB", pixels_per_metre, pixels_per_metre, 1),
+    )
+    metadata = _png_chunk(
+        b"tEXt",
+        (
+            f"Description\x00{payload};dpi={dpi};data_edge_px={data_edge};"
+            f"page_px={page_width}x{page_height}"
+        ).encode("latin-1"),
+    )
+    return png[:33] + physical + metadata + png[33:]
+
+
+def write_printable_qr_png(
+    path: str | Path,
+    *,
+    marker_id: str,
+    marker_edge_mm: float,
+    dpi: int = 300,
+) -> Path:
+    destination = Path(path)
+    if destination.suffix.lower() != ".png":
+        destination = destination.with_suffix(".png")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(
+        printable_qr_png(
+            marker_id=marker_id,
+            marker_edge_mm=marker_edge_mm,
+            dpi=dpi,
+        )
     )
     return destination
 
@@ -398,8 +510,10 @@ __all__ = [
     "WORLD_DIRECTIONS",
     "detect_qr_pose",
     "estimate_square_pose",
+    "printable_qr_png",
     "printable_qr_svg",
     "qr_payload",
     "register_calibration_from_qr",
+    "write_printable_qr_png",
     "write_printable_qr_svg",
 ]

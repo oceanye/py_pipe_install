@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,7 @@ from pipe_twin.qr_registration import (
     QrRegistrationError,
     detect_qr_pose,
     estimate_square_pose,
+    printable_qr_png,
     printable_qr_svg,
     qr_payload,
     register_calibration_from_qr,
@@ -38,6 +40,19 @@ class QrRegistrationTests(unittest.TestCase):
         self.assertIn("edge_mm=120.000", svg)
         self.assertIn('x1="55" y1="270" x2="155" y2="270"', svg)
         self.assertGreater(svg.count("<rect"), 100)
+
+    def test_printable_png_has_a4_300dpi_size_and_decodable_120mm_marker(self):
+        png = printable_qr_png(marker_id="PIPE-ROOM-A", marker_edge_mm=120.0)
+        image = cv2.imdecode(np.frombuffer(png, np.uint8), cv2.IMREAD_GRAYSCALE)
+        self.assertEqual(image.shape, (3508, 2480))
+        chunk = png.index(b"pHYs")
+        x_ppm, y_ppm, unit = struct.unpack(">IIB", png[chunk + 4 : chunk + 13])
+        self.assertEqual((x_ppm, y_ppm, unit), (11811, 11811, 1))
+        self.assertIn(b"data_edge_px=1417", png)
+        camera_sized = cv2.resize(image, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+        decoded, corners, _straight = cv2.QRCodeDetector().detectAndDecode(camera_sized)
+        self.assertEqual(decoded, qr_payload("PIPE-ROOM-A", 120.0))
+        self.assertIsNotNone(corners)
 
     def test_square_pose_recovers_metric_distance_and_camera_side(self):
         edge = 120.0

@@ -105,6 +105,9 @@ def main():
         assert qr.marker_edge.get() == "120.0"
         qr.window.destroy()
         pose = CameraPoseDialog(wizard, calibration)
+        assert not pose.advanced_visible
+        pose.toggle_advanced()
+        assert pose.advanced_visible
         pose.distance.set("1000")
         pose.select_side_view("top_down")
         assert pose.mode.get() == POSE_MODE_LABELS["positive_y"]

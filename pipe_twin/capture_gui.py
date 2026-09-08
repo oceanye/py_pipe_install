@@ -32,7 +32,7 @@ from .qr_registration import (
     detect_qr_pose,
     qr_payload,
     register_calibration_from_qr,
-    write_printable_qr_svg,
+    write_printable_qr_png,
 )
 from .stereo_camera import (
     LAYOUT_SEPARATE,
@@ -690,7 +690,7 @@ class QrRegistrationDialog:
         )
         ttk.Button(
             frame,
-            text="生成 A4 1:1 打印 SVG",
+            text="生成 A4 300DPI 打印 PNG",
             command=self.export_marker,
         ).grid(row=1, column=2, rowspan=2, columnspan=2, padx=8, pady=5)
 
@@ -789,18 +789,18 @@ class QrRegistrationDialog:
     def export_marker(self) -> None:
         try:
             _payload, edge, center, max_rms = self._values()
-            initial = f"{self.marker_id.get().strip()}_{edge:g}mm_1to1.svg"
+            initial = f"{self.marker_id.get().strip()}_{edge:g}mm_300dpi_1to1.png"
             selected = self.owner.app.filedialog.asksaveasfilename(
                 parent=self.window,
                 title="保存 1:1 二维码定位板",
                 initialfile=initial,
-                defaultextension=".svg",
-                filetypes=(("SVG", "*.svg"),),
+                defaultextension=".png",
+                filetypes=(("PNG", "*.png"),),
             )
             if not selected:
                 return
             self.owner.app.measurement_panel._protect_output(Path(selected))
-            path = write_printable_qr_svg(
+            path = write_printable_qr_png(
                 selected,
                 marker_id=self.marker_id.get(),
                 marker_edge_mm=edge,
@@ -874,9 +874,10 @@ class CameraPoseDialog:
         current = calibration_pose(calibration)
         stored = owner.pose_adjustment
         self.calibration = calibration
+        self.base_registration_validated = bool(current["registration_validated"])
         self.window = tk.Toplevel(owner.window)
         self.window.title("双目相机方向与倾斜校正")
-        self.window.geometry("760x720")
+        self.window.geometry("720x480")
         self.window.resizable(False, False)
         self.window.transient(owner.window)
         self.mode = tk.StringVar(value=POSE_MODE_LABELS.get(stored.get("mode", "keep"), POSE_MODE_LABELS["keep"]))
@@ -900,11 +901,30 @@ class CameraPoseDialog:
         frame.pack(fill="both", expand=True)
         ttk.Label(
             frame,
-            text="调整的是双目相机整体相对 CAD 的位置和方向。左右相机始终保持刚性基线，原图不会被二次旋转。",
-            wraplength=700,
+            text="相机已经大致摆正时，抓拍管件后直接运行一键自动微调。程序只修正画面中的小角度倾斜。",
+            wraplength=660,
         ).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 12))
-        side = ttk.LabelFrame(frame, text="CAD 侧立面快速方向", padding=9)
-        side.grid(row=1, column=0, columnspan=4, sticky="ew", pady=(0, 10))
+        quick = ttk.LabelFrame(frame, text="推荐操作", padding=10)
+        quick.grid(row=1, column=0, columnspan=4, sticky="ew", pady=(0, 10))
+        ttk.Label(
+            quick,
+            text="先在现场数据录入窗口完成双目抓拍，然后点击：",
+            foreground="#355371",
+        ).grid(row=0, column=0, sticky="w", padx=(0, 12))
+        ttk.Button(
+            quick,
+            text="一键自动微调角度",
+            command=self.auto_tilt,
+        ).grid(row=0, column=1, padx=5)
+        ttk.Button(
+            quick,
+            text="二维码自动完整定位",
+            command=self.open_qr,
+        ).grid(row=0, column=2, padx=5)
+        quick.columnconfigure(0, weight=1)
+
+        side = ttk.LabelFrame(frame, text="可选：CAD 侧立面粗略方向", padding=9)
+        side.grid(row=5, column=0, columnspan=4, sticky="ew", pady=(0, 10))
         ttk.Label(side, text=self.target_text, foreground="#355371").grid(
             row=0, column=0, columnspan=4, sticky="w", pady=(0, 7)
         )
@@ -921,43 +941,33 @@ class CameraPoseDialog:
                 command=lambda key=view_key: self.select_side_view(key),
             ).grid(row=2, column=column, padx=4, pady=(7, 2), sticky="ew")
             side.columnconfigure(column, weight=1)
-        ttk.Label(frame, text="当前/高级方向").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Label(frame, text="当前/高级方向").grid(row=6, column=0, sticky="w", pady=5)
         ttk.Combobox(
             frame,
             textvariable=self.mode,
             values=tuple(POSE_MODE_LABELS.values()),
             state="readonly",
             width=39,
-        ).grid(row=2, column=1, columnspan=3, sticky="ew", pady=5)
+        ).grid(row=6, column=1, columnspan=3, sticky="ew", pady=5)
         ttk.Label(frame, text="双目基线中点（CAD 世界坐标 / mm）").grid(
-            row=3, column=0, columnspan=4, sticky="w", pady=(12, 3)
+            row=7, column=0, columnspan=4, sticky="w", pady=(12, 3)
         )
         center_frame = ttk.Frame(frame)
-        center_frame.grid(row=4, column=0, columnspan=4, sticky="w")
+        center_frame.grid(row=8, column=0, columnspan=4, sticky="w")
         for axis, variable in zip("XYZ", self.center):
             ttk.Label(center_frame, text=axis).pack(side="left", padx=(0, 3))
             ttk.Entry(center_frame, textvariable=variable, width=14).pack(
                 side="left", padx=(0, 12)
             )
         ttk.Label(frame, text="相对所选方向的角度修正（度）").grid(
-            row=5, column=0, columnspan=2, sticky="w", pady=(14, 3)
+            row=9, column=0, columnspan=4, sticky="w", pady=(14, 3)
         )
-        ttk.Button(
-            frame,
-            text="自动轻微倾斜（roll）",
-            command=self.auto_tilt,
-        ).grid(row=5, column=2, sticky="e", padx=4, pady=(10, 3))
-        ttk.Button(
-            frame,
-            text="二维码自动完整位姿",
-            command=self.open_qr,
-        ).grid(row=5, column=3, sticky="e", padx=4, pady=(10, 3))
         angle_fields = (
             ("水平偏航 yaw", self.yaw, "让投影管轴左右转动"),
             ("上下俯仰 pitch", self.pitch, "修正相机抬头/低头"),
             ("画面滚转 roll", self.roll, "修正相机画面倾斜"),
         )
-        for row, (label, variable, hint) in enumerate(angle_fields, start=6):
+        for row, (label, variable, hint) in enumerate(angle_fields, start=10):
             ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", pady=5)
             ttk.Entry(frame, textvariable=variable, width=14).grid(row=row, column=1, sticky="w", pady=5)
             ttk.Label(frame, text=hint, foreground="#4A6178").grid(row=row, column=2, columnspan=2, sticky="w", pady=5)
@@ -966,12 +976,12 @@ class CameraPoseDialog:
             textvariable=self.auto_message,
             foreground="#355371",
             wraplength=700,
-        ).grid(row=9, column=0, columnspan=4, sticky="w", pady=(7, 0))
+        ).grid(row=2, column=0, columnspan=4, sticky="w", pady=(7, 0))
         ttk.Checkbutton(
             frame,
             text="已使用固定控制点验证调整后的相机—CAD 配准",
             variable=self.validated,
-        ).grid(row=10, column=0, columnspan=4, sticky="w", pady=(10, 5))
+        ).grid(row=13, column=0, columnspan=4, sticky="w", pady=(10, 5))
         ttk.Label(
             frame,
             text=(
@@ -980,11 +990,39 @@ class CameraPoseDialog:
             ),
             wraplength=700,
             foreground="#8A4E00",
-        ).grid(row=11, column=0, columnspan=4, sticky="w", pady=8)
+        ).grid(row=14, column=0, columnspan=4, sticky="w", pady=8)
+        self.advanced_visible = False
+        self.advanced_widgets = [
+            widget
+            for widget in frame.grid_slaves()
+            if int(widget.grid_info()["row"]) >= 5
+        ]
+        for widget in self.advanced_widgets:
+            widget.grid_remove()
+        self.advanced_toggle = ttk.Button(
+            frame,
+            text="显示可选方向与高级参数",
+            command=self.toggle_advanced,
+        )
+        self.advanced_toggle.grid(row=3, column=0, columnspan=4, sticky="w", pady=7)
         buttons = ttk.Frame(frame)
-        buttons.grid(row=12, column=0, columnspan=4, sticky="e", pady=10)
+        buttons.grid(row=4, column=0, columnspan=4, sticky="e", pady=10)
         ttk.Button(buttons, text="取消", command=self.window.destroy).pack(side="left", padx=4)
-        ttk.Button(buttons, text="应用方向与倾斜", command=self.save).pack(side="left", padx=4)
+        ttk.Button(buttons, text="应用微调", command=self.save).pack(side="left", padx=4)
+
+    def toggle_advanced(self) -> None:
+        self.advanced_visible = not self.advanced_visible
+        for widget in self.advanced_widgets:
+            if self.advanced_visible:
+                widget.grid()
+            else:
+                widget.grid_remove()
+        self.advanced_toggle.configure(
+            text="收起可选方向与高级参数"
+            if self.advanced_visible
+            else "显示可选方向与高级参数"
+        )
+        self.window.geometry("760x760" if self.advanced_visible else "720x480")
 
     def select_side_view(self, view_key: str) -> None:
         try:
@@ -1015,7 +1053,14 @@ class CameraPoseDialog:
             inverse_labels = {label: mode for mode, label in POSE_MODE_LABELS.items()}
             mode = inverse_labels[self.mode.get()]
             if mode == "keep":
-                raise ValueError("请先选择一个 CAD 侧立面观察方向")
+                current = calibration_pose(self.calibration)
+                mode = "adjust_current"
+                self.mode.set(POSE_MODE_LABELS[mode])
+                for variable, value in zip(self.center, current["center_world_mm"]):
+                    variable.set(f"{value:.6g}")
+                self.yaw.set("0")
+                self.pitch.set("0")
+                self.roll.set("0")
             candidate = apply_camera_pose(
                 self.calibration,
                 {
@@ -1033,9 +1078,9 @@ class CameraPoseDialog:
                 candidate,
             )
             self.roll.set(f"{estimate['roll_correction_deg']:.6g}")
-            self.validated.set(False)
+            self.validated.set(self.base_registration_validated)
             self.auto_message.set(
-                f"自动倾斜：画面管轴 {estimate['observed_pipe_angle_deg']:.2f}°，"
+                f"自动微调完成：画面管轴 {estimate['observed_pipe_angle_deg']:.2f}°，"
                 f"CAD 投影 {estimate['expected_cad_angle_deg']:.2f}°，"
                 f"已填写 roll={estimate['roll_correction_deg']:.2f}°；"
                 f"使用 {estimate['line_count']} 条线段。"
