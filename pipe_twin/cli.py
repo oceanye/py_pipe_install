@@ -132,6 +132,25 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional directory for status-coloured CAD overlay images",
     )
 
+    adapt_parser = subparsers.add_parser(
+        "adapt-calibration",
+        help="convert OpenCV K/D/R/T plus a CAD pose to manifest calibration JSON",
+    )
+    adapt_parser.add_argument("--source", required=True, help="OpenCV/GLM calibration JSON")
+    adapt_parser.add_argument("--output", required=True, help="manifest calibration JSON output")
+    adapt_parser.add_argument("--calibration-id", required=True)
+    adapt_parser.add_argument("--validated", action="store_true")
+    adapt_parser.add_argument("--registration-validated", action="store_true")
+
+    validate_parser = subparsers.add_parser(
+        "validate-calibration",
+        help="validate a manifest-bound calibration and print repair guidance",
+    )
+    validate_parser.add_argument(
+        "--calibration", required=True, help="calibration JSON or full stereo manifest"
+    )
+    validate_parser.add_argument("--output", help="optional JSON diagnostics output")
+
     gui_parser = subparsers.add_parser(
         "gui", help="open the local CAD-bound pipe status dashboard"
     )
@@ -143,6 +162,28 @@ def build_parser() -> argparse.ArgumentParser:
 def _main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     log_event(_LOGGER, "command_start", command=args.command)
+    if args.command == "adapt-calibration":
+        from .calibration_adapter import adapt_opencv_stereo_calibration, load_json
+
+        source = load_json(args.source)
+        source = source.get("opencv_stereo_calibration", source)
+        calibration = adapt_opencv_stereo_calibration(
+            source,
+            calibration_id=args.calibration_id,
+            validated=args.validated,
+            registration_validated=args.registration_validated,
+        )
+        _write_json(args.output, calibration)
+        print(f"Calibration written to {Path(args.output).resolve()}")
+        return 0
+    if args.command == "validate-calibration":
+        from .calibration_adapter import load_json, validate_calibration
+
+        diagnostics = validate_calibration(load_json(args.calibration))
+        if args.output:
+            _write_json(args.output, diagnostics)
+        print(json.dumps(diagnostics, ensure_ascii=False, indent=2))
+        return 0 if diagnostics["valid"] else 1
     if args.command == "inspect-model":
         if args.output:
             ensure_paths_distinct(model=args.model, output=args.output)

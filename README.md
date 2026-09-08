@@ -2,7 +2,16 @@
 
 局部测量 GUI：双击 `run_gui.bat`，或运行 `.\.venv\Scripts\python.exe -m pipe_twin gui`。支持已连接 USB 双目相机的实时左右预览与同步抓拍、CAD 侧立面四方向快速定位、管轴自动轻微倾斜校正、1:1 二维码完整位姿定位、现场模型/历史照片录入、局部管径与位置测量、中心距/净距/前后关系、实测样本校正和逐管状态导出。操作步骤及测量口径见 [局部测量工作台使用说明](doc/局部测量工作台使用说明.md)。默认 ±1 mm 为对照阈值，真实相机精度需实测验证。
 
-基于 CAD 先验和视觉证据的管道安装状态识别与数字孪生项目。当前交付 **M0 单层离线演示基线**、**M1 两层 CAD 合成双目/遮挡拓扑基线**，以及 **M2 真实双目静态照片 + 3DM/3MF/STL + 本地 GUI 软件候选版**。M2 已能输出逐管三态并完成合成回归；真实相机阈值、标定精度和现场验收仍要用到场实物确认。多机位和 3DGS 属于后续阶段。
+基于 CAD 先验和视觉证据的管道安装状态识别与数字孪生项目。
+当前 GUI 默认入口是“快速双目评估”，只需：
+
+1. 选择 STL 并指定原坐标单位；
+2. 确认自动识别的管道直径颜色映射，例如 22=#E74C3C;50=#3498DB；
+3. 选择真实双目标定和左右已矫正照片，或点击“连接双目并抓拍”；
+4. 点击“创建并开始评估”。
+
+程序会自动生成现场清单、绑定 STL 和颜色、运行双目分析，并在结果页逐根显示“安装 / 未安装 / 遮蔽不确定”。二维码定位、姿态微调、历史采集组和手工目录导入保留在底层能力中，只在需要时使用；任何标定、同步、深度或遮挡证据不足仍显示“遮蔽不确定”。
+当前交付 **M0 单层离线演示基线**、**M1 两层 CAD 合成双目/遮挡拓扑基线**，以及 **M2 真实双目静态照片 + 3DM/3MF/STL + 本地 GUI 软件候选版**。M2 已能输出逐管三态并完成合成回归；真实相机阈值、标定精度和现场验收仍要用到场实物确认。多机位和 3DGS 属于后续阶段。
 
 ## 生产采集主线：固定相机定时拍照
 
@@ -210,7 +219,14 @@ python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millime
 
 如果 Rhino 文件还包含未网格化的 Curve/Point/Text 或辅助 BRep，未带过滤参数的审计会安全拒绝（不会静默漏掉对象）；可按 Rhino 中看到的 GUID 重复传入 `--object-id`，例如 `--object-id 1234... --object-id 5678...`。`analyze-stereo` 会直接从 manifest 的 `cad_object_id` 集合过滤绑定管道，并仍对每个绑定对象严格校验。
 
-现场 manifest 使用 `schema_version=2.0`，显式绑定模型哈希、每根管的 `pipe_id ↔ cad_object_id`、中心线/外径/颜色、双目标定与 CAD 外参，以及按时间排序的 `capture.capture_groups[].views.left/right`。当前 M2 的 SGBM 与 `Z=fx·B/d` 门禁只接收已经完成共同极线矫正的左右图（`stereo_calibration.rectified=true`）；若相机输出原始未矫正图，先用同一组内参/双目标定执行 `cv2.stereoRectify` 和 `initUndistortRectifyMap`，再把矫正后的图及其哈希写入 manifest。完整字段和实物采集清单见[现场双目识别与 GUI 使用说明](doc/现场双目识别与GUI使用说明.md)。运行分析：
+现场 manifest 使用 `schema_version=2.0`，显式绑定模型哈希、每根管的 `pipe_id ↔ cad_object_id`、中心线/外径/颜色、双目标定与 CAD 外参，以及按时间排序的 `capture.capture_groups[].views.left/right`。当前 M2 的 SGBM 与 `Z=fx·B/d` 门禁只接收已经完成共同极线矫正的左右图（`stereo_calibration.rectified=true`）；若相机输出原始未矫正图，先用同一组内参/双目标定执行 `cv2.stereoRectify` 和 `initUndistortRectifyMap`，再把矫正后的图及其哈希写入 manifest。完整字段和实物采集清单见[现场双目识别与 GUI 使用说明](doc/现场双目识别与GUI使用说明.md)。先把 GLM/OpenCV 的原始标定转换为 manifest 标定（必须显式提供 translation_unit 和 left_camera_pose，适配器不会猜单位或 CAD 外参）。
+
+命令：
+  python -m pipe_twin adapt-calibration --source calibration/opencv_stereo.json --output calibration/manifest_stereo_calibration.json --calibration-id field-rig-202609 --validated --registration-validated
+  python -m pipe_twin validate-calibration --calibration calibration/manifest_stereo_calibration.json
+
+适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。validated 和 registration-validated 只有在独立重投影/配准检查通过后才应打开；valid=true 只表示格式和几何契约通过，不代表现场精度验收。
+运行分析：
 
 现场数据录入窗口可选择相机位于 CAD 的 ±X/±Y/±Z 方向，也可沿用当前外参并输入双目组中心、yaw、pitch、roll；它们作为刚性相机—CAD 外参调整参与完整三维投影、管件定位、角度匹配和前后关系判定。修改后的外参应使用固定控制点再次验证，不能用角度输入替代双目图像的极线矫正。
 

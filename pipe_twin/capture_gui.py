@@ -1174,7 +1174,7 @@ class CaptureInputDialog:
         main = ttk.Frame(self.window, padding=12)
         main.pack(fill="both", expand=True)
         main.columnconfigure(1, weight=1)
-        for row, (key, label) in enumerate((("model", "CAD 模型"), ("calibration", "双目标定 JSON"), ("left", "左目照片（自动抓拍/文件）"), ("right", "右目照片（自动抓拍/文件）"))):
+        for row, (key, label) in enumerate((("model", "CAD 模型"), ("calibration", "双目标定 JSON"), ("left", "左目已矫正照片（自动抓拍/文件）"), ("right", "右目已矫正照片（自动抓拍/文件）"))):
             ttk.Label(main, text=label).grid(row=row, column=0, sticky="w", padx=(0, 8), pady=4)
             ttk.Entry(main, textvariable=self.fields[key]).grid(row=row, column=1, sticky="ew", pady=4)
             ttk.Button(main, text="选择", command=lambda k=key: self.browse(k)).grid(row=row, column=2, padx=5)

@@ -350,7 +350,11 @@ def _camera_from_manifest(
 
     rectification_matrix: np.ndarray | None = None
     projection_matrix: np.ndarray | None = None
-    if not rectified:
+    has_rectified_projection = (
+        payload.get("rectification_matrix") is not None
+        or payload.get("projection_matrix") is not None
+    )
+    if not rectified or has_rectified_projection:
         rectification_matrix = _matrix(
             payload.get("rectification_matrix"),
             (3, 3),
@@ -423,30 +427,59 @@ def _calibration_from_manifest(payload: object) -> StereoCalibration:
             f"baseline_mm={baseline} disagrees with camera centres ({measured_baseline})"
         )
     if rectified:
-        if not np.allclose(
-            left.rotation_world_to_camera,
-            right.rotation_world_to_camera,
-            atol=1e-5,
-        ):
-            raise StereoAnalysisError("Rectified camera rotations must match")
-        baseline_camera = left.rotation_world_to_camera @ (
-            right.center_world_mm - left.center_world_mm
-        )
-        if baseline_camera[0] <= 0 or np.linalg.norm(baseline_camera[1:]) > max(
-            1e-3, baseline * 1e-4
-        ):
-            raise StereoAnalysisError(
-                "Rectified stereo baseline must point along positive camera X"
+        if left.rectification_matrix is not None or right.rectification_matrix is not None:
+            if left.rectification_matrix is None or right.rectification_matrix is None:
+                raise StereoAnalysisError("Rectified cameras must provide both rectification matrices")
+            if left.projection_matrix is None or right.projection_matrix is None:
+                raise StereoAnalysisError("Rectified cameras must provide both projection matrices")
+            for role, camera in (("left", left), ("right", right)):
+                if not np.allclose(
+                    camera.rectification_matrix @ camera.rectification_matrix.T,
+                    np.eye(3),
+                    atol=1e-5,
+                ) or not math.isclose(
+                    float(np.linalg.det(camera.rectification_matrix)), 1.0, abs_tol=1e-5
+                ):
+                    raise StereoAnalysisError(f"{role}.rectification_matrix must be a rotation")
+                if camera.projection_matrix[0, 0] <= 0 or camera.projection_matrix[1, 1] <= 0:
+                    raise StereoAnalysisError(f"{role}.projection_matrix must have positive focal lengths")
+            left_p, right_p = left.projection_matrix, right.projection_matrix
+            if not np.allclose(left_p[:2, :3], right_p[:2, :3], rtol=1e-5, atol=1e-6):
+                raise StereoAnalysisError(
+                    "Rectified left/right projection matrices must share fx, fy, cx, and cy"
+                )
+            encoded_baseline = -float(right_p[0, 3]) / float(right_p[0, 0])
+            if encoded_baseline <= 0 or not math.isclose(
+                encoded_baseline, baseline, rel_tol=1e-4, abs_tol=1e-3
+            ):
+                raise StereoAnalysisError(
+                    "Rectified projection matrix baseline disagrees with baseline_mm"
+                )
+        else:
+            if not np.allclose(
+                left.rotation_world_to_camera,
+                right.rotation_world_to_camera,
+                atol=1e-5,
+            ):
+                raise StereoAnalysisError("Rectified camera rotations must match")
+            baseline_camera = left.rotation_world_to_camera @ (
+                right.center_world_mm - left.center_world_mm
             )
-        if not np.allclose(
-            left.intrinsic,
-            right.intrinsic,
-            rtol=1e-5,
-            atol=1e-6,
-        ):
-            raise StereoAnalysisError(
-                "Rectified left/right K values must use the same fx, fy, cx, and cy"
-            )
+            if baseline_camera[0] <= 0 or np.linalg.norm(baseline_camera[1:]) > max(
+                1e-3, baseline * 1e-4
+            ):
+                raise StereoAnalysisError(
+                    "Rectified stereo baseline must point along positive camera X"
+                )
+            if not np.allclose(
+                left.intrinsic,
+                right.intrinsic,
+                rtol=1e-5,
+                atol=1e-6,
+            ):
+                raise StereoAnalysisError(
+                    "Rectified left/right K values must use the same fx, fy, cx, and cy"
+                )
     return StereoCalibration(
         calibration_id=calibration_id,
         validated=payload["validated"],
@@ -1059,13 +1092,32 @@ def _project_points(
     pixels = np.full((len(camera_points), 2), np.nan, dtype=np.float64)
     valid_depth = np.isfinite(depths) & (np.abs(depths) > 1.0e-9)
     if np.any(valid_depth):
-        normalized = camera_points[valid_depth, :2] / depths[valid_depth, None]
-        pixels[valid_depth] = np.column_stack(
-            (
-                camera.intrinsic[0, 0] * normalized[:, 0] + camera.intrinsic[0, 2],
-                camera.intrinsic[1, 1] * normalized[:, 1] + camera.intrinsic[1, 2],
+        indices = np.flatnonzero(valid_depth)
+        projected_points = camera_points[valid_depth]
+        if rectified and camera.rectification_matrix is not None:
+            projected_points = (camera.rectification_matrix @ projected_points.T).T
+        projected_depths = projected_points[:, 2]
+        valid_projected = np.isfinite(projected_depths) & (
+            np.abs(projected_depths) > 1.0e-9
+        )
+        if np.any(valid_projected):
+            matrix = (
+                camera.projection_matrix
+                if rectified and camera.projection_matrix is not None
+                else camera.intrinsic
             )
-        ).astype(np.float64)
+            output_indices = indices[valid_projected]
+            normalized = (
+                projected_points[valid_projected, :2]
+                / projected_depths[valid_projected, None]
+            )
+            pixels[output_indices] = np.column_stack(
+                (
+                    matrix[0, 0] * normalized[:, 0] + matrix[0, 2] + (matrix[0, 3] if matrix.shape[1] == 4 else 0.0),
+                    matrix[1, 1] * normalized[:, 1] + matrix[1, 2] + (matrix[1, 3] if matrix.shape[1] == 4 else 0.0),
+                )
+            ).astype(np.float64)
+            depths[output_indices] = projected_depths[valid_projected]
     if rectified:
         return pixels, depths
     assert camera.rectification_matrix is not None

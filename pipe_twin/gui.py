@@ -1436,7 +1436,7 @@ class _PipeTwinApplication:
         ttk.Button(toolbar, text="载入识别结果", command=self._choose_report).pack(
             side="left", padx=3
         )
-        ttk.Button(toolbar, text="现场数据录入", command=self._input_capture).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="快速双目评估", command=self._input_capture).pack(side="left", padx=3)
         ttk.Button(toolbar, text="打开合成示例", command=self._open_demo).pack(side="left", padx=3)
         ttk.Button(toolbar, text="导入DXF侧立面", command=self._import_dxf).pack(side="left", padx=3)
         ttk.Button(toolbar, text="DXF自动建档", command=self._automate_dxf_setup).pack(side="left", padx=3)
@@ -2396,9 +2396,9 @@ class _PipeTwinApplication:
         self.main_tabs.select(0)
 
     def _input_capture(self) -> None:
-        from .capture_gui import CaptureInputDialog
+        from .quick_capture_gui import QuickCaptureDialog
 
-        CaptureInputDialog(self)
+        QuickCaptureDialog(self)
 
 
 def launch_gui(
