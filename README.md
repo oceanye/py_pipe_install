@@ -199,6 +199,8 @@ python -m pipe_twin analyze --manifest path/to/capture_manifest.json --output ou
 
 ## 运行 3DM/3MF/STL + 双目安装状态识别
 
+现场标定与启动已自动化：GUI 内置**棋盘格双目标定向导**——生成 A4 打印棋盘格，用已连接的双目相机抓拍 ≥10 组姿态多样的照片，自动完成左右目内参/畸变、双目联合标定和极线矫正；产出的标定写入清单格式文件，原始 K/D 与矫正映射存入工作台配置档案，抓拍时实时把相机原始帧转换为矫正图。标定、管件目录（含逐管颜色，可从照片点选取色）、二维码定位、相机方向修正、设备索引和最近清单都保存在 `outputs/measurement_workbench/workbench_profile.json`，下次启动自动恢复；工具栏“一键抓拍并分析”把抓拍、建档和识别合并为一步。向导只解决内参与极线矫正，CAD 配准仍需一次二维码定位或方向设置。详细的操作步骤和门禁口径见[局部测量工作台使用说明](doc/局部测量工作台使用说明.md)。
+
 先审计 CAD。报告会列出对象或组件 ID、网格来源、毫米包围盒和网格闭合性；3DM 还会列出 GUID、对象名、图层和颜色：
 
 ```powershell
@@ -280,7 +282,7 @@ python -m pipe_twin simulate-stereo --manifest test_model/pipe_group2_manifest.j
 python -m unittest discover -s tests -v
 ```
 
-Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入校验、历史 3MF/MKV 回放、M1 合成几何/遮挡契约、3DM GUID/单位/缓存网格读取、STL 单位/连通组件/稳定 ID、相机方向与倾斜外参、M2 双目视差与三态安全门禁，以及 GUI 的报告绑定；不代表真实相机、标定、物理管径或业务状态指标已经验收。
+Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入校验、历史 3MF/MKV 回放、M1 合成几何/遮挡契约、3DM GUID/单位/缓存网格读取、STL 单位/连通组件/稳定 ID、相机方向与倾斜外参、M2 双目视差与三态安全门禁、GUI 的报告绑定，以及棋盘格向导的标定数学（合成刚体恢复已知内参与基线）、极线矫正配方 fail-closed 门禁和工作台配置档案的校验/持久化；不代表真实相机、标定、物理管径或业务状态指标已经验收。
 
 ## 后续能力边界
 

@@ -386,12 +386,13 @@ _CAMERA_LAYOUT_LABELS = {
 class StereoCameraDialog:
     """Preview a connected UVC stereo stream and fill the intake form."""
 
-    def __init__(self, owner: Any, calibration: dict) -> None:
+    def __init__(self, owner: Any, calibration: dict, rectifier: Any = None) -> None:
         from .stereo_analyzer import _calibration_from_manifest
 
         self.owner = owner
         self.app = owner.app
         self.calibration = _calibration_from_manifest(calibration)
+        self.rectifier = rectifier
         tk, ttk = self.app.tk, self.app.ttk
         self.window = tk.Toplevel(owner.window)
         self.window.title("连接双目相机并同步抓拍")
@@ -402,11 +403,22 @@ class StereoCameraDialog:
         self.mode = tk.StringVar(value=_CAMERA_LAYOUT_LABELS[LAYOUT_SIDE_BY_SIDE_LR])
         self.left_index = tk.StringVar(value="0")
         self.right_index = tk.StringVar(value="1")
+        # Reuse the device selection saved in the workbench profile when valid.
+        camera_state = (getattr(owner, "profile", None) or {}).get("camera")
+        if isinstance(camera_state, dict):
+            layout = camera_state.get("layout")
+            if layout in _CAMERA_LAYOUT_LABELS:
+                self.mode.set(_CAMERA_LAYOUT_LABELS[layout])
+            for key, variable in (("left_index", self.left_index), ("right_index", self.right_index)):
+                value = camera_state.get(key)
+                if type(value) is int and value >= 0:
+                    variable.set(str(value))
         self.message = tk.StringVar(
             value=(
                 f"当前标定要求每目 {self.calibration.left.width}×"
                 f"{self.calibration.left.height}；并排流应为 "
                 f"{self.calibration.left.width * 2}×{self.calibration.left.height}。"
+                + ("抓拍后将按标定配方自动极线矫正。" if self.rectifier is not None else "")
             )
         )
         self.session: StereoCameraSession | None = None
@@ -592,6 +604,27 @@ class StereoCameraDialog:
                     "左右画面完全相同，可能仍在预热或当前不是双目输出；"
                     "请等待实时预览出现两个不同视角后重试。"
                 )
+            if self.rectifier is not None:
+                # Wizard calibrations describe the rectified images, so the raw
+                # camera frames must be remapped with the stored recipe first.
+                pair = CapturedStereoPair(
+                    left=self.rectifier.rectify("left", pair.left),
+                    right=self.rectifier.rectify("right", pair.right),
+                    left_captured_at=pair.left_captured_at,
+                    right_captured_at=pair.right_captured_at,
+                    sync_delta_ms=pair.sync_delta_ms,
+                    timestamp_source=pair.timestamp_source,
+                    provenance=pair.provenance,
+                )
+                if pair.left.shape[:2] != (
+                    self.calibration.left.height,
+                    self.calibration.left.width,
+                ):
+                    raise StereoCameraError(
+                        f"矫正后左目尺寸 {pair.left.shape[1]}×{pair.left.shape[0]} "
+                        f"与标定要求的 {self.calibration.left.width}×"
+                        f"{self.calibration.left.height} 不一致"
+                    )
             if pair.sync_delta_ms > self.calibration.max_sync_delta_ms:
                 raise StereoCameraError(
                     f"本次左右抓拍时间差 {pair.sync_delta_ms:.3f} ms 超过标定允许的 "
@@ -622,6 +655,18 @@ class StereoCameraDialog:
                 "right": pair.timestamp_source,
             }
             self.owner.camera_capture_provenance = pair.provenance
+            try:
+                left_index, right_index = self._indices()
+            except StereoCameraError:
+                left_index, right_index = 0, None
+            self.owner._persist_profile(
+                ("camera",),
+                camera={
+                    "layout": self._layout(),
+                    "left_index": left_index,
+                    "right_index": right_index,
+                },
+            )
             if self._layout() in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}:
                 self.owner.confirmed.set(True)
                 confirmation = "同一并排视频帧，已自动确认配对"
@@ -633,7 +678,7 @@ class StereoCameraDialog:
                 f"时间差 {pair.sync_delta_ms:.3f} ms；{confirmation}。"
             )
             self.close()
-        except (OSError, StereoCameraError) as error:
+        except (OSError, ValueError) as error:
             self.app.messagebox.showerror("同步抓拍失败", str(error), parent=self.window)
 
     def close(self) -> None:
@@ -879,6 +924,10 @@ class QrRegistrationDialog:
             )
             self.message.set(result)
             self.owner.message.set(result + " 固定相机后可移走二维码并重新抓拍管件。")
+            self.owner._persist_profile(
+                ("calibration_current", "qr_settings", "calibration_path"),
+                calibration=adjusted,
+            )
         except (OSError, ValueError) as error:
             self.owner.app.messagebox.showerror(
                 "二维码定位失败", str(error), parent=self.window
@@ -1143,6 +1192,10 @@ class CameraPoseDialog:
                     f"yaw={adjustment['yaw_deg']:g}°，pitch={adjustment['pitch_deg']:g}°，"
                     f"roll={adjustment['roll_deg']:g}°；{state}。"
                 )
+            self.owner._persist_profile(
+                ("calibration_current", "pose_adjustment", "side_view_distance_mm"),
+                calibration=adjusted,
+            )
             self.window.destroy()
         except (KeyError, ValueError) as error:
             self.owner.app.messagebox.showerror("相机位姿无效", str(error), parent=self.window)
@@ -1171,6 +1224,29 @@ class CaptureInputDialog:
         self.camera_capture_provenance: dict[str, dict[str, Any]] = {}
         self.confirmed, self.history = tk.BooleanVar(value=False), tk.BooleanVar(value=False)
         self.message = tk.StringVar(value="相机已连接时可直接同步抓拍；也可导入已有双目照片。标定须含 CAD 世界坐标配准。")
+        # Restore the persistent workbench profile before the form is built so a
+        # new session opens in the previously saved operator state.
+        from .workbench_profile import capture_state_from_profile, load_profile
+
+        self.profile, self.profile_problem = load_profile()
+        self._profile_used = False
+        if self.profile:
+            state = capture_state_from_profile(self.profile)
+            if state["model_path"]:
+                self.fields["model"].set(state["model_path"])
+            self.stl_unit.set(state["stl_unit"])
+            if state["pipes"]:
+                self.pipes = state["pipes"]
+            self.pose_adjustment = state["pose_adjustment"]
+            self.qr_settings = state["qr_settings"]
+            self.side_view_distance_mm = state["side_view_distance_mm"]
+            self.history.set(bool(state["capture_history"]))
+            if state["calibration_path"] and Path(state["calibration_path"]).is_file():
+                self.fields["calibration"].set(state["calibration_path"])
+            if state["calibration_current"] is not None:
+                self.calibration_override = state["calibration_current"]
+            self._profile_used = True
+            self.message.set("已恢复上次工作台配置；" + self.message.get())
         main = ttk.Frame(self.window, padding=12)
         main.pack(fill="both", expand=True)
         main.columnconfigure(1, weight=1)
@@ -1204,6 +1280,18 @@ class CaptureInputDialog:
         ttk.Button(action_toolbar, text="编辑所选管件", command=self.edit_pipe).pack(side="left", padx=3)
         ttk.Button(action_toolbar, text="移除所选管件", command=self.remove_pipe).pack(side="left", padx=3)
         ttk.Button(action_toolbar, text="导出标定格式示例", command=self.calibration_example).pack(side="left", padx=3)
+        ttk.Button(action_toolbar, text="从照片取色", command=self.pick_color).pack(side="left", padx=3)
+        ttk.Button(action_toolbar, text="棋盘格标定向导", command=self.open_calibration_wizard).pack(side="left", padx=3)
+        ttk.Button(
+            action_toolbar,
+            text="保存工作台配置",
+            command=lambda: self._persist_profile(
+                ("model_path", "stl_unit", "pipes", "calibration_path", "calibration_current",
+                 "qr_settings", "pose_adjustment", "side_view_distance_mm", "last_manifest_path",
+                 "capture_history")
+            ),
+        ).pack(side="left", padx=3)
+        ttk.Button(action_toolbar, text="重置工作台配置", command=self.reset_profile).pack(side="left", padx=3)
         self.tree = ttk.Treeview(main, columns=("id", "object", "diameter", "color", "layer"), show="headings", height=8)
         for key, title in (("id", "管件 ID"), ("object", "CAD 对象 ID"), ("diameter", "设计外径/mm"), ("color", "物体颜色"), ("layer", "设计层")):
             self.tree.heading(key, text=title)
@@ -1215,7 +1303,7 @@ class CaptureInputDialog:
         ttk.Checkbutton(main, text="保留当前清单的历史拍摄组，用于连续缺失证据判断（要求配置完全一致）", variable=self.history).grid(row=11, column=0, columnspan=3, sticky="w", pady=3)
         ttk.Label(main, textvariable=self.message, wraplength=910, foreground="#355371").grid(row=12, column=0, columnspan=3, sticky="w", pady=8)
         ttk.Button(main, text="创建现场数据并载入", command=self.create).grid(row=13, column=0, columnspan=3, sticky="e", pady=7)
-        if app.manifest_path:
+        if not self._profile_used and app.manifest_path:
             from .gui import _safe_manifest_asset_path
 
             model = _safe_manifest_asset_path(app.manifest_path, app.manifest.get("model", {}).get("path"))
@@ -1232,7 +1320,70 @@ class CaptureInputDialog:
                 self.fields["calibration"].set(str(app.manifest_path))
             if app.manifest.get("model", {}).get("source_unit"):
                 self.stl_unit.set(app.manifest["model"]["source_unit"])
+        if self.profile_problem:
+            self.message.set(self.profile_problem + "请重新配置后点击“保存工作台配置”。")
         self.refresh()
+
+    def _persist_profile(
+        self,
+        sections: tuple[str, ...],
+        *,
+        calibration: dict[str, Any] | None = None,
+        camera: dict[str, Any] | None = None,
+    ) -> None:
+        """Merge the requested dialog state sections into the saved profile."""
+        from .workbench_profile import update_profile
+
+        state = {
+            "model_path": self.fields["model"].get(),
+            "stl_unit": self.stl_unit.get(),
+            "pipes": self.pipes,
+            "calibration_path": self.fields["calibration"].get(),
+            "qr_settings": self.qr_settings,
+            "pose_adjustment": self.pose_adjustment,
+            "side_view_distance_mm": self.side_view_distance_mm,
+            "last_manifest_path": str(self.app.manifest_path) if self.app.manifest_path else "",
+            "capture_history": bool(self.history.get()),
+        }
+        # calibration_current and camera are resolved separately below.
+        updates = {key: copy.deepcopy(state[key]) for key in sections if key in state}
+        if "calibration_current" in sections:
+            effective = calibration
+            try:
+                if effective is None:
+                    effective = apply_camera_pose(
+                        self.calibration_override
+                        or load_calibration_json(self.fields["calibration"].get()),
+                        self.pose_adjustment,
+                    )
+                from .workbench_profile import write_standalone_calibration
+
+                standalone = write_standalone_calibration(effective)
+            except (OSError, ValueError):
+                # Never block the operator here: the dialog message already
+                # explains why no usable calibration exists right now.
+                updates.pop("calibration_current", None)
+            else:
+                updates["calibration_current"] = copy.deepcopy(dict(effective))
+                updates["calibration_path"] = str(standalone)
+        if "camera" in sections:
+            if camera is None:
+                updates.pop("camera", None)
+            else:
+                updates["camera"] = copy.deepcopy(dict(camera))
+        try:
+            update_profile(updates)
+        except (ValueError, OSError) as error:
+            try:
+                self.app.messagebox.showwarning("配置保存失败", str(error), parent=self.window)
+            except Exception:
+                pass
+            return
+        try:
+            if self.window.winfo_exists():
+                self.message.set("已保存工作台配置。")
+        except Exception:
+            pass
 
     def browse(self, key: str) -> None:
         types = (("CAD", "*.3dm *.3mf *.stl"),) if key == "model" else (("JSON", "*.json"),) if key == "calibration" else (("照片", "*.png *.jpg *.jpeg *.bmp *.tif *.tiff"),)
@@ -1272,6 +1423,8 @@ class CaptureInputDialog:
             )
             self.refresh()
             stl_note = " STL 不含颜色和业务 ID，灰色为占位，必须逐管核对/编辑。" if model_path.suffix.lower() == ".stl" else ""
+            # Save first so the verification reminder below stays on screen.
+            self._persist_profile(("model_path", "stl_unit", "pipes"))
             self.message.set(f"已读取 {len(self.pipes)} 个直管候选（设计尺寸）。未纳入 {len(skipped)} 个对象：{', '.join(skipped) or '无'}。请核对全部目标、颜色与业务 ID；双击可修改。{stl_note}")
         except (ValueError, OSError) as error:
             self.app.messagebox.showerror("模型读取失败", str(error), parent=self.window)
@@ -1292,6 +1445,7 @@ class CaptureInputDialog:
                     _pipe_from_manifest(pipe, index)
                 self.pipes = pipes
                 self.refresh()
+                self._persist_profile(("model_path", "stl_unit", "pipes"))
             except (ValueError, OSError) as error:
                 self.app.messagebox.showerror("目录载入失败", str(error), parent=self.window)
 
@@ -1310,7 +1464,10 @@ class CaptureInputDialog:
             calibration_problem = field_calibration_problem(calibration)
             if calibration_problem:
                 raise ValueError(calibration_problem)
-            StereoCameraDialog(self, calibration)
+            from .calibration_wizard import rectifier_for_calibration
+
+            rectifier = rectifier_for_calibration(calibration, getattr(self, "profile", None))
+            StereoCameraDialog(self, calibration, rectifier)
         except (OSError, ValueError) as error:
             self.app.messagebox.showerror("标定载入失败", str(error), parent=self.window)
 
@@ -1341,6 +1498,7 @@ class CaptureInputDialog:
                     raise ValueError("业务 ID 不能重复。")
                 pipe.update(updated)
                 self.refresh()
+                self._persist_profile(("model_path", "stl_unit", "pipes"))
                 window.destroy()
             except ValueError as error:
                 app.messagebox.showerror("输入无效", str(error), parent=window)
@@ -1351,6 +1509,7 @@ class CaptureInputDialog:
         if selected:
             self.pipes.pop(int(selected[0]))
             self.refresh()
+            self._persist_profile(("model_path", "stl_unit", "pipes"))
 
     def calibration_example(self) -> None:
         path = self.app.filedialog.asksaveasfilename(parent=self.window, initialfile="标定格式示例_需替换实机参数.json", defaultextension=".json")
@@ -1366,6 +1525,37 @@ class CaptureInputDialog:
                 self.message.set(f"标定格式示例已保存：{path}")
             except (OSError, ValueError) as error:
                 self.app.messagebox.showerror("保存失败", str(error), parent=self.window)
+
+    def open_calibration_wizard(self) -> None:
+        try:
+            from .calibration_wizard import ChessboardWizardDialog
+
+            ChessboardWizardDialog(self.app, owner=self)
+        except (OSError, ValueError) as error:
+            self.app.messagebox.showerror("棋盘格标定失败", str(error), parent=self.window)
+
+    def reset_profile(self) -> None:
+        if not self.app.messagebox.askokcancel(
+            "重置工作台配置",
+            "将清除已保存的标定、管件目录和相机配置，确定？",
+            parent=self.window,
+        ):
+            return
+        try:
+            from .workbench_profile import reset_profile
+
+            reset_profile()
+        except (OSError, ValueError) as error:
+            self.app.messagebox.showwarning("重置失败", str(error), parent=self.window)
+            return
+        self.message.set("工作台配置已重置；请重新读取模型、标定和相机配置。")
+
+    def pick_color(self) -> None:
+        selected = self.tree.selection()
+        if not selected:
+            self.app.messagebox.showinfo("取色", "请先在管件目录中选择一根管件", parent=self.window)
+            return
+        ColorPickDialog(self, int(selected[0]))
 
     def create(self) -> None:
         try:
@@ -1393,7 +1583,125 @@ class CaptureInputDialog:
                 timestamp_sources=self.timestamp_sources,
                 camera_capture_provenance=self.camera_capture_provenance)
             self.app._load_sources(path, None)
+            self._persist_profile(("last_manifest_path", "capture_history"))
             self.app.main_tabs.select(0)
             self.window.destroy()
         except (OSError, ValueError) as error:
             self.app.messagebox.showerror("现场数据创建失败", str(error), parent=self.window)
+
+
+class ColorPickDialog:
+    """Pick a pipe's real color by clicking its surface in the left photo."""
+
+    def __init__(self, owner: Any, pipe_index: int) -> None:
+        self.owner = owner
+        self.pipe_index = pipe_index
+        self.sampled: str | None = None
+        app = owner.app
+        path = owner.fields["left"].get().strip()
+        if not path:
+            app.messagebox.showinfo(
+                "取色", "请先同步抓拍或选择左目照片，再从照片上取色。", parent=owner.window
+            )
+            return
+        try:
+            image = cv2.imread(str(Path(path)), cv2.IMREAD_COLOR)
+            if image is None:
+                raise OSError(f"无法读取左目照片：{path}")
+        except OSError as error:
+            app.messagebox.showerror("取色失败", str(error), parent=owner.window)
+            return
+        height, width = image.shape[:2]
+        scale = min(860 / width, 560 / height, 1.0)
+        shown = (
+            cv2.resize(
+                image,
+                (max(1, round(width * scale)), max(1, round(height * scale))),
+                interpolation=cv2.INTER_AREA,
+            )
+            if scale < 1
+            else image
+        )
+        ok, encoded = cv2.imencode(".png", shown)
+        if not ok:
+            app.messagebox.showerror("取色失败", "无法显示左目照片。", parent=owner.window)
+            return
+        self.image = image
+        self.scale = scale
+        # Keep a reference: Tk photo images are garbage collected otherwise.
+        self.photo = app.tk.PhotoImage(
+            data=base64.b64encode(encoded).decode("ascii"), format="png"
+        )
+        self.window = app.tk.Toplevel(owner.window)
+        self.window.title(f"从左目照片取色：{owner.pipes[pipe_index]['pipe_id']}")
+        self.window.transient(owner.window)
+        frame = app.ttk.Frame(self.window, padding=12)
+        frame.pack(fill="both", expand=True)
+        app.ttk.Label(
+            frame,
+            text="点击管件表面取色；取色来自分析所用同一张照片。",
+            foreground="#355371",
+        ).pack(anchor="w", pady=(0, 8))
+        canvas = app.tk.Canvas(
+            frame,
+            width=self.photo.width(),
+            height=self.photo.height(),
+            highlightthickness=1,
+            highlightbackground="#8A8A8A",
+        )
+        canvas.pack()
+        canvas.create_image(0, 0, anchor="nw", image=self.photo)
+        canvas.bind("<Button-1>", self._pick)
+        bottom = app.ttk.Frame(frame)
+        bottom.pack(fill="x", pady=(10, 0))
+        self.swatch = app.tk.Label(
+            bottom, text="尚未取样", width=20, background="#F0F0F0", relief="groove"
+        )
+        self.swatch.pack(side="left", padx=(0, 10))
+        app.ttk.Button(bottom, text="设为该管件颜色", command=self._apply).pack(side="left")
+
+    def _pick(self, event: Any) -> None:
+        try:
+            height, width = self.image.shape[:2]
+            centre_x = min(max(int(round(event.x / self.scale)), 0), width - 1)
+            centre_y = min(max(int(round(event.y / self.scale)), 0), height - 1)
+            # Median over a 9x9 patch, clamped at the image borders.
+            patch = self.image[
+                max(0, centre_y - 4):min(height, centre_y + 5),
+                max(0, centre_x - 4):min(width, centre_x + 5),
+            ]
+            blue, green, red = (
+                int(round(float(np.median(patch[:, :, channel])))) for channel in range(3)
+            )
+            self.sampled = f"#{red:02X}{green:02X}{blue:02X}"
+        except (ValueError, OSError) as error:
+            self.owner.app.messagebox.showerror("取色失败", str(error), parent=self.window)
+            return
+        luminance = 0.299 * red + 0.587 * green + 0.114 * blue
+        self.swatch.configure(
+            text=f"  {self.sampled}  ",
+            background=self.sampled,
+            foreground="#FFFFFF" if luminance < 128 else "#101010",
+        )
+
+    def _apply(self) -> None:
+        if not self.sampled:
+            self.owner.app.messagebox.showinfo(
+                "取色", "请先在照片上点击管件表面取样。", parent=self.window
+            )
+            return
+        try:
+            from .stereo_analyzer import _pipe_from_manifest
+
+            updated = self.owner.pipes[self.pipe_index] | {"color_srgb": self.sampled}
+            _pipe_from_manifest(updated, 0)
+        except ValueError as error:
+            self.owner.app.messagebox.showerror("取色失败", str(error), parent=self.window)
+            return
+        self.owner.pipes[self.pipe_index] = updated
+        self.owner.refresh()
+        self.owner._persist_profile(("pipes",))
+        self.owner.message.set(
+            f"管件 {updated['pipe_id']} 颜色已设为 {self.sampled}（来自左目照片取色）。"
+        )
+        self.window.destroy()

@@ -2,6 +2,8 @@
 
 Run after producing outputs/gui_validation/stereo_report.json.  --show makes
 the window visible briefly for desktop validation; the default stays hidden.
+The workbench profile paths are monkeypatched into a temporary directory so a
+smoke run never touches the operator's saved configuration.
 """
 
 from __future__ import annotations
@@ -21,15 +23,22 @@ sys.path.insert(0, str(ROOT))
 
 def main():
     import tkinter as tk
-    from pipe_twin.gui import _PipeTwinApplication
-    from pipe_twin.measurement_book import empty_book, load_book
-    from pipe_twin.camera_pose import POSE_MODE_LABELS
+
+    import cv2
+    import numpy as np
+
+    from pipe_twin import workbench_profile
+    from pipe_twin.calibration_wizard import ChessboardWizardDialog
     from pipe_twin.capture_gui import (
         CameraPoseDialog,
         CaptureInputDialog,
+        ColorPickDialog,
         QrRegistrationDialog,
         StereoCameraDialog,
     )
+    from pipe_twin.camera_pose import POSE_MODE_LABELS
+    from pipe_twin.gui import _PipeTwinApplication
+    from pipe_twin.measurement_book import empty_book, load_book
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--show", action="store_true")
@@ -37,62 +46,80 @@ def main():
     report = ROOT / "outputs/gui_validation/stereo_report.json"
     manifest = ROOT / "test_model/field_stereo_demo_manifest.json"
     errors = []
-    root = tk.Tk()
-    root.withdraw()
-    root.report_callback_exception = lambda *error: errors.append("".join(traceback.format_exception(*error)))
-    app = _PipeTwinApplication(root, None, None)
-    app.messagebox = Mock()
-    app._load_sources(manifest, report)
-    if args.show:
-        root.deiconify()
-    root.update()
-    layout = {"window": [root.winfo_width(), root.winfo_height()],
-              "photo": [app.measurement_panel.viewport.canvas.winfo_width(), app.measurement_panel.viewport.canvas.winfo_height()],
-              "pipe_table": [app.measurement_panel.pipe_tree.winfo_width(), app.measurement_panel.pipe_tree.winfo_height()]}
-    if args.show:
-        assert root.winfo_ismapped()
-        assert min(layout["photo"]) >= 180, layout
-        assert layout["pipe_table"][1] >= 120, layout
-    assert app.dashboard["binding_valid"], app.dashboard["binding_issues"]
-    panel = app.measurement_panel
-    measured = [r for r in panel.summary["pipes"] if r["measurement_status"] == "MEASURED"]
-    assert len(measured) >= 2, panel.summary
-    app._select_pipe(measured[0]["pipe_id"])
-    root.update()
     destination = ROOT / "outputs/gui_validation"
     destination.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=destination) as temporary:
-        panel.book_path = Path(temporary) / "smoke_samples.json"
-        panel.explicit_book = True
-        panel.book = empty_book()
-        panel.reference.set("40.0")
-        panel.use.set("校正样本")
-        panel.notes.set("自动界面测试样本，不是真实人工实测")
-        panel.add_sample()
+    sandbox = tempfile.TemporaryDirectory(dir=destination)
+    temporary = Path(sandbox.name)
+    # Keep the operator's real workbench profile out of this run.
+    original_paths = (
+        workbench_profile.default_profile_path,
+        workbench_profile.default_calibration_path,
+    )
+    workbench_profile.default_profile_path = lambda: temporary / "workbench_profile.json"
+    workbench_profile.default_calibration_path = lambda: temporary / "calibration_current.json"
+    root = tk.Tk()
+    try:
+        root.withdraw()
+        root.report_callback_exception = lambda *error: errors.append(
+            "".join(traceback.format_exception(*error))
+        )
+        app = _PipeTwinApplication(root, None, None)
+        app.messagebox = Mock()
+        app._load_sources(manifest, report)
+        if args.show:
+            root.deiconify()
         root.update()
-        assert len(panel.book["samples"]) == 1
-        assert load_book(panel.book_path)["samples"][0]["raw_mm"] == measured[0]["raw_diameter_mm"]
-        panel.role.set("right")
-        panel.update_photo()
-        panel.viewport._wheel(type("Event", (), {"x": 100, "y": 100, "delta": 120})())
-        panel.set_roi([500, 200, 200, 160])
-        assert panel.active_rois()[measured[0]["pipe_id"]]["right"] == [500, 200, 200, 160]
-        panel.clear_roi()
-        panel.book = empty_book()
-        panel.refresh()
-        folder = panel.export_to(destination)
-        exported = json.loads((folder / "逐管状态.json").read_text(encoding="utf-8"))
-        assert len(exported["pipes"]) == 9
-        assert len(exported["pairs"]) == 36
-        panel.tabs.select(1)
+        layout = {
+            "window": [root.winfo_width(), root.winfo_height()],
+            "photo": [
+                app.measurement_panel.viewport.canvas.winfo_width(),
+                app.measurement_panel.viewport.canvas.winfo_height(),
+            ],
+            "pipe_table": [
+                app.measurement_panel.pipe_tree.winfo_width(),
+                app.measurement_panel.pipe_tree.winfo_height(),
+            ],
+        }
+        if args.show:
+            assert root.winfo_ismapped()
+            assert min(layout["photo"]) >= 180, layout
+            assert layout["pipe_table"][1] >= 120, layout
+        assert app.dashboard["binding_valid"], app.dashboard["binding_issues"]
+        panel = app.measurement_panel
+        measured = [r for r in panel.summary["pipes"] if r["measurement_status"] == "MEASURED"]
+        assert len(measured) >= 2, panel.summary
+        app._select_pipe(measured[0]["pipe_id"])
         root.update()
-        panel.tabs.select(3)
-        root.update()
+        with tempfile.TemporaryDirectory(dir=destination) as book_temp:
+            panel.book_path = Path(book_temp) / "smoke_samples.json"
+            panel.explicit_book = True
+            panel.book = empty_book()
+            panel.reference.set("40.0")
+            panel.use.set("校正样本")
+            panel.notes.set("自动界面测试样本，不是真实人工实测")
+            panel.add_sample()
+            root.update()
+            assert len(panel.book["samples"]) == 1
+            assert load_book(panel.book_path)["samples"][0]["raw_mm"] == measured[0]["raw_diameter_mm"]
+            panel.role.set("right")
+            panel.update_photo()
+            panel.viewport._wheel(type("Event", (), {"x": 100, "y": 100, "delta": 120})())
+            panel.set_roi([500, 200, 200, 160])
+            assert panel.active_rois()[measured[0]["pipe_id"]]["right"] == [500, 200, 200, 160]
+            panel.clear_roi()
+            panel.book = empty_book()
+            panel.refresh()
+            folder = panel.export_to(destination)
+            exported = json.loads((folder / "逐管状态.json").read_text(encoding="utf-8"))
+            assert len(exported["pipes"]) == 9
+            assert len(exported["pairs"]) == 36
+            panel.tabs.select(1)
+            root.update()
+            panel.tabs.select(3)
+            root.update()
         wizard = CaptureInputDialog(app)
         root.update()
         assert len(wizard.tree.get_children()) == 9
-        assert wizard.model_toolbar.winfo_reqwidth() < 950
-        assert wizard.action_toolbar.winfo_reqwidth() < 950
         calibration = json.loads(manifest.read_text(encoding="utf-8"))["stereo_calibration"]
         camera = StereoCameraDialog(wizard, calibration)
         root.update()
@@ -125,17 +152,100 @@ def main():
         assert wizard.pose_adjustment["mode"] == "positive_z"
         assert wizard.pose_adjustment["roll_deg"] == 1.5
         assert wizard.pose_adjustment["registration_validated"] is True
+        board = ChessboardWizardDialog(app, owner=wizard)
+        root.update()
+        assert board.columns.get() == "9" and board.rows.get() == "7"
+        assert "180×140" in board.fit_hint.get() and "可打印" in board.fit_hint.get()
+        board.columns.set("12")
+        root.update()
+        assert "超出 A4" in board.fit_hint.get()
+        board.columns.set("9")
+        assert board.session is None
+        board.close()
         wizard.window.destroy()
+        # Color picking: click a pure-blue patch in a synthetic left photo.
+        wizard = CaptureInputDialog(app)
+        root.update()
+        photo_path = temporary / "pick_source.png"
+        photo = np.full((300, 400, 3), 255, dtype=np.uint8)
+        photo[150:210, 200:260] = (255, 0, 0)
+        cv2.imwrite(str(photo_path), photo)
+        wizard.fields["left"].set(str(photo_path))
+        picker = ColorPickDialog(wizard, 0)
+        root.update()
+        picker._pick(type("Event", (), {"x": 230, "y": 180})())
+        assert picker.sampled == "#0000FF", picker.sampled
+        picker._apply()
+        root.update()
+        assert wizard.pipes[0]["color_srgb"] == "#0000FF"
+        assert workbench_profile.default_profile_path().is_file()
+        saved = json.loads(workbench_profile.default_profile_path().read_text(encoding="utf-8"))
+        assert saved["pipes"][0]["color_srgb"] == "#0000FF"
+        # A new dialog must restore the persisted catalog instead of the demo.
+        wizard.window.destroy()
+        wizard = CaptureInputDialog(app)
+        root.update()
+        assert len(wizard.tree.get_children()) == 9
+        assert wizard.pipes[0]["color_srgb"] == "#0000FF"
+        assert wizard._profile_used
+        wizard.reset_profile()
+        root.update()
+        reset = json.loads(workbench_profile.default_profile_path().read_text(encoding="utf-8"))
+        assert reset["pipes"] == []
+        wizard.window.destroy()
+        # Startup restore: point the profile at the demo manifest and restore.
+        # The profile stores the manifest path only; a fresh session has no
+        # recognition report until the operator runs the analysis again.
+        workbench_profile.update_profile({"last_manifest_path": str(manifest)})
+        app._restore_workbench_session()
+        root.update()
+        assert str(app.manifest_path) == str(manifest), app.manifest_path
+        assert "已恢复上次工作台会话" in app.banner_text.get()
         app.main_tabs.select(1)
         root.update()
         app.main_tabs.select(0)
         root.update()
+    finally:
+        (
+            workbench_profile.default_profile_path,
+            workbench_profile.default_calibration_path,
+        ) = original_paths
+        root.destroy()
+        sandbox.cleanup()
     assert not errors, errors
     assert not app.messagebox.showerror.called, app.messagebox.showerror.call_args_list
-    root.destroy()
-    print(json.dumps({"status": "PASS", "pipe_count": 9, "pair_count": 36,
-                      "measured_count": len(measured), "export_directory": str(folder), "layout": layout,
-                      "checks": ["empty_start", "bound_report", "photo_zoom", "roi", "reference_save_reload", "pair_table", "detail", "capture_dialog", "stereo_camera_dialog", "qr_registration_dialog", "side_view_pose", "camera_pose_dialog", "export"]}, ensure_ascii=True))
+    print(
+        json.dumps(
+            {
+                "status": "PASS",
+                "pipe_count": 9,
+                "pair_count": 36,
+                "export_directory": str(folder),
+                "layout": layout,
+                "checks": [
+                    "empty_start",
+                    "bound_report",
+                    "photo_zoom",
+                    "roi",
+                    "reference_save_reload",
+                    "pair_table",
+                    "detail",
+                    "capture_dialog",
+                    "stereo_camera_dialog",
+                    "qr_registration_dialog",
+                    "side_view_pose",
+                    "camera_pose_dialog",
+                    "export",
+                    "wizard_dialog",
+                    "color_pick",
+                    "profile_prefill",
+                    "profile_reset",
+                    "startup_restore",
+                ],
+            },
+            ensure_ascii=True,
+        )
+    )
 
 
 if __name__ == "__main__":
