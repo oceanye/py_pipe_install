@@ -404,6 +404,7 @@ class StereoCameraDialog:
         self.mode = tk.StringVar(value=_CAMERA_LAYOUT_LABELS[LAYOUT_SIDE_BY_SIDE_LR])
         self.left_index = tk.StringVar(value="0")
         self.right_index = tk.StringVar(value="1")
+        self.right_frame_transform = "none"
         # Reuse the device selection saved in the workbench profile when valid.
         camera_state = (getattr(owner, "profile", None) or {}).get("camera")
         if isinstance(camera_state, dict):
@@ -414,6 +415,9 @@ class StereoCameraDialog:
                 value = camera_state.get(key)
                 if type(value) is int and value >= 0:
                     variable.set(str(value))
+            self.right_frame_transform = str(
+                camera_state.get("right_frame_transform", "none")
+            )
         self.message = tk.StringVar(
             value=(
                 f"当前标定要求每目 {self.calibration.left.width}×"
@@ -570,6 +574,7 @@ class StereoCameraDialog:
                 right_index=right,
                 eye_width=self.calibration.left.width,
                 eye_height=self.calibration.left.height,
+                right_frame_transform=self.right_frame_transform,
             )
             session.open()
             return session
@@ -740,6 +745,7 @@ class StereoCameraDialog:
                     "layout": self._layout(),
                     "left_index": left_index,
                     "right_index": right_index,
+                    "right_frame_transform": self.right_frame_transform,
                 },
             )
             if self._layout() in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}:

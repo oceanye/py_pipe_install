@@ -201,7 +201,15 @@ class WorkbenchProfileTests(unittest.TestCase):
 
     def test_capture_state_mapping_round_trips_through_profile_sections(self):
         state = capture_state_from_profile(_profile())
-        self.assertEqual(state["camera"], {"layout": "side_by_side_left_right", "left_index": 0, "right_index": 1})
+        self.assertEqual(
+            state["camera"],
+            {
+                "layout": "side_by_side_left_right",
+                "left_index": 0,
+                "right_index": 1,
+                "right_frame_transform": "none",
+            },
+        )
         sections = profile_sections_from_state(
             state,
             sections=("model_path", "stl_unit", "pipes", "qr_settings", "pose_adjustment", "camera"),

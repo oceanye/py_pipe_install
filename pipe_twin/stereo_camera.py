@@ -17,6 +17,16 @@ import numpy as np
 LAYOUT_SIDE_BY_SIDE_LR = "side_by_side_left_right"
 LAYOUT_SIDE_BY_SIDE_RL = "side_by_side_right_left"
 LAYOUT_SEPARATE = "separate_devices"
+FRAME_TRANSFORM_NONE = "none"
+FRAME_TRANSFORM_FLIP_HORIZONTAL = "flip_horizontal"
+FRAME_TRANSFORM_FLIP_VERTICAL = "flip_vertical"
+FRAME_TRANSFORM_ROTATE_180 = "rotate_180"
+SUPPORTED_FRAME_TRANSFORMS = {
+    FRAME_TRANSFORM_NONE,
+    FRAME_TRANSFORM_FLIP_HORIZONTAL,
+    FRAME_TRANSFORM_FLIP_VERTICAL,
+    FRAME_TRANSFORM_ROTATE_180,
+}
 SUPPORTED_LAYOUTS = {
     LAYOUT_SIDE_BY_SIDE_LR,
     LAYOUT_SIDE_BY_SIDE_RL,
@@ -26,6 +36,20 @@ SUPPORTED_LAYOUTS = {
 
 class StereoCameraError(ValueError):
     """Raised when a camera pair cannot satisfy the capture contract."""
+
+
+def apply_frame_transform(image: np.ndarray, transform: str) -> np.ndarray:
+    """Apply a saved sensor-orientation correction to one camera frame."""
+
+    if transform not in SUPPORTED_FRAME_TRANSFORMS:
+        raise StereoCameraError(f"unsupported frame transform: {transform!r}")
+    if transform == FRAME_TRANSFORM_NONE:
+        return image
+    if transform == FRAME_TRANSFORM_FLIP_HORIZONTAL:
+        return cv2.flip(image, 1)
+    if transform == FRAME_TRANSFORM_FLIP_VERTICAL:
+        return cv2.flip(image, 0)
+    return cv2.flip(image, -1)
 
 
 @dataclass(frozen=True)
@@ -245,9 +269,14 @@ class StereoCameraSession:
         backend: int | None = None,
         capture_factory: Callable[..., Any] = cv2.VideoCapture,
         clock_ns: Callable[[], int] = time.time_ns,
+        right_frame_transform: str = FRAME_TRANSFORM_NONE,
     ) -> None:
         if layout not in SUPPORTED_LAYOUTS:
             raise StereoCameraError(f"unsupported stereo camera layout: {layout!r}")
+        if right_frame_transform not in SUPPORTED_FRAME_TRANSFORMS:
+            raise StereoCameraError(
+                f"unsupported right frame transform: {right_frame_transform!r}"
+            )
         for name, value in (("left_index", left_index), ("eye_width", eye_width), ("eye_height", eye_height)):
             if type(value) is not int or value < 0 or (name != "left_index" and value <= 0):
                 raise StereoCameraError(f"{name} must be a valid integer")
@@ -264,6 +293,7 @@ class StereoCameraSession:
         self.backend = _default_backend() if backend is None else backend
         self.capture_factory = capture_factory
         self.clock_ns = clock_ns
+        self.right_frame_transform = right_frame_transform
         self.left_capture: Any | None = None
         self.right_capture: Any | None = None
 
@@ -328,6 +358,7 @@ class StereoCameraSession:
             if self.layout == LAYOUT_SIDE_BY_SIDE_LR
             else (second, first)
         )
+        right = apply_frame_transform(right, self.right_frame_transform)
         timestamp = _host_timestamp((started + finished) // 2)
         order = "LEFT_THEN_RIGHT" if self.layout == LAYOUT_SIDE_BY_SIDE_LR else "RIGHT_THEN_LEFT"
         common = {
@@ -344,7 +375,11 @@ class StereoCameraSession:
             right_captured_at=timestamp,
             sync_delta_ms=0.0,
             timestamp_source="HOST_SYSTEM_CLOCK",
-            provenance={"left": dict(common), "right": dict(common)},
+            provenance={
+                "left": dict(common),
+                "right": common
+                | {"right_frame_transform": self.right_frame_transform},
+            },
         )
 
     def _grab_with_time(self, capture: Any) -> tuple[bool, int]:
@@ -383,14 +418,18 @@ class StereoCameraSession:
         }
         return CapturedStereoPair(
             left=left.copy(),
-            right=right.copy(),
+            right=apply_frame_transform(right, self.right_frame_transform).copy(),
             left_captured_at=_host_timestamp(left_time),
             right_captured_at=_host_timestamp(right_time),
             sync_delta_ms=sync_delta_ms,
             timestamp_source="HOST_SYSTEM_CLOCK",
             provenance={
                 "left": common | {"capture_device_index": self.left_index},
-                "right": common | {"capture_device_index": self.right_index},
+                "right": common
+                | {
+                    "capture_device_index": self.right_index,
+                    "right_frame_transform": self.right_frame_transform,
+                },
             },
         )
 
@@ -409,12 +448,18 @@ class StereoCameraSession:
 
 __all__ = [
     "CapturedStereoPair",
+    "FRAME_TRANSFORM_FLIP_HORIZONTAL",
+    "FRAME_TRANSFORM_FLIP_VERTICAL",
+    "FRAME_TRANSFORM_NONE",
+    "FRAME_TRANSFORM_ROTATE_180",
     "LAYOUT_SEPARATE",
     "LAYOUT_SIDE_BY_SIDE_LR",
     "LAYOUT_SIDE_BY_SIDE_RL",
     "STEREO_MODE_CANDIDATES",
     "StereoCameraError",
     "StereoCameraSession",
+    "SUPPORTED_FRAME_TRANSFORMS",
+    "apply_frame_transform",
     "probe_video_devices",
     "probe_video_modes",
     "run_in_background",

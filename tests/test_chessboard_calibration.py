@@ -26,6 +26,7 @@ from pipe_twin.calibration_wizard import (
     printable_chessboard_png,
     rectifier_for_calibration,
     solve_stereo_calibration,
+    write_calibration_diagnostic,
     write_printable_chessboard_png,
 )
 from pipe_twin.capture_gui import field_calibration_problem
@@ -266,6 +267,50 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertAlmostEqual(calibration.baseline_mm, BASELINE_MM, delta=1.0)
         self.assertLess(result.stereo_rms_px, 0.5)
         self.assertTrue(result.audit["p1_p2_k_identical"])
+
+    def test_solver_detects_and_corrects_a_horizontally_mirrored_right_sensor(self):
+        mirrored = []
+        for left, right in _synthetic_pairs():
+            # Simulate detection after the camera driver mirrored the complete
+            # right frame: pixel coordinates reflect and grid columns relabel.
+            grid = right.corners_px.reshape(PATTERN[1], PATTERN[0], 2).copy()
+            grid[..., 0] = SIZE[0] - 1 - grid[..., 0]
+            grid = grid[:, ::-1]
+            mirrored.append(
+                (
+                    left,
+                    BoardObservation(
+                        grid.reshape(-1, 2).copy(),
+                        right.sharpness,
+                        right.centroid_zone,
+                    ),
+                )
+            )
+
+        result = _solve(pairs=mirrored)
+
+        self.assertTrue(result.validated, result.rejection_reasons)
+        self.assertEqual(result.audit["right_frame_transform"], "flip_horizontal")
+        self.assertAlmostEqual(result.calibration["baseline_mm"], BASELINE_MM, delta=1.0)
+        self.assertLess(result.stereo_rms_px, 0.5)
+
+    def test_failed_solve_diagnostic_round_trips_all_corner_points(self):
+        pairs = _synthetic_pairs()
+        result = _solve(pairs=pairs)
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_calibration_diagnostic(
+                pairs,
+                result,
+                image_size=SIZE,
+                pattern=PATTERN,
+                square_mm=SQUARE_MM,
+                root=temp,
+            )
+            with np.load(path) as payload:
+                self.assertEqual(payload["left_points"].shape, (12, 48, 2))
+                self.assertEqual(payload["right_points"].shape, (12, 48, 2))
+                metadata = json.loads(str(payload["metadata_json"]))
+            self.assertEqual(metadata["pattern_inner_corners"], [8, 6])
 
     def test_joint_solve_uses_the_joint_intrinsics_for_rectification(self):
         rng = np.random.default_rng(42)

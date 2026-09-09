@@ -77,6 +77,12 @@ _CAMERA_LAYOUTS = {
     "side_by_side_right_left",
     "separate_devices",
 }
+_CAMERA_FRAME_TRANSFORMS = {
+    "none",
+    "flip_horizontal",
+    "flip_vertical",
+    "rotate_180",
+}
 _SECTION_KEYS = (
     "model_path",
     "stl_unit",
@@ -119,7 +125,12 @@ def default_profile() -> dict:
         "qr_settings": {},
         "pose_adjustment": {"mode": "keep"},
         "side_view_distance_mm": 1000.0,
-        "camera": {"layout": "side_by_side_left_right", "left_index": 0, "right_index": 1},
+        "camera": {
+            "layout": "side_by_side_left_right",
+            "left_index": 0,
+            "right_index": 1,
+            "right_frame_transform": "none",
+        },
         "last_manifest_path": "",
         "chessboard": {"square_mm": 20.0, "columns": 9, "rows": 7, "dpi": 300},
         "wizard": {"operator": "field", "max_reprojection_rms_px": 0.5, "min_pairs": 10},
@@ -293,7 +304,7 @@ def _validate_pose_adjustment(payload: Any) -> dict:
 def _validate_camera(payload: Any) -> dict:
     if not isinstance(payload, dict):
         raise ValueError("camera 必须是对象")
-    if set(payload) - {"layout", "left_index", "right_index"}:
+    if set(payload) - {"layout", "left_index", "right_index", "right_frame_transform"}:
         raise ValueError("camera 包含不支持的字段")
     layout = payload.get("layout")
     if layout not in _CAMERA_LAYOUTS:
@@ -309,7 +320,15 @@ def _validate_camera(payload: Any) -> dict:
             raise ValueError("独立设备模式下左右相机索引不能相同")
     elif right_index is not None and (type(right_index) is not int or right_index < 0):
         raise ValueError("camera.right_index 必须是非负整数")
-    return {"layout": layout, "left_index": left_index, "right_index": right_index}
+    right_frame_transform = payload.get("right_frame_transform", "none")
+    if right_frame_transform not in _CAMERA_FRAME_TRANSFORMS:
+        raise ValueError("camera.right_frame_transform 无效")
+    return {
+        "layout": layout,
+        "left_index": left_index,
+        "right_index": right_index,
+        "right_frame_transform": right_frame_transform,
+    }
 
 
 def _validate_chessboard(payload: Any) -> dict:
