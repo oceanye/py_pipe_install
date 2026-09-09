@@ -163,6 +163,25 @@ class StereoCameraTests(unittest.TestCase):
         self.assertEqual([item["index"] for item in devices], [0, 2])
         self.assertTrue(all(capture.released for capture in captures))
 
+    def test_probe_can_stop_after_required_device_count(self):
+        attempted: list[int] = []
+
+        def factory(index: int, _backend: int) -> FakeCapture:
+            attempted.append(index)
+            return FakeCapture(
+                np.zeros((480, 640, 3), dtype=np.uint8),
+                opened=index in {0, 2},
+            )
+
+        devices = probe_video_devices(
+            maximum_index=5,
+            maximum_devices=1,
+            backend=123,
+            capture_factory=factory,
+        )
+        self.assertEqual([item["index"] for item in devices], [0])
+        self.assertEqual(attempted, [0])
+
     def test_probe_video_modes_reports_delivered_sizes_deduplicated(self):
         class ModeCapture:
             def __init__(self) -> None:
@@ -211,6 +230,22 @@ class StereoCameraTests(unittest.TestCase):
         )
         self.assertEqual(modes, [])
         self.assertLess(time.time() - started, 5.0)
+
+    def test_probe_video_modes_honours_cancellation(self):
+        attempted: list[int] = []
+
+        def factory(index: int, _backend: int):
+            attempted.append(index)
+            return FakeCapture(np.zeros((480, 640, 3), dtype=np.uint8))
+
+        modes = probe_video_modes(
+            index=0,
+            candidates=[(2560, 720)],
+            capture_factory=factory,
+            cancelled=lambda: True,
+        )
+        self.assertEqual(modes, [])
+        self.assertEqual(attempted, [])
 
 
 if __name__ == "__main__":

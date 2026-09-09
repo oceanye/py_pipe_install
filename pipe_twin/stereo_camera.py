@@ -53,6 +53,7 @@ def _default_backend() -> int:
 def probe_video_devices(
     *,
     maximum_index: int = 7,
+    maximum_devices: int | None = None,
     backend: int | None = None,
     capture_factory: Callable[..., Any] = cv2.VideoCapture,
     per_index_timeout_s: float = 5.0,
@@ -70,12 +71,17 @@ def probe_video_devices(
     """
     if type(maximum_index) is not int or not 0 <= maximum_index <= 32:
         raise StereoCameraError("maximum_index must be an integer between 0 and 32")
+    if maximum_devices is not None and (
+        type(maximum_devices) is not int or maximum_devices <= 0
+    ):
+        raise StereoCameraError("maximum_devices must be a positive integer or None")
     selected_backend = _default_backend() if backend is None else backend
     devices: list[dict[str, Any]] = []
 
     def _probe_one(index: int) -> dict[str, Any] | None:
-        capture = capture_factory(index, selected_backend)
+        capture: Any | None = None
         try:
+            capture = capture_factory(index, selected_backend)
             if not capture.isOpened():
                 return None
             return {
@@ -89,7 +95,8 @@ def probe_video_devices(
             # Driver errors behave like "no device here"; never kill the worker.
             return None
         finally:
-            capture.release()
+            if capture is not None:
+                capture.release()
 
     for index in range(maximum_index + 1):
         if cancelled is not None and cancelled():
@@ -110,6 +117,8 @@ def probe_video_devices(
         device = outcome.get("device")
         if device is not None:
             devices.append(device)
+            if maximum_devices is not None and len(devices) >= maximum_devices:
+                break
         elif progress is not None:
             progress(index, "empty")
     return devices
@@ -136,6 +145,7 @@ def probe_video_modes(
     backend: int | None = None,
     capture_factory: Callable[..., Any] = cv2.VideoCapture,
     per_mode_timeout_s: float = 6.0,
+    cancelled: Callable[[], bool] | None = None,
 ) -> list[tuple[int, int]]:
     """Return stream sizes ``index`` actually delivers, best stereo first.
 
@@ -149,12 +159,17 @@ def probe_video_modes(
     selected_backend = _default_backend() if backend is None else backend
     sizes: list[tuple[int, int]] = []
     for width, height in candidates or list(STEREO_MODE_CANDIDATES):
+        if cancelled is not None and cancelled():
+            break
         if sizes:
             time.sleep(0.3)
 
         def _task(w: int = width, h: int = height) -> tuple[int, int] | None:
-            capture = capture_factory(index, selected_backend)
+            if cancelled is not None and cancelled():
+                return None
+            capture: Any | None = None
             try:
+                capture = capture_factory(index, selected_backend)
                 if not capture.isOpened():
                     return None
                 capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
@@ -165,6 +180,8 @@ def probe_video_modes(
                 # up before trusting the delivered size.
                 frame: np.ndarray | None = None
                 for _ in range(6):
+                    if cancelled is not None and cancelled():
+                        return None
                     ok, frame = capture.read()
                     if not ok or not isinstance(frame, np.ndarray) or frame.ndim != 3:
                         return None
@@ -174,7 +191,8 @@ def probe_video_modes(
             except Exception:
                 return None
             finally:
-                capture.release()
+                if capture is not None:
+                    capture.release()
 
         outcome: dict[str, Any] = {}
         worker = threading.Thread(

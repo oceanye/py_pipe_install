@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 import struct
 import tempfile
+import threading
 import unittest
 import zlib
 from pathlib import Path
+from unittest import mock
 
 import cv2
 import numpy as np
@@ -13,6 +15,7 @@ import numpy as np
 from pipe_twin.calibration_wizard import (
     CHESS_ID_MARKER,
     BoardObservation,
+    ChessboardWizardDialog,
     Rectifier,
     _canonicalize_corner_order,
     align_pair_orientation,
@@ -160,6 +163,20 @@ class ChessboardWizardTests(unittest.TestCase):
         flipped = _canonicalize_corner_order(grid[::-1].copy(), PATTERN)
         np.testing.assert_allclose(canonical, flipped)
 
+    def test_pair_alignment_uses_grid_direction_when_disparity_exceeds_board_width(self):
+        columns, rows = PATTERN
+        xx, yy = np.meshgrid(np.arange(columns), np.arange(rows))
+        grid = np.stack((xx, yy), axis=-1).astype(float)
+        grid *= 20.0
+        left = BoardObservation(grid.reshape(-1, 2), 100.0, (1, 1))
+        correct_right = grid + np.asarray([-240.0, 7.0])
+        detector_reversed = correct_right[::-1, ::-1].reshape(-1, 2)
+        right = BoardObservation(detector_reversed, 100.0, (1, 1))
+
+        aligned = align_pair_orientation(left, right, pattern=PATTERN)
+
+        np.testing.assert_allclose(aligned.corners_px, correct_right.reshape(-1, 2))
+
     def test_detection_finds_board_and_matches_under_image_rotation(self):
         square = 40
         board = np.full(((7 + 4) * square, (9 + 4) * square), 255, np.uint8)
@@ -178,6 +195,67 @@ class ChessboardWizardTests(unittest.TestCase):
         realigned = align_pair_orientation(direct, rotated, pattern=PATTERN)
         np.testing.assert_allclose(direct.corners_px, realigned.corners_px, atol=1.5)
         self.assertEqual(pose_diversity_report([direct], image_size=scene.shape[:2][::-1])["unique_zones"], 1)
+
+    def test_sb_native_error_falls_back_without_stopping_preview(self):
+        square = 40
+        board = np.full(((7 + 4) * square, (9 + 4) * square), 255, np.uint8)
+        for row in range(7):
+            for column in range(9):
+                if (row + column) % 2 == 0:
+                    board[(row + 2) * square : (row + 3) * square, (column + 2) * square : (column + 3) * square] = 0
+        scene = cv2.cvtColor(board, cv2.COLOR_GRAY2BGR)
+        failures: list[tuple[str, str]] = []
+        native_error = cv2.error("Unknown C++ exception from OpenCV code")
+        with mock.patch.object(cv2, "findChessboardCornersSB", side_effect=native_error):
+            observation = detect_board_corners(
+                scene,
+                pattern=PATTERN,
+                on_cv_error=lambda stage, error: failures.append((stage, str(error))),
+            )
+        self.assertIsNotNone(observation)
+        self.assertEqual(failures, [("find_chessboard_corners_sb", str(native_error))])
+
+    def test_sb_detector_does_not_enable_partial_board_mode(self):
+        image = np.zeros((120, 160, 3), dtype=np.uint8)
+        seen_flags: list[int] = []
+
+        def sb(_gray, _pattern, flags):
+            seen_flags.append(flags)
+            return False, None
+
+        with mock.patch.object(cv2, "findChessboardCornersSB", side_effect=sb):
+            detect_board_corners(image, pattern=PATTERN)
+        self.assertEqual(len(seen_flags), 1)
+        self.assertFalse(seen_flags[0] & cv2.CALIB_CB_LARGER)
+
+    def test_live_sb_mode_skips_expensive_accuracy_upsampling(self):
+        image = np.zeros((120, 160, 3), dtype=np.uint8)
+        seen_flags: list[int] = []
+
+        def sb(_gray, _pattern, flags):
+            seen_flags.append(flags)
+            return False, None
+
+        with mock.patch.object(cv2, "findChessboardCornersSB", side_effect=sb):
+            self.assertIsNone(
+                detect_board_corners(image, pattern=PATTERN, sb_accuracy=False)
+            )
+        self.assertEqual(len(seen_flags), 1)
+        self.assertFalse(seen_flags[0] & cv2.CALIB_CB_ACCURACY)
+
+    def test_open_preview_queues_and_cancels_an_active_probe(self):
+        dialog = object.__new__(ChessboardWizardDialog)
+        dialog._opening = False
+        dialog._probing_modes = True
+        dialog.open_after_id = "probe-poll"
+        dialog._start_after_probe = False
+        dialog._probe_cancelled = threading.Event()
+        dialog.message = mock.Mock()
+
+        self.assertTrue(dialog.start())
+        self.assertTrue(dialog._start_after_probe)
+        self.assertTrue(dialog._probe_cancelled.is_set())
+        self.assertIn("自动打开预览", dialog.message.set.call_args.args[0])
 
     def test_synthetic_raw_rig_recovers_known_intrinsics_baseline_and_distortion(self):
         result = _solve()

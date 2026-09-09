@@ -30,7 +30,7 @@ import zlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 import cv2
 import numpy as np
@@ -47,6 +47,7 @@ _OPERATOR_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$")
 # Sanity bounds for recovered parameters; far outside means the solve drifted.
 _FOCAL_RANGE = (0.2, 4.0)
 _BASELINE_RANGE_MM = (20.0, 2000.0)
+_MIN_CENTROID_SPREAD_RATIO = 0.10
 
 
 class ChessboardCalibrationError(ValueError):
@@ -324,6 +325,9 @@ def detect_board_corners(
     image: np.ndarray,
     *,
     pattern: tuple[int, int],
+    on_cv_error: Callable[[str, Exception], None] | None = None,
+    use_sb: bool = True,
+    sb_accuracy: bool = True,
 ) -> BoardObservation | None:
     """Detect inner corners; return ``None`` when the board is not found."""
     if image is None or not isinstance(image, np.ndarray) or image.ndim not in {2, 3}:
@@ -334,34 +338,55 @@ def detect_board_corners(
         or any(type(value) is not int or value < 3 for value in pattern)
     ):
         raise ChessboardCalibrationError("棋盘格内角点网格必须是两个不小于 3 的整数")
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+    def _report(stage: str, error: Exception) -> None:
+        if on_cv_error is not None:
+            on_cv_error(stage, error)
+
+    try:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+    except cv2.error as error:
+        _report("cvt_color", error)
+        return None
     height, width = gray.shape[:2]
     corners: np.ndarray | None = None
-    if hasattr(cv2, "findChessboardCornersSB"):
+    if use_sb and hasattr(cv2, "findChessboardCornersSB"):
         flags = cv2.CALIB_CB_NORMALIZE_IMAGE
-        for extra in ("CALIB_CB_ACCURACY", "CALIB_CB_LARGER"):
-            if hasattr(cv2, extra):
-                flags |= getattr(cv2, extra)
-        found, candidate = cv2.findChessboardCornersSB(gray, pattern, flags)
-        if found:
-            corners = candidate
+        if sb_accuracy and hasattr(cv2, "CALIB_CB_ACCURACY"):
+            flags |= cv2.CALIB_CB_ACCURACY
+        # CALIB_CB_LARGER is intended for oversized/partial boards whose
+        # corner identity is recovered from the optional metadata API.  The
+        # wizard uses a fixed complete grid and the regular Python API; some
+        # OpenCV builds throw an opaque native exception when LARGER sees a
+        # partial board moving through a live frame.
+        try:
+            found, candidate = cv2.findChessboardCornersSB(gray, pattern, flags)
+            if found:
+                corners = candidate
+        except cv2.error as error:
+            # The classic detector remains safe for calibration and keeps a
+            # transient SB backend failure from taking down the live preview.
+            _report("find_chessboard_corners_sb", error)
     if corners is None:
-        found, candidate = cv2.findChessboardCorners(
-            gray,
-            pattern,
-            cv2.CALIB_CB_ADAPTIVE_THRESH
-            | cv2.CALIB_CB_FILTER_QUADS
-            | cv2.CALIB_CB_NORMALIZE_IMAGE,
-        )
-        if found:
-            refined = cv2.cornerSubPix(
+        try:
+            found, candidate = cv2.findChessboardCorners(
                 gray,
-                candidate,
-                (11, 11),
-                (-1, -1),
-                (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-3),
+                pattern,
+                cv2.CALIB_CB_ADAPTIVE_THRESH
+                | cv2.CALIB_CB_FILTER_QUADS
+                | cv2.CALIB_CB_NORMALIZE_IMAGE,
             )
-            corners = refined
+            if found:
+                refined = cv2.cornerSubPix(
+                    gray,
+                    candidate,
+                    (11, 11),
+                    (-1, -1),
+                    (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-3),
+                )
+                corners = refined
+        except cv2.error as error:
+            _report("find_chessboard_corners_classic", error)
+            return None
     if corners is None:
         return None
     ordered = _canonicalize_corner_order(corners, pattern)
@@ -370,11 +395,12 @@ def detect_board_corners(
         min(2, max(0, int(centroid[0] / max(1, width) * 3))),
         min(2, max(0, int(centroid[1] / max(1, height) * 3))),
     )
-    return BoardObservation(
-        corners_px=ordered,
-        sharpness=_laplacian_sharpness(gray),
-        centroid_zone=zone,
-    )
+    try:
+        sharpness = _laplacian_sharpness(gray)
+    except cv2.error as error:
+        _report("laplacian_sharpness", error)
+        return None
+    return BoardObservation(corners_px=ordered, sharpness=sharpness, centroid_zone=zone)
 
 
 def align_pair_orientation(
@@ -392,10 +418,33 @@ def align_pair_orientation(
     flat = np.asarray(right.corners_px, dtype=np.float64).reshape(-1, 2)
     if len(flat) != columns * rows:
         raise ChessboardCalibrationError("棋盘格内角点数量与网格不一致")
-    flipped = flat.reshape(rows, columns, 2)[::-1, ::-1].reshape(-1, 2)
-    as_is = float(np.linalg.norm(flat[0] - left.corners_px[0]))
-    rotated = float(np.linalg.norm(flipped[0] - left.corners_px[0]))
-    if rotated < as_is:
+    left_grid = np.asarray(left.corners_px, dtype=np.float64).reshape(rows, columns, 2)
+    right_grid = flat.reshape(rows, columns, 2)
+    flipped_grid = right_grid[::-1, ::-1]
+    flipped = flipped_grid.reshape(-1, 2)
+
+    def _basis(grid: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        horizontal = np.median(grid[:, 1:] - grid[:, :-1], axis=(0, 1))
+        vertical = np.median(grid[1:, :] - grid[:-1, :], axis=(0, 1))
+        return horizontal / max(float(np.linalg.norm(horizontal)), 1e-12), vertical / max(
+            float(np.linalg.norm(vertical)), 1e-12
+        )
+
+    left_horizontal, left_vertical = _basis(left_grid)
+
+    def _score(candidate: np.ndarray) -> float:
+        horizontal, vertical = _basis(candidate)
+        return float(
+            np.dot(left_horizontal, horizontal) + np.dot(left_vertical, vertical)
+        )
+
+    as_is_score = _score(right_grid)
+    flipped_score = _score(flipped_grid)
+    # Compare grid directions instead of absolute first-corner positions.
+    # At close range, stereo disparity can exceed the projected board width;
+    # the old nearest-first-corner rule then selected the 180-degree-wrong
+    # correspondence and corrupted the whole stereo solve.
+    if flipped_score > as_is_score:
         return BoardObservation(flipped.copy(), right.sharpness, right.centroid_zone)
     return right
 
@@ -739,9 +788,10 @@ def solve_stereo_calibration(
         reasons.append(
             f"棋盘格姿态太单一：至少需要 6 个不同画面区域，当前 {diversity['unique_zones']} 个"
         )
-    if diversity["centroid_spread_ratio"] < 0.15:
+    if diversity["centroid_spread_ratio"] < _MIN_CENTROID_SPREAD_RATIO:
         reasons.append(
-            f"棋盘格位置变化不足：质心散布 {diversity['centroid_spread_ratio']:.2f}（要求 ≥ 0.15），请覆盖画面四角和中心"
+            f"棋盘格位置变化不足：质心散布 {diversity['centroid_spread_ratio']:.2f}"
+            f"（要求 ≥ {_MIN_CENTROID_SPREAD_RATIO:.2f}），请覆盖画面四角和中心"
         )
     worst = max(float(left_rms), float(right_rms), float(stereo_rms))
     if worst > max_reprojection_rms_px:
@@ -994,6 +1044,8 @@ class ChessboardWizardDialog:
         self._closing = False
         self._probing_modes = False
         self._probe_cancelled = threading.Event()
+        self._start_after_probe = False
+        self._detector_error_keys: set[tuple[str, str, str]] = set()
         self._tick = 0
         self.preview_images: list[Any] = []
         self._last_auto_time = 0.0
@@ -1255,7 +1307,10 @@ class ChessboardWizardDialog:
         if self.open_after_id is not None or self._opening:
             self.message.set("正在处理上一个相机任务，请稍候…")
             return
-        self._probe_cancelled.clear()
+        self._probe_cancelled = threading.Event()
+        self._start_after_probe = False
+        layout = self._layout()
+        required_devices = 2 if layout == "separate_devices" else 1
         self.message.set("正在检测视频设备索引 0 / 5…（打开超时的设备会自动跳过；点“停止”可中断）")
         self.left_status.set("左目：检测设备中…")
         self.right_status.set("右目：检测设备中…")
@@ -1265,6 +1320,7 @@ class ChessboardWizardDialog:
         run_in_background(
             lambda: probe_video_devices(
                 maximum_index=5,
+                maximum_devices=required_devices,
                 per_index_timeout_s=5.0,
                 progress=lambda index, status: progress_state.update(index=index, status=status),
                 cancelled=self._probe_cancelled.is_set,
@@ -1291,24 +1347,21 @@ class ChessboardWizardDialog:
         self.open_after_id = None
         result, error = outcome["done"]
         cancelled = self._probe_cancelled.is_set()
+        queued_start = self._start_after_probe
+        self._start_after_probe = False
         try:
-            if error is not None:
+            if error is not None and not queued_start:
                 raise error
             devices = result or []
-            if not devices:
+            if not devices and not queued_start:
                 detail = "检测已停止，未得到完整结果。" if cancelled else ""
                 raise ChessboardCalibrationError(
                     f"未检测到 OpenCV 可打开的视频设备。{detail}"
                 )
-            self.left_index.set(str(devices[0]["index"]))
-            if len(devices) > 1:
-                self.right_index.set(str(devices[1]["index"]))
-            width = int(devices[0]["width"])
-            height = int(devices[0]["height"])
-            if self._layout() in {"side_by_side_left_right", "side_by_side_right_left"}:
-                width = max(1, width // 2)
-            self.eye_width.set(str(width))
-            self.eye_height.set(str(height))
+            if devices:
+                self.left_index.set(str(devices[0]["index"]))
+                if len(devices) > 1:
+                    self.right_index.set(str(devices[1]["index"]))
             summary = "；".join(
                 f"索引 {item['index']}：{item['width']}×{item['height']}" for item in devices
             )
@@ -1318,7 +1371,17 @@ class ChessboardWizardDialog:
             )
             self.left_status.set("左目：未打开预览")
             self.right_status.set("右目：未打开预览")
-            if not cancelled:
+            if queued_start:
+                from .logging_config import get_logger, log_event
+
+                log_event(
+                    get_logger("calibration_wizard"),
+                    "wizard_camera_open_resumed_after_probe",
+                    detected_devices=len(devices),
+                )
+                self.message.set("设备探测已停止，正在按当前索引和分辨率打开预览…")
+                self.window.after(0, self.start)
+            elif not cancelled:
                 self._probe_modes(int(devices[0]["index"]))
         except Exception as error:  # surfaced to the operator, never silent
             self.app.messagebox.showerror("相机检测失败", str(error), parent=self.window)
@@ -1333,11 +1396,14 @@ class ChessboardWizardDialog:
         from .stereo_camera import probe_video_modes, run_in_background
 
         self._probing_modes = True
-        self._mode_sizes = []
+        self._mode_before_probe = self.stream_mode.get()
         self.stream_mode.set("正在探测相机支持的分辨率（数秒）…")
         outcome: dict[str, Any] = {}
         run_in_background(
-            lambda: probe_video_modes(index=index),
+            lambda: probe_video_modes(
+                index=index,
+                cancelled=self._probe_cancelled.is_set,
+            ),
             lambda result, error: outcome.setdefault("done", (result, error)),
         )
         self._poll_modes(outcome)
@@ -1351,13 +1417,32 @@ class ChessboardWizardDialog:
         self.open_after_id = None
         self._probing_modes = False
         sizes, error = outcome["done"]
+        queued_start = self._start_after_probe
+        self._start_after_probe = False
+        if queued_start:
+            from .logging_config import get_logger, log_event
+
+            self.stream_mode.set(self._mode_before_probe)
+            log_event(
+                get_logger("calibration_wizard"),
+                "wizard_camera_open_resumed_after_mode_probe",
+                detected_modes=len(sizes or []),
+            )
+            self.message.set("分辨率探测已停止，正在按当前选择打开预览…")
+            self.window.after(0, self.start)
+            return
         if error is not None or not sizes:
             # Keep the static candidate list selectable; some drivers refuse
             # to reopen after many rapid cycles, which is not an error the
             # operator can act on.
+            self.stream_mode.set(self._mode_before_probe)
             self.message.set(
-                "自动分辨率探测未成功（部分驱动多次开关后会暂时拒绝打开）；"
-                "已预置常见并排分辨率，可直接从下拉框选择，或手动输入每目宽×高。"
+                (
+                    "分辨率探测已停止；已保留原选择，可直接打开预览。"
+                    if self._probe_cancelled.is_set()
+                    else "自动分辨率探测未成功（部分驱动多次开关后会暂时拒绝打开）；"
+                    "已预置常见并排分辨率，可直接从下拉框选择，或手动输入每目宽×高。"
+                )
             )
             return
         self._mode_sizes = list(sizes)
@@ -1394,9 +1479,19 @@ class ChessboardWizardDialog:
         from .logging_config import get_logger, log_event
         from .stereo_camera import StereoCameraSession, run_in_background
 
-        if self._opening or self._probing_modes or self.open_after_id is not None:
-            self.message.set("正在处理上一个相机任务，请稍候…")
+        if self._opening:
+            self.message.set("相机正在打开，请稍候…")
             return False
+        if self._probing_modes or self.open_after_id is not None:
+            self._start_after_probe = True
+            self._probe_cancelled.set()
+            log_event(
+                get_logger("calibration_wizard"),
+                "wizard_camera_open_queued",
+                probing_modes=self._probing_modes,
+            )
+            self.message.set("正在停止设备探测；当前驱动调用结束后将自动打开预览…")
+            return True
         try:
             layout = self._layout()
             left, right = self._indices()
@@ -1405,7 +1500,8 @@ class ChessboardWizardDialog:
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
             return False
         self.stop()
-        self._probe_cancelled.clear()
+        self._probe_cancelled = threading.Event()
+        self._detector_error_keys.clear()
         self._opening = True
         self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
         self.left_status.set("左目：正在打开相机…")
@@ -1469,7 +1565,9 @@ class ChessboardWizardDialog:
         self.session = session
         log_event(logger, "wizard_camera_open_finished")
         self.message.set("相机已打开；持棋盘格覆盖画面各区域，点击“抓拍一组”。")
-        self._tick = 0
+        # Show raw frames before running a full-resolution detector so opening
+        # a 3840x1080 stream cannot look like a frozen/failed preview.
+        self._tick = 1
         self._update_preview()
 
     def _photo(self, frame: np.ndarray) -> Any:
@@ -1496,15 +1594,25 @@ class ChessboardWizardDialog:
     def _update_preview(self) -> None:
         if self.session is None:
             return
+        stage = "read_pair"
         try:
             pair = self.session.read_pair()
+            stage = "parse_pattern"
             pattern = self._pattern()
             status = {role: "未检出" for role, _frame in (("left", pair.left), ("right", pair.right))}
             displays = {"left": pair.left, "right": pair.right}
             observations: dict[str, BoardObservation] = {}
             if self._tick % 3 == 0:
                 for role, frame in (("left", pair.left), ("right", pair.right)):
-                    observation = detect_board_corners(frame, pattern=pattern)
+                    stage = f"detect_{role}"
+                    observation = detect_board_corners(
+                        frame,
+                        pattern=pattern,
+                        sb_accuracy=False,
+                        on_cv_error=lambda detector_stage, error, current_role=role, current_frame=frame: self._log_detector_cv_error(
+                            current_role, current_frame, detector_stage, error
+                        ),
+                    )
                     if observation is not None:
                         observations[role] = observation
                         displays[role] = draw_detection_overlay(frame, observation, pattern)
@@ -1515,7 +1623,9 @@ class ChessboardWizardDialog:
                     else:
                         status[role] = "未检出，请让整个棋盘格进入画面"
                 self._maybe_auto_capture(pair, observations)
+            stage = "encode_preview"
             self.preview_images = [self._photo(displays["left"]), self._photo(displays["right"])]
+            stage = "update_widgets"
             self.left_preview.configure(image=self.preview_images[0])
             self.right_preview.configure(image=self.preview_images[1])
             self.left_status.set(f"左目：{status['left']}")
@@ -1523,11 +1633,55 @@ class ChessboardWizardDialog:
             self._tick += 1
             self.after_id = self.window.after(120, self._update_preview)
         except Exception as error:  # native cv2 errors included, never silent
-            from .logging_config import get_logger, log_event
+            from .logging_config import get_logger
 
-            log_event(get_logger("calibration_wizard"), "wizard_preview_failed", error=str(error))
+            get_logger("calibration_wizard").exception(
+                "wizard_preview_failed",
+                extra={
+                    "event": "wizard_preview_failed",
+                    "fields": {
+                        "stage": stage,
+                        "error_type": type(error).__name__,
+                        "error": str(error),
+                        "eye_width": self.eye_width.get(),
+                        "eye_height": self.eye_height.get(),
+                        "tick": self._tick,
+                    },
+                },
+            )
             self.stop()
             self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
+
+    def _log_detector_cv_error(
+        self,
+        role: str,
+        frame: np.ndarray,
+        stage: str,
+        error: Exception,
+    ) -> None:
+        """Record each distinct native detector failure once per preview."""
+
+        key = (role, stage, str(error))
+        if key in self._detector_error_keys:
+            return
+        self._detector_error_keys.add(key)
+        from .logging_config import get_logger
+
+        get_logger("calibration_wizard").warning(
+            "wizard_detector_cv_error",
+            exc_info=True,
+            extra={
+                "event": "wizard_detector_cv_error",
+                "fields": {
+                    "role": role,
+                    "stage": stage,
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                    "frame_shape": tuple(int(value) for value in frame.shape),
+                    "fallback": "classic_or_no_detection",
+                },
+            },
+        )
 
     def _maybe_auto_capture(
         self, pair: Any, observations: dict[str, BoardObservation]
@@ -1578,12 +1732,22 @@ class ChessboardWizardDialog:
     ) -> None:
         from .logging_config import get_logger, log_event
 
-        self.pairs.append((left_obs, right_obs))
+        aligned_right = align_pair_orientation(
+            left_obs, right_obs, pattern=self._pattern()
+        )
+        orientation_flipped = not np.array_equal(
+            aligned_right.corners_px, right_obs.corners_px
+        )
+        self.pairs.append((left_obs, aligned_right))
         minimum = self._int_value(self.min_pairs, "最少组数", minimum=3)
         count = len(self.pairs)
         self._refresh_pairs()
         coverage = zone_coverage_report(
             left.centroid_zone for left, _right in self.pairs
+        )
+        diversity = pose_diversity_report(
+            [left for left, _right in self.pairs],
+            image_size=self._eye_size(),
         )
         summary = f"{'自动' if automatic else '手动'}接受第 {count} 组（建议 ≥ {minimum} 组）"
         if coverage["missing"]:
@@ -1593,7 +1757,15 @@ class ChessboardWizardDialog:
             )
         else:
             summary += "；区域覆盖 9/9。"
-        if count >= minimum and coverage["covered"] >= coverage["required"]:
+        summary += (
+            f"；质心散布 {diversity['centroid_spread_ratio']:.2f}/"
+            f"{_MIN_CENTROID_SPREAD_RATIO:.2f}。"
+        )
+        if (
+            count >= minimum
+            and coverage["covered"] >= coverage["required"]
+            and diversity["centroid_spread_ratio"] >= _MIN_CENTROID_SPREAD_RATIO
+        ):
             summary += " 已满足组数与区域要求，可点击“完成标定并保存”，或继续补充远近与角度。"
         if count >= _MAX_AUTO_PAIRS:
             self.continuous.set(False)
@@ -1605,11 +1777,17 @@ class ChessboardWizardDialog:
             count=count,
             automatic=automatic,
             left_zone=left_obs.centroid_zone,
+            right_zone=aligned_right.centroid_zone,
+            right_orientation_flipped=orientation_flipped,
+            median_disparity_px=float(
+                np.median(left_obs.corners_px[:, 0] - aligned_right.corners_px[:, 0])
+            ),
         )
 
     def stop(self) -> None:
         # Also interrupts a running device sweep between indices.
         self._probe_cancelled.set()
+        self._start_after_probe = False
         if self.after_id is not None:
             try:
                 self.window.after_cancel(self.after_id)
@@ -1643,7 +1821,13 @@ class ChessboardWizardDialog:
             pattern = self._pattern()
             observations = []
             for role, frame in (("left", pair.left), ("right", pair.right)):
-                observation = detect_board_corners(frame, pattern=pattern)
+                observation = detect_board_corners(
+                    frame,
+                    pattern=pattern,
+                    on_cv_error=lambda detector_stage, error, current_role=role, current_frame=frame: self._log_detector_cv_error(
+                        current_role, current_frame, detector_stage, error
+                    ),
+                )
                 if observation is None:
                     raise ChessboardCalibrationError(
                         f"{role} 目未检出完整棋盘格；请让整个棋盘格平整进入画面后重试。"
