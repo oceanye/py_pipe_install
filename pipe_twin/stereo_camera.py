@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -54,28 +55,162 @@ def probe_video_devices(
     maximum_index: int = 7,
     backend: int | None = None,
     capture_factory: Callable[..., Any] = cv2.VideoCapture,
+    per_index_timeout_s: float = 5.0,
+    progress: Callable[[int, str], None] | None = None,
+    cancelled: Callable[[], bool] | None = None,
 ) -> list[dict[str, Any]]:
-    """Return OpenCV camera indices that can be opened, without retaining them."""
+    """Return OpenCV camera indices that can be opened, without retaining them.
+
+    A single misbehaving capture driver (commonly a virtual camera) can block
+    inside ``VideoCapture`` forever, so every index is probed on a worker
+    thread bounded by ``per_index_timeout_s``.  A timed-out index is skipped
+    and reported via ``progress``; its worker keeps running as a daemon and
+    releases the device whenever the driver finally answers.  ``cancelled``
+    is polled between indices so the UI can abort a long sweep.
+    """
     if type(maximum_index) is not int or not 0 <= maximum_index <= 32:
         raise StereoCameraError("maximum_index must be an integer between 0 and 32")
     selected_backend = _default_backend() if backend is None else backend
     devices: list[dict[str, Any]] = []
-    for index in range(maximum_index + 1):
+
+    def _probe_one(index: int) -> dict[str, Any] | None:
         capture = capture_factory(index, selected_backend)
         try:
-            if capture.isOpened():
-                devices.append(
-                    {
-                        "index": index,
-                        "width": int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
-                        "height": int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
-                        "fps": float(capture.get(cv2.CAP_PROP_FPS)),
-                        "backend": int(selected_backend),
-                    }
-                )
+            if not capture.isOpened():
+                return None
+            return {
+                "index": index,
+                "width": int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                "height": int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+                "fps": float(capture.get(cv2.CAP_PROP_FPS)),
+                "backend": int(selected_backend),
+            }
+        except Exception:
+            # Driver errors behave like "no device here"; never kill the worker.
+            return None
         finally:
             capture.release()
+
+    for index in range(maximum_index + 1):
+        if cancelled is not None and cancelled():
+            break
+        if progress is not None:
+            progress(index, "opening")
+        outcome: dict[str, Any] = {}
+        worker = threading.Thread(
+            target=lambda i=index: outcome.setdefault("device", _probe_one(i)),
+            daemon=True,
+        )
+        worker.start()
+        worker.join(per_index_timeout_s)
+        if worker.is_alive() and "device" not in outcome:
+            if progress is not None:
+                progress(index, "timeout")
+            continue
+        device = outcome.get("device")
+        if device is not None:
+            devices.append(device)
+        elif progress is not None:
+            progress(index, "empty")
     return devices
+
+
+STEREO_MODE_CANDIDATES: tuple[tuple[int, int], ...] = (
+    # Side-by-side stereo rigs expose their two-eye stream only at specific
+    # (usually 2:1) resolutions; the rest are ordinary single-eye modes.
+    # The 2:1 entries come first so a failed device probe still leaves them
+    # selectable by hand.
+    (2560, 720),
+    (1280, 480),
+    (3840, 1080),
+    (640, 480),
+    (1280, 720),
+    (1920, 1080),
+)
+
+
+def probe_video_modes(
+    *,
+    index: int,
+    candidates: list[tuple[int, int]] | None = None,
+    backend: int | None = None,
+    capture_factory: Callable[..., Any] = cv2.VideoCapture,
+    per_mode_timeout_s: float = 6.0,
+) -> list[tuple[int, int]]:
+    """Return stream sizes ``index`` actually delivers, best stereo first.
+
+    Each candidate resolution is requested in turn (MJPG, like the capture
+    session uses); the driver switches modes asynchronously, so a few warm-up
+    frames are read before trusting the delivered size.  A hung driver is
+    bounded by ``per_mode_timeout_s`` per candidate.  Some UVC drivers stop
+    cooperating after many rapid open/close cycles — callers must keep the
+    static candidate list selectable even when this probe returns nothing.
+    """
+    selected_backend = _default_backend() if backend is None else backend
+    sizes: list[tuple[int, int]] = []
+    for width, height in candidates or list(STEREO_MODE_CANDIDATES):
+        if sizes:
+            time.sleep(0.3)
+
+        def _task(w: int = width, h: int = height) -> tuple[int, int] | None:
+            capture = capture_factory(index, selected_backend)
+            try:
+                if not capture.isOpened():
+                    return None
+                capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+                capture.set(cv2.CAP_PROP_FRAME_WIDTH, w)
+                capture.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
+                # The driver switches modes asynchronously: the first frames
+                # after the request may still be in the previous mode, so warm
+                # up before trusting the delivered size.
+                frame: np.ndarray | None = None
+                for _ in range(6):
+                    ok, frame = capture.read()
+                    if not ok or not isinstance(frame, np.ndarray) or frame.ndim != 3:
+                        return None
+                if frame is None:
+                    return None
+                return int(frame.shape[1]), int(frame.shape[0])
+            except Exception:
+                return None
+            finally:
+                capture.release()
+
+        outcome: dict[str, Any] = {}
+        worker = threading.Thread(
+            target=lambda task=_task: outcome.setdefault("size", task()),
+            daemon=True,
+        )
+        worker.start()
+        worker.join(per_mode_timeout_s)
+        size = outcome.get("size")
+        if size is not None and size not in sizes:
+            sizes.append(size)
+    return sizes
+
+
+def run_in_background(
+    task: Callable[[], Any],
+    on_result: Callable[[Any, Exception | None], None],
+) -> None:
+    """Run ``task`` on a daemon thread and deliver its outcome once.
+
+    Opening a UVC device or probing indices can block for seconds on
+    DirectShow, so GUI callers must not run it on the Tk thread.  ``on_result``
+    executes on the worker thread and must not touch Tk widgets — store the
+    outcome and let the UI thread poll for it.  Native ``cv2.error`` exceptions
+    are reported here instead of escaping into the Tk callback.
+    """
+
+    def _worker() -> None:
+        try:
+            result = task()
+        except Exception as error:  # noqa: BLE001 - reported to the caller
+            on_result(None, error)
+            return
+        on_result(result, None)
+
+    threading.Thread(target=_worker, daemon=True).start()
 
 
 class StereoCameraSession:
@@ -259,7 +394,10 @@ __all__ = [
     "LAYOUT_SEPARATE",
     "LAYOUT_SIDE_BY_SIDE_LR",
     "LAYOUT_SIDE_BY_SIDE_RL",
+    "STEREO_MODE_CANDIDATES",
     "StereoCameraError",
     "StereoCameraSession",
     "probe_video_devices",
+    "probe_video_modes",
+    "run_in_background",
 ]

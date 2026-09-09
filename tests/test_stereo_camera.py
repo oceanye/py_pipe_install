@@ -12,6 +12,7 @@ from pipe_twin.stereo_camera import (
     StereoCameraError,
     StereoCameraSession,
     probe_video_devices,
+    probe_video_modes,
 )
 
 
@@ -161,6 +162,55 @@ class StereoCameraTests(unittest.TestCase):
         )
         self.assertEqual([item["index"] for item in devices], [0, 2])
         self.assertTrue(all(capture.released for capture in captures))
+
+    def test_probe_video_modes_reports_delivered_sizes_deduplicated(self):
+        class ModeCapture:
+            def __init__(self) -> None:
+                self.size = (0, 0)
+                self.released = True
+
+            def isOpened(self) -> bool:
+                return True
+
+            def set(self, key: int, value: float) -> bool:
+                if key == cv2.CAP_PROP_FRAME_WIDTH:
+                    self.size = (int(value), self.size[1])
+                if key == cv2.CAP_PROP_FRAME_HEIGHT:
+                    self.size = (self.size[0], int(value))
+                return True
+
+            def read(self):
+                width, height = self.size
+                return True, np.zeros((height, width, 3), dtype=np.uint8)
+
+            def release(self) -> None:
+                self.released = True
+
+        capture = ModeCapture()
+        modes = probe_video_modes(
+            index=0,
+            candidates=[(2560, 720), (640, 480), (2560, 720)],
+            capture_factory=lambda *_args: capture,
+            per_mode_timeout_s=2.0,
+        )
+        self.assertEqual(modes, [(2560, 720), (640, 480)])
+
+    def test_probe_video_modes_bounds_a_hung_driver(self):
+        import time
+
+        def hanging_factory(_index: int, _backend: int):
+            time.sleep(1.0)
+            raise AssertionError("the hung open should be abandoned, not joined")
+
+        started = time.time()
+        modes = probe_video_modes(
+            index=0,
+            candidates=[(2560, 720)],
+            capture_factory=hanging_factory,
+            per_mode_timeout_s=0.2,
+        )
+        self.assertEqual(modes, [])
+        self.assertLess(time.time() - started, 5.0)
 
 
 if __name__ == "__main__":

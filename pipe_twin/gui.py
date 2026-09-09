@@ -56,6 +56,11 @@ _FIELD_CALIBRATION_ID_MARKERS = (
     "REPLACE_WITH_REAL",
 )
 
+# Mirrors measurement_gui.OUTPUT_ROOT and workbench_profile._ROOT.  It is
+# duplicated here so the one-click capture can write its camera intake folders
+# without importing a Tk panel module (see the module import rules below).
+_WORKBENCH_ROOT = Path(__file__).resolve().parents[1] / "outputs" / "measurement_workbench"
+
 
 def summarize_stereo_diagnostics(
     manifest: Mapping[str, Any], report: Mapping[str, Any]
@@ -1423,7 +1428,10 @@ class _PipeTwinApplication:
         if self.manifest_path:
             self._load_sources(self.manifest_path, self.report_path)
         else:
-            self._refresh_dashboard()
+            # Without CLI sources the last saved workbench session is reopened;
+            # the restore helper repaints the dashboard itself when there is
+            # nothing to restore.
+            self._restore_workbench_session()
         self.root.after(80, self._poll_worker)
 
     def _build_widgets(self) -> None:
@@ -1436,7 +1444,11 @@ class _PipeTwinApplication:
         ttk.Button(toolbar, text="载入识别结果", command=self._choose_report).pack(
             side="left", padx=3
         )
-        ttk.Button(toolbar, text="快速双目评估", command=self._input_capture).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="现场数据录入", command=self._input_capture).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="棋盘格标定向导", command=self._open_calibration_wizard).pack(
+            side="left", padx=3
+        )
+        ttk.Button(toolbar, text="一键抓拍并分析", command=self._quick_capture).pack(side="left", padx=3)
         ttk.Button(toolbar, text="打开合成示例", command=self._open_demo).pack(side="left", padx=3)
         ttk.Button(toolbar, text="导入DXF侧立面", command=self._import_dxf).pack(side="left", padx=3)
         ttk.Button(toolbar, text="DXF自动建档", command=self._automate_dxf_setup).pack(side="left", padx=3)
@@ -1715,6 +1727,43 @@ class _PipeTwinApplication:
         )
         for role in ("left", "right"):
             self._render_photo(role)
+
+    def _restore_workbench_session(self) -> None:
+        """Reopen the last saved manifest so a new session starts warm."""
+
+        from .workbench_profile import load_profile
+
+        try:
+            profile, problem = load_profile()
+        except Exception as error:  # a broken profile must never block startup
+            self.banner.configure(bg="#FFF3CD", fg="#5F4500")
+            self.banner_text.set("工作台配置未载入：" + str(error))
+            log_event(_LOGGER, "gui_session_restore_failed", error=str(error))
+            return
+        if problem:
+            self.banner.configure(bg="#FFF3CD", fg="#5F4500")
+            self.banner_text.set("工作台配置未载入：" + problem)
+            return
+        if not profile:
+            self._refresh_dashboard()
+            return
+        last = str(profile.get("last_manifest_path", "") or "")
+        if last and Path(last).is_file():
+            try:
+                self._load_sources(Path(last), None)
+            except Exception as error:
+                # _load_sources already fails closed and reports to the
+                # operator; log so the restore attempt stays auditable.
+                log_event(_LOGGER, "gui_session_restore_failed", manifest=last, error=str(error))
+            else:
+                log_event(_LOGGER, "gui_session_restored", manifest=last)
+                note = f"已恢复上次工作台会话：{last}"
+                current = self.banner_text.get()
+                # Append instead of replacing so the binding verdict that
+                # _refresh_dashboard just painted stays visible.
+                self.banner_text.set(f"{note}｜{current}" if current else note)
+                return
+        self._refresh_dashboard()
 
     def _restore_dxf_from_manifest(self, manifest_path: Path, manifest: Mapping[str, Any]) -> None:
         elevation = manifest.get("elevation")
@@ -2396,9 +2445,388 @@ class _PipeTwinApplication:
         self.main_tabs.select(0)
 
     def _input_capture(self) -> None:
-        from .quick_capture_gui import QuickCaptureDialog
+        from .capture_gui import CaptureInputDialog
 
-        QuickCaptureDialog(self)
+        CaptureInputDialog(self)
+
+    def _open_calibration_wizard(self) -> None:
+        """Open the chessboard wizard; it needs only the app, not a manifest."""
+
+        try:
+            from .calibration_wizard import ChessboardWizardDialog
+
+            ChessboardWizardDialog(self)
+        except (ImportError, OSError, ValueError) as error:
+            # ImportError keeps the toolbar usable when the wizard module is
+            # unavailable; OSError/ValueError are its fail-closed reports.
+            self.messagebox.showerror("标定向导", str(error))
+
+    def _quick_capture(self) -> None:
+        """Capture from the saved rig and analyse it in one step."""
+
+        from .workbench_profile import capture_state_from_profile, load_profile
+
+        profile, problem = load_profile()
+        if problem or not profile:
+            message = "尚未保存工作台配置；请先完成现场数据录入并保存工作台配置。"
+            if problem:
+                message += f"\n{problem}"
+            self.messagebox.showinfo("一键抓拍", message)
+            return
+        state = capture_state_from_profile(profile)
+        calibration = state["calibration_current"]
+        missing = []
+        if calibration is None:
+            missing.append("尚未完成双目标定。")
+        elif not state["calibration_path"] or not Path(state["calibration_path"]).is_file():
+            missing.append("标定文件不存在，请重新保存工作台配置。")
+        if not state["model_path"] or not Path(state["model_path"]).is_file():
+            missing.append("CAD 模型不存在。")
+        if not state["pipes"]:
+            missing.append("管件目录为空。")
+        if missing:
+            # The regular input dialog is prefilled from the same profile, so
+            # the operator can repair the missing piece and come back.
+            self.messagebox.showinfo("一键抓拍", "请先补全现场配置：\n" + "\n".join(missing))
+            self._input_capture()
+            return
+        try:
+            from .calibration_wizard import rectifier_for_calibration
+
+            rectifier = rectifier_for_calibration(calibration, profile)
+        except ValueError as error:  # ChessboardCalibrationError is a ValueError
+            self.messagebox.showerror("一键抓拍", str(error))
+            return
+        QuickCaptureDialog(self, profile, state, calibration, rectifier)
+
+
+class QuickCaptureDialog:
+    """Capture from the saved rig, build the dataset, and start the analysis.
+
+    Everything the operator configured once lives in the workbench profile, so
+    this dialog only opens the camera, takes one audited pair, and hands the
+    resulting manifest back to the dashboard's normal analysis path.
+    """
+
+    def __init__(
+        self,
+        app: Any,
+        profile: Mapping[str, Any],
+        state: Mapping[str, Any],
+        calibration: Mapping[str, Any],
+        rectifier: Any | None,
+    ) -> None:
+        from .stereo_camera import LAYOUT_SEPARATE
+
+        self.app = app
+        self.profile = profile
+        self.state = state
+        self.calibration = calibration
+        self.rectifier = rectifier
+        self.camera = dict(state["camera"])
+        self.separate_devices = self.camera["layout"] == LAYOUT_SEPARATE
+        tk, ttk = app.tk, app.ttk
+        self.window = tk.Toplevel(app.root)
+        self.window.title("一键抓拍并分析")
+        self.window.geometry("880x620")
+        self.window.minsize(760, 540)
+        self.window.transient(app.root)
+        self.window.protocol("WM_DELETE_WINDOW", self.close)
+        self.session: Any | None = None
+        self.after_id: str | None = None
+        self.open_after_id: str | None = None
+        self._opening = False
+        self._closing = False
+        self.preview_images: list[Any] = []
+        self.message = tk.StringVar(value=self._reminder())
+
+        main = ttk.Frame(self.window, padding=12)
+        main.pack(fill="both", expand=True)
+        controls = ttk.Frame(main)
+        controls.pack(fill="x", pady=(0, 8))
+        ttk.Button(controls, text="打开预览", command=self.start).pack(side="left", padx=3)
+        ttk.Button(controls, text="停止", command=self.stop).pack(side="left", padx=3)
+        ttk.Button(controls, text="抓拍并分析", command=self.capture).pack(side="left", padx=3)
+        ttk.Button(controls, text="关闭", command=self.close).pack(side="left", padx=3)
+        ttk.Label(main, textvariable=self.message, wraplength=830, foreground="#355371").pack(
+            fill="x", pady=(0, 8)
+        )
+        previews = ttk.Frame(main)
+        previews.pack(fill="both", expand=True)
+        previews.columnconfigure(0, weight=1)
+        previews.columnconfigure(1, weight=1)
+        previews.rowconfigure(1, weight=1)
+        ttk.Label(previews, text="左目").grid(row=0, column=0, pady=4)
+        ttk.Label(previews, text="右目").grid(row=0, column=1, pady=4)
+        self.left_preview = ttk.Label(previews, anchor="center")
+        self.right_preview = ttk.Label(previews, anchor="center")
+        self.left_preview.grid(row=1, column=0, sticky="nsew", padx=(0, 4))
+        self.right_preview.grid(row=1, column=1, sticky="nsew", padx=(4, 0))
+        ttk.Label(
+            main,
+            text=(
+                "抓拍后自动建立现场数据集并运行双目识别；"
+                "标定要求每目 {width}×{height}，时间差不得超过 {delta:g} ms。"
+            ).format(
+                width=self.calibration["left_camera"]["width"],
+                height=self.calibration["left_camera"]["height"],
+                delta=float(self.calibration["max_sync_delta_ms"]),
+            ),
+            foreground="#4A6178",
+        ).pack(fill="x", pady=(10, 0))
+
+    def _reminder(self) -> str:
+        model_name = Path(str(self.state["model_path"])).name
+        calibration_id = str(self.calibration.get("calibration_id", ""))
+        summary = (
+            f"模型 {model_name} · 管件 {len(self.state['pipes'])} 根 · 标定 {calibration_id}"
+        )
+        if self.rectifier is not None:
+            return summary + " · 预览与抓拍前会按极线矫正配方处理原始相机帧。"
+        return summary + " · 相机输出须为已完成极线矫正的图像。"
+
+    def _photo(self, frame: Any) -> Any:
+        import cv2
+
+        height, width = frame.shape[:2]
+        scale = min(400 / width, 440 / height, 1.0)
+        shown = (
+            cv2.resize(
+                frame,
+                (max(1, round(width * scale)), max(1, round(height * scale))),
+                interpolation=cv2.INTER_AREA,
+            )
+            if scale < 1
+            else frame
+        )
+        ok, encoded = cv2.imencode(".png", shown)
+        if not ok:
+            raise ValueError("无法生成相机预览")
+        return self.app.tk.PhotoImage(
+            data=base64.b64encode(encoded).decode("ascii"), format="png"
+        )
+
+    def start(self) -> None:
+        from .logging_config import get_logger, log_event
+        from .stereo_camera import StereoCameraSession, run_in_background
+
+        if self._opening or self.open_after_id is not None:
+            self.message.set("正在处理上一个相机任务，请稍候…")
+            return
+        self.stop()
+        self._opening = True
+        self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
+        layout = self.camera["layout"]
+        left_index = self.camera["left_index"]
+        right_index = None if self.separate_devices else self.camera["right_index"]
+        log_event(
+            get_logger("gui.quick_capture"),
+            "quick_capture_camera_open_start",
+            layout=layout,
+            left_index=left_index,
+            right_index=right_index,
+        )
+        outcome: dict[str, Any] = {}
+
+        def _task() -> Any:
+            session = StereoCameraSession(
+                layout=layout,
+                left_index=left_index,
+                right_index=right_index,
+                eye_width=int(self.calibration["left_camera"]["width"]),
+                eye_height=int(self.calibration["left_camera"]["height"]),
+            )
+            session.open()
+            return session
+
+        def _on_result(result: Any, error: Exception | None) -> None:
+            if error is not None:
+                outcome["done"] = (None, error)
+                return
+            if self._closing:
+                result.close()
+                outcome["done"] = (None, ValueError("窗口已关闭"))
+                return
+            outcome["done"] = (result, None)
+
+        run_in_background(_task, _on_result)
+        self._poll_open(outcome)
+
+    def _poll_open(self, outcome: dict[str, Any]) -> None:
+        if self._closing:
+            return
+        if "done" not in outcome:
+            self.open_after_id = self.window.after(200, lambda: self._poll_open(outcome))
+            return
+        self.open_after_id = None
+        self._opening = False
+        session, error = outcome["done"]
+        from .logging_config import get_logger, log_event
+
+        if error is not None:
+            log_event(get_logger("gui.quick_capture"), "quick_capture_camera_open_failed", error=str(error))
+            self.message.set(f"相机打开失败：{error}")
+            self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
+            return
+        self.session = session
+        log_event(get_logger("gui.quick_capture"), "quick_capture_camera_open_finished")
+        self.message.set("相机已打开，正在显示实时预览。")
+        self._update_preview()
+
+    def _update_preview(self) -> None:
+        import numpy as np
+
+        if self.session is None:
+            return
+        try:
+            pair = self.session.read_pair()
+            left = pair.left if self.rectifier is None else self.rectifier.rectify("left", pair.left)
+            right = (
+                pair.right
+                if self.rectifier is None
+                else self.rectifier.rectify("right", pair.right)
+            )
+            self.preview_images = [self._photo(left), self._photo(right)]
+            self.left_preview.configure(image=self.preview_images[0])
+            self.right_preview.configure(image=self.preview_images[1])
+            if np.array_equal(pair.left, pair.right):
+                self.message.set(
+                    "相机仍在预热，或左右画面完全相同；请等待出现两个不同视角后再抓拍。"
+                )
+            else:
+                source = "矫正后帧" if self.rectifier is not None else "相机输出帧"
+                self.message.set(
+                    f"实时预览（{source}）：左右主机时间差 {pair.sync_delta_ms:.3f} ms；"
+                    "确认左右顺序正确后点击抓拍并分析。"
+                )
+            self.after_id = self.window.after(80, self._update_preview)
+        except Exception as error:  # native cv2 errors included, never silent
+            self.stop()
+            self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
+
+    def stop(self) -> None:
+        if self.after_id is not None:
+            try:
+                self.window.after_cancel(self.after_id)
+            except Exception:
+                pass
+            self.after_id = None
+        if self.session is not None:
+            self.session.close()
+            self.session = None
+
+    def close(self) -> None:
+        self._closing = True
+        self.stop()
+        if self.open_after_id is not None:
+            try:
+                self.window.after_cancel(self.open_after_id)
+            except Exception:
+                pass
+            self.open_after_id = None
+        self.window.destroy()
+
+    def _intake_directory(self) -> Path:
+        """Create a fresh camera_intake folder, retrying an id collision."""
+
+        from datetime import datetime
+        from uuid import uuid4
+
+        collision: FileExistsError | None = None
+        for _attempt in range(3):
+            capture_id = f"camera-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
+            directory = _WORKBENCH_ROOT / "camera_intake" / capture_id
+            try:
+                directory.mkdir(parents=True, exist_ok=False)
+            except FileExistsError as error:
+                collision = error
+                continue
+            return directory
+        raise collision if collision is not None else OSError("无法创建抓拍目录")
+
+    def capture(self) -> None:
+        import cv2
+        import numpy as np
+
+        if self._opening:
+            self.message.set("相机仍在后台打开；打开后请再点击“抓拍并分析”。")
+            return
+        if self.session is None:
+            self.start()
+            self.message.set("相机正在后台打开；打开后请点击“抓拍并分析”。")
+            return
+        try:
+            pair = self.session.read_pair()
+            if np.array_equal(pair.left, pair.right):
+                raise ValueError(
+                    "左右画面完全相同，可能仍在预热或当前不是双目输出；"
+                    "请等待实时预览出现两个不同视角后重试。"
+                )
+            max_sync_delta_ms = float(self.calibration["max_sync_delta_ms"])
+            if pair.sync_delta_ms > max_sync_delta_ms:
+                raise ValueError(
+                    f"本次左右抓拍时间差 {pair.sync_delta_ms:.3f} ms 超过标定允许的 "
+                    f"{max_sync_delta_ms:g} ms"
+                )
+            frames = {"left": pair.left, "right": pair.right}
+            for role in ("left", "right"):
+                if self.rectifier is not None:
+                    frame = self.rectifier.rectify(role, frames[role])
+                    height = int(self.calibration["left_camera"]["height"])
+                    width = int(self.calibration["left_camera"]["width"])
+                    if frame.shape[:2] != (height, width):
+                        raise ValueError(
+                            f"{role} 目矫正后尺寸 {frame.shape[1]}×{frame.shape[0]} 与标定的 "
+                            f"{width}×{height} 不一致，不能继续分析。"
+                        )
+                    frames[role] = frame
+            directory = self._intake_directory()
+            paths = {role: directory / f"{role}.png" for role in ("left", "right")}
+            for role, frame in frames.items():
+                ok, payload = cv2.imencode(".png", frame)
+                if not ok:
+                    raise ValueError(f"无法编码{role}相机图像")
+                paths[role].write_bytes(payload.tobytes())
+
+            from .capture_gui import create_capture_dataset
+
+            model_path = Path(str(self.state["model_path"]))
+            previous_manifest = (
+                Path(str(self.state["last_manifest_path"]))
+                if self.state["capture_history"]
+                and self.state["last_manifest_path"]
+                and Path(str(self.state["last_manifest_path"])).is_file()
+                else None
+            )
+            manifest_path = create_capture_dataset(
+                output_root=_WORKBENCH_ROOT / "captures",
+                model_path=model_path,
+                pipes=self.state["pipes"],
+                calibration=self.calibration,
+                left_path=paths["left"],
+                right_path=paths["right"],
+                left_time=pair.left_captured_at,
+                right_time=pair.right_captured_at,
+                pair_confirmed=not self.separate_devices,
+                previous_manifest=previous_manifest,
+                stl_unit=self.state["stl_unit"] if model_path.suffix.lower() == ".stl" else None,
+                timestamp_sources={
+                    "left": pair.timestamp_source,
+                    "right": pair.timestamp_source,
+                },
+                camera_capture_provenance=pair.provenance,
+            )
+        except Exception as error:
+            # Keep the dialog (and its camera session) open so the operator can
+            # retry; a dataset is mandatory before any analysis may run.
+            # Native cv2 errors are included — they must surface, not vanish.
+            self.app.messagebox.showerror("一键抓拍失败", str(error), parent=self.window)
+            return
+        self.stop()
+        self.window.destroy()
+        self.app._load_sources(manifest_path, None)
+        self.app.main_tabs.select(0)
+        self.app._run_analysis()
 
 
 def launch_gui(
