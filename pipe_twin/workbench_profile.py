@@ -77,12 +77,6 @@ _CAMERA_LAYOUTS = {
     "side_by_side_right_left",
     "separate_devices",
 }
-_CAMERA_FRAME_TRANSFORMS = {
-    "none",
-    "flip_horizontal",
-    "flip_vertical",
-    "rotate_180",
-}
 _SECTION_KEYS = (
     "model_path",
     "stl_unit",
@@ -125,15 +119,15 @@ def default_profile() -> dict:
         "qr_settings": {},
         "pose_adjustment": {"mode": "keep"},
         "side_view_distance_mm": 1000.0,
-        "camera": {
-            "layout": "side_by_side_left_right",
-            "left_index": 0,
-            "right_index": 1,
-            "right_frame_transform": "none",
-        },
+        "camera": {"layout": "side_by_side_left_right", "left_index": 0, "right_index": 1},
         "last_manifest_path": "",
         "chessboard": {"square_mm": 20.0, "columns": 9, "rows": 7, "dpi": 300},
-        "wizard": {"operator": "field", "max_reprojection_rms_px": 0.5, "min_pairs": 10},
+        "wizard": {
+            "operator": "field",
+            "max_reprojection_rms_px": 0.5,
+            "min_pairs": 10,
+            "expected_baseline_mm": 0.0,
+        },
         "capture_history": False,
     }
 
@@ -180,7 +174,7 @@ def validate_rectification_recipe(
     payload: Any, *, calibration: Mapping | None = None
 ) -> dict:
     """Fail-closed validation of a wizard rectification recipe (pure JSON)."""
-    expected_keys = {
+    required_keys = {
         "calibration_id",
         "K1",
         "D1",
@@ -198,15 +192,20 @@ def validate_rectification_recipe(
         "created_at",
         "definition",
     }
+    optional_keys = {"right_frame_transform"}
     if not isinstance(payload, dict):
         raise ValueError("极线矫正配方必须是 JSON 对象")
-    if set(payload) != expected_keys:
-        missing = sorted(expected_keys - set(payload))
-        extra = sorted(set(payload) - expected_keys)
+    if not required_keys.issubset(payload) or set(payload) - required_keys - optional_keys:
+        missing = sorted(required_keys - set(payload))
+        extra = sorted(set(payload) - required_keys - optional_keys)
         raise ValueError(f"极线矫正配方字段不匹配（缺少 {missing}，多余 {extra}）")
     if not str(payload["calibration_id"]).strip():
         raise ValueError("极线矫正配方缺少 calibration_id")
     recipe = json.loads(json.dumps(payload, allow_nan=False))
+    frame_transform = recipe.get("right_frame_transform", "none")
+    if frame_transform not in {"none", "flip_horizontal", "flip_vertical", "rotate_180"}:
+        raise ValueError("极线矫正配方 right_frame_transform 无效")
+    recipe["right_frame_transform"] = frame_transform
     for name in ("K1", "K2"):
         matrix = np.asarray(_matrix(recipe[name], (3, 3), name), dtype=float)
         if matrix[0, 0] <= 0 or matrix[1, 1] <= 0 or not math.isclose(matrix[2, 2], 1.0, abs_tol=1e-9):
@@ -223,6 +222,17 @@ def validate_rectification_recipe(
         if matrix[0, 0] <= 0 or matrix[1, 1] <= 0:
             raise ValueError(f"极线矫正配方 {name} 不是有效的投影矩阵")
         recipe[name] = matrix.tolist()
+    p1 = np.asarray(recipe["P1"], dtype=float)
+    p2 = np.asarray(recipe["P2"], dtype=float)
+    if not np.allclose(p1[:, :3], p2[:, :3], rtol=1e-6, atol=1e-6):
+        raise ValueError("极线矫正配方 P1/P2 必须共享同一个矫正后内参矩阵")
+    if not np.allclose(p1[:, 3], 0.0, atol=1e-6):
+        raise ValueError("极线矫正配方 P1 的平移列必须为零")
+    if not np.allclose(p2[1:, 3], 0.0, atol=1e-6):
+        raise ValueError("极线矫正配方仅支持水平双目，P2 不得包含垂直投影平移")
+    encoded_baseline = -float(p2[0, 3]) / float(p2[0, 0])
+    if not math.isfinite(encoded_baseline) or encoded_baseline <= 0:
+        raise ValueError("极线矫正配方 P2 必须编码正的水平基线")
     for key in ("image_width_px", "image_height_px", "output_width_px", "output_height_px"):
         if type(recipe[key]) is not int or recipe[key] <= 0:
             raise ValueError(f"极线矫正配方 {key} 必须是正整数")
@@ -242,11 +252,23 @@ def validate_rectification_recipe(
         from .stereo_analyzer import _calibration_from_manifest
 
         parsed = _calibration_from_manifest(calibration)
+        if not calibration_ids_match(
+            parsed.calibration_id, str(recipe["calibration_id"])
+        ):
+            raise ValueError("极线矫正配方不属于当前相机标定")
         if (recipe["image_width_px"], recipe["image_height_px"]) != (
             parsed.left.width,
             parsed.left.height,
         ):
             raise ValueError("极线矫正配方尺寸与当前标定的图像尺寸不一致")
+        if not np.allclose(p1[:, :3], parsed.left.intrinsic, rtol=1e-6, atol=1e-6):
+            raise ValueError("极线矫正配方 P1 与当前左目矫正内参不一致")
+        if not np.allclose(p2[:, :3], parsed.right.intrinsic, rtol=1e-6, atol=1e-6):
+            raise ValueError("极线矫正配方 P2 与当前右目矫正内参不一致")
+        if not math.isclose(
+            encoded_baseline, parsed.baseline_mm, rel_tol=1e-4, abs_tol=1e-3
+        ):
+            raise ValueError("极线矫正配方 P2 基线与当前标定不一致")
     return recipe
 
 
@@ -304,8 +326,21 @@ def _validate_pose_adjustment(payload: Any) -> dict:
 def _validate_camera(payload: Any) -> dict:
     if not isinstance(payload, dict):
         raise ValueError("camera 必须是对象")
-    if set(payload) - {"layout", "left_index", "right_index", "right_frame_transform"}:
+    if set(payload) - {
+        "layout",
+        "left_index",
+        "right_index",
+        "right_frame_transform",
+    }:
         raise ValueError("camera 包含不支持的字段")
+    legacy_transform = payload.get("right_frame_transform", "none")
+    if legacy_transform not in {
+        "none",
+        "flip_horizontal",
+        "flip_vertical",
+        "rotate_180",
+    }:
+        raise ValueError("camera.right_frame_transform 无效")
     layout = payload.get("layout")
     if layout not in _CAMERA_LAYOUTS:
         raise ValueError("camera.layout 无效")
@@ -320,15 +355,7 @@ def _validate_camera(payload: Any) -> dict:
             raise ValueError("独立设备模式下左右相机索引不能相同")
     elif right_index is not None and (type(right_index) is not int or right_index < 0):
         raise ValueError("camera.right_index 必须是非负整数")
-    right_frame_transform = payload.get("right_frame_transform", "none")
-    if right_frame_transform not in _CAMERA_FRAME_TRANSFORMS:
-        raise ValueError("camera.right_frame_transform 无效")
-    return {
-        "layout": layout,
-        "left_index": left_index,
-        "right_index": right_index,
-        "right_frame_transform": right_frame_transform,
-    }
+    return {"layout": layout, "left_index": left_index, "right_index": right_index}
 
 
 def _validate_chessboard(payload: Any) -> dict:
@@ -350,7 +377,12 @@ def _validate_chessboard(payload: Any) -> dict:
 def _validate_wizard(payload: Any) -> dict:
     if not isinstance(payload, dict):
         raise ValueError("wizard 必须是对象")
-    if set(payload) - {"operator", "max_reprojection_rms_px", "min_pairs"}:
+    if set(payload) - {
+        "operator",
+        "max_reprojection_rms_px",
+        "min_pairs",
+        "expected_baseline_mm",
+    }:
         raise ValueError("wizard 包含不支持的字段")
     operator = payload.get("operator")
     if not isinstance(operator, str) or not _OPERATOR_PATTERN.match(operator):
@@ -358,7 +390,18 @@ def _validate_wizard(payload: Any) -> dict:
     max_rms = _number(payload.get("max_reprojection_rms_px"), "wizard.max_reprojection_rms_px", positive=True)
     if type(payload.get("min_pairs")) is not int or payload["min_pairs"] < 3:
         raise ValueError("wizard.min_pairs 必须是不小于 3 的整数")
-    return {"operator": operator, "max_reprojection_rms_px": max_rms, "min_pairs": payload["min_pairs"]}
+    expected_baseline = _number(
+        payload.get("expected_baseline_mm", 0.0),
+        "wizard.expected_baseline_mm",
+    )
+    if expected_baseline != 0.0 and not 20.0 <= expected_baseline <= 2000.0:
+        raise ValueError("wizard.expected_baseline_mm 必须为 0 或在 20 到 2000 mm 之间")
+    return {
+        "operator": operator,
+        "max_reprojection_rms_px": max_rms,
+        "min_pairs": payload["min_pairs"],
+        "expected_baseline_mm": expected_baseline,
+    }
 
 
 def validate_profile(payload: Any) -> dict:
@@ -397,6 +440,15 @@ def validate_profile(payload: Any) -> dict:
     if calibration is not None:
         _calibration_from_manifest(calibration)
     recipe = result.get("rectification_recipe")
+    camera_payload = result.get("camera", {})
+    legacy_transform = (
+        camera_payload.get("right_frame_transform", "none")
+        if isinstance(camera_payload, dict)
+        else "none"
+    )
+    if isinstance(recipe, dict) and "right_frame_transform" not in recipe:
+        recipe = dict(recipe)
+        recipe["right_frame_transform"] = legacy_transform
     result["rectification_recipe"] = (
         None
         if recipe is None

@@ -48,6 +48,9 @@ _OPERATOR_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$")
 _FOCAL_RANGE = (0.2, 4.0)
 _BASELINE_RANGE_MM = (20.0, 2000.0)
 _MIN_CENTROID_SPREAD_RATIO = 0.10
+_MIN_TILT_SPAN_DEG = 8.0
+_MIN_DEPTH_SPREAD_RATIO = 0.08
+_MAX_DISTORTION_ABS = 5.0
 
 
 class ChessboardCalibrationError(ValueError):
@@ -205,9 +208,14 @@ def calibrate_stereo_from_folders(
     calibration_id: str = "FIELD-AUTO-STEREO",
     min_pairs: int = 8,
     max_rms_px: float | None = 1.5,
+    expected_baseline_mm: float | None = None,
     left_camera_pose: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run the same guarded solve as the GUI over paired image folders."""
+    if not isinstance(calibration_id, str) or not _OPERATOR_PATTERN.match(calibration_id):
+        raise CalibrationWizardError(
+            "calibration_id 只能包含字母、数字、点、下划线和连字符（≤32 字符）"
+        )
     def images(folder: str | Path) -> list[Path]:
         path = Path(folder)
         if not path.is_dir():
@@ -237,8 +245,16 @@ def calibrate_stereo_from_folders(
         if size != image_size:
             rejected.append({"left": str(left_path), "right": str(right_path), "reason": "照片分辨率不一致"})
             continue
-        left_observation = detect_board_corners(left_image, pattern=pattern)
-        right_observation = detect_board_corners(right_image, pattern=pattern)
+        # Use one deterministic detector for the complete offline data set.
+        # Mixing SB and classic sub-pixel conventions between folders/pairs
+        # can create a small systematic stereo residual that looks like a rig
+        # geometry problem.
+        left_observation = detect_board_corners(
+            left_image, pattern=pattern, use_sb=False
+        )
+        right_observation = detect_board_corners(
+            right_image, pattern=pattern, use_sb=False
+        )
         if left_observation is None or right_observation is None:
             rejected.append({"left": str(left_path), "right": str(right_path), "reason": "未同时检测到完整棋盘"})
             continue
@@ -250,17 +266,51 @@ def calibrate_stereo_from_folders(
         image_size=image_size,
         square_mm=float(square_size_mm),
         pattern=pattern,
-        max_reprojection_rms_px=float(max_rms_px if max_rms_px is not None else float("inf")),
+        max_reprojection_rms_px=float(max_rms_px if max_rms_px is not None else 1.5),
         min_pairs=int(min_pairs),
-        operator="AUTO",
+        operator=calibration_id,
         max_sync_delta_ms=5.0,
         layout="paired_folders",
+        expected_baseline_mm=expected_baseline_mm,
     )
+    if not result.validated:
+        raise CalibrationWizardError(
+            "标定质量门禁未通过：" + "；".join(result.rejection_reasons)
+        )
     calibration = copy.deepcopy(result.calibration)
     if left_camera_pose is not None:
         pose = dict(left_camera_pose)
-        for role in ("left_camera", "right_camera"):
-            calibration[role].update(pose if role == "left_camera" else {})
+        if set(pose) != {"rotation_world_to_camera", "center_world_mm"}:
+            raise CalibrationWizardError(
+                "left_camera_pose 必须且只能包含 rotation_world_to_camera 和 center_world_mm"
+            )
+        rotation = np.asarray(pose["rotation_world_to_camera"], dtype=float)
+        center = np.asarray(pose["center_world_mm"], dtype=float)
+        if (
+            rotation.shape != (3, 3)
+            or center.shape != (3,)
+            or not np.all(np.isfinite(rotation))
+            or not np.all(np.isfinite(center))
+            or not np.allclose(rotation @ rotation.T, np.eye(3), atol=1e-6)
+            or not math.isclose(float(np.linalg.det(rotation)), 1.0, abs_tol=1e-6)
+        ):
+            raise CalibrationWizardError("left_camera_pose 不是有效的相机刚体位姿")
+        baseline_camera = np.asarray(
+            [float(calibration["baseline_mm"]), 0.0, 0.0], dtype=float
+        )
+        right_center = center + rotation.T @ baseline_camera
+        calibration["left_camera"]["rotation_world_to_camera"] = rotation.tolist()
+        calibration["right_camera"]["rotation_world_to_camera"] = rotation.tolist()
+        calibration["left_camera"]["center_world_mm"] = center.tolist()
+        calibration["right_camera"]["center_world_mm"] = right_center.tolist()
+        calibration["registration_validated"] = True
+        calibration["calibration_id"] = (
+            f"{calibration['calibration_id']}-pose-"
+            f"{_audit_hash({'rotation': rotation.tolist(), 'center': center.tolist()})}"
+        )
+        from .stereo_analyzer import _calibration_from_manifest
+
+        _calibration_from_manifest(calibration)
     calibration["source_audit"] = {"auto_calibration": {
         "method": "opencv_chessboard_stereo_calibrate_v2",
         "board_inner_corners": [pattern[0], pattern[1]],
@@ -269,16 +319,47 @@ def calibrate_stereo_from_folders(
         "rejected_pairs": rejected,
         "rms_left_px": result.left_rms_px, "rms_right_px": result.right_rms_px,
         "rms_stereo_px": result.stereo_rms_px,
+        "right_frame_transform": result.audit["right_frame_transform"],
+        "rectification_recipe": result.recipe,
+        "solve_audit": result.audit,
         "registration_required": True,
     }}
     return calibration
 
 
 def write_calibration(path: str | Path, calibration: Mapping[str, Any]) -> Path:
+    """Write a portable calibration, including its raw-frame remap when present."""
+
+    source_audit = calibration.get("source_audit", {})
+    auto_audit = (
+        source_audit.get("auto_calibration", {})
+        if isinstance(source_audit, Mapping)
+        else {}
+    )
+    recipe = (
+        auto_audit.get("rectification_recipe")
+        if isinstance(auto_audit, Mapping)
+        else None
+    )
+    if recipe is not None:
+        from .workbench_profile import save_camera_calibration_bundle
+
+        return save_camera_calibration_bundle(
+            path,
+            calibration,
+            rectification_recipe=recipe,
+            qr_settings={},
+        )
+    from .pipeline import atomic_write_text
+
     destination = Path(path)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(dict(calibration), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    return destination
+    return atomic_write_text(
+        destination,
+        json.dumps(
+            dict(calibration), ensure_ascii=False, indent=2, allow_nan=False
+        )
+        + "\n",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +374,7 @@ class BoardObservation:
     corners_px: np.ndarray
     sharpness: float
     centroid_zone: tuple[int, int]
+    detector: str = "unknown"
 
     @property
     def centroid_px(self) -> np.ndarray:
@@ -349,6 +431,7 @@ def detect_board_corners(
         return None
     height, width = gray.shape[:2]
     corners: np.ndarray | None = None
+    detector = "unknown"
     if use_sb and hasattr(cv2, "findChessboardCornersSB"):
         flags = cv2.CALIB_CB_NORMALIZE_IMAGE
         if sb_accuracy and hasattr(cv2, "CALIB_CB_ACCURACY"):
@@ -362,6 +445,7 @@ def detect_board_corners(
             found, candidate = cv2.findChessboardCornersSB(gray, pattern, flags)
             if found:
                 corners = candidate
+                detector = "sb"
         except cv2.error as error:
             # The classic detector remains safe for calibration and keeps a
             # transient SB backend failure from taking down the live preview.
@@ -384,6 +468,7 @@ def detect_board_corners(
                     (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 1e-3),
                 )
                 corners = refined
+                detector = "classic"
         except cv2.error as error:
             _report("find_chessboard_corners_classic", error)
             return None
@@ -400,7 +485,12 @@ def detect_board_corners(
     except cv2.error as error:
         _report("laplacian_sharpness", error)
         return None
-    return BoardObservation(corners_px=ordered, sharpness=sharpness, centroid_zone=zone)
+    return BoardObservation(
+        corners_px=ordered,
+        sharpness=sharpness,
+        centroid_zone=zone,
+        detector=detector,
+    )
 
 
 def align_pair_orientation(
@@ -445,7 +535,9 @@ def align_pair_orientation(
     # the old nearest-first-corner rule then selected the 180-degree-wrong
     # correspondence and corrupted the whole stereo solve.
     if flipped_score > as_is_score:
-        return BoardObservation(flipped.copy(), right.sharpness, right.centroid_zone)
+        return BoardObservation(
+            flipped.copy(), right.sharpness, right.centroid_zone, right.detector
+        )
     return right
 
 
@@ -485,6 +577,7 @@ def build_rectification_recipe(
     P2: np.ndarray,
     image_size: tuple[int, int],
     alpha: float = 0.0,
+    right_frame_transform: str = "none",
     definition: str = "cv2.stereoRectify(alpha=0) raw->rectified remap",
 ) -> dict:
     recipe = {
@@ -502,6 +595,7 @@ def build_rectification_recipe(
         "output_width_px": int(image_size[0]),
         "output_height_px": int(image_size[1]),
         "alpha": float(alpha),
+        "right_frame_transform": right_frame_transform,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "definition": definition,
     }
@@ -515,6 +609,7 @@ class Rectifier:
         validated = validate_rectification_recipe(recipe)
         self.recipe = validated
         self.size = (validated["image_width_px"], validated["image_height_px"])
+        self.right_frame_transform = validated["right_frame_transform"]
         self._maps: dict[str, tuple[np.ndarray, np.ndarray]] = {}
         self._sources = {
             "left": (
@@ -541,6 +636,10 @@ class Rectifier:
                 f"{role} 原始帧尺寸 {image.shape[1]}×{image.shape[0]} 与"
                 f"矫正配方要求 {self.size[0]}×{self.size[1]} 不一致"
             )
+        if role == "right":
+            from .stereo_camera import apply_frame_transform
+
+            image = apply_frame_transform(image, self.right_frame_transform)
         if role not in self._maps:
             matrix, distortion, rotation, projection = self._sources[role]
             self._maps[role] = cv2.initUndistortRectifyMap(
@@ -639,6 +738,217 @@ def _camera_dict(role: str, center_world_mm: list[float], size: tuple[int, int],
     }
 
 
+def _validate_solve_inputs(
+    pairs: list[tuple[BoardObservation, BoardObservation]],
+    image_size: tuple[int, int],
+    square_mm: float,
+    pattern: tuple[int, int],
+    max_reprojection_rms_px: float,
+    min_pairs: int,
+    max_sync_delta_ms: float,
+) -> None:
+    if (
+        type(image_size) is not tuple
+        or len(image_size) != 2
+        or any(type(value) is not int or value <= 0 for value in image_size)
+    ):
+        raise ChessboardCalibrationError("图像尺寸必须是两个正整数")
+    if (
+        type(pattern) is not tuple
+        or len(pattern) != 2
+        or any(type(value) is not int or value < 3 for value in pattern)
+    ):
+        raise ChessboardCalibrationError("棋盘格内角点规格必须是两个不小于 3 的整数")
+    if not math.isfinite(float(square_mm)) or not 0 < float(square_mm) <= 1000:
+        raise ChessboardCalibrationError("棋盘格实测格边长必须在 0 到 1000 mm 之间")
+    if (
+        not isinstance(max_reprojection_rms_px, (int, float))
+        or not math.isfinite(float(max_reprojection_rms_px))
+        or float(max_reprojection_rms_px) <= 0
+    ):
+        raise ChessboardCalibrationError("允许 RMS 必须是正数")
+    if type(min_pairs) is not int or min_pairs < 3:
+        raise ChessboardCalibrationError("最少照片组数必须是不小于 3 的整数")
+    if not math.isfinite(float(max_sync_delta_ms)) or max_sync_delta_ms < 0:
+        raise ChessboardCalibrationError("max_sync_delta_ms 必须是非负有限数")
+    columns, rows = pattern
+    width, height = image_size
+    detector_names: set[str] = set()
+    for pair_index, pair in enumerate(pairs, start=1):
+        if not isinstance(pair, tuple) or len(pair) != 2:
+            raise ChessboardCalibrationError(f"第 {pair_index} 组不是左右角点对")
+        for role, observation in zip(("左", "右"), pair):
+            points = np.asarray(observation.corners_px, dtype=float)
+            if points.shape != (columns * rows, 2) or not np.all(np.isfinite(points)):
+                raise ChessboardCalibrationError(
+                    f"第 {pair_index} 组{role}目角点数量、形状或有限性无效"
+                )
+            if (
+                np.any(points[:, 0] < -1)
+                or np.any(points[:, 0] > width)
+                or np.any(points[:, 1] < -1)
+                or np.any(points[:, 1] > height)
+            ):
+                raise ChessboardCalibrationError(f"第 {pair_index} 组{role}目角点超出图像")
+            detector = str(getattr(observation, "detector", "unknown"))
+            if detector != "unknown":
+                detector_names.add(detector)
+        left_detector = str(getattr(pair[0], "detector", "unknown"))
+        right_detector = str(getattr(pair[1], "detector", "unknown"))
+        if (
+            "unknown" not in {left_detector, right_detector}
+            and left_detector != right_detector
+        ):
+            raise ChessboardCalibrationError(
+                f"第 {pair_index} 组左右目使用了不同角点检测器，必须重新采集"
+            )
+    if len(detector_names) > 1:
+        raise ChessboardCalibrationError(
+            "标定照片混用了 SB 与 classic 角点检测器；请使用同一检测器重新采集"
+        )
+
+
+def _intrinsic_problems(
+    matrix: np.ndarray,
+    distortion: np.ndarray,
+    image_size: tuple[int, int],
+    role: str,
+) -> list[str]:
+    """Return physical sanity failures for one raw camera solution."""
+
+    problems: list[str] = []
+    K = np.asarray(matrix, dtype=float)
+    D = np.asarray(distortion, dtype=float).reshape(-1)
+    width, height = image_size
+    focal_min = _FOCAL_RANGE[0] * max(image_size)
+    focal_max = _FOCAL_RANGE[1] * max(image_size)
+    if K.shape != (3, 3) or not np.all(np.isfinite(K)):
+        return [f"{role}目原始内参矩阵无效"]
+    fx, fy, cx, cy = float(K[0, 0]), float(K[1, 1]), float(K[0, 2]), float(K[1, 2])
+    if not (focal_min <= fx <= focal_max and focal_min <= fy <= focal_max):
+        problems.append(f"{role}目原始焦距超出合理范围：fx={fx:.1f}, fy={fy:.1f} px")
+    if not (0 <= cx <= width and 0 <= cy <= height):
+        problems.append(f"{role}目原始主点超出图像：cx={cx:.1f}, cy={cy:.1f} px")
+    if not np.all(np.isfinite(D)) or np.any(np.abs(D) > _MAX_DISTORTION_ABS):
+        largest = float(np.max(np.abs(D))) if D.size and np.all(np.isfinite(D)) else float("inf")
+        problems.append(f"{role}目畸变系数异常：最大绝对值 {largest:.3g}")
+    return problems
+
+
+def calibration_pose_report(
+    object_points: np.ndarray,
+    image_points: list[np.ndarray],
+    matrix: np.ndarray,
+    distortion: np.ndarray,
+) -> dict[str, Any]:
+    """Measure out-of-plane tilt and distance variation of accepted views."""
+
+    tilt_x: list[float] = []
+    tilt_y: list[float] = []
+    depths: list[float] = []
+    failed_pose_count = 0
+    for points in image_points:
+        try:
+            ok, rvec, tvec = cv2.solvePnP(
+                object_points,
+                points,
+                matrix,
+                distortion,
+                flags=cv2.SOLVEPNP_ITERATIVE,
+            )
+            if not ok:
+                failed_pose_count += 1
+                continue
+            rotation = cv2.Rodrigues(rvec)[0]
+            normal = np.asarray(rotation[:, 2], dtype=float)
+            depth = float(np.asarray(tvec).reshape(3)[2])
+            if not np.all(np.isfinite(normal)) or not math.isfinite(depth) or depth <= 0:
+                failed_pose_count += 1
+                continue
+            if normal[2] < 0:
+                normal = -normal
+            tilt_x.append(math.degrees(math.atan2(float(normal[0]), float(normal[2]))))
+            tilt_y.append(math.degrees(math.atan2(float(normal[1]), float(normal[2]))))
+            depths.append(depth)
+        except (cv2.error, ValueError, FloatingPointError):
+            failed_pose_count += 1
+    if not depths:
+        return {
+            "pose_count": 0,
+            "failed_pose_count": failed_pose_count,
+            "tilt_span_deg": 0.0,
+            "depth_spread_ratio": 0.0,
+        }
+    x_span = float(np.percentile(tilt_x, 95) - np.percentile(tilt_x, 5))
+    y_span = float(np.percentile(tilt_y, 95) - np.percentile(tilt_y, 5))
+    depth_median = float(np.median(depths))
+    depth_span = float(np.percentile(depths, 90) - np.percentile(depths, 10))
+    return {
+        "pose_count": len(depths),
+        "failed_pose_count": failed_pose_count,
+        "tilt_x_span_deg": x_span,
+        "tilt_y_span_deg": y_span,
+        "tilt_span_deg": max(x_span, y_span),
+        "depth_min_mm": float(np.min(depths)),
+        "depth_median_mm": depth_median,
+        "depth_max_mm": float(np.max(depths)),
+        "depth_spread_ratio": depth_span / max(abs(depth_median), 1e-9),
+    }
+
+
+def rectification_quality_report(
+    left_points: list[np.ndarray],
+    right_points: list[np.ndarray],
+    K1: np.ndarray,
+    D1: np.ndarray,
+    K2: np.ndarray,
+    D2: np.ndarray,
+    R1: np.ndarray,
+    R2: np.ndarray,
+    P1: np.ndarray,
+    P2: np.ndarray,
+) -> dict[str, Any]:
+    """Audit the exact horizontal epipolar geometry consumed by metrology."""
+
+    vertical_errors: list[np.ndarray] = []
+    disparities: list[np.ndarray] = []
+    per_pair_vertical_rms: list[float] = []
+    for left, right in zip(left_points, right_points):
+        left_rectified = cv2.undistortPoints(left, K1, D1, R=R1, P=P1).reshape(-1, 2)
+        right_rectified = cv2.undistortPoints(right, K2, D2, R=R2, P=P2).reshape(-1, 2)
+        vertical = left_rectified[:, 1] - right_rectified[:, 1]
+        disparity = left_rectified[:, 0] - right_rectified[:, 0]
+        vertical_errors.append(vertical)
+        disparities.append(disparity)
+        per_pair_vertical_rms.append(float(np.sqrt(np.mean(vertical * vertical))))
+    vertical = np.concatenate(vertical_errors)
+    disparity = np.concatenate(disparities)
+    p1 = np.asarray(P1, dtype=float)
+    p2 = np.asarray(P2, dtype=float)
+    if (
+        not np.all(np.isfinite(vertical))
+        or not np.all(np.isfinite(disparity))
+        or not np.all(np.isfinite(p1))
+        or not np.all(np.isfinite(p2))
+        or abs(float(p2[0, 0])) < 1e-12
+        or abs(float(p2[1, 1])) < 1e-12
+    ):
+        raise ValueError("极线校正质量计算包含非有限数值或零焦距")
+    horizontal_encoded_baseline = -float(p2[0, 3]) / float(p2[0, 0])
+    vertical_projection_mm = -float(p2[1, 3]) / float(p2[1, 1])
+    return {
+        "vertical_rms_px": float(np.sqrt(np.mean(vertical * vertical))),
+        "vertical_p95_abs_px": float(np.percentile(np.abs(vertical), 95)),
+        "vertical_max_abs_px": float(np.max(np.abs(vertical))),
+        "per_pair_vertical_rms_px": per_pair_vertical_rms,
+        "median_disparity_px": float(np.median(disparity)),
+        "positive_disparity_ratio": float(np.mean(disparity > 0)),
+        "horizontal_encoded_baseline_mm": horizontal_encoded_baseline,
+        "vertical_projection_mm": vertical_projection_mm,
+        "p1_p2_k_identical": bool(np.allclose(p1[:, :3], p2[:, :3], atol=1e-6)),
+    }
+
+
 def transform_board_observation(
     observation: BoardObservation,
     *,
@@ -675,7 +985,7 @@ def transform_board_observation(
         min(2, max(0, int(centroid[0] / max(1, width) * 3))),
         min(2, max(0, int(centroid[1] / max(1, height) * 3))),
     )
-    return BoardObservation(flat, observation.sharpness, zone)
+    return BoardObservation(flat, observation.sharpness, zone, observation.detector)
 
 
 def solve_stereo_calibration(
@@ -689,14 +999,32 @@ def solve_stereo_calibration(
     operator: str,
     max_sync_delta_ms: float,
     layout: str,
+    expected_baseline_mm: float | None = None,
+    _allow_outlier_pruning: bool = True,
+    _input_pair_count: int | None = None,
+    _discarded_pair_indices: list[int] | None = None,
 ) -> WizardResult:
     """Calibrate from accepted pairs and build the rectified-rig contract."""
     if not isinstance(operator, str) or not _OPERATOR_PATTERN.match(operator):
         raise ChessboardCalibrationError("操作员代号只能包含字母、数字、点、下划线和连字符（≤32 字符）")
-    if max_sync_delta_ms < 0:
-        raise ChessboardCalibrationError("max_sync_delta_ms 不能为负")
     if not pairs:
         raise ChessboardCalibrationError("没有可用的棋盘格照片对")
+    _validate_solve_inputs(
+        pairs,
+        image_size,
+        square_mm,
+        pattern,
+        max_reprojection_rms_px,
+        min_pairs,
+        max_sync_delta_ms,
+    )
+    if expected_baseline_mm is not None and (
+        not math.isfinite(float(expected_baseline_mm))
+        or not _BASELINE_RANGE_MM[0] <= float(expected_baseline_mm) <= _BASELINE_RANGE_MM[1]
+    ):
+        raise ChessboardCalibrationError(
+            f"实测镜头中心距必须在 {_BASELINE_RANGE_MM[0]:g}–{_BASELINE_RANGE_MM[1]:g} mm 之间"
+        )
 
     object_points = _object_points(pattern, float(square_mm))
     aligned = [
@@ -711,6 +1039,10 @@ def solve_stereo_calibration(
     left_rms, K1, D1, _rvecs_l, _tvecs_l = cv2.calibrateCamera(
         object_lists, left_points, size, None, None, flags=cv2.CALIB_FIX_K3, criteria=criteria
     )
+    if not math.isfinite(float(left_rms)) or not all(
+        np.all(np.isfinite(value)) for value in (K1, D1)
+    ):
+        raise ChessboardCalibrationError("左目单目标定返回了非有限数值")
     transform_audit: list[dict[str, Any]] = []
 
     def _try_transform(transform: str) -> dict[str, Any]:
@@ -768,6 +1100,66 @@ def solve_stereo_calibration(
                 1e-7,
             ),
         )
+        if (
+            not math.isfinite(float(candidate_right_rms))
+            or not math.isfinite(float(candidate_stereo_rms))
+            or not all(
+                np.all(np.isfinite(value))
+                for value in (
+                    candidate_k2,
+                    candidate_d2,
+                    candidate_r,
+                    candidate_t,
+                    candidate_per_view,
+                )
+            )
+        ):
+            raise ValueError("OpenCV 标定返回了非有限数值")
+        candidate_baseline = float(np.linalg.norm(candidate_t))
+        candidate_geometry: dict[str, Any]
+        geometry_compatible = False
+        try:
+            c_r1, c_r2, c_p1, c_p2, _c_q, _c_roi1, _c_roi2 = cv2.stereoRectify(
+                K1,
+                D1,
+                candidate_k2,
+                candidate_d2,
+                size,
+                candidate_r,
+                candidate_t,
+                alpha=0.0,
+                flags=cv2.CALIB_ZERO_DISPARITY,
+            )
+            candidate_geometry = rectification_quality_report(
+                left_points,
+                candidate_right_points,
+                K1,
+                D1,
+                candidate_k2,
+                candidate_d2,
+                c_r1,
+                c_r2,
+                c_p1,
+                c_p2,
+            )
+            encoded = float(candidate_geometry["horizontal_encoded_baseline_mm"])
+            vertical = float(candidate_geometry["vertical_projection_mm"])
+            geometry_compatible = bool(
+                _BASELINE_RANGE_MM[0]
+                <= candidate_baseline
+                <= _BASELINE_RANGE_MM[1]
+                and encoded > 0
+                and math.isclose(
+                    encoded, candidate_baseline, rel_tol=1e-4, abs_tol=1e-3
+                )
+                and abs(vertical) <= max(1e-3, candidate_baseline * 1e-4)
+                and float(candidate_geometry["median_disparity_px"]) > 0
+                and float(candidate_geometry["positive_disparity_ratio"]) >= 0.98
+            )
+        except (cv2.error, ValueError, FloatingPointError) as error:
+            candidate_geometry = {
+                "error": f"{type(error).__name__}: {error}"
+            }
         return {
             "transform": transform,
             "right_rms": float(candidate_right_rms),
@@ -776,8 +1168,14 @@ def solve_stereo_calibration(
             "D2": candidate_d2,
             "R": candidate_r,
             "T": candidate_t,
+            "baseline_mm": candidate_baseline,
             "per_view": candidate_per_view,
             "right_points": candidate_right_points,
+            "geometry_compatible": geometry_compatible,
+            "rectification_geometry": candidate_geometry,
+            "per_pair_rms": np.max(
+                np.asarray(candidate_per_view, dtype=float).reshape(-1, 2), axis=1
+            ),
         }
 
     attempts: list[dict[str, Any]] = []
@@ -791,7 +1189,10 @@ def solve_stereo_calibration(
                     "transform": transform,
                     "right_rms_px": attempt["right_rms"],
                     "fixed_intrinsic_stereo_rms_px": attempt["stereo_rms"],
-                    "baseline_mm": float(np.linalg.norm(attempt["T"])),
+                    "baseline_mm": attempt["baseline_mm"],
+                    "median_pair_rms_px": float(np.median(attempt["per_pair_rms"])),
+                    "geometry_compatible": attempt["geometry_compatible"],
+                    "rectification_geometry": attempt["rectification_geometry"],
                 }
             )
         except (cv2.error, ValueError) as error:
@@ -805,15 +1206,31 @@ def solve_stereo_calibration(
     # Sensor reflection is only considered for the characteristic gross
     # stereo mismatch.  A healthy rig should keep its native orientation even
     # if another candidate happens to improve a noisy solve by a tiny amount.
-    gross_mismatch_px = max(2.0, max_reprojection_rms_px * 4.0)
+    quality_target = (
+        float(max_reprojection_rms_px)
+        if math.isfinite(float(max_reprojection_rms_px))
+        else 0.5
+    )
+    gross_mismatch_px = max(2.0, quality_target * 4.0)
     if attempts[0]["stereo_rms"] > gross_mismatch_px:
         _evaluate("flip_horizontal")
-        if min(item["stereo_rms"] for item in attempts) > gross_mismatch_px:
-            _evaluate("flip_vertical")
-            _evaluate("rotate_180")
-    best = min(attempts, key=lambda item: item["stereo_rms"])
+        _evaluate("flip_vertical")
+        _evaluate("rotate_180")
+    best = min(
+        attempts,
+        key=lambda item: (
+            not item["geometry_compatible"],
+            float(np.median(item["per_pair_rms"])),
+            item["stereo_rms"],
+        ),
+    )
     native = attempts[0]
-    if native["stereo_rms"] <= best["stereo_rms"] * 1.05 + 0.02:
+    native_score = float(np.median(native["per_pair_rms"]))
+    best_score = float(np.median(best["per_pair_rms"]))
+    if (
+        native["geometry_compatible"] == best["geometry_compatible"]
+        and native_score <= best_score * 1.05 + 0.02
+    ):
         best = native
     right_frame_transform = str(best["transform"])
     right_points = best["right_points"]
@@ -823,38 +1240,38 @@ def solve_stereo_calibration(
     fixed_intrinsic_stereo_rms = stereo_rms
     R, T, per_view = best["R"], best["T"], best["per_view"]
     solve_mode = "fix_intrinsics"
-    if stereo_rms > max_reprojection_rms_px:
-        joint_rms, _K1j, _D1j, _K2j, _D2j, Rj, Tj, _Ej, _Fj, per_view_j = cv2.stereoCalibrate(
-            object_lists,
-            left_points,
-            right_points,
-            K1,
-            D1,
-            K2,
-            D2,
-            size,
-            np.eye(3, dtype=np.float64),
-            np.zeros((3, 1), dtype=np.float64),
-            None,
-            None,
-            None,
-            flags=cv2.CALIB_FIX_K3,
-            criteria=criteria,
-        )
-        if joint_rms < stereo_rms:
-            # The joint solve owns its updated intrinsics and distortion as
-            # well as R/T.  Keeping the earlier monocular K/D here mixed two
-            # different solutions and could make stereoRectify report an
-            # absurd focal length or a principal point outside the image even
-            # when the joint RMS had improved.
-            stereo_rms, R, T, per_view, solve_mode = (
-                joint_rms,
-                Rj,
-                Tj,
-                per_view_j,
-                "joint_intrinsics",
+
+    if _allow_outlier_pruning and len(pairs) > min_pairs:
+        scores = np.asarray(best["per_pair_rms"], dtype=float)
+        median = float(np.median(scores))
+        mad = float(np.median(np.abs(scores - median)))
+        robust_limit = median + max(4.5 * 1.4826 * mad, quality_target * 2.0)
+        candidates = [
+            index
+            for index, score in enumerate(scores)
+            if score > robust_limit and score > quality_target * 2.0
+        ]
+        maximum_removals = min(len(pairs) - min_pairs, max(1, len(pairs) // 5))
+        if candidates and maximum_removals > 0:
+            ranked = sorted(candidates, key=lambda index: scores[index], reverse=True)
+            removed = sorted(ranked[:maximum_removals])
+            retained = [pair for index, pair in enumerate(pairs) if index not in removed]
+            original_indices = [index + 1 for index in removed]
+            return solve_stereo_calibration(
+                pairs=retained,
+                image_size=image_size,
+                square_mm=square_mm,
+                pattern=pattern,
+                max_reprojection_rms_px=max_reprojection_rms_px,
+                min_pairs=min_pairs,
+                operator=operator,
+                max_sync_delta_ms=max_sync_delta_ms,
+                layout=layout,
+                expected_baseline_mm=expected_baseline_mm,
+                _allow_outlier_pruning=False,
+                _input_pair_count=_input_pair_count or len(pairs),
+                _discarded_pair_indices=original_indices,
             )
-            K1, D1, K2, D2 = _K1j, _D1j, _K2j, _D2j
 
     R1, R2, P1, P2, _Q, _roi1, _roi2 = cv2.stereoRectify(
         K1,
@@ -869,9 +1286,24 @@ def solve_stereo_calibration(
         # identical rectified K in P1/P2 — required by the calibration contract.
         flags=cv2.CALIB_ZERO_DISPARITY,
     )
+    if not all(np.all(np.isfinite(value)) for value in (R1, R2, P1, P2)):
+        raise ChessboardCalibrationError("极线校正返回了非有限数值")
     rectified_intrinsic = np.asarray(P1[:, :3], dtype=np.float64)
-    k_identical = bool(np.allclose(P1[:, :3], P2[:, :3], atol=1e-6))
     baseline = float(np.linalg.norm(np.asarray(T, dtype=np.float64)))
+    pose_geometry = calibration_pose_report(object_points, left_points, K1, D1)
+    rectification_geometry = rectification_quality_report(
+        left_points,
+        right_points,
+        K1,
+        D1,
+        K2,
+        D2,
+        R1,
+        R2,
+        P1,
+        P2,
+    )
+    k_identical = bool(rectification_geometry["p1_p2_k_identical"])
 
     per_view_values = np.asarray(per_view, dtype=float).reshape(-1)
     audit = {
@@ -880,6 +1312,8 @@ def solve_stereo_calibration(
         "pattern_inner_corners": list(pattern),
         "square_mm": float(square_mm),
         "pair_count": len(pairs),
+        "input_pair_count": int(_input_pair_count or len(pairs)),
+        "discarded_pair_indices": list(_discarded_pair_indices or []),
         "image_size_px": [size[0], size[1]],
         "stereo_rms_px": float(stereo_rms),
         "fixed_intrinsic_stereo_rms_px": float(fixed_intrinsic_stereo_rms),
@@ -893,11 +1327,18 @@ def solve_stereo_calibration(
         "right_frame_transform": right_frame_transform,
         "right_frame_transform_candidates": transform_audit,
         "baseline_mm": baseline,
+        "expected_baseline_mm": (
+            None if expected_baseline_mm is None else float(expected_baseline_mm)
+        ),
+        "calibration_pose_geometry": pose_geometry,
+        "rectification_geometry": rectification_geometry,
         "p1_p2_k_identical": k_identical,
         "rectify_alpha": 0.0,
         "diversity": pose_diversity_report([pair[0] for pair in pairs], image_size=size),
         "layout": layout,
         "max_sync_delta_ms": float(max_sync_delta_ms),
+        "max_reprojection_rms_px": float(max_reprojection_rms_px),
+        "minimum_pairs": int(min_pairs),
         "opencv_version": cv2.__version__,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -930,6 +1371,20 @@ def solve_stereo_calibration(
             f"棋盘格位置变化不足：质心散布 {diversity['centroid_spread_ratio']:.2f}"
             f"（要求 ≥ {_MIN_CENTROID_SPREAD_RATIO:.2f}），请覆盖画面四角和中心"
         )
+    if pose_geometry["pose_count"] != len(pairs):
+        reasons.append(
+            f"有 {pose_geometry['failed_pose_count']} 组棋盘格无法恢复有效正深度姿态"
+        )
+    if pose_geometry["tilt_span_deg"] < _MIN_TILT_SPAN_DEG:
+        reasons.append(
+            f"棋盘格前后/左右倾斜变化不足：当前 {pose_geometry['tilt_span_deg']:.1f}°，"
+            f"要求至少 {_MIN_TILT_SPAN_DEG:g}°"
+        )
+    if pose_geometry["depth_spread_ratio"] < _MIN_DEPTH_SPREAD_RATIO:
+        reasons.append(
+            f"棋盘格远近变化不足：当前 {pose_geometry['depth_spread_ratio']:.2f}，"
+            f"要求至少 {_MIN_DEPTH_SPREAD_RATIO:.2f}"
+        )
     worst = max(float(left_rms), float(right_rms), float(stereo_rms))
     if worst > max_reprojection_rms_px:
         reasons.append(
@@ -946,10 +1401,49 @@ def solve_stereo_calibration(
         reasons.append(f"矫正后焦距超出合理范围：fx={fx:.1f}, fy={fy:.1f} px")
     if not (0 <= cx <= size[0] and 0 <= cy <= size[1]):
         reasons.append(f"矫正后主点超出图像：cx={cx:.1f}, cy={cy:.1f} px")
+    reasons.extend(_intrinsic_problems(K1, D1, size, "左"))
+    reasons.extend(_intrinsic_problems(K2, D2, size, "右"))
     if not _BASELINE_RANGE_MM[0] <= baseline <= _BASELINE_RANGE_MM[1]:
         reasons.append(f"基线 {baseline:.2f} mm 超出合理范围 {_BASELINE_RANGE_MM[0]:g}–{_BASELINE_RANGE_MM[1]:g} mm")
+    if expected_baseline_mm is not None:
+        baseline_tolerance = max(3.0, float(expected_baseline_mm) * 0.15)
+        if abs(baseline - float(expected_baseline_mm)) > baseline_tolerance:
+            reasons.append(
+                f"求得基线 {baseline:.2f} mm 与实测镜头中心距 {float(expected_baseline_mm):.2f} mm "
+                f"相差超过 {baseline_tolerance:.2f} mm"
+            )
     if not k_identical:
         reasons.append("stereoRectify 后左右投影矩阵 K 不一致，无法满足极线校正契约")
+    vertical_rms = float(rectification_geometry["vertical_rms_px"])
+    vertical_p95 = float(rectification_geometry["vertical_p95_abs_px"])
+    if vertical_rms > float(max_reprojection_rms_px) or vertical_p95 > max(
+        1.0, float(max_reprojection_rms_px) * 2.0
+    ):
+        reasons.append(
+            f"极线校正后垂直残差过大：RMS {vertical_rms:.3f} px，"
+            f"P95 {vertical_p95:.3f} px"
+        )
+    encoded_baseline = float(rectification_geometry["horizontal_encoded_baseline_mm"])
+    vertical_projection = float(rectification_geometry["vertical_projection_mm"])
+    if encoded_baseline <= 0 or not math.isclose(
+        encoded_baseline, baseline, rel_tol=1e-4, abs_tol=1e-3
+    ):
+        reasons.append(
+            f"矫正投影矩阵的水平基线 {encoded_baseline:.3f} mm 与求解基线 {baseline:.3f} mm 不一致"
+        )
+    if abs(vertical_projection) > max(1e-3, baseline * 1e-4):
+        reasons.append(
+            f"矫正结果不是水平双目：垂直投影基线为 {vertical_projection:.3f} mm"
+        )
+    if (
+        float(rectification_geometry["median_disparity_px"]) <= 0
+        or float(rectification_geometry["positive_disparity_ratio"]) < 0.98
+    ):
+        reasons.append(
+            "矫正后视差方向与深度公式不一致："
+            f"中位视差 {float(rectification_geometry['median_disparity_px']):.3f} px，"
+            f"正视差比例 {float(rectification_geometry['positive_disparity_ratio']):.1%}"
+        )
 
     from .capture_gui import field_calibration_problem
     from .stereo_analyzer import _calibration_from_manifest
@@ -965,21 +1459,26 @@ def solve_stereo_calibration(
     if field_problem:
         reasons.append(field_problem)
 
+    try:
+        recipe = build_rectification_recipe(
+            calibration_id=calibration_id,
+            K1=K1,
+            D1=D1,
+            K2=K2,
+            D2=D2,
+            R1=R1,
+            R2=R2,
+            P1=P1,
+            P2=P2,
+            image_size=size,
+            alpha=0.0,
+            right_frame_transform=right_frame_transform,
+        )
+    except ValueError as error:
+        recipe = {}
+        reasons.append(f"极线矫正配方校验失败：{error}")
     validated = not reasons
     calibration["validated"] = validated
-    recipe = build_rectification_recipe(
-        calibration_id=calibration_id,
-        K1=K1,
-        D1=D1,
-        K2=K2,
-        D2=D2,
-        R1=R1,
-        R2=R2,
-        P1=P1,
-        P2=P2,
-        image_size=size,
-        alpha=0.0,
-    )
     return WizardResult(
         calibration=calibration,
         recipe=recipe,
@@ -996,15 +1495,18 @@ def solve_stereo_calibration(
 
 def write_calibration_diagnostic(
     pairs: list[tuple[BoardObservation, BoardObservation]],
-    result: WizardResult,
+    result: WizardResult | None,
     *,
     image_size: tuple[int, int],
     pattern: tuple[int, int],
     square_mm: float,
     root: str | Path = "outputs/measurement_workbench/calibration_diagnostics",
+    solve_error: str = "",
 ) -> Path:
     """Persist all accepted corner coordinates so a failed solve is replayable."""
 
+    if not pairs:
+        raise ValueError("没有可写入诊断文件的角点对")
     destination = Path(root).resolve()
     destination.mkdir(parents=True, exist_ok=True)
     path = destination / f"calibration_{datetime.now():%Y%m%d_%H%M%S_%f}.npz"
@@ -1012,8 +1514,9 @@ def write_calibration_diagnostic(
         "image_size_px": [int(image_size[0]), int(image_size[1])],
         "pattern_inner_corners": [int(pattern[0]), int(pattern[1])],
         "square_mm": float(square_mm),
-        "result_audit": result.audit,
-        "rejection_reasons": result.rejection_reasons,
+        "result_audit": result.audit if result is not None else {},
+        "rejection_reasons": result.rejection_reasons if result is not None else [],
+        "solve_error": str(solve_error),
     }
     np.savez_compressed(
         path,
@@ -1023,9 +1526,84 @@ def write_calibration_diagnostic(
         right_sharpness=np.asarray([pair[1].sharpness for pair in pairs]),
         left_zones=np.asarray([pair[0].centroid_zone for pair in pairs], dtype=np.int8),
         right_zones=np.asarray([pair[1].centroid_zone for pair in pairs], dtype=np.int8),
+        left_detectors=np.asarray([pair[0].detector for pair in pairs]),
+        right_detectors=np.asarray([pair[1].detector for pair in pairs]),
         metadata_json=np.asarray(json.dumps(metadata, ensure_ascii=False)),
     )
     return path
+
+
+def replay_calibration_diagnostic(path: str | Path) -> WizardResult:
+    """Re-run a saved calibration failure without reopening the camera."""
+
+    source = Path(path)
+    try:
+        with np.load(source, allow_pickle=False) as payload:
+            left_points = np.asarray(payload["left_points"], dtype=float)
+            right_points = np.asarray(payload["right_points"], dtype=float)
+            left_sharpness = np.asarray(payload["left_sharpness"], dtype=float)
+            right_sharpness = np.asarray(payload["right_sharpness"], dtype=float)
+            left_zones = np.asarray(payload["left_zones"], dtype=int)
+            right_zones = np.asarray(payload["right_zones"], dtype=int)
+            left_detectors = (
+                np.asarray(payload["left_detectors"], dtype=str)
+                if "left_detectors" in payload.files
+                else np.full(left_sharpness.shape, "unknown")
+            )
+            right_detectors = (
+                np.asarray(payload["right_detectors"], dtype=str)
+                if "right_detectors" in payload.files
+                else np.full(right_sharpness.shape, "unknown")
+            )
+            metadata = json.loads(str(payload["metadata_json"]))
+    except (OSError, KeyError, ValueError, json.JSONDecodeError) as error:
+        raise ChessboardCalibrationError(f"无法读取标定诊断文件：{error}") from error
+    count = int(left_points.shape[0]) if left_points.ndim == 3 else 0
+    expected_shapes = {
+        "right_points": right_points.shape == left_points.shape,
+        "left_sharpness": left_sharpness.shape == (count,),
+        "right_sharpness": right_sharpness.shape == (count,),
+        "left_zones": left_zones.shape == (count, 2),
+        "right_zones": right_zones.shape == (count, 2),
+        "left_detectors": left_detectors.shape == (count,),
+        "right_detectors": right_detectors.shape == (count,),
+    }
+    if count == 0 or left_points.shape[-1:] != (2,) or not all(expected_shapes.values()):
+        raise ChessboardCalibrationError(
+            f"标定诊断数组形状不一致：left_points={left_points.shape}"
+        )
+    pairs = [
+        (
+            BoardObservation(
+                left_points[index].copy(),
+                float(left_sharpness[index]),
+                tuple(int(value) for value in left_zones[index]),
+                str(left_detectors[index]),
+            ),
+            BoardObservation(
+                right_points[index].copy(),
+                float(right_sharpness[index]),
+                tuple(int(value) for value in right_zones[index]),
+                str(right_detectors[index]),
+            ),
+        )
+        for index in range(count)
+    ]
+    audit = metadata.get("result_audit", {})
+    image_size = tuple(int(value) for value in metadata["image_size_px"])
+    pattern = tuple(int(value) for value in metadata["pattern_inner_corners"])
+    return solve_stereo_calibration(
+        pairs=pairs,
+        image_size=image_size,
+        square_mm=float(metadata["square_mm"]),
+        pattern=pattern,
+        max_reprojection_rms_px=float(audit.get("max_reprojection_rms_px", 0.5)),
+        min_pairs=int(audit.get("minimum_pairs", max(3, min(10, count)))),
+        operator="replay",
+        max_sync_delta_ms=float(audit.get("max_sync_delta_ms", 1.0)),
+        layout=str(audit.get("layout", "diagnostic_replay")),
+        expected_baseline_mm=audit.get("expected_baseline_mm"),
+    )
 
 
 def save_wizard_result(
@@ -1038,7 +1616,6 @@ def save_wizard_result(
     # Function-level imports keep this patchable in tests.
     from .workbench_profile import (
         default_calibration_path,
-        load_profile,
         update_profile,
         write_standalone_calibration,
     )
@@ -1053,30 +1630,11 @@ def save_wizard_result(
         "calibration_current": copy.deepcopy(result.calibration),
         "rectification_recipe": copy.deepcopy(result.recipe),
     }
-    current_profile, _profile_problem = load_profile(profile_path)
-    current_camera = copy.deepcopy(
-        (current_profile or {}).get(
-            "camera",
-            {
-                "layout": "side_by_side_left_right",
-                "left_index": 0,
-                "right_index": 1,
-            },
-        )
-    )
-    current_camera["right_frame_transform"] = str(
-        result.audit.get("right_frame_transform", "none")
-    )
-    updates["camera"] = current_camera
     if extras:
         unknown = sorted(set(extras) - {"camera", "chessboard", "wizard"})
         if unknown:
             raise ChessboardCalibrationError(f"不支持的附加配置段落：{unknown}")
         updates.update(copy.deepcopy(dict(extras)))
-        if "camera" in extras:
-            updates["camera"]["right_frame_transform"] = str(
-                result.audit.get("right_frame_transform", "none")
-            )
     update_profile(updates, path=profile_path)
     return calibration_path
 
@@ -1221,6 +1779,9 @@ class ChessboardWizardDialog:
         self.operator = tk.StringVar(value=str(wizard.get("operator", "field")))
         self.max_rms = tk.StringVar(value=str(wizard.get("max_reprojection_rms_px", 0.5)))
         self.min_pairs = tk.StringVar(value=str(wizard.get("min_pairs", 10)))
+        self.expected_baseline_mm = tk.StringVar(
+            value=f"{float(wizard.get('expected_baseline_mm', 0.0)):g}"
+        )
         self.max_sync = tk.StringVar(value="1.0")
         self.sharpness_gate = tk.StringVar(value="60")
         self.eye_width = tk.StringVar(value="1920")
@@ -1330,6 +1891,10 @@ class ChessboardWizardDialog:
         )
         self.stream_combo.pack(side="left", padx=(3, 10))
         self.stream_combo.bind("<<ComboboxSelected>>", lambda _e: self._apply_stream_mode())
+        ttk.Label(mode_row, text="实测镜头中心距/mm（0=未知）：").pack(side="left")
+        ttk.Entry(
+            mode_row, textvariable=self.expected_baseline_mm, width=7
+        ).pack(side="left", padx=(3, 10))
         ttk.Label(
             mode_row,
             text="并排双目只在特定分辨率输出；选错会只看到单目画面。",
@@ -1860,7 +2425,10 @@ class ChessboardWizardDialog:
             return
         self._detector_error_keys.add(key)
         if stage == "find_chessboard_corners_sb":
-            self._sb_disabled_roles.add(role)
+            # Both eyes must use the same detector within a stereo pair.
+            # If one SB backend fails, switch the complete session to the
+            # classic detector; the current mixed-backend frame is skipped.
+            self._sb_disabled_roles.update(("left", "right"))
         from .logging_config import get_logger
 
         get_logger("calibration_wizard").warning(
@@ -1898,6 +2466,9 @@ class ChessboardWizardDialog:
             return
         left_obs = observations["left"]
         right_obs = observations["right"]
+        if left_obs.detector != right_obs.detector:
+            self.message.set("左右目检测器刚完成同步切换；本帧已跳过，请保持棋盘格稳定。")
+            return
         # Motion blur (long exposure while the board moves) inflates the
         # reprojection RMS without being visible in the pair count, so blurred
         # frames are skipped before they can enter the solve.
@@ -1928,6 +2499,35 @@ class ChessboardWizardDialog:
     ) -> None:
         from .logging_config import get_logger, log_event
 
+        if (
+            left_obs.detector != "unknown"
+            and right_obs.detector != "unknown"
+            and left_obs.detector != right_obs.detector
+        ):
+            raise ChessboardCalibrationError("左右目必须使用同一个角点检测器")
+        existing_detectors = {
+            observation.detector
+            for pair in self.pairs
+            for observation in pair
+            if observation.detector != "unknown"
+        }
+        incoming_detectors = {
+            detector
+            for detector in (left_obs.detector, right_obs.detector)
+            if detector != "unknown"
+        }
+        reset_count = 0
+        if existing_detectors and incoming_detectors != existing_detectors:
+            reset_count = len(self.pairs)
+            self.pairs.clear()
+            self._last_left_centroid = None
+            log_event(
+                get_logger("calibration_wizard"),
+                "wizard_detector_dataset_reset",
+                discarded_pair_count=reset_count,
+                previous_detectors=sorted(existing_detectors),
+                new_detectors=sorted(incoming_detectors),
+            )
         aligned_right = align_pair_orientation(
             left_obs, right_obs, pattern=self._pattern()
         )
@@ -1946,6 +2546,10 @@ class ChessboardWizardDialog:
             image_size=self._eye_size(),
         )
         summary = f"{'自动' if automatic else '手动'}接受第 {count} 组（建议 ≥ {minimum} 组）"
+        if reset_count:
+            summary = (
+                f"角点检测器已切换，旧的 {reset_count} 组已清除；" + summary
+            )
         if coverage["missing"]:
             summary += (
                 f"；区域覆盖 {coverage['covered']}/9（要求 ≥{coverage['required']}），"
@@ -1978,6 +2582,7 @@ class ChessboardWizardDialog:
             median_disparity_px=float(
                 np.median(left_obs.corners_px[:, 0] - aligned_right.corners_px[:, 0])
             ),
+            detector=left_obs.detector,
         )
 
     def stop(self) -> None:
@@ -2030,6 +2635,10 @@ class ChessboardWizardDialog:
                         f"{role} 目未检出完整棋盘格；请让整个棋盘格平整进入画面后重试。"
                     )
                 observations.append(observation)
+            if observations[0].detector != observations[1].detector:
+                raise ChessboardCalibrationError(
+                    "左右目角点检测器刚完成同步切换；请保持棋盘格稳定后重新抓拍"
+                )
             try:
                 threshold = float(self.sharpness_gate.get())
             except ValueError:
@@ -2076,6 +2685,8 @@ class ChessboardWizardDialog:
         LogViewerDialog(self.app, parent=self.window)
 
     def finish(self) -> None:
+        eye_size: tuple[int, int] | None = None
+        square_mm: float | None = None
         try:
             operator = str(self.operator.get()).strip()
             maximum_rms = self._float_value(self.max_rms, "允许RMS")
@@ -2084,6 +2695,13 @@ class ChessboardWizardDialog:
             maximum_sync = self._float_value(self.max_sync, "同步容差", positive=False)
             eye_size = self._eye_size()
             layout = self._layout()
+            expected_baseline = self._float_value(
+                self.expected_baseline_mm,
+                "实测镜头中心距",
+                positive=False,
+            )
+            if expected_baseline < 0:
+                raise ChessboardCalibrationError("实测镜头中心距必须为 0 或正数")
             result = solve_stereo_calibration(
                 pairs=list(self.pairs),
                 image_size=eye_size,
@@ -2094,6 +2712,7 @@ class ChessboardWizardDialog:
                 operator=operator,
                 max_sync_delta_ms=maximum_sync,
                 layout=layout,
+                expected_baseline_mm=(expected_baseline or None),
             )
             if not result.validated:
                 from .logging_config import get_logger, log_event
@@ -2153,6 +2772,7 @@ class ChessboardWizardDialog:
                 "operator": operator,
                 "max_reprojection_rms_px": maximum_rms,
                 "min_pairs": minimum_pairs,
+                "expected_baseline_mm": expected_baseline,
             }
             path = save_wizard_result(
                 result,
@@ -2162,9 +2782,6 @@ class ChessboardWizardDialog:
                         "layout": layout,
                         "left_index": self._indices()[0],
                         "right_index": self._indices()[1],
-                        "right_frame_transform": result.audit.get(
-                            "right_frame_transform", "none"
-                        ),
                     },
                     "chessboard": chessboard,
                     "wizard": wizard_section,
@@ -2206,8 +2823,43 @@ class ChessboardWizardDialog:
         except Exception as error:  # native cv2 errors included, never silent
             from .logging_config import get_logger, log_event
 
-            log_event(get_logger("calibration_wizard"), "wizard_solve_failed", error=str(error))
-            self.app.messagebox.showerror("标定失败", str(error), parent=self.window)
+            diagnostic_path: Path | None = None
+            diagnostic_error = ""
+            if self.pairs:
+                try:
+                    diagnostic_path = write_calibration_diagnostic(
+                        list(self.pairs),
+                        None,
+                        image_size=eye_size or self._eye_size(),
+                        pattern=self._pattern(),
+                        square_mm=(
+                            square_mm
+                            if square_mm is not None
+                            else self._float_value(
+                                self.measured_square_mm, "打印后实测格边长"
+                            )
+                        ),
+                        solve_error=f"{type(error).__name__}: {error}",
+                    )
+                except Exception as diagnostic_exception:
+                    diagnostic_error = (
+                        f"{type(diagnostic_exception).__name__}: {diagnostic_exception}"
+                    )
+            log_event(
+                get_logger("calibration_wizard"),
+                "wizard_solve_failed",
+                error_type=type(error).__name__,
+                error=str(error),
+                pair_count=len(self.pairs),
+                diagnostic_path=diagnostic_path,
+                diagnostic_error=diagnostic_error,
+            )
+            diagnostic_note = (
+                f"\n诊断数据：{diagnostic_path}" if diagnostic_path is not None else ""
+            )
+            self.app.messagebox.showerror(
+                "标定失败", str(error) + diagnostic_note, parent=self.window
+            )
 
     def close(self) -> None:
         self._closing = True
@@ -2231,12 +2883,15 @@ __all__ = [
     "WizardResult",
     "align_pair_orientation",
     "build_rectification_recipe",
+    "calibration_pose_report",
     "calibrate_stereo_from_folders",
     "detect_board_corners",
     "pose_diversity_report",
     "preferred_stream_mode",
     "printable_chessboard_png",
     "rectifier_for_calibration",
+    "rectification_quality_report",
+    "replay_calibration_diagnostic",
     "save_wizard_result",
     "solve_stereo_calibration",
     "transform_board_observation",

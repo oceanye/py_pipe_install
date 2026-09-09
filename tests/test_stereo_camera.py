@@ -11,6 +11,7 @@ from pipe_twin.stereo_camera import (
     LAYOUT_SIDE_BY_SIDE_RL,
     StereoCameraError,
     StereoCameraSession,
+    apply_frame_transform,
     probe_video_devices,
     probe_video_modes,
 )
@@ -98,24 +99,16 @@ class StereoCameraTests(unittest.TestCase):
         self.assertTrue(np.array_equal(pair.right, first))
         self.assertEqual(pair.provenance["left"]["side_by_side_order"], "RIGHT_THEN_LEFT")
 
-    def test_saved_right_sensor_transform_is_applied_before_delivery(self):
-        left = np.zeros((2, 3, 3), dtype=np.uint8)
-        right = np.arange(18, dtype=np.uint8).reshape(2, 3, 3)
-        capture = FakeCapture(np.concatenate((left, right), axis=1))
-        with StereoCameraSession(
-            layout=LAYOUT_SIDE_BY_SIDE_LR,
-            left_index=0,
-            right_index=None,
-            eye_width=3,
-            eye_height=2,
-            right_frame_transform="flip_horizontal",
-            capture_factory=lambda *_args: capture,
-        ) as session:
-            pair = session.read_pair()
-        np.testing.assert_array_equal(pair.right, cv2.flip(right, 1))
-        self.assertEqual(
-            pair.provenance["right"]["right_frame_transform"],
-            "flip_horizontal",
+    def test_frame_transform_utility_matches_opencv_orientation(self):
+        image = np.arange(18, dtype=np.uint8).reshape(2, 3, 3)
+        np.testing.assert_array_equal(
+            apply_frame_transform(image, "flip_horizontal"), cv2.flip(image, 1)
+        )
+        np.testing.assert_array_equal(
+            apply_frame_transform(image, "flip_vertical"), cv2.flip(image, 0)
+        )
+        np.testing.assert_array_equal(
+            apply_frame_transform(image, "rotate_180"), cv2.flip(image, -1)
         )
 
     def test_two_devices_are_grabbed_as_a_pair_and_keep_device_identity(self):

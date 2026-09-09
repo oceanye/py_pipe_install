@@ -2635,9 +2635,6 @@ class QuickCaptureDialog:
                 right_index=right_index,
                 eye_width=int(self.calibration["left_camera"]["width"]),
                 eye_height=int(self.calibration["left_camera"]["height"]),
-                right_frame_transform=str(
-                    self.camera.get("right_frame_transform", "none")
-                ),
             )
             session.open()
             return session

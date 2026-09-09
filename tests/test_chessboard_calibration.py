@@ -20,17 +20,21 @@ from pipe_twin.calibration_wizard import (
     _canonicalize_corner_order,
     align_pair_orientation,
     build_rectification_recipe,
+    calibrate_stereo_from_folders,
     detect_board_corners,
     pose_diversity_report,
     preferred_stream_mode,
     printable_chessboard_png,
     rectifier_for_calibration,
+    replay_calibration_diagnostic,
     solve_stereo_calibration,
+    write_calibration,
     write_calibration_diagnostic,
     write_printable_chessboard_png,
 )
 from pipe_twin.capture_gui import field_calibration_problem
 from pipe_twin.stereo_analyzer import _calibration_from_manifest
+from pipe_twin.workbench_profile import load_camera_calibration_bundle
 
 
 SIZE = (640, 480)
@@ -69,8 +73,16 @@ def _synthetic_pairs(count: int = 12) -> list[tuple[BoardObservation, BoardObser
             _rotation(np.asarray([0.0, 0.0, 1.0]), np.deg2rad((column - 1) * 6.0))
             @ _rotation(np.asarray([1.0, 0.0, 0.0]), np.deg2rad((row - 1) * 5.0))
         )
+        # Keep the complete board inside both 640x480 eyes while still
+        # spanning the image, depth and out-of-plane tilt.  Real detectors
+        # cannot return corners outside the source frame.
         board_to_left_translation = np.asarray(
-            [(column - 1) * 300.0, (row - 1) * 180.0, 900.0 + 60.0 * row], dtype=float
+            [
+                (column - 1) * 385.0 - 110.0,
+                (row - 1.5) * 210.0 - 70.0,
+                1400.0 + 120.0 * row,
+            ],
+            dtype=float,
         )
         board_to_right_rotation = left_to_right_rotation @ board_to_left_rotation
         board_to_right_translation = (
@@ -267,6 +279,73 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertAlmostEqual(calibration.baseline_mm, BASELINE_MM, delta=1.0)
         self.assertLess(result.stereo_rms_px, 0.5)
         self.assertTrue(result.audit["p1_p2_k_identical"])
+        self.assertTrue(
+            next(
+                candidate
+                for candidate in result.audit["right_frame_transform_candidates"]
+                if candidate["transform"] == "none"
+            )["geometry_compatible"]
+        )
+
+    def test_solver_rejects_vertical_baseline_and_reversed_disparity(self):
+        source = _synthetic_pairs()
+        vertical = [
+            (
+                left,
+                BoardObservation(
+                    left.corners_px + np.asarray([0.0, 20.0]),
+                    right.sharpness,
+                    right.centroid_zone,
+                ),
+            )
+            for left, right in source
+        ]
+        # Swapping the physical left/right cameras produces a negative
+        # horizontal baseline and negative rectified disparity.
+        reversed_disparity = [(right, left) for left, right in source]
+        for label, pairs, expected_reason in (
+            ("vertical", vertical, "水平双目"),
+            ("reversed", reversed_disparity, "视差方向"),
+        ):
+            with self.subTest(label=label):
+                result = _solve(pairs=pairs)
+                self.assertFalse(result.validated)
+                self.assertTrue(
+                    any(
+                        expected_reason in reason
+                        for reason in result.rejection_reasons
+                    ),
+                    result.rejection_reasons,
+                )
+
+    def test_solver_rejects_mixed_corner_detector_conventions(self):
+        pairs = _synthetic_pairs()
+        first_left, first_right = pairs[0]
+        second_left, second_right = pairs[1]
+        pairs[0] = (
+            BoardObservation(
+                first_left.corners_px, first_left.sharpness, first_left.centroid_zone, "sb"
+            ),
+            BoardObservation(
+                first_right.corners_px, first_right.sharpness, first_right.centroid_zone, "sb"
+            ),
+        )
+        pairs[1] = (
+            BoardObservation(
+                second_left.corners_px,
+                second_left.sharpness,
+                second_left.centroid_zone,
+                "classic",
+            ),
+            BoardObservation(
+                second_right.corners_px,
+                second_right.sharpness,
+                second_right.centroid_zone,
+                "classic",
+            ),
+        )
+        with self.assertRaisesRegex(Exception, "混用了 SB 与 classic"):
+            _solve(pairs=pairs)
 
     def test_solver_detects_and_corrects_a_horizontally_mirrored_right_sensor(self):
         mirrored = []
@@ -291,6 +370,7 @@ class ChessboardWizardTests(unittest.TestCase):
 
         self.assertTrue(result.validated, result.rejection_reasons)
         self.assertEqual(result.audit["right_frame_transform"], "flip_horizontal")
+        self.assertEqual(result.recipe["right_frame_transform"], "flip_horizontal")
         self.assertAlmostEqual(result.calibration["baseline_mm"], BASELINE_MM, delta=1.0)
         self.assertLess(result.stereo_rms_px, 0.5)
 
@@ -311,8 +391,73 @@ class ChessboardWizardTests(unittest.TestCase):
                 self.assertEqual(payload["right_points"].shape, (12, 48, 2))
                 metadata = json.loads(str(payload["metadata_json"]))
             self.assertEqual(metadata["pattern_inner_corners"], [8, 6])
+            replayed = replay_calibration_diagnostic(path)
+            self.assertTrue(replayed.validated, replayed.rejection_reasons)
+            self.assertAlmostEqual(
+                replayed.calibration["baseline_mm"], BASELINE_MM, delta=1.0
+            )
 
-    def test_joint_solve_uses_the_joint_intrinsics_for_rectification(self):
+    def test_offline_writer_keeps_rectification_recipe_in_portable_bundle(self):
+        result = _solve()
+        calibration = dict(result.calibration)
+        calibration["source_audit"] = {
+            "auto_calibration": {"rectification_recipe": result.recipe}
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_calibration(Path(temp) / "camera.json", calibration)
+            loaded = load_camera_calibration_bundle(path)
+        self.assertEqual(
+            loaded["rectification_recipe"]["calibration_id"],
+            result.calibration["calibration_id"],
+        )
+
+    def test_offline_left_pose_moves_both_cameras_as_one_rigid_rig(self):
+        result = _solve()
+        rotation = _rotation(np.asarray([0.0, 0.0, 1.0]), np.deg2rad(90.0))
+        center = np.asarray([100.0, 200.0, 300.0])
+        observation = BoardObservation(np.zeros((54, 2)), 100.0, (1, 1), "classic")
+        with tempfile.TemporaryDirectory() as temp:
+            left_dir = Path(temp) / "left"
+            right_dir = Path(temp) / "right"
+            left_dir.mkdir()
+            right_dir.mkdir()
+            for index in range(8):
+                (left_dir / f"{index:02}.png").write_bytes(b"x")
+                (right_dir / f"{index:02}.png").write_bytes(b"x")
+            with (
+                mock.patch(
+                    "pipe_twin.calibration_wizard.cv2.imread",
+                    return_value=np.zeros((SIZE[1], SIZE[0], 3), dtype=np.uint8),
+                ),
+                mock.patch(
+                    "pipe_twin.calibration_wizard.detect_board_corners",
+                    return_value=observation,
+                ),
+                mock.patch(
+                    "pipe_twin.calibration_wizard.solve_stereo_calibration",
+                    return_value=result,
+                ),
+            ):
+                calibration = calibrate_stereo_from_folders(
+                    left_dir,
+                    right_dir,
+                    left_camera_pose={
+                        "rotation_world_to_camera": rotation.tolist(),
+                        "center_world_mm": center.tolist(),
+                    },
+                )
+        parsed = _calibration_from_manifest(calibration)
+        np.testing.assert_allclose(parsed.left.center_world_mm, center)
+        np.testing.assert_allclose(parsed.left.rotation_world_to_camera, rotation)
+        np.testing.assert_allclose(parsed.right.rotation_world_to_camera, rotation)
+        baseline_camera = rotation @ (
+            parsed.right.center_world_mm - parsed.left.center_world_mm
+        )
+        np.testing.assert_allclose(baseline_camera, [BASELINE_MM, 0.0, 0.0], atol=1e-3)
+        self.assertTrue(parsed.registration_validated)
+        self.assertIn("-pose-", parsed.calibration_id)
+
+    def test_solver_keeps_independent_intrinsics_when_stereo_gate_is_strict(self):
         rng = np.random.default_rng(42)
         noisy = []
         for left, right in _synthetic_pairs():
@@ -344,9 +489,9 @@ class ChessboardWizardTests(unittest.TestCase):
             flags=cv2.CALIB_FIX_K3,
         )
         result = _solve(pairs=noisy, max_reprojection_rms_px=0.01)
-        self.assertEqual(result.audit["solve_mode"], "joint_intrinsics")
-        self.assertFalse(
-            np.allclose(np.asarray(result.recipe["K1"]), separate_k, atol=1e-5)
+        self.assertEqual(result.audit["solve_mode"], "fix_intrinsics")
+        np.testing.assert_allclose(
+            np.asarray(result.recipe["K1"]), separate_k, rtol=1e-4, atol=0.1
         )
 
     def test_wizard_calibration_satisfies_contract_and_field_gate(self):
@@ -383,6 +528,66 @@ class ChessboardWizardTests(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "尺寸"):
             rectifier.rectify("left", np.zeros((100, 120, 3), dtype=np.uint8))
 
+    def test_rectifier_owns_the_persisted_right_frame_transform(self):
+        size = (8, 6)
+        intrinsic = np.asarray(
+            [[5.0, 0.0, 3.5], [0.0, 5.0, 2.5], [0.0, 0.0, 1.0]]
+        )
+        projection = np.hstack((intrinsic, np.zeros((3, 1))))
+        right_projection = projection.copy()
+        right_projection[0, 3] = -intrinsic[0, 0] * 1.0
+        recipe = build_rectification_recipe(
+            calibration_id="FIELD-CHESS-MIRROR",
+            K1=intrinsic,
+            D1=np.zeros(5),
+            K2=intrinsic,
+            D2=np.zeros(5),
+            R1=np.eye(3),
+            R2=np.eye(3),
+            P1=projection,
+            P2=right_projection,
+            image_size=size,
+            right_frame_transform="flip_horizontal",
+        )
+        frame = np.arange(size[0] * size[1] * 3, dtype=np.uint8).reshape(
+            size[1], size[0], 3
+        )
+        rectifier = Rectifier(recipe)
+        np.testing.assert_array_equal(
+            rectifier.rectify("right", frame), cv2.flip(frame, 1)
+        )
+        np.testing.assert_array_equal(rectifier.rectify("left", frame), frame)
+
+    def test_expected_baseline_and_pose_diversity_are_guarded(self):
+        wrong_baseline = _solve(expected_baseline_mm=140.0)
+        self.assertFalse(wrong_baseline.validated)
+        self.assertTrue(
+            any("实测镜头中心距" in reason for reason in wrong_baseline.rejection_reasons)
+        )
+
+        repeated_pose = _synthetic_pairs()
+        first_left, first_right = repeated_pose[0]
+        flat = [
+            (
+                BoardObservation(
+                    first_left.corners_px.copy(),
+                    first_left.sharpness,
+                    (index % 3, index // 4),
+                ),
+                BoardObservation(
+                    first_right.corners_px.copy(),
+                    first_right.sharpness,
+                    (index % 3, index // 4),
+                ),
+            )
+            for index in range(12)
+        ]
+        result = _solve(pairs=flat)
+        self.assertFalse(result.validated)
+        self.assertTrue(
+            any("倾斜变化不足" in reason for reason in result.rejection_reasons)
+        )
+
     def test_rectifier_for_calibration_is_fail_closed(self):
         result = _solve()
         profile = {"rectification_recipe": result.recipe}
@@ -397,19 +602,21 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertIsNone(rectifier_for_calibration(external, profile))
         self.assertIsNone(rectifier_for_calibration(external, {}))
 
-    def test_per_view_rms_gate_rejects_a_corrupted_pair(self):
+    def test_robust_solve_discards_one_corrupted_pair(self):
         pairs = _synthetic_pairs()
         noisy = list(pairs)
         left, right = noisy[0]
         perturbed = BoardObservation(
-            corners_px=right.corners_px + np.asarray([25.0, -18.0]),
+            corners_px=right.corners_px + np.asarray([15.0, 10.0]),
             sharpness=right.sharpness,
             centroid_zone=right.centroid_zone,
         )
         noisy[0] = (left, perturbed)
         result = _solve(pairs=noisy)
-        self.assertFalse(result.validated)
-        self.assertTrue(any("重投影误差过大" in reason for reason in result.rejection_reasons))
+        self.assertTrue(result.validated, result.rejection_reasons)
+        self.assertEqual(result.audit["input_pair_count"], 12)
+        self.assertEqual(result.audit["discarded_pair_indices"], [1])
+        self.assertEqual(result.pair_count, 11)
 
     def test_wizard_rejects_insufficient_or_repeated_poses(self):
         few = _solve(pairs=_synthetic_pairs(5))

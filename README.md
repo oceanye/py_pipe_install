@@ -225,11 +225,11 @@ python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millime
 
 命令：
   # 自动棋盘格标定：左右目录按排序后一一配对，默认 9×6 内角点、25 mm 方格、至少 8 对
-  python -m pipe_twin calibrate-stereo --left-dir calibration/left --right-dir calibration/right --output calibration/auto_stereo.json
+  python -m pipe_twin calibrate-stereo --left-dir calibration/left --right-dir calibration/right --output calibration/auto_stereo.json --expected-baseline-mm 95
   python -m pipe_twin adapt-calibration --source calibration/opencv_stereo.json --output calibration/manifest_stereo_calibration.json --calibration-id field-rig-202609 --validated --registration-validated
   python -m pipe_twin validate-calibration --calibration calibration/manifest_stereo_calibration.json
 
-`calibrate-stereo` 会自动检测棋盘角点、剔除未检测到的照片、执行两目内参/外参求解和 `stereoRectify`，并输出统一格式的 JSON。只有在棋盘照片质量不足或左右数量不一致时才需要补拍；需要不同规格时再显式传 `--board-columns/--board-rows/--square-size-mm`。输出会在 RMS 质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘重投影质量通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
+`calibrate-stereo` 会统一使用 classic 检测器处理所有棋盘照片，固定分别求得的两目内参后求双目外参和 `stereoRectify`，并输出同时包含标定与原始帧矫正配方的便携 JSON。照片质量、姿态跨度、RMS、内参、基线、极线残差或视差方向任一不合格都会拒绝输出；需要不同规格时显式传 `--board-columns/--board-rows/--square-size-mm`，建议用 `--expected-baseline-mm` 填写实测镜头中心距。输出会在质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘与极线几何通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
 
 建议的自动标定顺序是：打印一张已知方格边长的棋盘格；让棋盘在近/中/远距离、画面四角和不同倾角各拍一组左右同步照片（建议 8–15 组）；把左目照片放入 `calibration/left`、右目照片放入 `calibration/right`，两边按同一序号命名；运行上面的命令后，在快速双目评估窗口使用二维码配准。程序会报告每一组被接受或剔除的原因和 RMS 重投影误差，失败时只需补拍提示的照片。
 运行分析：

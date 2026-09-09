@@ -41,10 +41,11 @@ def _pipes() -> list[dict]:
 
 def _recipe(*, width: int = 1920, height: int = 1080, calibration_id: str = "FIELD-CHESS-TEST-001") -> dict:
     identity = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-    intrinsic = [[1000.0, 0.0, width / 2], [0.0, 1000.0, height / 2], [0.0, 0.0, 1.0]]
-    projection_left = [[1000.0, 0.0, width / 2, 0.0], [0.0, 1000.0, height / 2, 0.0], [0.0, 0.0, 1.0, 0.0]]
+    focal = 2637.5783226764374
+    intrinsic = [[focal, 0.0, width / 2], [0.0, focal, height / 2], [0.0, 0.0, 1.0]]
+    projection_left = [[focal, 0.0, width / 2, 0.0], [0.0, focal, height / 2, 0.0], [0.0, 0.0, 1.0, 0.0]]
     projection_right = [row[:] for row in projection_left]
-    projection_right[0][3] = -1000.0 * 95.0
+    projection_right[0][3] = -focal * 95.0
     return {
         "calibration_id": calibration_id,
         "K1": intrinsic,
@@ -106,6 +107,19 @@ class WorkbenchProfileTests(unittest.TestCase):
             expected["updated_at"] = loaded["updated_at"]
             self.assertEqual(loaded, expected)
 
+    def test_legacy_camera_transform_migrates_into_rectification_recipe(self):
+        profile = _profile()
+        profile["camera"]["right_frame_transform"] = "flip_horizontal"
+        profile["rectification_recipe"].pop("right_frame_transform", None)
+
+        migrated = validate_profile(profile)
+
+        self.assertEqual(
+            migrated["rectification_recipe"]["right_frame_transform"],
+            "flip_horizontal",
+        )
+        self.assertNotIn("right_frame_transform", migrated["camera"])
+
     def test_invalid_kind_or_schema_version_is_rejected(self):
         for changed in ({"kind": "other"}, {"schema_version": "9.9"}):
             with self.subTest(changed=changed):
@@ -139,6 +153,20 @@ class WorkbenchProfileTests(unittest.TestCase):
         skewed["K1"][0][1] = 5.0
         with self.assertRaisesRegex(ValueError, "轴倾斜"):
             validate_rectification_recipe(skewed)
+
+    def test_recipe_projection_geometry_and_calibration_binding_are_guarded(self):
+        reversed_baseline = _recipe()
+        reversed_baseline["P2"][0][3] *= -1
+        with self.assertRaisesRegex(ValueError, "正的水平基线"):
+            validate_rectification_recipe(reversed_baseline)
+
+        wrong_intrinsic = _recipe()
+        wrong_intrinsic["P1"][0][0] += 5.0
+        wrong_intrinsic["P2"][0][0] += 5.0
+        with self.assertRaisesRegex(ValueError, "当前左目矫正内参"):
+            validate_rectification_recipe(
+                wrong_intrinsic, calibration=_calibration()
+            )
 
     def test_safety_checkboxes_are_never_persisted(self):
         payload = _profile()
@@ -201,15 +229,7 @@ class WorkbenchProfileTests(unittest.TestCase):
 
     def test_capture_state_mapping_round_trips_through_profile_sections(self):
         state = capture_state_from_profile(_profile())
-        self.assertEqual(
-            state["camera"],
-            {
-                "layout": "side_by_side_left_right",
-                "left_index": 0,
-                "right_index": 1,
-                "right_frame_transform": "none",
-            },
-        )
+        self.assertEqual(state["camera"], {"layout": "side_by_side_left_right", "left_index": 0, "right_index": 1})
         sections = profile_sections_from_state(
             state,
             sections=("model_path", "stl_unit", "pipes", "qr_settings", "pose_adjustment", "camera"),
@@ -261,6 +281,7 @@ class WorkbenchProfileTests(unittest.TestCase):
         )
         self.assertEqual(loaded["qr_settings"]["measured_marker_edge_mm"], 114.5)
         self.assertEqual(loaded["rectification_recipe"]["calibration_id"], "FIELD-CHESS-TEST-001")
+        self.assertEqual(loaded["rectification_recipe"]["right_frame_transform"], "none")
 
     def test_chessboard_bundle_without_rectification_recipe_is_rejected(self):
         calibration = _calibration()

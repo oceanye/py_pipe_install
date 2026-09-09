@@ -269,14 +269,9 @@ class StereoCameraSession:
         backend: int | None = None,
         capture_factory: Callable[..., Any] = cv2.VideoCapture,
         clock_ns: Callable[[], int] = time.time_ns,
-        right_frame_transform: str = FRAME_TRANSFORM_NONE,
     ) -> None:
         if layout not in SUPPORTED_LAYOUTS:
             raise StereoCameraError(f"unsupported stereo camera layout: {layout!r}")
-        if right_frame_transform not in SUPPORTED_FRAME_TRANSFORMS:
-            raise StereoCameraError(
-                f"unsupported right frame transform: {right_frame_transform!r}"
-            )
         for name, value in (("left_index", left_index), ("eye_width", eye_width), ("eye_height", eye_height)):
             if type(value) is not int or value < 0 or (name != "left_index" and value <= 0):
                 raise StereoCameraError(f"{name} must be a valid integer")
@@ -293,7 +288,6 @@ class StereoCameraSession:
         self.backend = _default_backend() if backend is None else backend
         self.capture_factory = capture_factory
         self.clock_ns = clock_ns
-        self.right_frame_transform = right_frame_transform
         self.left_capture: Any | None = None
         self.right_capture: Any | None = None
 
@@ -358,7 +352,6 @@ class StereoCameraSession:
             if self.layout == LAYOUT_SIDE_BY_SIDE_LR
             else (second, first)
         )
-        right = apply_frame_transform(right, self.right_frame_transform)
         timestamp = _host_timestamp((started + finished) // 2)
         order = "LEFT_THEN_RIGHT" if self.layout == LAYOUT_SIDE_BY_SIDE_LR else "RIGHT_THEN_LEFT"
         common = {
@@ -375,11 +368,7 @@ class StereoCameraSession:
             right_captured_at=timestamp,
             sync_delta_ms=0.0,
             timestamp_source="HOST_SYSTEM_CLOCK",
-            provenance={
-                "left": dict(common),
-                "right": common
-                | {"right_frame_transform": self.right_frame_transform},
-            },
+            provenance={"left": dict(common), "right": dict(common)},
         )
 
     def _grab_with_time(self, capture: Any) -> tuple[bool, int]:
@@ -418,18 +407,14 @@ class StereoCameraSession:
         }
         return CapturedStereoPair(
             left=left.copy(),
-            right=apply_frame_transform(right, self.right_frame_transform).copy(),
+            right=right.copy(),
             left_captured_at=_host_timestamp(left_time),
             right_captured_at=_host_timestamp(right_time),
             sync_delta_ms=sync_delta_ms,
             timestamp_source="HOST_SYSTEM_CLOCK",
             provenance={
                 "left": common | {"capture_device_index": self.left_index},
-                "right": common
-                | {
-                    "capture_device_index": self.right_index,
-                    "right_frame_transform": self.right_frame_transform,
-                },
+                "right": common | {"capture_device_index": self.right_index},
             },
         )
 

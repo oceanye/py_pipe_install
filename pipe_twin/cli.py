@@ -165,7 +165,13 @@ def build_parser() -> argparse.ArgumentParser:
     calibrate_parser.add_argument("--min-pairs", type=int, default=8, help="minimum usable pairs (default: 8)")
     calibrate_parser.add_argument(
         "--max-rms-px", type=float, default=1.5,
-        help="reject poor calibration above this RMS reprojection error; 0 disables the gate",
+        help="reject poor calibration above this RMS reprojection error; 0 uses the 1.5 px safe default",
+    )
+    calibrate_parser.add_argument(
+        "--expected-baseline-mm",
+        type=float,
+        default=0.0,
+        help="measured lens-centre distance in mm; 0 means unknown",
     )
 
     gui_parser = subparsers.add_parser(
@@ -218,6 +224,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
                 calibration_id=args.calibration_id,
                 min_pairs=args.min_pairs,
                 max_rms_px=None if args.max_rms_px <= 0 else args.max_rms_px,
+                expected_baseline_mm=(args.expected_baseline_mm or None),
             )
         except CalibrationWizardError as error:
             raise SystemExit(f"自动双目标定失败：{error}") from error
