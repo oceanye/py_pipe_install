@@ -97,6 +97,18 @@ def _profile() -> dict:
 
 
 class WorkbenchProfileTests(unittest.TestCase):
+    def test_wizard_hardware_specs_are_persistent(self):
+        profile = default_profile()
+        profile["wizard"]["expected_baseline_mm"] = 60.0
+        profile["wizard"]["nominal_fov_deg"] = 80.0
+        profile["wizard"]["nominal_focal_length_mm"] = 3.0
+
+        validated = validate_profile(profile)
+
+        self.assertEqual(validated["wizard"]["expected_baseline_mm"], 60.0)
+        self.assertEqual(validated["wizard"]["nominal_fov_deg"], 80.0)
+        self.assertEqual(validated["wizard"]["nominal_focal_length_mm"], 3.0)
+
     def test_profile_round_trip_preserves_every_section(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "profile.json"

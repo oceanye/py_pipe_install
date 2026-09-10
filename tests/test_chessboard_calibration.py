@@ -15,6 +15,7 @@ import numpy as np
 from pipe_twin.calibration_wizard import (
     CHESS_ID_MARKER,
     BoardObservation,
+    CalibrationCaptureArchive,
     ChessboardWizardDialog,
     Rectifier,
     _canonicalize_corner_order,
@@ -27,11 +28,14 @@ from pipe_twin.calibration_wizard import (
     pose_diversity_report,
     preferred_stream_mode,
     projective_pose_report,
+    read_calibration_diagnostic,
     printable_chessboard_png,
     rectifier_for_calibration,
     replay_calibration_diagnostic,
+    reusable_calibration_pairs,
     solve_stereo_calibration,
     write_calibration,
+    write_calibration_checkpoint,
     write_calibration_diagnostic,
     write_printable_chessboard_png,
 )
@@ -394,11 +398,91 @@ class ChessboardWizardTests(unittest.TestCase):
                 self.assertEqual(payload["right_points"].shape, (12, 48, 2))
                 metadata = json.loads(str(payload["metadata_json"]))
             self.assertEqual(metadata["pattern_inner_corners"], [8, 6])
+            loaded_pairs, loaded_metadata = read_calibration_diagnostic(path)
+            self.assertEqual(len(loaded_pairs), len(pairs))
+            self.assertEqual(loaded_metadata["square_mm"], SQUARE_MM)
             replayed = replay_calibration_diagnostic(path)
             self.assertTrue(replayed.validated, replayed.rejection_reasons)
             self.assertAlmostEqual(
                 replayed.calibration["baseline_mm"], BASELINE_MM, delta=1.0
             )
+
+    def test_calibration_checkpoint_overwrites_with_the_latest_pair_set(self):
+        pairs = _synthetic_pairs()
+        with tempfile.TemporaryDirectory() as temp:
+            first = write_calibration_checkpoint(
+                pairs,
+                image_size=SIZE,
+                pattern=PATTERN,
+                square_mm=SQUARE_MM,
+                root=temp,
+            )
+            second = write_calibration_checkpoint(
+                pairs[:5],
+                image_size=SIZE,
+                pattern=PATTERN,
+                square_mm=SQUARE_MM,
+                root=temp,
+            )
+            self.assertEqual(first, second)
+            restored, metadata = read_calibration_diagnostic(second)
+            self.assertEqual(len(restored), 5)
+            self.assertEqual(metadata["pattern_inner_corners"], [8, 6])
+
+    def test_raw_calibration_archive_keeps_images_after_exclusion(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = CalibrationCaptureArchive.create(
+                root=temp,
+                session_metadata={
+                    "hardware": {
+                        "expected_baseline_mm": 60.0,
+                        "nominal_fov_deg": 80.0,
+                        "nominal_focal_length_mm": 3.0,
+                    }
+                },
+            )
+            left = np.full((24, 32, 3), 40, dtype=np.uint8)
+            right = np.full((24, 32, 3), 80, dtype=np.uint8)
+            capture_id = archive.add_pair(
+                left,
+                right,
+                metadata={"automatic": True, "left_zone": [1, 1]},
+            )
+            archive.mark_status(
+                [capture_id],
+                status="excluded_solver",
+                reason="test outlier",
+            )
+            manifest = json.loads(archive.manifest_path.read_text(encoding="utf-8"))
+            record = manifest["pairs"][0]
+            self.assertEqual(record["status"], "excluded_solver")
+            self.assertEqual(record["status_reason"], "test outlier")
+            self.assertTrue((archive.session_path / record["left_file"]).is_file())
+            self.assertTrue((archive.session_path / record["right_file"]).is_file())
+            np.testing.assert_array_equal(
+                cv2.imread(str(archive.session_path / record["left_file"])), left
+            )
+            reopened = CalibrationCaptureArchive.open_existing(
+                archive.session_path, required_root=temp
+            )
+            self.assertEqual(reopened.manifest["pairs"][0]["status"], "excluded_solver")
+
+    def test_reusable_diagnostic_omits_previously_rejected_views(self):
+        pairs = _synthetic_pairs()
+        result = _solve(pairs=pairs)
+        result.audit["discarded_pair_indices"] = [2, 7]
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_calibration_diagnostic(
+                pairs,
+                result,
+                image_size=SIZE,
+                pattern=PATTERN,
+                square_mm=SQUARE_MM,
+                root=temp,
+            )
+            restored, _metadata, discarded = reusable_calibration_pairs(path)
+        self.assertEqual(discarded, [2, 7])
+        self.assertEqual(len(restored), len(pairs) - 2)
 
     def test_offline_writer_keeps_rectification_recipe_in_portable_bundle(self):
         result = _solve()

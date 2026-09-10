@@ -26,6 +26,7 @@ import re
 import struct
 import threading
 import time
+import uuid
 import zlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -53,6 +54,18 @@ _MIN_DEPTH_SPREAD_RATIO = 0.08
 _MIN_PROJECTED_SCALE_SPAN_RATIO = 0.08
 _MIN_PROJECTIVE_SHAPE_SPAN = 0.04
 _MAX_DISTORTION_ABS = 5.0
+_DIAGNOSTIC_ROOT = (
+    Path(__file__).resolve().parents[1]
+    / "outputs"
+    / "measurement_workbench"
+    / "calibration_diagnostics"
+)
+_CALIBRATION_CAPTURE_ROOT = (
+    Path(__file__).resolve().parents[1]
+    / "outputs"
+    / "measurement_workbench"
+    / "calibration_captures"
+)
 
 
 class ChessboardCalibrationError(ValueError):
@@ -381,6 +394,165 @@ class BoardObservation:
     @property
     def centroid_px(self) -> np.ndarray:
         return self.corners_px.mean(axis=0)
+
+
+class CalibrationCaptureArchive:
+    """Lossless raw left/right frames and an auditable session manifest."""
+
+    def __init__(self, session_path: Path, manifest: dict[str, Any]) -> None:
+        self.session_path = session_path
+        self.manifest = manifest
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        session_metadata: Mapping[str, Any],
+        root: str | Path = _CALIBRATION_CAPTURE_ROOT,
+    ) -> "CalibrationCaptureArchive":
+        destination = Path(root).resolve()
+        destination.mkdir(parents=True, exist_ok=True)
+        session_id = (
+            f"{datetime.now():%Y%m%d_%H%M%S_%f}_"
+            f"{uuid.uuid4().hex[:8]}"
+        )
+        session_path = destination / session_id
+        (session_path / "left").mkdir(parents=True)
+        (session_path / "right").mkdir(parents=True)
+        metadata = json.loads(
+            json.dumps(dict(session_metadata), ensure_ascii=False, allow_nan=False)
+        )
+        archive = cls(
+            session_path,
+            {
+                "kind": "pipe-twin-calibration-capture-session",
+                "schema_version": "1.0",
+                "session_id": session_id,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "session": metadata,
+                "pairs": [],
+            },
+        )
+        archive._write_manifest()
+        return archive
+
+    @classmethod
+    def open_existing(
+        cls,
+        session_path: str | Path,
+        *,
+        required_root: str | Path = _CALIBRATION_CAPTURE_ROOT,
+    ) -> "CalibrationCaptureArchive":
+        root = Path(required_root).resolve()
+        resolved = Path(session_path).resolve()
+        try:
+            resolved.relative_to(root)
+        except ValueError as error:
+            raise ChessboardCalibrationError(
+                "原始照片会话不在标定归档目录内"
+            ) from error
+        manifest_path = resolved / "session.json"
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ChessboardCalibrationError(
+                f"无法读取原始照片会话：{error}"
+            ) from error
+        if (
+            not isinstance(manifest, dict)
+            or manifest.get("kind") != "pipe-twin-calibration-capture-session"
+            or manifest.get("schema_version") != "1.0"
+            or not isinstance(manifest.get("session"), dict)
+            or not isinstance(manifest.get("pairs"), list)
+        ):
+            raise ChessboardCalibrationError("原始照片会话清单格式无效")
+        return cls(resolved, manifest)
+
+    @property
+    def manifest_path(self) -> Path:
+        return self.session_path / "session.json"
+
+    def _write_manifest(self) -> None:
+        from .pipeline import atomic_write_text
+
+        self.manifest["updated_at"] = datetime.now(timezone.utc).isoformat()
+        atomic_write_text(
+            self.manifest_path,
+            json.dumps(
+                self.manifest,
+                ensure_ascii=False,
+                indent=2,
+                allow_nan=False,
+            )
+            + "\n",
+        )
+
+    def update_session(self, values: Mapping[str, Any]) -> None:
+        clean = json.loads(
+            json.dumps(dict(values), ensure_ascii=False, allow_nan=False)
+        )
+        self.manifest["session"].update(clean)
+        self._write_manifest()
+
+    def add_pair(
+        self,
+        left_frame: np.ndarray,
+        right_frame: np.ndarray,
+        *,
+        metadata: Mapping[str, Any],
+    ) -> int:
+        frames = (np.asarray(left_frame), np.asarray(right_frame))
+        if any(frame.size == 0 or frame.ndim not in {2, 3} for frame in frames):
+            raise ChessboardCalibrationError("标定原始照片数组为空或形状无效")
+        capture_id = len(self.manifest["pairs"]) + 1
+        filename = f"{capture_id:06d}.png"
+        left_path = self.session_path / "left" / filename
+        right_path = self.session_path / "right" / filename
+        left_temporary = left_path.with_name(f"{left_path.stem}.tmp.png")
+        right_temporary = right_path.with_name(f"{right_path.stem}.tmp.png")
+        try:
+            if not cv2.imwrite(str(left_temporary), frames[0]):
+                raise OSError("左目 PNG 写入失败")
+            if not cv2.imwrite(str(right_temporary), frames[1]):
+                raise OSError("右目 PNG 写入失败")
+            left_temporary.replace(left_path)
+            right_temporary.replace(right_path)
+        finally:
+            left_temporary.unlink(missing_ok=True)
+            right_temporary.unlink(missing_ok=True)
+        record = json.loads(
+            json.dumps(dict(metadata), ensure_ascii=False, allow_nan=False)
+        )
+        record.update(
+            {
+                "capture_id": capture_id,
+                "captured_at": datetime.now(timezone.utc).isoformat(),
+                "left_file": left_path.relative_to(self.session_path).as_posix(),
+                "right_file": right_path.relative_to(self.session_path).as_posix(),
+                "status": "active",
+            }
+        )
+        self.manifest["pairs"].append(record)
+        self._write_manifest()
+        return capture_id
+
+    def mark_status(
+        self,
+        capture_ids: list[int],
+        *,
+        status: str,
+        reason: str,
+    ) -> None:
+        selected = set(int(value) for value in capture_ids)
+        if not selected:
+            return
+        for record in self.manifest["pairs"]:
+            if int(record["capture_id"]) in selected:
+                record["status"] = str(status)
+                record["status_reason"] = str(reason)
+                record["status_updated_at"] = datetime.now(timezone.utc).isoformat()
+        self._write_manifest()
 
 
 def _canonicalize_corner_order(corners: np.ndarray, pattern: tuple[int, int]) -> np.ndarray:
@@ -1993,6 +2165,8 @@ def write_calibration_diagnostic(
     square_mm: float,
     root: str | Path = "outputs/measurement_workbench/calibration_diagnostics",
     solve_error: str = "",
+    filename: str | None = None,
+    metadata_extra: Mapping[str, Any] | None = None,
 ) -> Path:
     """Persist all accepted corner coordinates so a failed solve is replayable."""
 
@@ -2000,7 +2174,12 @@ def write_calibration_diagnostic(
         raise ValueError("没有可写入诊断文件的角点对")
     destination = Path(root).resolve()
     destination.mkdir(parents=True, exist_ok=True)
-    path = destination / f"calibration_{datetime.now():%Y%m%d_%H%M%S_%f}.npz"
+    if filename is not None:
+        if Path(filename).name != filename or not filename.endswith(".npz"):
+            raise ValueError("标定诊断文件名必须是当前目录下的 .npz 文件")
+        path = destination / filename
+    else:
+        path = destination / f"calibration_{datetime.now():%Y%m%d_%H%M%S_%f}.npz"
     metadata = {
         "image_size_px": [int(image_size[0]), int(image_size[1])],
         "pattern_inner_corners": [int(pattern[0]), int(pattern[1])],
@@ -2009,6 +2188,12 @@ def write_calibration_diagnostic(
         "rejection_reasons": result.rejection_reasons if result is not None else [],
         "solve_error": str(solve_error),
     }
+    if metadata_extra:
+        metadata["capture_archive"] = json.loads(
+            json.dumps(
+                dict(metadata_extra), ensure_ascii=False, allow_nan=False
+            )
+        )
     np.savez_compressed(
         path,
         left_points=np.stack([pair[0].corners_px for pair in pairs]),
@@ -2024,8 +2209,33 @@ def write_calibration_diagnostic(
     return path
 
 
-def replay_calibration_diagnostic(path: str | Path) -> WizardResult:
-    """Re-run a saved calibration failure without reopening the camera."""
+def write_calibration_checkpoint(
+    pairs: list[tuple[BoardObservation, BoardObservation]],
+    *,
+    image_size: tuple[int, int],
+    pattern: tuple[int, int],
+    square_mm: float,
+    root: str | Path = "outputs/measurement_workbench/calibration_diagnostics",
+    metadata_extra: Mapping[str, Any] | None = None,
+) -> Path:
+    """Overwrite the session checkpoint so accepted photos survive a restart."""
+
+    return write_calibration_diagnostic(
+        pairs,
+        None,
+        image_size=image_size,
+        pattern=pattern,
+        square_mm=square_mm,
+        root=root,
+        filename="calibration_autosave.npz",
+        metadata_extra=metadata_extra,
+    )
+
+
+def read_calibration_diagnostic(
+    path: str | Path,
+) -> tuple[list[tuple[BoardObservation, BoardObservation]], dict[str, Any]]:
+    """Load validated corner pairs and metadata from a diagnostic checkpoint."""
 
     source = Path(path)
     try:
@@ -2063,6 +2273,24 @@ def replay_calibration_diagnostic(path: str | Path) -> WizardResult:
         raise ChessboardCalibrationError(
             f"标定诊断数组形状不一致：left_points={left_points.shape}"
         )
+    if not isinstance(metadata, dict):
+        raise ChessboardCalibrationError("标定诊断 metadata_json 必须是对象")
+    try:
+        image_size = tuple(int(value) for value in metadata["image_size_px"])
+        pattern = tuple(int(value) for value in metadata["pattern_inner_corners"])
+        square_mm = float(metadata["square_mm"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ChessboardCalibrationError(f"标定诊断元数据不完整：{error}") from error
+    if (
+        len(image_size) != 2
+        or min(image_size) <= 0
+        or len(pattern) != 2
+        or min(pattern) <= 0
+        or left_points.shape[1] != pattern[0] * pattern[1]
+        or not math.isfinite(square_mm)
+        or square_mm <= 0
+    ):
+        raise ChessboardCalibrationError("标定诊断中的图像尺寸、棋盘规格或格边长无效")
     pairs = [
         (
             BoardObservation(
@@ -2080,9 +2308,65 @@ def replay_calibration_diagnostic(path: str | Path) -> WizardResult:
         )
         for index in range(count)
     ]
+    return pairs, metadata
+
+
+def reusable_calibration_pairs(
+    path: str | Path,
+) -> tuple[
+    list[tuple[BoardObservation, BoardObservation]],
+    dict[str, Any],
+    list[int],
+]:
+    """Load a checkpoint while omitting views already rejected by its solve."""
+
+    pairs, metadata = read_calibration_diagnostic(path)
     audit = metadata.get("result_audit", {})
+    if not isinstance(audit, Mapping):
+        audit = {}
+    discarded = sorted(
+        {
+            int(value)
+            for value in audit.get("discarded_pair_indices", [])
+            if type(value) in {int, float} and float(value).is_integer()
+        }
+    )
+    if any(index < 1 or index > len(pairs) for index in discarded):
+        raise ChessboardCalibrationError("标定诊断中的异常组号超出照片组范围")
+    discarded_set = set(discarded)
+    retained = [
+        pair
+        for index, pair in enumerate(pairs, start=1)
+        if index not in discarded_set
+    ]
+    if not retained:
+        raise ChessboardCalibrationError("标定诊断没有可继续使用的照片组")
+    return retained, metadata, discarded
+
+
+def replay_calibration_diagnostic(
+    path: str | Path,
+    *,
+    expected_baseline_mm: float | None = None,
+) -> WizardResult:
+    """Re-run a saved calibration failure without reopening the camera.
+
+    ``expected_baseline_mm`` can supply a newly measured rig baseline when the
+    original capture was saved before the operator entered that value.
+    """
+
+    pairs, metadata = read_calibration_diagnostic(path)
+    count = len(pairs)
+    audit = metadata.get("result_audit", {})
+    if not isinstance(audit, Mapping):
+        audit = {}
     image_size = tuple(int(value) for value in metadata["image_size_px"])
     pattern = tuple(int(value) for value in metadata["pattern_inner_corners"])
+    baseline = (
+        audit.get("expected_baseline_mm")
+        if expected_baseline_mm is None
+        else float(expected_baseline_mm)
+    )
     return solve_stereo_calibration(
         pairs=pairs,
         image_size=image_size,
@@ -2093,7 +2377,7 @@ def replay_calibration_diagnostic(path: str | Path) -> WizardResult:
         operator="replay",
         max_sync_delta_ms=float(audit.get("max_sync_delta_ms", 1.0)),
         layout=str(audit.get("layout", "diagnostic_replay")),
-        expected_baseline_mm=audit.get("expected_baseline_mm"),
+        expected_baseline_mm=baseline,
     )
 
 
@@ -2292,6 +2576,12 @@ class ChessboardWizardDialog:
         self.expected_baseline_mm = tk.StringVar(
             value=f"{float(wizard.get('expected_baseline_mm', 0.0)):g}"
         )
+        self.nominal_fov_deg = tk.StringVar(
+            value=f"{float(wizard.get('nominal_fov_deg', 0.0)):g}"
+        )
+        self.nominal_focal_length_mm = tk.StringVar(
+            value=f"{float(wizard.get('nominal_focal_length_mm', 0.0)):g}"
+        )
         self.max_sync = tk.StringVar(value="1.0")
         self.sharpness_gate = tk.StringVar(value="60")
         self.eye_width = tk.StringVar(value="1920")
@@ -2314,6 +2604,8 @@ class ChessboardWizardDialog:
         self._last_auto_time = 0.0
         self._last_left_observation: BoardObservation | None = None
         self.pairs: list[tuple[BoardObservation, BoardObservation]] = []
+        self._pair_capture_ids: list[int | None] = []
+        self.capture_archive: CalibrationCaptureArchive | None = None
         self.continuous = tk.BooleanVar(value=True)
         self.message = tk.StringVar(
             value=(
@@ -2411,6 +2703,25 @@ class ChessboardWizardDialog:
             text="并排双目只在特定分辨率输出；选错会只看到单目画面。",
             foreground="#8A4E00",
         ).pack(side="left")
+        hardware_row = ttk.Frame(camera_row)
+        hardware_row.pack(fill="x", pady=(4, 0))
+        ttk.Label(hardware_row, text="硬件规格（随原始照片保存）：视场角/°").pack(
+            side="left"
+        )
+        ttk.Entry(hardware_row, textvariable=self.nominal_fov_deg, width=7).pack(
+            side="left", padx=(3, 10)
+        )
+        ttk.Label(hardware_row, text="镜头焦距/mm").pack(side="left")
+        ttk.Entry(
+            hardware_row,
+            textvariable=self.nominal_focal_length_mm,
+            width=7,
+        ).pack(side="left", padx=(3, 10))
+        ttk.Label(
+            hardware_row,
+            text="焦距毫米值仅作硬件记录；像素内参仍由棋盘照片求解。",
+            foreground="#4A6178",
+        ).pack(side="left")
         self.sync_gate_label = tk.StringVar(value="标定阶段为静态棋盘，同步容差只用于记录。")
         ttk.Label(camera_row, textvariable=self.sync_gate_label, foreground="#4A6178").pack(
             anchor="w", pady=(2, 0)
@@ -2456,7 +2767,17 @@ class ChessboardWizardDialog:
             variable=self.continuous,
         ).pack(fill="x", pady=(0, 3))
         ttk.Button(actions, text="抓拍一组", command=self.capture_pair).pack(fill="x", pady=3)
+        ttk.Button(
+            actions,
+            text="移除选中组",
+            command=self.remove_selected,
+        ).pack(fill="x", pady=3)
         ttk.Button(actions, text="移除上一组", command=self.remove_last).pack(fill="x", pady=3)
+        ttk.Button(
+            actions,
+            text="恢复最近照片组",
+            command=self.restore_recent_pairs,
+        ).pack(fill="x", pady=3)
         ttk.Button(actions, text="完成标定并保存", command=self.finish).pack(fill="x", pady=(14, 3))
         ttk.Button(actions, text="查看完整日志", command=self.show_log).pack(fill="x", pady=3)
         ttk.Button(actions, text="关闭", command=self.close).pack(fill="x", pady=3)
@@ -2536,6 +2857,220 @@ class ChessboardWizardDialog:
             self._int_value(self.eye_width, "每目宽度", minimum=1),
             self._int_value(self.eye_height, "每目高度", minimum=1),
         )
+
+    def _hardware_specs(self) -> dict[str, float]:
+        baseline = self._float_value(
+            self.expected_baseline_mm, "实测镜头中心距", positive=False
+        )
+        nominal_fov = self._float_value(
+            self.nominal_fov_deg, "标称视场角", positive=False
+        )
+        nominal_focal = self._float_value(
+            self.nominal_focal_length_mm, "标称镜头焦距", positive=False
+        )
+        if baseline < 0 or nominal_fov < 0 or nominal_focal < 0:
+            raise ChessboardCalibrationError("硬件规格可填 0（未知）或正数")
+        if nominal_fov and not 10 <= nominal_fov < 180:
+            raise ChessboardCalibrationError("标称视场角必须为 0 或 10～180 度")
+        if nominal_focal and not 0.1 <= nominal_focal <= 100:
+            raise ChessboardCalibrationError("标称镜头焦距必须为 0 或 0.1～100 mm")
+        return {
+            "expected_baseline_mm": baseline,
+            "nominal_fov_deg": nominal_fov,
+            "nominal_focal_length_mm": nominal_focal,
+        }
+
+    def _capture_session_metadata(self) -> dict[str, Any]:
+        return {
+            "hardware": self._hardware_specs(),
+            "camera": {
+                "layout": self._layout(),
+                "left_index": self._indices()[0],
+                "right_index": self._indices()[1],
+                "eye_size_px": list(self._eye_size()),
+            },
+            "target": {
+                "pattern_inner_corners": list(self._pattern()),
+                "measured_square_mm": self._float_value(
+                    self.measured_square_mm, "打印后实测格边长"
+                ),
+            },
+        }
+
+    def _ensure_capture_archive(self) -> CalibrationCaptureArchive:
+        if self.capture_archive is None:
+            self.capture_archive = CalibrationCaptureArchive.create(
+                session_metadata=self._capture_session_metadata()
+            )
+        else:
+            self.capture_archive.update_session(self._capture_session_metadata())
+        return self.capture_archive
+
+    def _save_pair_checkpoint(self) -> Path | None:
+        """Persist the current accepted set without interrupting capture."""
+
+        checkpoint = _DIAGNOSTIC_ROOT / "calibration_autosave.npz"
+        if not self.pairs:
+            checkpoint.unlink(missing_ok=True)
+            return None
+        return write_calibration_checkpoint(
+            list(self.pairs),
+            image_size=self._eye_size(),
+            pattern=self._pattern(),
+            square_mm=self._float_value(
+                self.measured_square_mm, "打印后实测格边长"
+            ),
+            root=_DIAGNOSTIC_ROOT,
+            metadata_extra={
+                "session_path": (
+                    str(self.capture_archive.session_path)
+                    if self.capture_archive is not None
+                    else ""
+                ),
+                "pair_capture_ids": list(self._pair_capture_ids),
+            },
+        )
+
+    def restore_recent_pairs(self) -> None:
+        """Restore the newest failed solve/checkpoint and remove known bad views."""
+
+        from .logging_config import get_logger, log_event
+
+        try:
+            candidates = sorted(
+                _DIAGNOSTIC_ROOT.glob("calibration_*.npz"),
+                key=lambda path: path.stat().st_mtime_ns,
+                reverse=True,
+            )
+            if not candidates:
+                raise ChessboardCalibrationError("没有找到可恢复的标定照片组")
+            source = candidates[0]
+            retained, metadata, discarded_indices = reusable_calibration_pairs(source)
+            audit = metadata.get("result_audit", {})
+            if not isinstance(audit, Mapping):
+                audit = {}
+            discarded = set(discarded_indices)
+
+            image_size = tuple(int(value) for value in metadata["image_size_px"])
+            pattern = tuple(
+                int(value) for value in metadata["pattern_inner_corners"]
+            )
+            self.eye_width.set(str(image_size[0]))
+            self.eye_height.set(str(image_size[1]))
+            self.columns.set(str(pattern[0] + 1))
+            self.rows.set(str(pattern[1] + 1))
+            self.measured_square_mm.set(f"{float(metadata['square_mm']):g}")
+            saved_rms = audit.get("max_reprojection_rms_px")
+            if isinstance(saved_rms, (int, float)) and float(saved_rms) > 0:
+                self.max_rms.set(f"{float(saved_rms):g}")
+            saved_layout = audit.get("layout")
+            if saved_layout in {
+                "side_by_side_left_right",
+                "side_by_side_right_left",
+                "separate_devices",
+            }:
+                self.mode.set(str(saved_layout))
+            saved_baseline = audit.get("expected_baseline_mm")
+            if isinstance(saved_baseline, (int, float)) and float(saved_baseline) > 0:
+                self.expected_baseline_mm.set(f"{float(saved_baseline):g}")
+
+            if self.capture_archive is not None:
+                self.capture_archive.mark_status(
+                    [
+                        value
+                        for value in self._pair_capture_ids
+                        if value is not None
+                    ],
+                    status="excluded_restore_replaced",
+                    reason="界面恢复了另一份最近照片组",
+                )
+            restored_archive: CalibrationCaptureArchive | None = None
+            restored_capture_ids: list[int | None] = [None] * len(retained)
+            archive_note = ""
+            archive_link = metadata.get("capture_archive", {})
+            if isinstance(archive_link, Mapping) and archive_link.get("session_path"):
+                try:
+                    all_capture_ids = list(archive_link.get("pair_capture_ids", []))
+                    original_count = len(retained) + len(discarded)
+                    if len(all_capture_ids) != original_count:
+                        raise ChessboardCalibrationError(
+                            "原始照片编号数量与角点组不一致"
+                        )
+                    restored_capture_ids = [
+                        (
+                            int(capture_id)
+                            if capture_id is not None
+                            else None
+                        )
+                        for index, capture_id in enumerate(
+                            all_capture_ids, start=1
+                        )
+                        if index not in discarded
+                    ]
+                    restored_archive = CalibrationCaptureArchive.open_existing(
+                        str(archive_link["session_path"])
+                    )
+                    hardware = restored_archive.manifest["session"].get(
+                        "hardware", {}
+                    )
+                    if isinstance(hardware, Mapping):
+                        for key, variable in (
+                            ("expected_baseline_mm", self.expected_baseline_mm),
+                            ("nominal_fov_deg", self.nominal_fov_deg),
+                            (
+                                "nominal_focal_length_mm",
+                                self.nominal_focal_length_mm,
+                            ),
+                        ):
+                            value = hardware.get(key)
+                            if isinstance(value, (int, float)) and float(value) > 0:
+                                variable.set(f"{float(value):g}")
+                    archive_note = "；原始左右 PNG 会话已重新关联"
+                except (OSError, ValueError) as error:
+                    archive_note = f"；原始照片会话未关联：{error}"
+            self.capture_archive = restored_archive
+            self.pairs = retained
+            self._pair_capture_ids = restored_capture_ids
+            self._last_left_observation = retained[-1][0]
+            self._refresh_pairs()
+            self._save_pair_checkpoint()
+            coverage = zone_coverage_report(
+                left.centroid_zone for left, _right in retained
+            )
+            removal_note = (
+                "；已跳过先前判定异常的第 "
+                + "、".join(str(value) for value in sorted(discarded))
+                + " 组"
+                if discarded
+                else ""
+            )
+            missing_note = (
+                "；还需补拍区域：" + "、".join(coverage["missing"])
+                if coverage["missing"]
+                else "；区域覆盖已满足"
+            )
+            self.message.set(
+                f"已从 {source.name} 恢复 {len(retained)} 组{removal_note}"
+                f"{missing_note}{archive_note}。现有照片可继续使用。"
+            )
+            log_event(
+                get_logger("calibration_wizard"),
+                "wizard_pairs_restored",
+                source=source,
+                restored_pair_count=len(retained),
+                discarded_pair_indices=sorted(discarded),
+                missing_zones=coverage["missing"],
+            )
+        except Exception as error:
+            log_event(
+                get_logger("calibration_wizard"),
+                "wizard_pairs_restore_failed",
+                error_type=type(error).__name__,
+                error=str(error),
+            )
+            self.app.messagebox.showerror(
+                "恢复照片组失败", str(error), parent=self.window
+            )
 
     # -- actions -----------------------------------------------------------
 
@@ -3002,12 +3537,24 @@ class ChessboardWizardDialog:
             self._pattern(),
         ):
             return
-        self._accept_pair(left_obs, observations["right"], automatic=True)
+        self._accept_pair(
+            left_obs,
+            observations["right"],
+            automatic=True,
+            raw_left=pair.left,
+            raw_right=pair.right,
+        )
         self._last_auto_time = now
         self._last_left_observation = left_obs
 
     def _accept_pair(
-        self, left_obs: BoardObservation, right_obs: BoardObservation, *, automatic: bool
+        self,
+        left_obs: BoardObservation,
+        right_obs: BoardObservation,
+        *,
+        automatic: bool,
+        raw_left: np.ndarray | None = None,
+        raw_right: np.ndarray | None = None,
     ) -> None:
         from .logging_config import get_logger, log_event
 
@@ -3031,7 +3578,17 @@ class ChessboardWizardDialog:
         reset_count = 0
         if existing_detectors and incoming_detectors != existing_detectors:
             reset_count = len(self.pairs)
+            reset_capture_ids = [
+                value for value in self._pair_capture_ids if value is not None
+            ]
+            if self.capture_archive is not None:
+                self.capture_archive.mark_status(
+                    reset_capture_ids,
+                    status="excluded_detector_reset",
+                    reason="角点检测器在同一数据集中发生切换",
+                )
             self.pairs.clear()
+            self._pair_capture_ids.clear()
             self._last_left_observation = None
             log_event(
                 get_logger("calibration_wizard"),
@@ -3046,7 +3603,31 @@ class ChessboardWizardDialog:
         orientation_flipped = not np.array_equal(
             aligned_right.corners_px, right_obs.corners_px
         )
+        if (raw_left is None) != (raw_right is None):
+            raise ChessboardCalibrationError("左右标定原始照片必须成对保存")
+        capture_id: int | None = None
+        if raw_left is not None and raw_right is not None:
+            capture_id = self._ensure_capture_archive().add_pair(
+                raw_left,
+                raw_right,
+                metadata={
+                    "automatic": bool(automatic),
+                    "left_zone": list(left_obs.centroid_zone),
+                    "right_zone": list(aligned_right.centroid_zone),
+                    "left_sharpness": float(left_obs.sharpness),
+                    "right_sharpness": float(aligned_right.sharpness),
+                    "detector": left_obs.detector,
+                    "right_corner_order_rotated_180": orientation_flipped,
+                    "median_raw_disparity_px": float(
+                        np.median(
+                            left_obs.corners_px[:, 0]
+                            - aligned_right.corners_px[:, 0]
+                        )
+                    ),
+                },
+            )
         self.pairs.append((left_obs, aligned_right))
+        self._pair_capture_ids.append(capture_id)
         self._last_left_observation = left_obs
         minimum = self._int_value(self.min_pairs, "最少组数", minimum=3)
         count = len(self.pairs)
@@ -3096,6 +3677,11 @@ class ChessboardWizardDialog:
         if count >= _MAX_AUTO_PAIRS:
             self.continuous.set(False)
             summary += f" 已达自动采集上限 {_MAX_AUTO_PAIRS} 组。"
+        try:
+            checkpoint = self._save_pair_checkpoint()
+        except (OSError, ValueError) as error:
+            checkpoint = None
+            summary += f" 照片组自动保存失败：{error}"
         self.message.set(summary)
         log_event(
             get_logger("calibration_wizard"),
@@ -3113,6 +3699,13 @@ class ChessboardWizardDialog:
             ),
             image_pose_geometry=image_geometry,
             detector=left_obs.detector,
+            checkpoint_path=checkpoint,
+            capture_session=(
+                self.capture_archive.session_path
+                if self.capture_archive is not None
+                else None
+            ),
+            capture_id=capture_id,
         )
 
     def stop(self) -> None:
@@ -3181,7 +3774,13 @@ class ChessboardWizardDialog:
                     f"右 {observations[1].sharpness:.0f} < {threshold:g}）；"
                     "请增加光照或放慢移动；确要忽略请把“清晰度门限”改为 0。"
                 )
-            self._accept_pair(observations[0], observations[1], automatic=False)
+            self._accept_pair(
+                observations[0],
+                observations[1],
+                automatic=False,
+                raw_left=pair.left,
+                raw_right=pair.right,
+            )
         except Exception as error:  # native cv2 errors included, never silent
             from .logging_config import get_logger, log_event
 
@@ -3206,9 +3805,60 @@ class ChessboardWizardDialog:
     def remove_last(self) -> None:
         if self.pairs:
             self.pairs.pop()
+            capture_id = (
+                self._pair_capture_ids.pop() if self._pair_capture_ids else None
+            )
+            if capture_id is not None and self.capture_archive is not None:
+                self.capture_archive.mark_status(
+                    [capture_id],
+                    status="excluded_manual",
+                    reason="操作员移除上一组",
+                )
             self._last_left_observation = self.pairs[-1][0] if self.pairs else None
             self._refresh_pairs()
-            self.message.set(f"已移除上一组，剩余 {len(self.pairs)} 组。")
+            try:
+                self._save_pair_checkpoint()
+                checkpoint_note = "；自动保存已更新"
+            except (OSError, ValueError) as error:
+                checkpoint_note = f"；自动保存失败：{error}"
+            self.message.set(
+                f"已移除上一组，剩余 {len(self.pairs)} 组{checkpoint_note}。"
+            )
+
+    def remove_selected(self) -> None:
+        selected = sorted(
+            {int(item) for item in self.tree.selection()}, reverse=True
+        )
+        if not selected:
+            self.message.set("请先在照片组表格中选择需要删除的组。")
+            return
+        display_indices = [index + 1 for index in reversed(selected)]
+        capture_ids: list[int] = []
+        for index in selected:
+            if 0 <= index < len(self.pairs):
+                self.pairs.pop(index)
+                if index < len(self._pair_capture_ids):
+                    capture_id = self._pair_capture_ids.pop(index)
+                    if capture_id is not None:
+                        capture_ids.append(capture_id)
+        if capture_ids and self.capture_archive is not None:
+            self.capture_archive.mark_status(
+                capture_ids,
+                status="excluded_manual",
+                reason="操作员移除选中组",
+            )
+        self._last_left_observation = self.pairs[-1][0] if self.pairs else None
+        self._refresh_pairs()
+        try:
+            self._save_pair_checkpoint()
+            checkpoint_note = "；自动保存已更新"
+        except (OSError, ValueError) as error:
+            checkpoint_note = f"；自动保存失败：{error}"
+        self.message.set(
+            "已移除选中组 "
+            + "、".join(str(value) for value in display_indices)
+            + f"，剩余 {len(self.pairs)} 组{checkpoint_note}。"
+        )
 
     def show_log(self) -> None:
         from .log_viewer import LogViewerDialog
@@ -3226,13 +3876,12 @@ class ChessboardWizardDialog:
             maximum_sync = self._float_value(self.max_sync, "同步容差", positive=False)
             eye_size = self._eye_size()
             layout = self._layout()
-            expected_baseline = self._float_value(
-                self.expected_baseline_mm,
-                "实测镜头中心距",
-                positive=False,
-            )
-            if expected_baseline < 0:
-                raise ChessboardCalibrationError("实测镜头中心距必须为 0 或正数")
+            hardware_specs = self._hardware_specs()
+            expected_baseline = hardware_specs["expected_baseline_mm"]
+            if self.capture_archive is not None:
+                self.capture_archive.update_session(
+                    self._capture_session_metadata()
+                )
             result = solve_stereo_calibration(
                 pairs=list(self.pairs),
                 image_size=eye_size,
@@ -3257,6 +3906,14 @@ class ChessboardWizardDialog:
                         image_size=eye_size,
                         pattern=self._pattern(),
                         square_mm=square_mm,
+                        metadata_extra={
+                            "session_path": (
+                                str(self.capture_archive.session_path)
+                                if self.capture_archive is not None
+                                else ""
+                            ),
+                            "pair_capture_ids": list(self._pair_capture_ids),
+                        },
                     )
                 except (OSError, ValueError) as error:
                     diagnostic_error = f"{type(error).__name__}: {error}"
@@ -3286,15 +3943,39 @@ class ChessboardWizardDialog:
                 ]
                 if discarded_indices:
                     discarded = set(discarded_indices)
+                    discarded_capture_ids = [
+                        capture_id
+                        for index, capture_id in enumerate(
+                            self._pair_capture_ids, start=1
+                        )
+                        if index in discarded and capture_id is not None
+                    ]
+                    if self.capture_archive is not None:
+                        self.capture_archive.mark_status(
+                            discarded_capture_ids,
+                            status="excluded_solver",
+                            reason="标定求解判定为异常组",
+                        )
                     self.pairs = [
                         pair
                         for index, pair in enumerate(self.pairs, start=1)
+                        if index not in discarded
+                    ]
+                    self._pair_capture_ids = [
+                        capture_id
+                        for index, capture_id in enumerate(
+                            self._pair_capture_ids, start=1
+                        )
                         if index not in discarded
                     ]
                     self._last_left_observation = (
                         self.pairs[-1][0] if self.pairs else None
                     )
                     self._refresh_pairs()
+                    try:
+                        self._save_pair_checkpoint()
+                    except (OSError, ValueError) as error:
+                        diagnostic_note += f"\n保留组自动保存失败：{error}"
                     diagnostic_note += (
                         "\n已自动移除不合格照片组："
                         + "、".join(str(value) for value in discarded_indices)
@@ -3324,6 +4005,10 @@ class ChessboardWizardDialog:
                 "max_reprojection_rms_px": maximum_rms,
                 "min_pairs": minimum_pairs,
                 "expected_baseline_mm": expected_baseline,
+                "nominal_fov_deg": hardware_specs["nominal_fov_deg"],
+                "nominal_focal_length_mm": hardware_specs[
+                    "nominal_focal_length_mm"
+                ],
             }
             path = save_wizard_result(
                 result,
@@ -3338,6 +4023,32 @@ class ChessboardWizardDialog:
                     "wizard": wizard_section,
                 },
             )
+            try:
+                (_DIAGNOSTIC_ROOT / "calibration_autosave.npz").unlink(
+                    missing_ok=True
+                )
+            except OSError:
+                pass
+            if self.capture_archive is not None:
+                self.capture_archive.update_session(
+                    {
+                        "result": {
+                            "calibration_id": result.calibration["calibration_id"],
+                            "calibration_path": str(path),
+                            "stereo_rms_px": result.stereo_rms_px,
+                            "baseline_mm": result.calibration["baseline_mm"],
+                        }
+                    }
+                )
+                self.capture_archive.mark_status(
+                    [
+                        value
+                        for value in self._pair_capture_ids
+                        if value is not None
+                    ],
+                    status="used_in_saved_calibration",
+                    reason=result.calibration["calibration_id"],
+                )
             self.message.set(
                 f"标定完成并已保存：{path}\n"
                 f"双目 RMS {result.stereo_rms_px:.3f} px，左右目 "
@@ -3370,6 +4081,11 @@ class ChessboardWizardDialog:
                 right_frame_transform=result.audit.get(
                     "right_frame_transform", "none"
                 ),
+                capture_session=(
+                    self.capture_archive.session_path
+                    if self.capture_archive is not None
+                    else None
+                ),
             )
         except Exception as error:  # native cv2 errors included, never silent
             from .logging_config import get_logger, log_event
@@ -3391,6 +4107,14 @@ class ChessboardWizardDialog:
                             )
                         ),
                         solve_error=f"{type(error).__name__}: {error}",
+                        metadata_extra={
+                            "session_path": (
+                                str(self.capture_archive.session_path)
+                                if self.capture_archive is not None
+                                else ""
+                            ),
+                            "pair_capture_ids": list(self._pair_capture_ids),
+                        },
                     )
                 except Exception as diagnostic_exception:
                     diagnostic_error = (
@@ -3426,6 +4150,7 @@ class ChessboardWizardDialog:
 
 __all__ = [
     "BoardObservation",
+    "CalibrationCaptureArchive",
     "CHESS_ID_MARKER",
     "ChessboardCalibrationError",
     "CalibrationWizardError",
@@ -3445,11 +4170,14 @@ __all__ = [
     "projective_pose_report",
     "rectifier_for_calibration",
     "rectification_quality_report",
+    "read_calibration_diagnostic",
+    "reusable_calibration_pairs",
     "replay_calibration_diagnostic",
     "save_wizard_result",
     "solve_stereo_calibration",
     "transform_board_observation",
     "write_calibration_diagnostic",
+    "write_calibration_checkpoint",
     "write_printable_chessboard_png",
     "write_calibration",
 ]

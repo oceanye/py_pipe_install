@@ -127,6 +127,8 @@ def default_profile() -> dict:
             "max_reprojection_rms_px": 1.5,
             "min_pairs": 10,
             "expected_baseline_mm": 0.0,
+            "nominal_fov_deg": 0.0,
+            "nominal_focal_length_mm": 0.0,
         },
         "capture_history": False,
     }
@@ -382,6 +384,8 @@ def _validate_wizard(payload: Any) -> dict:
         "max_reprojection_rms_px",
         "min_pairs",
         "expected_baseline_mm",
+        "nominal_fov_deg",
+        "nominal_focal_length_mm",
     }:
         raise ValueError("wizard 包含不支持的字段")
     operator = payload.get("operator")
@@ -396,11 +400,24 @@ def _validate_wizard(payload: Any) -> dict:
     )
     if expected_baseline != 0.0 and not 20.0 <= expected_baseline <= 2000.0:
         raise ValueError("wizard.expected_baseline_mm 必须为 0 或在 20 到 2000 mm 之间")
+    nominal_fov = _number(
+        payload.get("nominal_fov_deg", 0.0), "wizard.nominal_fov_deg"
+    )
+    if nominal_fov != 0.0 and not 10.0 <= nominal_fov < 180.0:
+        raise ValueError("wizard.nominal_fov_deg 必须为 0 或在 10 到 180 度之间")
+    nominal_focal = _number(
+        payload.get("nominal_focal_length_mm", 0.0),
+        "wizard.nominal_focal_length_mm",
+    )
+    if nominal_focal != 0.0 and not 0.1 <= nominal_focal <= 100.0:
+        raise ValueError("wizard.nominal_focal_length_mm 必须为 0 或在 0.1 到 100 mm 之间")
     return {
         "operator": operator,
         "max_reprojection_rms_px": max_rms,
         "min_pairs": payload["min_pairs"],
         "expected_baseline_mm": expected_baseline,
+        "nominal_fov_deg": nominal_fov,
+        "nominal_focal_length_mm": nominal_focal,
     }
 
 

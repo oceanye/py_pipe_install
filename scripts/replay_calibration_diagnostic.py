@@ -17,8 +17,16 @@ from pipe_twin.calibration_wizard import replay_calibration_diagnostic
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("diagnostic", type=Path)
+    parser.add_argument(
+        "--expected-baseline-mm",
+        type=float,
+        help="override the saved measured lens-centre baseline",
+    )
     args = parser.parse_args()
-    result = replay_calibration_diagnostic(args.diagnostic)
+    result = replay_calibration_diagnostic(
+        args.diagnostic,
+        expected_baseline_mm=args.expected_baseline_mm,
+    )
     summary = {
         "validated": result.validated,
         "rejection_reasons": result.rejection_reasons,
