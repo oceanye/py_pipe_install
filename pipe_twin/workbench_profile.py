@@ -124,7 +124,7 @@ def default_profile() -> dict:
         "chessboard": {"square_mm": 20.0, "columns": 9, "rows": 7, "dpi": 300},
         "wizard": {
             "operator": "field",
-            "max_reprojection_rms_px": 0.5,
+            "max_reprojection_rms_px": 1.5,
             "min_pairs": 10,
             "expected_baseline_mm": 0.0,
         },

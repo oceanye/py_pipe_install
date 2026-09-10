@@ -50,6 +50,8 @@ _BASELINE_RANGE_MM = (20.0, 2000.0)
 _MIN_CENTROID_SPREAD_RATIO = 0.10
 _MIN_TILT_SPAN_DEG = 8.0
 _MIN_DEPTH_SPREAD_RATIO = 0.08
+_MIN_PROJECTED_SCALE_SPAN_RATIO = 0.08
+_MIN_PROJECTIVE_SHAPE_SPAN = 0.04
 _MAX_DISTORTION_ABS = 5.0
 
 
@@ -559,6 +561,86 @@ def pose_diversity_report(
     }
 
 
+def _board_shape_signature(
+    observation: BoardObservation, pattern: tuple[int, int]
+) -> np.ndarray:
+    """Describe scale and projective shape without requiring camera intrinsics."""
+
+    columns, rows = int(pattern[0]), int(pattern[1])
+    grid = np.asarray(observation.corners_px, dtype=float).reshape(rows, columns, 2)
+    horizontal_vectors = grid[:, 1:] - grid[:, :-1]
+    vertical_vectors = grid[1:, :] - grid[:-1, :]
+    horizontal_lengths = np.linalg.norm(horizontal_vectors, axis=2)
+    vertical_lengths = np.linalg.norm(vertical_vectors, axis=2)
+    horizontal = np.median(horizontal_vectors, axis=(0, 1))
+    vertical = np.median(vertical_vectors, axis=(0, 1))
+    horizontal_size = max(float(np.median(horizontal_lengths)), 1e-12)
+    vertical_size = max(float(np.median(vertical_lengths)), 1e-12)
+    cosine = float(
+        np.dot(horizontal, vertical)
+        / max(float(np.linalg.norm(horizontal) * np.linalg.norm(vertical)), 1e-12)
+    )
+    left_vertical = max(float(np.median(vertical_lengths[:, 0])), 1e-12)
+    right_vertical = max(float(np.median(vertical_lengths[:, -1])), 1e-12)
+    top_horizontal = max(float(np.median(horizontal_lengths[0, :])), 1e-12)
+    bottom_horizontal = max(float(np.median(horizontal_lengths[-1, :])), 1e-12)
+    return np.asarray(
+        [
+            math.sqrt(horizontal_size * vertical_size),
+            math.log(horizontal_size / vertical_size),
+            cosine,
+            math.log(right_vertical / left_vertical),
+            math.log(bottom_horizontal / top_horizontal),
+        ],
+        dtype=float,
+    )
+
+
+def projective_pose_report(
+    observations: list[BoardObservation],
+    *,
+    image_size: tuple[int, int],
+    pattern: tuple[int, int],
+) -> dict[str, Any]:
+    """Audit distance and tilt variation directly from detected image grids.
+
+    This report intentionally does not use a recovered camera matrix.  A
+    degenerate planar solve can invent large tilt/depth changes together with
+    a huge focal length, which made the previous pose gate self-validating.
+    """
+
+    if not observations:
+        return {
+            "pose_count": 0,
+            "projected_scale_span_ratio": 0.0,
+            "projective_shape_span": 0.0,
+        }
+    signatures = np.stack(
+        [_board_shape_signature(observation, pattern) for observation in observations]
+    )
+    scale = signatures[:, 0]
+    median_scale = max(float(np.median(scale)), 1e-12)
+    if len(observations) > 2:
+        scale_low, scale_high = np.percentile(scale, [10, 90])
+        shape_spans = np.percentile(signatures[:, 1:], 90, axis=0) - np.percentile(
+            signatures[:, 1:], 10, axis=0
+        )
+    else:
+        scale_low, scale_high = float(np.min(scale)), float(np.max(scale))
+        shape_spans = np.ptp(signatures[:, 1:], axis=0)
+    diagonal = max(float(math.hypot(*image_size)), 1e-12)
+    return {
+        "pose_count": len(observations),
+        "projected_scale_min_px": float(np.min(scale)),
+        "projected_scale_median_px": median_scale,
+        "projected_scale_max_px": float(np.max(scale)),
+        "projected_scale_span_ratio": float(scale_high - scale_low) / median_scale,
+        "projected_scale_to_image_ratio": median_scale / diagonal,
+        "projective_shape_span": float(np.max(np.abs(shape_spans))),
+        "shape_component_spans": [float(value) for value in shape_spans],
+    }
+
+
 # ---------------------------------------------------------------------------
 # Rectification recipe
 # ---------------------------------------------------------------------------
@@ -835,6 +917,29 @@ def _intrinsic_problems(
     return problems
 
 
+def _monocular_view_rms(
+    object_points: np.ndarray,
+    image_points: list[np.ndarray],
+    matrix: np.ndarray,
+    distortion: np.ndarray,
+    rotation_vectors: Any,
+    translation_vectors: Any,
+) -> np.ndarray:
+    """Return one geometric reprojection RMS for every monocular view."""
+
+    errors: list[float] = []
+    for points, rotation, translation in zip(
+        image_points, rotation_vectors, translation_vectors
+    ):
+        projected = cv2.projectPoints(
+            object_points, rotation, translation, matrix, distortion
+        )[0].reshape(-1, 2)
+        observed = np.asarray(points, dtype=float).reshape(-1, 2)
+        residual = projected - observed
+        errors.append(float(np.sqrt(np.mean(np.sum(residual * residual, axis=1)))))
+    return np.asarray(errors, dtype=float)
+
+
 def calibration_pose_report(
     object_points: np.ndarray,
     image_points: list[np.ndarray],
@@ -988,6 +1093,195 @@ def transform_board_observation(
     return BoardObservation(flat, observation.sharpness, zone, observation.detector)
 
 
+def _baseline_anchored_pinhole_attempt(
+    *,
+    object_lists: list[np.ndarray],
+    left_points: list[np.ndarray],
+    right_points: list[np.ndarray],
+    image_size: tuple[int, int],
+    expected_baseline_mm: float,
+) -> dict[str, Any]:
+    """Resolve a weak planar data set with measured baseline and a stable K.
+
+    Nearly front-facing chessboard sweeps have a focal-length/depth ambiguity.
+    The unconstrained Brown model can reduce monocular RMS by inventing focal
+    lengths, principal points and distortion.  A measured rig baseline removes
+    that ambiguity: search a centred square-pixel pinhole model, keep all
+    intrinsics fixed during each stereo solve, and select the focal length that
+    reproduces the independently measured lens-centre distance.
+    """
+
+    width, height = image_size
+    focal_min = max(1.0, _FOCAL_RANGE[0] * max(image_size))
+    # The anchor path is only a fallback for ordinary UVC stereo modules.  A
+    # very narrow-FOV root can reproduce the same measured baseline while
+    # sending stereoRectify's principal point outside the image.  Keep this
+    # fallback within roughly 37° horizontal FOV; specialised telephoto rigs
+    # need supplied factory intrinsics instead of self-calibration.
+    focal_max = min(
+        _FOCAL_RANGE[1] * max(image_size), 1.5 * max(image_size)
+    )
+    mono_flags = (
+        cv2.CALIB_USE_INTRINSIC_GUESS
+        | cv2.CALIB_FIX_FOCAL_LENGTH
+        | cv2.CALIB_FIX_PRINCIPAL_POINT
+        | cv2.CALIB_ZERO_TANGENT_DIST
+        | cv2.CALIB_FIX_K1
+        | cv2.CALIB_FIX_K2
+        | cv2.CALIB_FIX_K3
+    )
+    mono_criteria = (
+        cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
+        80,
+        1e-7,
+    )
+    stereo_criteria = (
+        cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER,
+        100,
+        1e-7,
+    )
+    evaluated: dict[float, dict[str, Any]] = {}
+
+    def evaluate(focal_px: float) -> dict[str, Any] | None:
+        focal_px = float(np.clip(focal_px, focal_min, focal_max))
+        key = round(focal_px, 6)
+        if key in evaluated:
+            return evaluated[key]
+        intrinsic = np.asarray(
+            [
+                [focal_px, 0.0, (width - 1) / 2.0],
+                [0.0, focal_px, (height - 1) / 2.0],
+                [0.0, 0.0, 1.0],
+            ],
+            dtype=np.float64,
+        )
+        distortion = np.zeros(5, dtype=np.float64)
+        try:
+            left_rms, K1, D1, _left_rv, _left_tv = cv2.calibrateCamera(
+                object_lists,
+                left_points,
+                image_size,
+                intrinsic.copy(),
+                distortion.copy(),
+                flags=mono_flags,
+                criteria=mono_criteria,
+            )
+            right_rms, K2, D2, _right_rv, _right_tv = cv2.calibrateCamera(
+                object_lists,
+                right_points,
+                image_size,
+                intrinsic.copy(),
+                distortion.copy(),
+                flags=mono_flags,
+                criteria=mono_criteria,
+            )
+            (
+                stereo_rms,
+                _stereo_k1,
+                _stereo_d1,
+                _stereo_k2,
+                _stereo_d2,
+                rotation,
+                translation,
+                _essential,
+                _fundamental,
+                per_view,
+            ) = cv2.stereoCalibrate(
+                object_lists,
+                left_points,
+                right_points,
+                K1,
+                D1,
+                K2,
+                D2,
+                image_size,
+                np.eye(3, dtype=np.float64),
+                np.zeros((3, 1), dtype=np.float64),
+                None,
+                None,
+                None,
+                flags=cv2.CALIB_FIX_INTRINSIC,
+                criteria=stereo_criteria,
+            )
+            R1, R2, P1, P2, _Q, _roi1, _roi2 = cv2.stereoRectify(
+                K1,
+                D1,
+                K2,
+                D2,
+                image_size,
+                rotation,
+                translation,
+                alpha=0.0,
+                flags=cv2.CALIB_ZERO_DISPARITY,
+            )
+            geometry = rectification_quality_report(
+                left_points,
+                right_points,
+                K1,
+                D1,
+                K2,
+                D2,
+                R1,
+                R2,
+                P1,
+                P2,
+            )
+        except (cv2.error, ValueError, FloatingPointError):
+            return None
+        values = (K1, D1, K2, D2, rotation, translation, per_view)
+        if not all(np.all(np.isfinite(value)) for value in values):
+            return None
+        baseline = float(np.linalg.norm(translation))
+        rectified_intrinsic_problems = _intrinsic_problems(
+            np.asarray(P1[:, :3], dtype=float),
+            np.zeros(5, dtype=float),
+            image_size,
+            "矫正后",
+        )
+        attempt = {
+            "model": "baseline_anchored_centered_pinhole",
+            "focal_px": focal_px,
+            "left_rms": float(left_rms),
+            "right_rms": float(right_rms),
+            "stereo_rms": float(stereo_rms),
+            "K1": K1,
+            "D1": D1,
+            "K2": K2,
+            "D2": D2,
+            "R": rotation,
+            "T": translation,
+            "per_view": per_view,
+            "baseline_mm": baseline,
+            "baseline_relative_error": abs(baseline - expected_baseline_mm)
+            / expected_baseline_mm,
+            "rectified_intrinsic_problems": rectified_intrinsic_problems,
+            "rectification_geometry": geometry,
+        }
+        evaluated[key] = attempt
+        return attempt
+
+    for focal in np.geomspace(focal_min, focal_max, num=9):
+        evaluate(float(focal))
+    if not evaluated:
+        raise ChessboardCalibrationError("实测基线约束求解失败")
+    for factor in (1.35, 1.12):
+        closest = min(
+            evaluated.values(), key=lambda item: item["baseline_relative_error"]
+        )
+        centre = float(closest["focal_px"])
+        for focal in np.geomspace(centre / factor, centre * factor, num=5):
+            evaluate(float(focal))
+    return min(
+        evaluated.values(),
+        key=lambda item: (
+            bool(item["rectified_intrinsic_problems"]),
+            item["baseline_relative_error"],
+            item["stereo_rms"],
+            float(item["rectification_geometry"]["vertical_rms_px"]),
+        ),
+    )
+
+
 def solve_stereo_calibration(
     *,
     pairs: list[tuple[BoardObservation, BoardObservation]],
@@ -1003,6 +1297,7 @@ def solve_stereo_calibration(
     _allow_outlier_pruning: bool = True,
     _input_pair_count: int | None = None,
     _discarded_pair_indices: list[int] | None = None,
+    _pruning_audit: Mapping[str, Any] | None = None,
 ) -> WizardResult:
     """Calibrate from accepted pairs and build the rectified-rig contract."""
     if not isinstance(operator, str) or not _OPERATOR_PATTERN.match(operator):
@@ -1036,13 +1331,90 @@ def solve_stereo_calibration(
     size = (int(image_size[0]), int(image_size[1]))
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 60, 1e-6)
 
-    left_rms, K1, D1, _rvecs_l, _tvecs_l = cv2.calibrateCamera(
+    left_rms, K1, D1, rvecs_l, tvecs_l = cv2.calibrateCamera(
         object_lists, left_points, size, None, None, flags=cv2.CALIB_FIX_K3, criteria=criteria
     )
     if not math.isfinite(float(left_rms)) or not all(
         np.all(np.isfinite(value)) for value in (K1, D1)
     ):
         raise ChessboardCalibrationError("左目单目标定返回了非有限数值")
+    native_right_points = [
+        pair[1].corners_px.reshape(-1, 1, 2).astype(np.float32)
+        for pair in aligned
+    ]
+    (
+        native_right_rms,
+        native_K2,
+        native_D2,
+        native_rvecs_r,
+        native_tvecs_r,
+    ) = cv2.calibrateCamera(
+        object_lists,
+        native_right_points,
+        size,
+        None,
+        None,
+        flags=cv2.CALIB_FIX_K3,
+        criteria=criteria,
+    )
+    if not math.isfinite(float(native_right_rms)) or not all(
+        np.all(np.isfinite(value)) for value in (native_K2, native_D2)
+    ):
+        raise ChessboardCalibrationError("右目单目标定返回了非有限数值")
+    left_mono_per_pair = _monocular_view_rms(
+        object_points, left_points, K1, D1, rvecs_l, tvecs_l
+    )
+    right_mono_per_pair = _monocular_view_rms(
+        object_points,
+        native_right_points,
+        native_K2,
+        native_D2,
+        native_rvecs_r,
+        native_tvecs_r,
+    )
+    mono_pair_scores = np.maximum(left_mono_per_pair, right_mono_per_pair)
+    quality_target = float(max_reprojection_rms_px)
+    if _allow_outlier_pruning and len(pairs) > min_pairs:
+        median = float(np.median(mono_pair_scores))
+        mad = float(np.median(np.abs(mono_pair_scores - median)))
+        robust_limit = max(median + 3.5 * 1.4826 * mad, 0.5)
+        candidates = [
+            index
+            for index, score in enumerate(mono_pair_scores)
+            if score > robust_limit
+        ]
+        maximum_removals = min(
+            len(pairs) - min_pairs, max(1, len(pairs) // 5)
+        )
+        if candidates and maximum_removals > 0:
+            ranked = sorted(
+                candidates, key=lambda index: mono_pair_scores[index], reverse=True
+            )
+            removed = sorted(ranked[:maximum_removals])
+            retained = [pair for index, pair in enumerate(pairs) if index not in removed]
+            original_indices = [index + 1 for index in removed]
+            return solve_stereo_calibration(
+                pairs=retained,
+                image_size=image_size,
+                square_mm=square_mm,
+                pattern=pattern,
+                max_reprojection_rms_px=max_reprojection_rms_px,
+                min_pairs=min_pairs,
+                operator=operator,
+                max_sync_delta_ms=max_sync_delta_ms,
+                layout=layout,
+                expected_baseline_mm=expected_baseline_mm,
+                _allow_outlier_pruning=False,
+                _input_pair_count=_input_pair_count or len(pairs),
+                _discarded_pair_indices=original_indices,
+                _pruning_audit={
+                    "stage": "monocular_reprojection",
+                    "threshold_px": robust_limit,
+                    "left_per_pair_rms_px": left_mono_per_pair.tolist(),
+                    "right_per_pair_rms_px": right_mono_per_pair.tolist(),
+                    "discarded_pair_indices": original_indices,
+                },
+            )
     transform_audit: list[dict[str, Any]] = []
 
     def _try_transform(transform: str) -> dict[str, Any]:
@@ -1206,11 +1578,7 @@ def solve_stereo_calibration(
     # Sensor reflection is only considered for the characteristic gross
     # stereo mismatch.  A healthy rig should keep its native orientation even
     # if another candidate happens to improve a noisy solve by a tiny amount.
-    quality_target = (
-        float(max_reprojection_rms_px)
-        if math.isfinite(float(max_reprojection_rms_px))
-        else 0.5
-    )
+    quality_target = float(max_reprojection_rms_px)
     gross_mismatch_px = max(2.0, quality_target * 4.0)
     if attempts[0]["stereo_rms"] > gross_mismatch_px:
         _evaluate("flip_horizontal")
@@ -1240,12 +1608,99 @@ def solve_stereo_calibration(
     fixed_intrinsic_stereo_rms = stereo_rms
     R, T, per_view = best["R"], best["T"], best["per_view"]
     solve_mode = "fix_intrinsics"
+    selected_per_pair_rms = np.asarray(best["per_pair_rms"], dtype=float)
+    intrinsic_model_audit: list[dict[str, Any]] = [
+        {
+            "model": "free_brown_k1_k2_tangential",
+            "selected_transform": right_frame_transform,
+            "left_rms_px": float(left_rms),
+            "right_rms_px": float(right_rms),
+            "stereo_rms_px": float(stereo_rms),
+            "baseline_mm": float(np.linalg.norm(T)),
+            "intrinsic_problems": _intrinsic_problems(K1, D1, size, "左")
+            + _intrinsic_problems(K2, D2, size, "右"),
+            "rectification_geometry": best["rectification_geometry"],
+        }
+    ]
+    full_model_problems = intrinsic_model_audit[0]["intrinsic_problems"]
+    full_vertical_rms = float(
+        best["rectification_geometry"].get("vertical_rms_px", float("inf"))
+    )
+    full_model_unstable = bool(
+        full_model_problems
+        or stereo_rms > max(2.0, quality_target * 4.0)
+        or full_vertical_rms > max(2.0, quality_target * 4.0)
+    )
+    if expected_baseline_mm is not None and full_model_unstable:
+        try:
+            anchored = _baseline_anchored_pinhole_attempt(
+                object_lists=object_lists,
+                left_points=left_points,
+                right_points=right_points,
+                image_size=size,
+                expected_baseline_mm=float(expected_baseline_mm),
+            )
+            intrinsic_model_audit.append(
+                {
+                    "model": anchored["model"],
+                    "focal_px": anchored["focal_px"],
+                    "left_rms_px": anchored["left_rms"],
+                    "right_rms_px": anchored["right_rms"],
+                    "stereo_rms_px": anchored["stereo_rms"],
+                    "baseline_mm": anchored["baseline_mm"],
+                    "baseline_relative_error": anchored[
+                        "baseline_relative_error"
+                    ],
+                    "rectified_intrinsic_problems": anchored[
+                        "rectified_intrinsic_problems"
+                    ],
+                    "rectification_geometry": anchored[
+                        "rectification_geometry"
+                    ],
+                }
+            )
+            anchor_geometry = anchored["rectification_geometry"]
+            anchor_is_usable = bool(
+                anchored["baseline_relative_error"] <= 0.15
+                and float(anchor_geometry["horizontal_encoded_baseline_mm"]) > 0
+                and float(anchor_geometry["median_disparity_px"]) > 0
+                and float(anchor_geometry["positive_disparity_ratio"]) >= 0.98
+                and not _intrinsic_problems(
+                    anchored["K1"], anchored["D1"], size, "左"
+                )
+                and not _intrinsic_problems(
+                    anchored["K2"], anchored["D2"], size, "右"
+                )
+                and not anchored["rectified_intrinsic_problems"]
+            )
+            if anchor_is_usable:
+                K1, D1 = anchored["K1"], anchored["D1"]
+                K2, D2 = anchored["K2"], anchored["D2"]
+                left_rms = float(anchored["left_rms"])
+                right_rms = float(anchored["right_rms"])
+                stereo_rms = float(anchored["stereo_rms"])
+                fixed_intrinsic_stereo_rms = stereo_rms
+                R, T, per_view = anchored["R"], anchored["T"], anchored["per_view"]
+                selected_per_pair_rms = np.max(
+                    np.asarray(per_view, dtype=float).reshape(-1, 2), axis=1
+                )
+                solve_mode = "baseline_anchored_centered_pinhole"
+        except (ChessboardCalibrationError, cv2.error, ValueError) as error:
+            intrinsic_model_audit.append(
+                {
+                    "model": "baseline_anchored_centered_pinhole",
+                    "error": f"{type(error).__name__}: {error}",
+                }
+            )
 
     if _allow_outlier_pruning and len(pairs) > min_pairs:
-        scores = np.asarray(best["per_pair_rms"], dtype=float)
+        scores = selected_per_pair_rms
         median = float(np.median(scores))
         mad = float(np.median(np.abs(scores - median)))
-        robust_limit = median + max(4.5 * 1.4826 * mad, quality_target * 2.0)
+        robust_limit = max(
+            median + 4.5 * 1.4826 * mad,
+            quality_target * 2.0,
+        )
         candidates = [
             index
             for index, score in enumerate(scores)
@@ -1271,6 +1726,12 @@ def solve_stereo_calibration(
                 _allow_outlier_pruning=False,
                 _input_pair_count=_input_pair_count or len(pairs),
                 _discarded_pair_indices=original_indices,
+                _pruning_audit={
+                    "stage": "stereo_reprojection",
+                    "threshold_px": robust_limit,
+                    "per_pair_rms_px": scores.tolist(),
+                    "discarded_pair_indices": original_indices,
+                },
             )
 
     R1, R2, P1, P2, _Q, _roi1, _roi2 = cv2.stereoRectify(
@@ -1291,6 +1752,9 @@ def solve_stereo_calibration(
     rectified_intrinsic = np.asarray(P1[:, :3], dtype=np.float64)
     baseline = float(np.linalg.norm(np.asarray(T, dtype=np.float64)))
     pose_geometry = calibration_pose_report(object_points, left_points, K1, D1)
+    image_pose_geometry = projective_pose_report(
+        [pair[0] for pair in pairs], image_size=size, pattern=pattern
+    )
     rectification_geometry = rectification_quality_report(
         left_points,
         right_points,
@@ -1326,11 +1790,14 @@ def solve_stereo_calibration(
         ],
         "right_frame_transform": right_frame_transform,
         "right_frame_transform_candidates": transform_audit,
+        "intrinsic_model_candidates": intrinsic_model_audit,
+        "outlier_pruning": dict(_pruning_audit or {}),
         "baseline_mm": baseline,
         "expected_baseline_mm": (
             None if expected_baseline_mm is None else float(expected_baseline_mm)
         ),
         "calibration_pose_geometry": pose_geometry,
+        "image_pose_geometry": image_pose_geometry,
         "rectification_geometry": rectification_geometry,
         "p1_p2_k_identical": k_identical,
         "rectify_alpha": 0.0,
@@ -1370,6 +1837,30 @@ def solve_stereo_calibration(
         reasons.append(
             f"棋盘格位置变化不足：质心散布 {diversity['centroid_spread_ratio']:.2f}"
             f"（要求 ≥ {_MIN_CENTROID_SPREAD_RATIO:.2f}），请覆盖画面四角和中心"
+        )
+    if (
+        image_pose_geometry["projected_scale_span_ratio"]
+        < _MIN_PROJECTED_SCALE_SPAN_RATIO
+    ):
+        reasons.append(
+            "棋盘格远近变化不足：图像尺度跨度 "
+            f"{image_pose_geometry['projected_scale_span_ratio']:.2f}"
+            f"（要求 ≥ {_MIN_PROJECTED_SCALE_SPAN_RATIO:.2f}），请在近、中、远距离各拍几组"
+        )
+    if image_pose_geometry["projective_shape_span"] < _MIN_PROJECTIVE_SHAPE_SPAN:
+        reasons.append(
+            "棋盘格倾斜变化不足：投影形状跨度 "
+            f"{image_pose_geometry['projective_shape_span']:.2f}"
+            f"（要求 ≥ {_MIN_PROJECTIVE_SHAPE_SPAN:.2f}），请分别前后和左右倾斜硬质平板"
+        )
+    if (
+        expected_baseline_mm is None
+        and full_model_unstable
+        and solve_mode == "fix_intrinsics"
+    ):
+        reasons.append(
+            "自由内参求解不稳定且未填写实测镜头中心距；请量取两只镜头光学中心距离并填写，"
+            "该值用于消除近似正对棋盘时的焦距/距离歧义"
         )
     if pose_geometry["pose_count"] != len(pairs):
         reasons.append(
@@ -1715,6 +2206,25 @@ def pose_is_novel(
     return delta >= min_ratio * diagonal
 
 
+def observation_is_novel(
+    previous: BoardObservation | None,
+    current: BoardObservation,
+    image_size: tuple[int, int],
+    pattern: tuple[int, int],
+) -> bool:
+    """Accept translation, distance change, or projective tilt as a new pose."""
+
+    if previous is None:
+        return True
+    if pose_is_novel(previous.centroid_px, current.centroid_px, image_size):
+        return True
+    old_signature = _board_shape_signature(previous, pattern)
+    new_signature = _board_shape_signature(current, pattern)
+    scale_change = abs(math.log(new_signature[0] / max(old_signature[0], 1e-12)))
+    shape_change = float(np.linalg.norm(new_signature[1:] - old_signature[1:]))
+    return scale_change >= 0.10 or shape_change >= 0.04
+
+
 def draw_detection_overlay(
     frame: np.ndarray, observation: BoardObservation, pattern: tuple[int, int]
 ) -> np.ndarray:
@@ -1777,7 +2287,7 @@ class ChessboardWizardDialog:
         self.square_mm = tk.StringVar(value=f"{chess.get('square_mm', 20.0):g}")
         self.measured_square_mm = tk.StringVar(value=f"{chess.get('square_mm', 20.0):g}")
         self.operator = tk.StringVar(value=str(wizard.get("operator", "field")))
-        self.max_rms = tk.StringVar(value=str(wizard.get("max_reprojection_rms_px", 0.5)))
+        self.max_rms = tk.StringVar(value=str(wizard.get("max_reprojection_rms_px", 1.5)))
         self.min_pairs = tk.StringVar(value=str(wizard.get("min_pairs", 10)))
         self.expected_baseline_mm = tk.StringVar(
             value=f"{float(wizard.get('expected_baseline_mm', 0.0)):g}"
@@ -1802,13 +2312,14 @@ class ChessboardWizardDialog:
         self._tick = 0
         self.preview_images: list[Any] = []
         self._last_auto_time = 0.0
-        self._last_left_centroid: Any = None
+        self._last_left_observation: BoardObservation | None = None
         self.pairs: list[tuple[BoardObservation, BoardObservation]] = []
         self.continuous = tk.BooleanVar(value=True)
         self.message = tk.StringVar(
             value=(
                 "步骤：生成并 100% 打印棋盘格 → 量取实测格边长 → 打开预览，"
-                "持棋盘格覆盖画面各区域抓拍 ≥10 组 → 完成标定。标定后仍需一次二维码定位。"
+                "把纸张固定在硬质平板上，覆盖各区域并改变远近、前后倾斜和左右倾斜，"
+                "抓拍 ≥10 组 → 完成标定。标定后仍需一次二维码定位。"
             )
         )
 
@@ -1891,7 +2402,7 @@ class ChessboardWizardDialog:
         )
         self.stream_combo.pack(side="left", padx=(3, 10))
         self.stream_combo.bind("<<ComboboxSelected>>", lambda _e: self._apply_stream_mode())
-        ttk.Label(mode_row, text="实测镜头中心距/mm（0=未知）：").pack(side="left")
+        ttk.Label(mode_row, text="实测镜头中心距/mm（建议必填）：").pack(side="left")
         ttk.Entry(
             mode_row, textvariable=self.expected_baseline_mm, width=7
         ).pack(side="left", padx=(3, 10))
@@ -2484,15 +2995,16 @@ class ChessboardWizardDialog:
                 f" < {threshold:g}），已跳过自动抓拍；请放慢移动或增加光照。"
             )
             return
-        if not pose_is_novel(
-            self._last_left_centroid,
-            left_obs.centroid_px,
+        if not observation_is_novel(
+            self._last_left_observation,
+            left_obs,
             (pair.left.shape[1], pair.left.shape[0]),
+            self._pattern(),
         ):
             return
         self._accept_pair(left_obs, observations["right"], automatic=True)
         self._last_auto_time = now
-        self._last_left_centroid = left_obs.centroid_px
+        self._last_left_observation = left_obs
 
     def _accept_pair(
         self, left_obs: BoardObservation, right_obs: BoardObservation, *, automatic: bool
@@ -2520,7 +3032,7 @@ class ChessboardWizardDialog:
         if existing_detectors and incoming_detectors != existing_detectors:
             reset_count = len(self.pairs)
             self.pairs.clear()
-            self._last_left_centroid = None
+            self._last_left_observation = None
             log_event(
                 get_logger("calibration_wizard"),
                 "wizard_detector_dataset_reset",
@@ -2535,6 +3047,7 @@ class ChessboardWizardDialog:
             aligned_right.corners_px, right_obs.corners_px
         )
         self.pairs.append((left_obs, aligned_right))
+        self._last_left_observation = left_obs
         minimum = self._int_value(self.min_pairs, "最少组数", minimum=3)
         count = len(self.pairs)
         self._refresh_pairs()
@@ -2544,6 +3057,11 @@ class ChessboardWizardDialog:
         diversity = pose_diversity_report(
             [left for left, _right in self.pairs],
             image_size=self._eye_size(),
+        )
+        image_geometry = projective_pose_report(
+            [left for left, _right in self.pairs],
+            image_size=self._eye_size(),
+            pattern=self._pattern(),
         )
         summary = f"{'自动' if automatic else '手动'}接受第 {count} 组（建议 ≥ {minimum} 组）"
         if reset_count:
@@ -2559,14 +3077,22 @@ class ChessboardWizardDialog:
             summary += "；区域覆盖 9/9。"
         summary += (
             f"；质心散布 {diversity['centroid_spread_ratio']:.2f}/"
-            f"{_MIN_CENTROID_SPREAD_RATIO:.2f}。"
+            f"{_MIN_CENTROID_SPREAD_RATIO:.2f}；远近跨度 "
+            f"{image_geometry['projected_scale_span_ratio']:.2f}/"
+            f"{_MIN_PROJECTED_SCALE_SPAN_RATIO:.2f}；倾斜跨度 "
+            f"{image_geometry['projective_shape_span']:.2f}/"
+            f"{_MIN_PROJECTIVE_SHAPE_SPAN:.2f}。"
         )
         if (
             count >= minimum
             and coverage["covered"] >= coverage["required"]
             and diversity["centroid_spread_ratio"] >= _MIN_CENTROID_SPREAD_RATIO
+            and image_geometry["projected_scale_span_ratio"]
+            >= _MIN_PROJECTED_SCALE_SPAN_RATIO
+            and image_geometry["projective_shape_span"]
+            >= _MIN_PROJECTIVE_SHAPE_SPAN
         ):
-            summary += " 已满足组数与区域要求，可点击“完成标定并保存”，或继续补充远近与角度。"
+            summary += " 已满足组数、区域、远近与倾斜要求，可点击“完成标定并保存”。"
         if count >= _MAX_AUTO_PAIRS:
             self.continuous.set(False)
             summary += f" 已达自动采集上限 {_MAX_AUTO_PAIRS} 组。"
@@ -2582,6 +3108,10 @@ class ChessboardWizardDialog:
             median_disparity_px=float(
                 np.median(left_obs.corners_px[:, 0] - aligned_right.corners_px[:, 0])
             ),
+            projected_scale_px=float(
+                _board_shape_signature(left_obs, self._pattern())[0]
+            ),
+            image_pose_geometry=image_geometry,
             detector=left_obs.detector,
         )
 
@@ -2676,6 +3206,7 @@ class ChessboardWizardDialog:
     def remove_last(self) -> None:
         if self.pairs:
             self.pairs.pop()
+            self._last_left_observation = self.pairs[-1][0] if self.pairs else None
             self._refresh_pairs()
             self.message.set(f"已移除上一组，剩余 {len(self.pairs)} 组。")
 
@@ -2749,6 +3280,26 @@ class ChessboardWizardDialog:
                 diagnostic_note = (
                     f"\n诊断数据：{diagnostic_path}" if diagnostic_path is not None else ""
                 )
+                discarded_indices = [
+                    int(value)
+                    for value in result.audit.get("discarded_pair_indices", [])
+                ]
+                if discarded_indices:
+                    discarded = set(discarded_indices)
+                    self.pairs = [
+                        pair
+                        for index, pair in enumerate(self.pairs, start=1)
+                        if index not in discarded
+                    ]
+                    self._last_left_observation = (
+                        self.pairs[-1][0] if self.pairs else None
+                    )
+                    self._refresh_pairs()
+                    diagnostic_note += (
+                        "\n已自动移除不合格照片组："
+                        + "、".join(str(value) for value in discarded_indices)
+                        + "；可保持其余组并补拍新的近/中/远和倾斜姿态。"
+                    )
                 self.message.set(
                     "标定未通过门禁，未保存：\n· "
                     + "\n· ".join(result.rejection_reasons)
@@ -2886,9 +3437,12 @@ __all__ = [
     "calibration_pose_report",
     "calibrate_stereo_from_folders",
     "detect_board_corners",
+    "observation_is_novel",
     "pose_diversity_report",
+    "pose_is_novel",
     "preferred_stream_mode",
     "printable_chessboard_png",
+    "projective_pose_report",
     "rectifier_for_calibration",
     "rectification_quality_report",
     "replay_calibration_diagnostic",

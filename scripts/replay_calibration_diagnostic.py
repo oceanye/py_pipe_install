@@ -33,6 +33,9 @@ def main() -> int:
         "right_frame_transform_candidates": result.audit[
             "right_frame_transform_candidates"
         ],
+        "outlier_pruning": result.audit["outlier_pruning"],
+        "intrinsic_model_candidates": result.audit["intrinsic_model_candidates"],
+        "image_pose_geometry": result.audit["image_pose_geometry"],
         "calibration_pose_geometry": result.audit["calibration_pose_geometry"],
         "rectification_geometry": result.audit["rectification_geometry"],
     }

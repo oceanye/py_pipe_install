@@ -18,12 +18,15 @@ from pipe_twin.calibration_wizard import (
     ChessboardWizardDialog,
     Rectifier,
     _canonicalize_corner_order,
+    _baseline_anchored_pinhole_attempt,
     align_pair_orientation,
     build_rectification_recipe,
     calibrate_stereo_from_folders,
     detect_board_corners,
+    observation_is_novel,
     pose_diversity_report,
     preferred_stream_mode,
+    projective_pose_report,
     printable_chessboard_png,
     rectifier_for_calibration,
     replay_calibration_diagnostic,
@@ -618,6 +621,31 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertEqual(result.audit["discarded_pair_indices"], [1])
         self.assertEqual(result.pair_count, 11)
 
+    def test_monocular_outlier_gate_discards_a_warped_board_pair(self):
+        noisy = _synthetic_pairs()
+        left, right = noisy[0]
+        rng = np.random.default_rng(20260910)
+        shared_warp = rng.normal(0.0, 3.0, left.corners_px.shape)
+        noisy[0] = (
+            BoardObservation(
+                left.corners_px + shared_warp,
+                left.sharpness,
+                left.centroid_zone,
+            ),
+            BoardObservation(
+                right.corners_px + shared_warp,
+                right.sharpness,
+                right.centroid_zone,
+            ),
+        )
+        result = _solve(pairs=noisy)
+        self.assertTrue(result.validated, result.rejection_reasons)
+        self.assertEqual(result.audit["discarded_pair_indices"], [1])
+        self.assertEqual(
+            result.audit["outlier_pruning"]["stage"],
+            "monocular_reprojection",
+        )
+
     def test_wizard_rejects_insufficient_or_repeated_poses(self):
         few = _solve(pairs=_synthetic_pairs(5))
         self.assertFalse(few.validated)
@@ -660,6 +688,58 @@ class ChessboardWizardTests(unittest.TestCase):
         # 6% of the diagonal is the threshold: 48 px on a 800 px diagonal.
         self.assertFalse(pose_is_novel((320.0, 240.0), (360.0, 240.0), SIZE))
         self.assertTrue(pose_is_novel((320.0, 240.0), (370.0, 240.0), SIZE))
+
+    def test_projective_pose_gate_observes_scale_and_tilt_without_intrinsics(self):
+        pairs = _synthetic_pairs()
+        diverse = projective_pose_report(
+            [pair[0] for pair in pairs], image_size=SIZE, pattern=PATTERN
+        )
+        self.assertGreaterEqual(diverse["projected_scale_span_ratio"], 0.08)
+        self.assertGreaterEqual(diverse["projective_shape_span"], 0.04)
+
+        repeated = projective_pose_report(
+            [pairs[0][0]] * len(pairs), image_size=SIZE, pattern=PATTERN
+        )
+        self.assertEqual(repeated["projected_scale_span_ratio"], 0.0)
+        self.assertEqual(repeated["projective_shape_span"], 0.0)
+
+    def test_automatic_capture_accepts_scale_change_at_same_centroid(self):
+        base = _synthetic_pairs()[0][0]
+        centre = base.centroid_px
+        enlarged = BoardObservation(
+            (base.corners_px - centre) * 1.2 + centre,
+            base.sharpness,
+            base.centroid_zone,
+            base.detector,
+        )
+        self.assertTrue(observation_is_novel(base, enlarged, SIZE, PATTERN))
+        self.assertFalse(observation_is_novel(base, base, SIZE, PATTERN))
+
+    def test_baseline_anchor_recovers_the_independently_measured_scale(self):
+        pairs = _synthetic_pairs()
+        object_points = _object_points().astype(np.float32)
+        left_points = [
+            pair[0].corners_px.reshape(-1, 1, 2).astype(np.float32)
+            for pair in pairs
+        ]
+        right_points = [
+            align_pair_orientation(pair[0], pair[1], pattern=PATTERN)
+            .corners_px.reshape(-1, 1, 2)
+            .astype(np.float32)
+            for pair in pairs
+        ]
+        attempt = _baseline_anchored_pinhole_attempt(
+            object_lists=[object_points] * len(pairs),
+            left_points=left_points,
+            right_points=right_points,
+            image_size=SIZE,
+            expected_baseline_mm=BASELINE_MM,
+        )
+        self.assertLess(attempt["baseline_relative_error"], 0.15)
+        self.assertAlmostEqual(attempt["K1"][0, 0], attempt["K1"][1, 1])
+        self.assertAlmostEqual(attempt["K1"][0, 2], (SIZE[0] - 1) / 2)
+        self.assertAlmostEqual(attempt["K1"][1, 2], (SIZE[1] - 1) / 2)
+        np.testing.assert_allclose(attempt["D1"], np.zeros(5), atol=0.0)
 
     def test_native_high_resolution_stereo_stream_is_preferred(self):
         sizes = [(2560, 720), (1280, 480), (3840, 1080), (1920, 1080)]
