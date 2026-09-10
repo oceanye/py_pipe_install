@@ -100,11 +100,11 @@ def calibration_pose(calibration: Mapping[str, Any]) -> dict[str, Any]:
 
     parsed = _calibration_from_manifest(calibration)
     midpoint = (parsed.left.center_world_mm + parsed.right.center_world_mm) / 2
-    forward = parsed.left.rotation_world_to_camera.T @ np.array([0.0, 0.0, 1.0])
+    forward = parsed.left.rotation_world_to_rectified_camera.T @ np.array([0.0, 0.0, 1.0])
     return {
         "center_world_mm": midpoint.tolist(),
         "forward_world": forward.tolist(),
-        "rotation_world_to_camera": parsed.left.rotation_world_to_camera.tolist(),
+        "rotation_world_to_camera": parsed.left.rotation_world_to_rectified_camera.tolist(),
         "baseline_mm": parsed.baseline_mm,
         "registration_validated": parsed.registration_validated,
     }
@@ -233,7 +233,7 @@ def estimate_pipe_roll_correction(
         if line.shape != (2, 3) or not np.all(np.isfinite(line)):
             continue
         world_vector = line[1] - line[0]
-        camera_vector = parsed.left.rotation_world_to_camera @ world_vector
+        camera_vector = parsed.left.rotation_world_to_rectified_camera @ world_vector
         projected_length = float(np.linalg.norm(camera_vector[:2]))
         if projected_length > 1e-6:
             model_angles.append(
@@ -305,7 +305,10 @@ def apply_camera_pose(
         raise ValueError("registration_validated must be a boolean")
 
     if mode == "adjust_current":
-        base_rotation = parsed.left.rotation_world_to_camera
+        # Pose edits describe the rectified image frame.  The manifest keeps
+        # raw-camera extrinsics, so convert the edited rectified rotation back
+        # through each eye's R1/R2 before persisting it.
+        base_rotation = parsed.left.rotation_world_to_rectified_camera
     else:
         forward, up = _PRESET_FORWARD_UP[mode]
         base_rotation = _look_rotation(forward, up)
@@ -319,8 +322,14 @@ def apply_camera_pose(
     right_center = center + baseline_world / 2
 
     result = copy.deepcopy(dict(calibration))
-    result["left_camera"]["rotation_world_to_camera"] = rotation.tolist()
-    result["right_camera"]["rotation_world_to_camera"] = rotation.tolist()
+    left_raw_rotation = rotation
+    right_raw_rotation = rotation
+    if parsed.left.rectification_matrix is not None:
+        left_raw_rotation = parsed.left.rectification_matrix.T @ rotation
+    if parsed.right.rectification_matrix is not None:
+        right_raw_rotation = parsed.right.rectification_matrix.T @ rotation
+    result["left_camera"]["rotation_world_to_camera"] = left_raw_rotation.tolist()
+    result["right_camera"]["rotation_world_to_camera"] = right_raw_rotation.tolist()
     result["left_camera"]["center_world_mm"] = left_center.tolist()
     result["right_camera"]["center_world_mm"] = right_center.tolist()
     result["registration_validated"] = registration_validated

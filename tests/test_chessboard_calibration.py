@@ -429,6 +429,38 @@ class ChessboardWizardTests(unittest.TestCase):
             self.assertEqual(len(restored), 5)
             self.assertEqual(metadata["pattern_inner_corners"], [8, 6])
 
+    def test_checkpoint_replay_keeps_operator_solve_settings_and_explicit_override(self):
+        pairs = _synthetic_pairs()
+        options = {"expected_baseline_mm": 95.0, "max_reprojection_rms_px": 1.25,
+                   "minimum_pairs": 12, "max_sync_delta_ms": 2.0,
+                   "layout": "side_by_side_left_right"}
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_calibration_checkpoint(
+                pairs, image_size=SIZE, pattern=PATTERN,
+                square_mm=SQUARE_MM, root=temp, solve_options=options,
+            )
+            with mock.patch("pipe_twin.calibration_wizard.solve_stereo_calibration") as solve:
+                replay_calibration_diagnostic(path)
+                self.assertEqual(solve.call_args.kwargs["expected_baseline_mm"], 95.0)
+                self.assertEqual(solve.call_args.kwargs["max_reprojection_rms_px"], 1.25)
+                self.assertEqual(solve.call_args.kwargs["min_pairs"], 12)
+                self.assertEqual(solve.call_args.kwargs["max_sync_delta_ms"], 2.0)
+                replay_calibration_diagnostic(path, expected_baseline_mm=60.0,
+                                              max_reprojection_rms_px=1.5)
+                self.assertEqual(solve.call_args.kwargs["expected_baseline_mm"], 60.0)
+                self.assertEqual(solve.call_args.kwargs["max_reprojection_rms_px"], 1.5)
+
+    def test_legacy_checkpoint_replay_does_not_silently_tighten_rms_or_lower_pair_count(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = write_calibration_checkpoint(
+                _synthetic_pairs()[:5], image_size=SIZE, pattern=PATTERN,
+                square_mm=SQUARE_MM, root=temp,
+            )
+            with mock.patch("pipe_twin.calibration_wizard.solve_stereo_calibration") as solve:
+                replay_calibration_diagnostic(path)
+            self.assertEqual(solve.call_args.kwargs["max_reprojection_rms_px"], 1.5)
+            self.assertEqual(solve.call_args.kwargs["min_pairs"], 10)
+
     def test_raw_calibration_archive_keeps_images_after_exclusion(self):
         with tempfile.TemporaryDirectory() as temp:
             archive = CalibrationCaptureArchive.create(

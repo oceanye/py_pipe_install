@@ -215,8 +215,11 @@ def pair_geometry(first: Mapping, second: Mapping, camera: Any, tolerance_mm: fl
         definition = "LOCAL_AXIS_CLOSEST_APPROACH"
     distance = float(np.linalg.norm(pb - pa))
     gap = distance - (first["diameter_mm"] + second["diameter_mm"]) / 2
-    za = float((camera.rotation_world_to_camera @ (pa - camera.center_world_mm))[2])
-    zb = float((camera.rotation_world_to_camera @ (pb - camera.center_world_mm))[2])
+    rect_rotation = getattr(
+        camera, "rotation_world_to_rectified_camera", camera.rotation_world_to_camera
+    )
+    za = float((rect_rotation @ (pa - camera.center_world_mm))[2])
+    zb = float((rect_rotation @ (pb - camera.center_world_mm))[2])
     order_threshold = max(tolerance_mm, first.get("view_position_difference_mm", 0), second.get("view_position_difference_mm", 0))
     front = None if abs(zb - za) <= order_threshold else first["pipe_id"] if za < zb else second["pipe_id"]
     return result | {
@@ -271,9 +274,13 @@ def _measure_view(pipe: Any, projection: Any, image_lab: np.ndarray, depth: np.n
         if len(rows) < 80:
             continue
         z = depth[y0 + rows, x0 + cols]
-        points_camera = np.column_stack(((cols + x0 - camera.intrinsic[0, 2]) * z / camera.fx,
-                                        (rows + y0 - camera.intrinsic[1, 2]) * z / camera.fy, z))
-        points = points_camera @ camera.rotation_world_to_camera + camera.center_world_mm
+        intrinsic = getattr(camera, "rectified_intrinsic", camera.intrinsic)
+        points_camera = np.column_stack(((cols + x0 - intrinsic[0, 2]) * z / camera.fx,
+                                        (rows + y0 - intrinsic[1, 2]) * z / camera.fy, z))
+        rect_rotation = getattr(
+            camera, "rotation_world_to_rectified_camera", camera.rotation_world_to_camera
+        )
+        points = points_camera @ rect_rotation + camera.center_world_mm
         try:
             fit = fit_local_cylinder(points, config)
             center = np.array(fit["center_world_mm"])
@@ -337,7 +344,7 @@ def analyze_local_geometry(pipes: Any, projections: Mapping, images: Mapping, de
                     row.update(status="MEASURED", diameter_mm=(left["diameter_mm"] + right["diameter_mm"]) / 2,
                         center_world_mm=center.tolist(), observed_segment_world_mm=segment,
                         axis_direction_world=_unit(np.diff(segment, axis=0)[0]).tolist(),
-                        camera_depth_mm=float((calibration.left.rotation_world_to_camera @ (center - calibration.left.center_world_mm))[2]),
+                        camera_depth_mm=float((calibration.left.rotation_world_to_rectified_camera @ (center - calibration.left.center_world_mm))[2]),
                         view_position_difference_mm=difference, view_diameter_difference_mm=diameter_difference)
         results.append(row)
     # One observed local axis must not be counted for two CAD identities.

@@ -462,21 +462,34 @@ def register_calibration_from_qr(
         raise QrRegistrationError("二维码中心 CAD 坐标必须包含三个有限毫米值")
     front_world = np.cross(right_world, up_world)
     world_from_marker = np.column_stack((right_world, up_world, front_world))
-    rotation_world_to_camera = (
+    rotation_world_to_rectified_camera = (
         estimate.rotation_marker_to_camera @ world_from_marker.T
     )
     left_center = center - (
-        rotation_world_to_camera.T @ estimate.translation_marker_to_camera_mm
+        rotation_world_to_rectified_camera.T @ estimate.translation_marker_to_camera_mm
     )
-    baseline_world = rotation_world_to_camera.T @ np.asarray(
+    baseline_world = rotation_world_to_rectified_camera.T @ np.asarray(
         [parsed.baseline_mm, 0.0, 0.0]
     )
     right_center = left_center + baseline_world
 
+    # QR corners are measured in the rectified image.  Persist the equivalent
+    # raw-camera world rotations because the manifest keeps raw extrinsics,
+    # while projection/depth use Rrect @ Rraw at runtime.
+    left_raw_rotation = rotation_world_to_rectified_camera
+    right_raw_rotation = rotation_world_to_rectified_camera
+    if parsed.left.rectification_matrix is not None:
+        left_raw_rotation = parsed.left.rectification_matrix.T @ rotation_world_to_rectified_camera
+    if parsed.right.rectification_matrix is not None:
+        right_raw_rotation = parsed.right.rectification_matrix.T @ rotation_world_to_rectified_camera
+
     result = copy.deepcopy(dict(calibration))
-    for role, camera_center in (("left", left_center), ("right", right_center)):
+    for role, camera_center, camera_rotation in (
+        ("left", left_center, left_raw_rotation),
+        ("right", right_center, right_raw_rotation),
+    ):
         camera = result[f"{role}_camera"]
-        camera["rotation_world_to_camera"] = rotation_world_to_camera.tolist()
+        camera["rotation_world_to_camera"] = camera_rotation.tolist()
         camera["center_world_mm"] = camera_center.tolist()
     result["registration_validated"] = registration_validated
     audit = {

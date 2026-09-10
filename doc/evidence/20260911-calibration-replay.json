@@ -1,0 +1,90 @@
+{
+  "checked_commit": "58d31c5",
+  "checked_at": "2026-09-11",
+  "environment": {
+    "python": "3.10.0",
+    "opencv": "4.13.0",
+    "numpy": "2.2.6",
+    "hardware_connected": false
+  },
+  "archive": {
+    "root": "test_data/real_hardware_archive/2026-09-field-test",
+    "sha256_manifest_entries": 46,
+    "sha256_and_size_match": true,
+    "jsonl_field_log_present": false
+  },
+  "replay_policy": {
+    "image_size_px": [1920, 1080],
+    "pattern_inner_corners": [8, 6],
+    "square_mm": 19.0,
+    "expected_baseline_mm": 60.0,
+    "max_reprojection_rms_px": 1.5,
+    "minimum_pairs": 10,
+    "right_frame_transform": "none"
+  },
+  "runs": [
+    {
+      "file": "calibration_20260910_095536_531086.npz",
+      "input_pairs": 11,
+      "used_pairs": 10,
+      "discarded_pair_indices": [6],
+      "left_rms_px": 1.63470786,
+      "right_rms_px": 1.61848306,
+      "stereo_rms_px": 2.52185276,
+      "baseline_mm": 59.791560998,
+      "solve_mode": "baseline_anchored_centered_pinhole",
+      "validated": false,
+      "rejection_reasons": ["reprojection_rms_over_limit"]
+    },
+    {
+      "file": "calibration_20260910_095749_708841.npz",
+      "input_pairs": 21,
+      "used_pairs": 17,
+      "discarded_pair_indices": [16, 19, 20, 21],
+      "left_rms_px": 0.658166417,
+      "right_rms_px": 0.671774794,
+      "stereo_rms_px": 1.143971022,
+      "baseline_mm": 59.982270556,
+      "solve_mode": "baseline_anchored_centered_pinhole",
+      "validated": false,
+      "rejection_reasons": ["insufficient_projected_scale_span"]
+    },
+    {
+      "file": "calibration_20260910_170037_316212.npz",
+      "input_pairs": 14,
+      "used_pairs": 13,
+      "discarded_pair_indices": [13],
+      "left_rms_px": 1.162599155,
+      "right_rms_px": 1.252539591,
+      "stereo_rms_px": 2.192539496,
+      "baseline_mm": 60.102921562,
+      "solve_mode": "baseline_anchored_centered_pinhole",
+      "validated": false,
+      "rejection_reasons": ["insufficient_pose_zones", "reprojection_rms_over_limit"]
+    },
+    {
+      "file": "calibration_autosave.npz",
+      "input_pairs": 13,
+      "used_pairs": 13,
+      "discarded_pair_indices": [],
+      "left_rms_px": 1.162599155,
+      "right_rms_px": 1.252539591,
+      "stereo_rms_px": 2.192539496,
+      "baseline_mm": 60.102921562,
+      "solve_mode": "baseline_anchored_centered_pinhole",
+      "validated": false,
+      "rejection_reasons": ["insufficient_pose_zones", "reprojection_rms_over_limit"],
+      "same_corner_arrays_as": "calibration_20260910_170037_316212.npz_without_original_pair_13"
+    }
+  ],
+  "raw_probe": {
+    "files_checked": 6,
+    "correct_inner_corner_detection_8x6_all_eyes": false,
+    "requested_actual_resolution_mismatches": 3
+  },
+  "tests": {
+    "command": "python -m pytest -q",
+    "passed": 246,
+    "subtests_passed": 206
+  }
+}

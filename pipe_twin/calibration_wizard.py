@@ -2167,6 +2167,7 @@ def write_calibration_diagnostic(
     solve_error: str = "",
     filename: str | None = None,
     metadata_extra: Mapping[str, Any] | None = None,
+    solve_options: Mapping[str, Any] | None = None,
 ) -> Path:
     """Persist all accepted corner coordinates so a failed solve is replayable."""
 
@@ -2188,6 +2189,10 @@ def write_calibration_diagnostic(
         "rejection_reasons": result.rejection_reasons if result is not None else [],
         "solve_error": str(solve_error),
     }
+    if solve_options is not None:
+        metadata["solve_options"] = json.loads(
+            json.dumps(dict(solve_options), ensure_ascii=False, allow_nan=False)
+        )
     if metadata_extra:
         metadata["capture_archive"] = json.loads(
             json.dumps(
@@ -2217,6 +2222,7 @@ def write_calibration_checkpoint(
     square_mm: float,
     root: str | Path = "outputs/measurement_workbench/calibration_diagnostics",
     metadata_extra: Mapping[str, Any] | None = None,
+    solve_options: Mapping[str, Any] | None = None,
 ) -> Path:
     """Overwrite the session checkpoint so accepted photos survive a restart."""
 
@@ -2229,6 +2235,7 @@ def write_calibration_checkpoint(
         root=root,
         filename="calibration_autosave.npz",
         metadata_extra=metadata_extra,
+        solve_options=solve_options,
     )
 
 
@@ -2344,10 +2351,21 @@ def reusable_calibration_pairs(
     return retained, metadata, discarded
 
 
+def _diagnostic_solve_options(metadata: Mapping[str, Any]) -> dict[str, Any]:
+    """Prefer the completed solve audit, with checkpoint settings as fallback."""
+    options = metadata.get("solve_options", {})
+    audit = metadata.get("result_audit", {})
+    return {
+        **(dict(options) if isinstance(options, Mapping) else {}),
+        **(dict(audit) if isinstance(audit, Mapping) else {}),
+    }
+
+
 def replay_calibration_diagnostic(
     path: str | Path,
     *,
     expected_baseline_mm: float | None = None,
+    max_reprojection_rms_px: float | None = None,
 ) -> WizardResult:
     """Re-run a saved calibration failure without reopening the camera.
 
@@ -2356,10 +2374,7 @@ def replay_calibration_diagnostic(
     """
 
     pairs, metadata = read_calibration_diagnostic(path)
-    count = len(pairs)
-    audit = metadata.get("result_audit", {})
-    if not isinstance(audit, Mapping):
-        audit = {}
+    audit = _diagnostic_solve_options(metadata)
     image_size = tuple(int(value) for value in metadata["image_size_px"])
     pattern = tuple(int(value) for value in metadata["pattern_inner_corners"])
     baseline = (
@@ -2372,8 +2387,12 @@ def replay_calibration_diagnostic(
         image_size=image_size,
         square_mm=float(metadata["square_mm"]),
         pattern=pattern,
-        max_reprojection_rms_px=float(audit.get("max_reprojection_rms_px", 0.5)),
-        min_pairs=int(audit.get("minimum_pairs", max(3, min(10, count)))),
+        max_reprojection_rms_px=float(
+            audit.get("max_reprojection_rms_px", 1.5)
+            if max_reprojection_rms_px is None
+            else max_reprojection_rms_px
+        ),
+        min_pairs=int(audit.get("minimum_pairs", 10)),
         operator="replay",
         max_sync_delta_ms=float(audit.get("max_sync_delta_ms", 1.0)),
         layout=str(audit.get("layout", "diagnostic_replay")),
@@ -2897,6 +2916,15 @@ class ChessboardWizardDialog:
             },
         }
 
+    def _current_solve_options(self) -> dict[str, Any]:
+        return {
+            "max_reprojection_rms_px": self._float_value(self.max_rms, "允许RMS"),
+            "minimum_pairs": self._int_value(self.min_pairs, "最少组数", minimum=3),
+            "max_sync_delta_ms": self._float_value(self.max_sync, "同步容差", positive=False),
+            "layout": self._layout(),
+            "expected_baseline_mm": self._hardware_specs()["expected_baseline_mm"] or None,
+        }
+
     def _ensure_capture_archive(self) -> CalibrationCaptureArchive:
         if self.capture_archive is None:
             self.capture_archive = CalibrationCaptureArchive.create(
@@ -2921,6 +2949,7 @@ class ChessboardWizardDialog:
                 self.measured_square_mm, "打印后实测格边长"
             ),
             root=_DIAGNOSTIC_ROOT,
+            solve_options=self._current_solve_options(),
             metadata_extra={
                 "session_path": (
                     str(self.capture_archive.session_path)
@@ -2946,9 +2975,7 @@ class ChessboardWizardDialog:
                 raise ChessboardCalibrationError("没有找到可恢复的标定照片组")
             source = candidates[0]
             retained, metadata, discarded_indices = reusable_calibration_pairs(source)
-            audit = metadata.get("result_audit", {})
-            if not isinstance(audit, Mapping):
-                audit = {}
+            audit = _diagnostic_solve_options(metadata)
             discarded = set(discarded_indices)
 
             image_size = tuple(int(value) for value in metadata["image_size_px"])
@@ -2963,6 +2990,11 @@ class ChessboardWizardDialog:
             saved_rms = audit.get("max_reprojection_rms_px")
             if isinstance(saved_rms, (int, float)) and float(saved_rms) > 0:
                 self.max_rms.set(f"{float(saved_rms):g}")
+            if type(audit.get("minimum_pairs")) is int:
+                self.min_pairs.set(str(audit["minimum_pairs"]))
+            saved_sync = audit.get("max_sync_delta_ms")
+            if isinstance(saved_sync, (int, float)) and float(saved_sync) >= 0:
+                self.max_sync.set(f"{float(saved_sync):g}")
             saved_layout = audit.get("layout")
             if saved_layout in {
                 "side_by_side_left_right",
@@ -3868,6 +3900,7 @@ class ChessboardWizardDialog:
     def finish(self) -> None:
         eye_size: tuple[int, int] | None = None
         square_mm: float | None = None
+        solve_options: dict[str, Any] = {}
         try:
             operator = str(self.operator.get()).strip()
             maximum_rms = self._float_value(self.max_rms, "允许RMS")
@@ -3878,6 +3911,7 @@ class ChessboardWizardDialog:
             layout = self._layout()
             hardware_specs = self._hardware_specs()
             expected_baseline = hardware_specs["expected_baseline_mm"]
+            solve_options = self._current_solve_options()
             if self.capture_archive is not None:
                 self.capture_archive.update_session(
                     self._capture_session_metadata()
@@ -4107,6 +4141,7 @@ class ChessboardWizardDialog:
                             )
                         ),
                         solve_error=f"{type(error).__name__}: {error}",
+                        solve_options=solve_options,
                         metadata_extra={
                             "session_path": (
                                 str(self.capture_archive.session_path)

@@ -332,7 +332,7 @@ def create_capture_dataset(*, output_root: Path, model_path: Path, pipes: list[d
     if not manifest["analysis"]:
         # Search range must cover the registered model at its expected depth.
         all_points = np.array([p for pipe in pipes for p in pipe["centerline_world_mm"]])
-        camera_points = (all_points - calib.left.center_world_mm) @ calib.left.rotation_world_to_camera.T
+        camera_points = (all_points - calib.left.center_world_mm) @ calib.left.rotation_world_to_rectified_camera.T
         positive_z = camera_points[:, 2][camera_points[:, 2] > 0]
         if not len(positive_z):
             raise ValueError("模型在相机后方，请检查 CAD 与相机的配准。")
@@ -993,7 +993,9 @@ class QrRegistrationDialog:
                 self.owner.fields["left"].get(),
                 expected_payload=payload,
                 marker_edge_mm=measured_edge,
-                intrinsic=parsed.left.intrinsic,
+                # The selected QR image is an already-rectified capture; use
+                # P1[:,:3] rather than the raw K retained for remapping.
+                intrinsic=parsed.left.rectified_intrinsic,
                 expected_size=(parsed.left.width, parsed.left.height),
             )
             adjusted = register_calibration_from_qr(

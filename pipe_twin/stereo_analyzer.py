@@ -109,6 +109,20 @@ class CameraCalibration:
             return float(self.projection_matrix[1, 1])
         return float(self.intrinsic[1, 1])
 
+    @property
+    def rectified_intrinsic(self) -> np.ndarray:
+        """Intrinsic matrix for the pixels supplied to the analyzer."""
+        if self.projection_matrix is not None:
+            return np.asarray(self.projection_matrix[:, :3], dtype=np.float64)
+        return self.intrinsic
+
+    @property
+    def rotation_world_to_rectified_camera(self) -> np.ndarray:
+        """CAD-world to the rectified image camera frame."""
+        if self.rectification_matrix is not None:
+            return self.rectification_matrix @ self.rotation_world_to_camera
+        return self.rotation_world_to_camera
+
 
 @dataclass(frozen=True)
 class StereoCalibration:
@@ -1097,15 +1111,23 @@ def _project_points(
         if rectified and camera.rectification_matrix is not None:
             projected_points = (camera.rectification_matrix @ projected_points.T).T
         projected_depths = projected_points[:, 2]
-        valid_projected = np.isfinite(projected_depths) & (
-            np.abs(projected_depths) > 1.0e-9
-        )
+        # Visibility is defined in the rectified camera frame.  Points with
+        # negative rectified Z are behind the sensor and must never yield a
+        # nominal CAD projection even when their raw-camera Z was positive.
+        valid_projected = np.isfinite(projected_depths) & (projected_depths > 1.0e-9)
         if np.any(valid_projected):
             matrix = (
                 camera.projection_matrix
                 if rectified and camera.projection_matrix is not None
                 else camera.intrinsic
             )
+            # A rectified image is produced by undistortPoints/remap.  Its
+            # pixel projection uses P[:,:3] on each eye's rectified camera
+            # coordinates; P's fourth column belongs to the stereo Q/P
+            # convention and must not be re-applied to CAD points already
+            # expressed relative to that eye's optical centre.
+            if matrix.shape[1] == 4:
+                matrix = matrix[:, :3]
             output_indices = indices[valid_projected]
             normalized = (
                 projected_points[valid_projected, :2]
@@ -1113,8 +1135,10 @@ def _project_points(
             )
             pixels[output_indices] = np.column_stack(
                 (
-                    matrix[0, 0] * normalized[:, 0] + matrix[0, 2] + (matrix[0, 3] if matrix.shape[1] == 4 else 0.0),
-                    matrix[1, 1] * normalized[:, 1] + matrix[1, 2] + (matrix[1, 3] if matrix.shape[1] == 4 else 0.0),
+                    matrix[0, 0] * normalized[:, 0]
+                    + matrix[0, 2],
+                    matrix[1, 1] * normalized[:, 1]
+                    + matrix[1, 2],
                 )
             ).astype(np.float64)
             depths[output_indices] = projected_depths[valid_projected]
