@@ -13,3 +13,4 @@
 *.dwg binary
 *.mkv binary
 *.npz binary
+*.png binary

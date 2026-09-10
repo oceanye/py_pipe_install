@@ -1,0 +1,421 @@
+{
+  "schema_version": "2.0",
+  "dataset_id": "field-20260907-210854-5e80e125",
+  "model_revision": "cbe4c74b54aed6b6",
+  "validation_scope": "FIELD_CAPTURE_PENDING_ACCEPTANCE",
+  "model": {
+    "path": "model.stl",
+    "sha256": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "unit": "millimeter",
+    "pipes": [
+      {
+        "instance_id": 1,
+        "pipe_id": "P001",
+        "cad_object_id": "stl-87bc0d33eae346de8450",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 51.000073,
+        "centerline_world_mm": [
+          [
+            2082.11083984375,
+            1797.4565124511719,
+            9.99999883788405e-07
+          ],
+          [
+            2082.11083984375,
+            1797.4565124511719,
+            683.0776367187501
+          ]
+        ]
+      },
+      {
+        "instance_id": 2,
+        "pipe_id": "P002",
+        "cad_object_id": "stl-a1cf4b29bdf42357aa12",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 41.000017,
+        "centerline_world_mm": [
+          [
+            2082.1108194986978,
+            1657.4565124511719,
+            9.999999974752427e-07
+          ],
+          [
+            2082.1108194986978,
+            1657.4565124511719,
+            683.07763671875
+          ]
+        ]
+      },
+      {
+        "instance_id": 3,
+        "pipe_id": "P003",
+        "cad_object_id": "stl-8026a1990bb7e2d78af4",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 26.000124,
+        "centerline_world_mm": [
+          [
+            2082.11083984375,
+            1937.4565124511719,
+            9.999999974752427e-07
+          ],
+          [
+            2082.11083984375,
+            1937.4565124511719,
+            683.07763671875
+          ]
+        ]
+      },
+      {
+        "instance_id": 4,
+        "pipe_id": "P004",
+        "cad_object_id": "stl-87766d775655f2235777",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 51.000073,
+        "centerline_world_mm": [
+          [
+            2172.11083984375,
+            1937.4565124511719,
+            9.99999883788405e-07
+          ],
+          [
+            2172.11083984375,
+            1937.4565124511719,
+            683.0776367187501
+          ]
+        ]
+      },
+      {
+        "instance_id": 5,
+        "pipe_id": "P005",
+        "cad_object_id": "stl-fb6a20dfcca473d3b33d",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 41.000017,
+        "centerline_world_mm": [
+          [
+            2172.1108194986978,
+            1657.4565124511719,
+            9.999999974752427e-07
+          ],
+          [
+            2172.1108194986978,
+            1657.4565124511719,
+            683.07763671875
+          ]
+        ]
+      },
+      {
+        "instance_id": 6,
+        "pipe_id": "P006",
+        "cad_object_id": "stl-03ef3fecfed994680303",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 26.000124,
+        "centerline_world_mm": [
+          [
+            2172.11083984375,
+            1797.4565124511719,
+            9.999999974752427e-07
+          ],
+          [
+            2172.11083984375,
+            1797.4565124511719,
+            683.07763671875
+          ]
+        ]
+      },
+      {
+        "instance_id": 7,
+        "pipe_id": "P007",
+        "cad_object_id": "stl-74103116ad5a954723a2",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 51.000073,
+        "centerline_world_mm": [
+          [
+            2262.11083984375,
+            1797.4565124511719,
+            9.99999883788405e-07
+          ],
+          [
+            2262.11083984375,
+            1797.4565124511719,
+            683.0776367187501
+          ]
+        ]
+      },
+      {
+        "instance_id": 8,
+        "pipe_id": "P008",
+        "cad_object_id": "stl-f44abbc04a35c2405703",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 41.000017,
+        "centerline_world_mm": [
+          [
+            2262.1108194986978,
+            1937.4565124511719,
+            9.999999974752427e-07
+          ],
+          [
+            2262.1108194986978,
+            1937.4565124511719,
+            683.07763671875
+          ]
+        ]
+      },
+      {
+        "instance_id": 9,
+        "pipe_id": "P009",
+        "cad_object_id": "stl-17298b8d5bb5744b1658",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 26.000124,
+        "centerline_world_mm": [
+          [
+            2262.11083984375,
+            1657.4565124511719,
+            9.999999974752427e-07
+          ],
+          [
+            2262.11083984375,
+            1657.4565124511719,
+            683.07763671875
+          ]
+        ]
+      },
+      {
+        "instance_id": 10,
+        "pipe_id": "P010",
+        "cad_object_id": "stl-ac88c565eb007e27c560",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 51.000073,
+        "centerline_world_mm": [
+          [
+            2352.11083984375,
+            1657.4565124511719,
+            9.99999883788405e-07
+          ],
+          [
+            2352.11083984375,
+            1657.4565124511719,
+            683.0776367187501
+          ]
+        ]
+      },
+      {
+        "instance_id": 11,
+        "pipe_id": "P011",
+        "cad_object_id": "stl-2677c1db4ee18896a527",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 41.000017,
+        "centerline_world_mm": [
+          [
+            2352.1108194986978,
+            1797.4565124511719,
+            9.999999974752427e-07
+          ],
+          [
+            2352.1108194986978,
+            1797.4565124511719,
+            683.07763671875
+          ]
+        ]
+      },
+      {
+        "instance_id": 12,
+        "pipe_id": "P012",
+        "cad_object_id": "stl-8aae2a62782678e7ec5e",
+        "cad_uuid": null,
+        "layer_id": "现场",
+        "color_class": "cad_color",
+        "color_srgb": "#B0B0B0",
+        "nominal_diameter_mm": 26.000124,
+        "centerline_world_mm": [
+          [
+            2352.11083984375,
+            1937.4565124511719,
+            9.999999974752427e-07
+          ],
+          [
+            2352.11083984375,
+            1937.4565124511719,
+            683.07763671875
+          ]
+        ]
+      }
+    ],
+    "source_unit": "millimeter"
+  },
+  "stereo_calibration": {
+    "calibration_id": "PG2-SYNTHETIC-EXACT-V1",
+    "validated": true,
+    "registration_validated": true,
+    "rectified": true,
+    "baseline_mm": 95.0,
+    "max_sync_delta_ms": 5.0,
+    "left_camera": {
+      "camera_id": "left",
+      "width": 1920,
+      "height": 1080,
+      "fx": 2637.5783226764374,
+      "fy": 2637.5783226764374,
+      "cx": 960.0,
+      "cy": 540.0,
+      "distortion_coefficients": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_world_to_camera": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      ],
+      "center_world_mm": [
+        202.5,
+        165.212569,
+        1020.884848
+      ]
+    },
+    "right_camera": {
+      "camera_id": "right",
+      "width": 1920,
+      "height": 1080,
+      "fx": 2637.5783226764374,
+      "fy": 2637.5783226764374,
+      "cx": 960.0,
+      "cy": 540.0,
+      "distortion_coefficients": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_world_to_camera": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -1.0
+        ]
+      ],
+      "center_world_mm": [
+        297.5,
+        165.212569,
+        1020.884848
+      ]
+    }
+  },
+  "capture": {
+    "kind": "stereo_still_capture_set",
+    "camera_layout": "stereo",
+    "capture_group_id": "field-20260907-210854-5e80e125",
+    "interval_minutes": 30,
+    "capture_groups": [
+      {
+        "capture_id": "field-20260907-210854-5e80e125",
+        "views": {
+          "left": {
+            "camera_id": "left",
+            "path": "left.png",
+            "sha256": "f49c72927016981d1c41bd2df3ceee07e8b160075160efa0ad7b9736bfb27f22",
+            "expected_width": 1920,
+            "expected_height": 1080,
+            "captured_at": "2026-09-07T21:08:44.152+08:00",
+            "timestamp_source": "HOST_SYSTEM_CLOCK",
+            "timestamp_timezone_assumed": false,
+            "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME"
+          },
+          "right": {
+            "camera_id": "right",
+            "path": "right.png",
+            "sha256": "23c8ac37e3788e230fe0852efd206330b8b1d9c9ce4870d062d9be8904b8e6bf",
+            "expected_width": 1920,
+            "expected_height": 1080,
+            "captured_at": "2026-09-07T21:08:44.152+08:00",
+            "timestamp_source": "HOST_SYSTEM_CLOCK",
+            "timestamp_timezone_assumed": false,
+            "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME"
+          }
+        }
+      }
+    ]
+  },
+  "analysis": {
+    "stereo_matching": {
+      "num_disparities": 800
+    },
+    "minimum_focus_laplacian_variance": 5.0,
+    "minimum_luminance_p05": 1.0,
+    "maximum_luminance_p95": 254.0,
+    "intake_disparity_estimate": {
+      "nearest_registered_cad_depth_mm": 337.8072112812499,
+      "expected_max_disparity_px": 741.7542677786213,
+      "selected_num_disparities": 800,
+      "image_width_px": 1920
+    }
+  }
+}

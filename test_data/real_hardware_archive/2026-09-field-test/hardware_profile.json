@@ -1,0 +1,37 @@
+{
+  "kind": "pipe-twin-workbench-profile",
+  "schema_version": "1.0",
+  "updated_at": "2026-09-10T10:03:30.122722+00:00",
+  "model_path": "",
+  "stl_unit": "millimeter",
+  "pipes": [],
+  "calibration_path": "",
+  "calibration_current": null,
+  "rectification_recipe": null,
+  "qr_settings": {},
+  "pose_adjustment": {
+    "mode": "keep"
+  },
+  "side_view_distance_mm": 1000.0,
+  "camera": {
+    "layout": "side_by_side_left_right",
+    "left_index": 0,
+    "right_index": 1
+  },
+  "last_manifest_path": "",
+  "chessboard": {
+    "square_mm": 19.0,
+    "columns": 9,
+    "rows": 7,
+    "dpi": 300
+  },
+  "wizard": {
+    "operator": "field",
+    "max_reprojection_rms_px": 1.5,
+    "min_pairs": 10,
+    "expected_baseline_mm": 60.0,
+    "nominal_fov_deg": 80.0,
+    "nominal_focal_length_mm": 3.0
+  },
+  "capture_history": false
+}
