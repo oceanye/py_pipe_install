@@ -190,6 +190,19 @@ class WorkbenchProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "安全确认"):
             validate_profile(payload)
 
+    def test_qr_model_surface_basis_is_normalized_and_persisted_as_a_pair(self):
+        payload = _profile()
+        payload["qr_settings"]["marker_right_world"] = [2.0, 0.0, 0.0]
+        payload["qr_settings"]["marker_up_world"] = [0.0, 0.0, 3.0]
+        validated = validate_profile(payload)
+        self.assertEqual(validated["qr_settings"]["marker_right_world"], [1.0, 0.0, 0.0])
+        self.assertEqual(validated["qr_settings"]["marker_up_world"], [0.0, 0.0, 1.0])
+
+        incomplete = _profile()
+        incomplete["qr_settings"]["marker_right_world"] = [1.0, 0.0, 0.0]
+        with self.assertRaisesRegex(ValueError, "必须同时保存"):
+            validate_profile(incomplete)
+
     def test_unreadable_profile_is_quarantined_to_recovery_file(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "profile.json"

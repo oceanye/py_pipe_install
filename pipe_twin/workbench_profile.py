@@ -48,6 +48,8 @@ _QR_SETTINGS_KEYS = {
     "marker_center_world_mm",
     "print_right_world",
     "print_up_world",
+    "marker_right_world",
+    "marker_up_world",
     "max_reprojection_rms_px",
 }
 # The two live-capture safety confirmations must be re-ticked by a human on
@@ -297,6 +299,29 @@ def _validate_qr_settings(payload: Any) -> dict:
             not isinstance(result[key], str) or not _DIRECTION_PATTERN.match(result[key])
         ):
             raise ValueError(f"qr_settings.{key} 必须是 +X/-X/+Y/-Y/+Z/-Z 之一")
+    marker_basis_keys = {"marker_right_world", "marker_up_world"}
+    present_basis_keys = marker_basis_keys & set(result)
+    if present_basis_keys and present_basis_keys != marker_basis_keys:
+        raise ValueError("qr_settings 的三维 RIGHT / UP 方向必须同时保存")
+    if present_basis_keys:
+        right = np.asarray(
+            _vector3(result["marker_right_world"], "qr_settings.marker_right_world"),
+            dtype=np.float64,
+        )
+        up = np.asarray(
+            _vector3(result["marker_up_world"], "qr_settings.marker_up_world"),
+            dtype=np.float64,
+        )
+        right_length = float(np.linalg.norm(right))
+        up_length = float(np.linalg.norm(up))
+        if right_length <= 1e-12 or up_length <= 1e-12:
+            raise ValueError("qr_settings 的三维 RIGHT / UP 方向不能是零向量")
+        right /= right_length
+        up /= up_length
+        if abs(float(np.dot(right, up))) > 1e-6:
+            raise ValueError("qr_settings 的三维 RIGHT / UP 方向必须互相垂直")
+        result["marker_right_world"] = right.tolist()
+        result["marker_up_world"] = up.tolist()
     return result
 
 

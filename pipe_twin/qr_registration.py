@@ -61,6 +61,24 @@ def _positive_finite(value: Any, field: str) -> float:
     return float(value)
 
 
+def _world_direction(value: Any, field: str) -> tuple[np.ndarray, str | list[float]]:
+    if isinstance(value, str):
+        try:
+            return WORLD_DIRECTIONS[value].copy(), value
+        except KeyError as error:
+            raise QrRegistrationError(
+                f"{field}必须是有效 CAD 坐标轴方向或三维单位向量"
+            ) from error
+    vector = np.asarray(value, dtype=np.float64).reshape(-1)
+    if vector.shape != (3,) or not np.all(np.isfinite(vector)):
+        raise QrRegistrationError(f"{field}必须包含三个有限值")
+    length = float(np.linalg.norm(vector))
+    if length <= 1e-12:
+        raise QrRegistrationError(f"{field}不能是零向量")
+    normalized = vector / length
+    return normalized, normalized.tolist()
+
+
 def _qr_data_matrix(payload: str) -> np.ndarray:
     try:
         encoded = cv2.QRCodeEncoder_create().encode(payload)
@@ -431,8 +449,8 @@ def register_calibration_from_qr(
     estimate: QrPoseEstimate,
     *,
     marker_center_world_mm: Any,
-    print_right_world: str,
-    print_up_world: str,
+    print_right_world: Any,
+    print_up_world: Any,
     registration_validated: bool,
     max_reprojection_rms_px: float = 2.0,
 ) -> dict[str, Any]:
@@ -450,12 +468,9 @@ def register_calibration_from_qr(
             f"二维码重投影误差 {estimate.reprojection_rms_px:.3f} px 超过 "
             f"{max_rms:.3f} px，不能应用定位"
         )
-    try:
-        right_world = WORLD_DIRECTIONS[print_right_world]
-        up_world = WORLD_DIRECTIONS[print_up_world]
-    except KeyError as error:
-        raise QrRegistrationError("纸面 RIGHT / UP 必须选择有效 CAD 方向") from error
-    if abs(float(np.dot(right_world, up_world))) > 1e-12:
+    right_world, right_audit = _world_direction(print_right_world, "纸面 RIGHT")
+    up_world, up_audit = _world_direction(print_up_world, "纸面 UP")
+    if abs(float(np.dot(right_world, up_world))) > 1e-6:
         raise QrRegistrationError("纸面 RIGHT 与 UP 的 CAD 方向必须互相垂直")
     center = np.asarray(marker_center_world_mm, dtype=np.float64).reshape(-1)
     if center.shape != (3,) or not np.all(np.isfinite(center)):
@@ -497,8 +512,8 @@ def register_calibration_from_qr(
         "decoded_payload": estimate.decoded_payload,
         "marker_edge_mm": estimate.marker_edge_mm,
         "marker_center_world_mm": center.tolist(),
-        "print_right_world": print_right_world,
-        "print_up_world": print_up_world,
+        "print_right_world": right_audit,
+        "print_up_world": up_audit,
         "marker_front_world": front_world.tolist(),
         "left_corners_px": estimate.corners_px.tolist(),
         "left_camera_distance_to_marker_mm": estimate.camera_distance_mm,

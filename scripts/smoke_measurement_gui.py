@@ -141,6 +141,7 @@ def main():
         assert qr.marker_id.get() == "PIPE-TWIN-QR-001"
         assert qr.marker_edge.get() == "120.0"
         assert qr.measured_edge.get() == "120.0"
+        assert not wizard.fields["left"].get()
         model_picker = ModelAnchorPickerDialog(qr)
         root.update()
         assert model_picker.projection is not None, [
@@ -157,6 +158,9 @@ def main():
         model_picker._apply()
         root.update()
         assert qr.cad_confirmed.get()
+        assert qr.custom_right_world is not None and qr.custom_up_world is not None
+        assert np.allclose(np.dot(qr.custom_right_world, qr.custom_up_world), 0.0)
+        assert "RIGHT" in qr.orientation_text.get() and "UP" in qr.orientation_text.get()
         qr.window.destroy()
         pose = CameraPoseDialog(wizard, calibration)
         assert not pose.advanced_visible

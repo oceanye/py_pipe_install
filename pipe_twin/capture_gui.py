@@ -9,7 +9,7 @@ import json
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 from uuid import uuid4
 
 import cv2
@@ -92,9 +92,65 @@ def _model_anchor_projection(
     if width < 100 or height < 100:
         raise ValueError("模型选点画布尺寸过小")
     right_name, up_name = MODEL_ANCHOR_VIEWS[view_label]
-    right = WORLD_DIRECTIONS[right_name]
-    up = WORLD_DIRECTIONS[up_name]
-    front = np.cross(right, up)
+    result = _model_anchor_projection_basis(
+        scene,
+        width=width,
+        height=height,
+        right_world=WORLD_DIRECTIONS[right_name],
+        up_world=WORLD_DIRECTIONS[up_name],
+    )
+    result.update({"right_name": right_name, "up_name": up_name})
+    return result
+
+
+def _normalized_direction(value: Any, label: str) -> np.ndarray:
+    vector = np.asarray(value, dtype=np.float64).reshape(-1)
+    if vector.shape != (3,) or not np.all(np.isfinite(vector)):
+        raise ValueError(f"{label}必须包含三个有限值")
+    length = float(np.linalg.norm(vector))
+    if length <= 1e-12:
+        raise ValueError(f"{label}不能是零向量")
+    return vector / length
+
+
+def _orbit_view_basis(yaw_deg: float, pitch_deg: float) -> tuple[np.ndarray, np.ndarray]:
+    """Return screen-right/up world vectors for an orbit camera."""
+
+    yaw = np.deg2rad(float(yaw_deg))
+    pitch = np.deg2rad(float(pitch_deg))
+    front = np.asarray(
+        [np.cos(pitch) * np.cos(yaw), np.cos(pitch) * np.sin(yaw), np.sin(pitch)],
+        dtype=np.float64,
+    )
+    reference_up = np.asarray([0.0, 0.0, 1.0], dtype=np.float64)
+    if abs(float(np.dot(front, reference_up))) > 0.98:
+        reference_up = np.asarray([0.0, 1.0, 0.0], dtype=np.float64)
+    right = _normalized_direction(np.cross(reference_up, front), "三维视图右方向")
+    up = _normalized_direction(np.cross(front, right), "三维视图上方向")
+    return right, up
+
+
+def _model_anchor_projection_basis(
+    scene: Any,
+    *,
+    width: int,
+    height: int,
+    right_world: Any,
+    up_world: Any,
+    zoom: float = 1.0,
+) -> dict[str, Any]:
+    """Project CAD triangles with an arbitrary orthographic view basis."""
+
+    if width < 100 or height < 100:
+        raise ValueError("模型选点画布尺寸过小")
+    right = _normalized_direction(right_world, "三维视图右方向")
+    supplied_up = _normalized_direction(up_world, "三维视图上方向")
+    up_component = supplied_up - right * float(np.dot(supplied_up, right))
+    up = _normalized_direction(up_component, "三维视图上方向")
+    front = _normalized_direction(np.cross(right, up), "三维视图观察方向")
+    zoom_value = float(zoom)
+    if not np.isfinite(zoom_value) or zoom_value <= 0:
+        raise ValueError("三维视图缩放必须为正数")
     triangles_world: list[np.ndarray] = []
     colors: list[str] = []
     object_ids: list[str] = []
@@ -116,12 +172,15 @@ def _model_anchor_projection(
     min_u, max_u = float(np.min(u)), float(np.max(u))
     min_v, max_v = float(np.min(v)), float(np.max(v))
     margin = 42.0
-    scale = min(
+    fit_scale = min(
         max(1.0, width - 2.0 * margin) / max(max_u - min_u, 1e-9),
         max(1.0, height - 2.0 * margin) / max(max_v - min_v, 1e-9),
     )
-    offset_x = (width - (max_u - min_u) * scale) / 2.0 - min_u * scale
-    offset_y = (height + (max_v - min_v) * scale) / 2.0 + min_v * scale
+    scale = fit_scale * zoom_value
+    center_u = (min_u + max_u) / 2.0
+    center_v = (min_v + max_v) / 2.0
+    offset_x = width / 2.0 - center_u * scale
+    offset_y = height / 2.0 + center_v * scale
     canvas = np.stack(
         (u * scale + offset_x, -v * scale + offset_y), axis=-1
     )
@@ -134,12 +193,56 @@ def _model_anchor_projection(
         "right_world": right.copy(),
         "up_world": up.copy(),
         "front_world": front.copy(),
-        "right_name": right_name,
-        "up_name": up_name,
         "scale": float(scale),
         "offset_x": float(offset_x),
         "offset_y": float(offset_y),
     }
+
+
+def _model_surface_orientation(
+    projection: Mapping[str, Any],
+    triangle_index: int,
+    *,
+    roll_deg: float = 0.0,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return printed RIGHT/UP/FRONT vectors on the selected mesh triangle."""
+
+    triangle = np.asarray(
+        projection["triangles_world"][int(triangle_index)], dtype=np.float64
+    )
+    normal = _normalized_direction(
+        np.cross(triangle[1] - triangle[0], triangle[2] - triangle[0]),
+        "所选模型表面法向",
+    )
+    view_front = _normalized_direction(projection["front_world"], "三维视图观察方向")
+    if float(np.dot(normal, view_front)) < 0:
+        normal = -normal
+    screen_right = _normalized_direction(projection["right_world"], "三维视图右方向")
+    projected_right = screen_right - normal * float(np.dot(screen_right, normal))
+    if float(np.linalg.norm(projected_right)) <= 1e-8:
+        screen_up = _normalized_direction(projection["up_world"], "三维视图上方向")
+        projected_right = screen_up - normal * float(np.dot(screen_up, normal))
+    base_right = _normalized_direction(projected_right, "二维码纸面右方向")
+    base_up = _normalized_direction(np.cross(normal, base_right), "二维码纸面上方向")
+    angle = np.deg2rad(float(roll_deg))
+    right = np.cos(angle) * base_right + np.sin(angle) * base_up
+    up = -np.sin(angle) * base_right + np.cos(angle) * base_up
+    return right, up, normal
+
+
+def _qr_source_image_path(value: Any) -> Path:
+    """Validate the actual left image selected for QR detection."""
+
+    text = str(value).strip() if value is not None else ""
+    if not text:
+        raise QrRegistrationError(
+            "尚未抓拍二维码照片；请点击“连接双目相机并抓拍二维码”，"
+            "或在现场页导入已有左目照片。"
+        )
+    path = Path(text)
+    if not path.is_file():
+        raise QrRegistrationError(f"二维码识别所用左目照片不存在或不是文件：{path}")
+    return path
 
 
 def _pick_model_anchor_surface(
@@ -511,13 +614,21 @@ _CAMERA_LAYOUT_LABELS = {
 class StereoCameraDialog:
     """Preview a connected UVC stereo stream and fill the intake form."""
 
-    def __init__(self, owner: Any, calibration: dict, rectifier: Any = None) -> None:
+    def __init__(
+        self,
+        owner: Any,
+        calibration: dict,
+        rectifier: Any = None,
+        *,
+        on_capture: Callable[[Mapping[str, Path], CapturedStereoPair], None] | None = None,
+    ) -> None:
         from .stereo_analyzer import _calibration_from_manifest
 
         self.owner = owner
         self.app = owner.app
         self.calibration = _calibration_from_manifest(calibration)
         self.rectifier = rectifier
+        self.on_capture = on_capture
         tk, ttk = self.app.tk, self.app.ttk
         self.window = tk.Toplevel(owner.window)
         self.window.title("连接双目相机并同步抓拍")
@@ -876,6 +987,8 @@ class StereoCameraDialog:
                 f"已从相机直接抓拍：{pair.left.shape[1]}×{pair.left.shape[0]} 每目，"
                 f"时间差 {pair.sync_delta_ms:.3f} ms；{confirmation}。"
             )
+            if self.on_capture is not None:
+                self.on_capture(paths, pair)
             self.close()
         except Exception as error:  # native cv2 errors included, never silent
             self.app.messagebox.showerror("同步抓拍失败", str(error), parent=self.window)
@@ -893,7 +1006,7 @@ class StereoCameraDialog:
 
 
 class ModelAnchorPickerDialog:
-    """Pick the QR centre and its axis-aligned printed-front from a CAD mesh."""
+    """Pick the QR centre and full surface orientation from an orbitable CAD mesh."""
 
     def __init__(self, owner: Any) -> None:
         self.owner = owner
@@ -903,55 +1016,46 @@ class ModelAnchorPickerDialog:
             raise ValueError("请先在现场录入页面选择并读取三维模型")
         self.scene = load_cad_scene(
             model_path,
-            stl_unit=(
-                capture.stl_unit.get()
-                if model_path.suffix.lower() == ".stl"
-                else None
-            ),
+            stl_unit=(capture.stl_unit.get() if model_path.suffix.lower() == ".stl" else None),
         )
         app = capture.app
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(owner.window)
-        self.window.title("从三维模型选择二维码中心和方向")
-        self.window.geometry("940x720")
-        self.window.minsize(760, 600)
+        self.window.title("在三维模型中选择二维码点和方向")
+        self.window.geometry("980x760")
+        self.window.minsize(780, 620)
         self.window.transient(owner.window)
-        current_axes = (owner.print_right.get(), owner.print_up.get())
-        initial_view = next(
-            (
-                label
-                for label, axes in MODEL_ANCHOR_VIEWS.items()
-                if axes == current_axes
-            ),
-            next(iter(MODEL_ANCHOR_VIEWS)),
-        )
-        self.view = tk.StringVar(value=initial_view)
+        self.yaw_deg = 45.0
+        self.pitch_deg = 25.0
+        self.zoom = 1.0
+        self.roll_deg = tk.DoubleVar(value=0.0)
+        self.roll_text = tk.StringVar(value="纸面旋转 0.0°")
         self.selection_text = tk.StringVar(
-            value="选择相机所在方向，然后点击二维码中心在模型上的安装位置。"
+            value="先把模型旋转到现场相机看到的方向，再单击实际安装表面；当前视角决定表面朝外方向。"
         )
         self.selected_point: np.ndarray | None = None
+        self.selected_triangle_index: int | None = None
         self.selected_object_id = ""
+        self.surface_right: np.ndarray | None = None
+        self.surface_up: np.ndarray | None = None
+        self.surface_front: np.ndarray | None = None
         self.projection: dict[str, Any] | None = None
+        self._press_xy: tuple[float, float] | None = None
+        self._last_drag_xy: tuple[float, float] | None = None
+        self._dragged = False
 
         frame = ttk.Frame(self.window, padding=12)
         frame.pack(fill="both", expand=True)
         toolbar = ttk.Frame(frame)
         toolbar.pack(fill="x", pady=(0, 8))
-        ttk.Label(toolbar, text="相机相对模型方向：").pack(side="left")
-        chooser = ttk.Combobox(
-            toolbar,
-            textvariable=self.view,
-            values=tuple(MODEL_ANCHOR_VIEWS),
-            state="readonly",
-            width=28,
-        )
-        chooser.pack(side="left", padx=(4, 12))
-        chooser.bind("<<ComboboxSelected>>", self._change_view)
         ttk.Label(
             toolbar,
-            text="视图会同步确定纸面 RIGHT / UP；轻微倾斜由二维码自动求解。",
+            text="三维操作：拖动到相机视角 · 滚轮缩放 · 单击表面选点",
             foreground="#355371",
         ).pack(side="left")
+        ttk.Button(toolbar, text="恢复等轴视图", command=self._reset_view).pack(
+            side="right", padx=4
+        )
         self.canvas = tk.Canvas(
             frame,
             background="#F4F6F8",
@@ -960,12 +1064,31 @@ class ModelAnchorPickerDialog:
         )
         self.canvas.pack(fill="both", expand=True)
         self.canvas.bind("<Configure>", self._draw)
-        self.canvas.bind("<Button-1>", self._pick)
+        self.canvas.bind("<ButtonPress-1>", self._press)
+        self.canvas.bind("<B1-Motion>", self._drag)
+        self.canvas.bind("<ButtonRelease-1>", self._release)
+        self.canvas.bind("<MouseWheel>", self._wheel)
+        direction = ttk.Frame(frame)
+        direction.pack(fill="x", pady=(8, 2))
+        ttk.Label(direction, textvariable=self.roll_text, width=18).pack(side="left")
+        ttk.Scale(
+            direction,
+            from_=-180.0,
+            to=180.0,
+            variable=self.roll_deg,
+            command=self._roll_changed,
+        ).pack(side="left", fill="x", expand=True, padx=(5, 10))
+        ttk.Label(
+            direction,
+            text="红色 RIGHT / 绿色 UP；滑动可绕表面法向旋转纸张",
+            foreground="#4A6178",
+        ).pack(side="right")
         ttk.Label(
             frame,
             textvariable=self.selection_text,
             foreground="#244D70",
-        ).pack(fill="x", pady=(8, 4))
+            wraplength=930,
+        ).pack(fill="x", pady=(5, 4))
         buttons = ttk.Frame(frame)
         buttons.pack(fill="x")
         ttk.Button(buttons, text="取消", command=self.window.destroy).pack(
@@ -973,15 +1096,50 @@ class ModelAnchorPickerDialog:
         )
         ttk.Button(
             buttons,
-            text="使用所选点和方向",
+            text="使用所选三维点和方向",
             command=self._apply,
         ).pack(side="right", padx=4)
         self._draw()
 
-    def _change_view(self, _event: Any = None) -> None:
-        self.selected_point = None
-        self.selected_object_id = ""
-        self.selection_text.set("方向已切换，请重新点击二维码中心安装位置。")
+    def _reset_view(self) -> None:
+        self.yaw_deg, self.pitch_deg, self.zoom = 45.0, 25.0, 1.0
+        self._draw()
+
+    def _press(self, event: Any) -> None:
+        self._press_xy = (float(event.x), float(event.y))
+        self._last_drag_xy = self._press_xy
+        self._dragged = False
+
+    def _drag(self, event: Any) -> None:
+        current = (float(event.x), float(event.y))
+        if self._last_drag_xy is None or self._press_xy is None:
+            self._press(event)
+            return
+        dx = current[0] - self._last_drag_xy[0]
+        dy = current[1] - self._last_drag_xy[1]
+        if np.hypot(current[0] - self._press_xy[0], current[1] - self._press_xy[1]) >= 4:
+            self._dragged = True
+        if self._dragged:
+            self.yaw_deg += dx * 0.45
+            self.pitch_deg = float(np.clip(self.pitch_deg - dy * 0.35, -88.0, 88.0))
+            self._draw()
+        self._last_drag_xy = current
+
+    def _release(self, event: Any) -> None:
+        if not self._dragged:
+            self._pick(event)
+        self._press_xy = None
+        self._last_drag_xy = None
+
+    def _wheel(self, event: Any) -> None:
+        direction = 1 if float(getattr(event, "delta", 0)) > 0 else -1
+        self.zoom = float(np.clip(self.zoom * (1.14 ** direction), 0.25, 8.0))
+        self._draw()
+
+    def _roll_changed(self, _value: Any = None) -> None:
+        self.roll_text.set(f"纸面旋转 {self.roll_deg.get():.1f}°")
+        if self.selected_point is not None:
+            self._update_selection_text()
         self._draw()
 
     def _draw(self, _event: Any = None) -> None:
@@ -989,11 +1147,14 @@ class ModelAnchorPickerDialog:
         height = max(int(self.canvas.winfo_height()), 300)
         self.canvas.delete("all")
         try:
-            projection = _model_anchor_projection(
+            right, up = _orbit_view_basis(self.yaw_deg, self.pitch_deg)
+            projection = _model_anchor_projection_basis(
                 self.scene,
                 width=width,
                 height=height,
-                view_label=self.view.get(),
+                right_world=right,
+                up_world=up,
+                zoom=self.zoom,
             )
         except (OSError, ValueError) as error:
             self.projection = None
@@ -1008,15 +1169,12 @@ class ModelAnchorPickerDialog:
         triangles = projection["triangles_canvas"]
         depths = np.mean(projection["triangle_depths"], axis=1)
         order = np.argsort(depths)
-        # Tk remains responsive for detailed engineering meshes while the
-        # full-resolution triangle set stays available for point picking.
         stride = max(1, int(np.ceil(len(order) / 12000)))
         for index in order[::stride]:
             points = triangles[int(index)].reshape(-1).tolist()
-            color = projection["colors"][int(index)]
             self.canvas.create_polygon(
                 *points,
-                fill=color,
+                fill=projection["colors"][int(index)],
                 outline="#6C747A",
                 width=1,
             )
@@ -1024,81 +1182,120 @@ class ModelAnchorPickerDialog:
             12,
             10,
             anchor="nw",
-            text=f"{self.view.get()} · 单位 mm · 点击可见表面",
+            text=f"可旋转三维模型 · 缩放 {self.zoom:.2f}× · 单位 mm",
             fill="#263238",
             font=("Segoe UI", 11, "bold"),
         )
         if self.selected_point is not None:
+            if self.selected_triangle_index is not None:
+                selected_triangle = triangles[self.selected_triangle_index].reshape(-1).tolist()
+                self.canvas.create_polygon(
+                    *selected_triangle, fill="", outline="#FF8F00", width=3
+                )
             x, y = self._canvas_point(self.selected_point)
             self.canvas.create_oval(
-                x - 7,
-                y - 7,
-                x + 7,
-                y + 7,
-                outline="#D32F2F",
-                width=3,
+                x - 7, y - 7, x + 7, y + 7, outline="#D32F2F", width=3
             )
-            self.canvas.create_line(x - 11, y, x + 11, y, fill="#D32F2F", width=2)
-            self.canvas.create_line(x, y - 11, x, y + 11, fill="#D32F2F", width=2)
+            right_world, up_world, _front_world = self._orientation()
+            arrow_world = 72.0 / max(float(projection["scale"]), 1e-9)
+            rx, ry = self._canvas_point(self.selected_point + right_world * arrow_world)
+            ux, uy = self._canvas_point(self.selected_point + up_world * arrow_world)
+            self.canvas.create_line(x, y, rx, ry, fill="#D32F2F", width=4, arrow="last")
+            self.canvas.create_line(x, y, ux, uy, fill="#16833B", width=4, arrow="last")
+            self.canvas.create_text(rx, ry, text="R", fill="#A10F0F", font=("Segoe UI", 10, "bold"))
+            self.canvas.create_text(ux, uy, text="U", fill="#08752B", font=("Segoe UI", 10, "bold"))
 
     def _canvas_point(self, world_point: np.ndarray) -> tuple[float, float]:
         if self.projection is None:
             raise ValueError("模型视图尚未生成")
         point = np.asarray(world_point, dtype=np.float64)
-        x = (
-            float(point @ self.projection["right_world"])
-            * self.projection["scale"]
-            + self.projection["offset_x"]
+        return (
+            float(point @ self.projection["right_world"]) * self.projection["scale"]
+            + self.projection["offset_x"],
+            -float(point @ self.projection["up_world"]) * self.projection["scale"]
+            + self.projection["offset_y"],
         )
-        y = (
-            -float(point @ self.projection["up_world"])
-            * self.projection["scale"]
-            + self.projection["offset_y"]
+
+    def _orientation(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if self.surface_right is None or self.surface_up is None or self.surface_front is None:
+            raise ValueError("尚未从模型表面取得二维码方向")
+        angle = np.deg2rad(float(self.roll_deg.get()))
+        right = np.cos(angle) * self.surface_right + np.sin(angle) * self.surface_up
+        up = -np.sin(angle) * self.surface_right + np.cos(angle) * self.surface_up
+        return right, up, self.surface_front
+
+    @staticmethod
+    def _vector_text(vector: np.ndarray) -> str:
+        return "[" + ", ".join(f"{float(value):.4f}" for value in vector) + "]"
+
+    def _update_selection_text(self) -> None:
+        if self.selected_point is None:
+            return
+        right, up, front = self._orientation()
+        coordinates = ", ".join(f"{value:.3f}" for value in self.selected_point)
+        self.selection_text.set(
+            f"模型点 [{coordinates}] mm · 对象 {self.selected_object_id} · "
+            f"表面朝向 {self._vector_text(front)} · RIGHT {self._vector_text(right)} · "
+            f"UP {self._vector_text(up)}"
         )
-        return x, y
 
     def _pick(self, event: Any) -> None:
         if self.projection is None:
             return
         selected = _pick_model_anchor_surface(
-            self.projection,
-            (float(event.x), float(event.y)),
+            self.projection, (float(event.x), float(event.y))
         )
         if selected is None:
-            self.selection_text.set("该位置没有模型表面，请点击着色区域。")
+            self.selection_text.set("该位置没有模型表面，请单击着色区域。")
             return
         point, triangle_index = selected
+        try:
+            right, up, front = _model_surface_orientation(
+                self.projection, triangle_index
+            )
+        except ValueError as error:
+            self.selection_text.set(f"该三角面无法确定方向：{error}；请点击相邻表面。")
+            return
         self.selected_point = point
-        self.selected_object_id = str(
-            self.projection["object_ids"][triangle_index]
-        )
-        coordinates = ", ".join(f"{value:.3f}" for value in point)
-        right_name = self.projection["right_name"]
-        up_name = self.projection["up_name"]
-        self.selection_text.set(
-            f"模型点 [{coordinates}] mm · 对象 {self.selected_object_id} · "
-            f"纸面 RIGHT={right_name}、UP={up_name}"
-        )
+        self.selected_triangle_index = triangle_index
+        self.selected_object_id = str(self.projection["object_ids"][triangle_index])
+        self.surface_right, self.surface_up, self.surface_front = right, up, front
+        self.roll_deg.set(0.0)
+        self.roll_text.set("纸面旋转 0.0°")
+        self._update_selection_text()
         self._draw()
 
     def _apply(self) -> None:
-        if self.selected_point is None or self.projection is None:
+        if self.selected_point is None:
             self.owner.owner.app.messagebox.showinfo(
                 "尚未选点",
-                "请先点击模型表面上的二维码中心安装位置。",
+                "请先单击模型表面上的二维码中心安装位置。",
                 parent=self.window,
             )
             return
+        right, up, front = self._orientation()
         for variable, value in zip(self.owner.center, self.selected_point):
             variable.set(f"{float(value):.6g}")
-        self.owner.print_right.set(str(self.projection["right_name"]))
-        self.owner.print_up.set(str(self.projection["up_name"]))
+        self.owner.custom_right_world = right.copy()
+        self.owner.custom_up_world = up.copy()
+        self.owner.orientation_text.set(
+            f"模型三维方向：RIGHT {self._vector_text(right)}，UP {self._vector_text(up)}，"
+            f"朝外法向 {self._vector_text(front)}"
+        )
         self.owner.cad_confirmed.set(True)
         coordinates = ", ".join(f"{value:.3f}" for value in self.selected_point)
         self.owner.message.set(
-            f"已从三维模型选择二维码中心 [{coordinates}] mm，"
-            f"方向为 {self.view.get()}。将二维码中心固定在该位置后再识别。"
+            f"已从三维模型选择二维码中心 [{coordinates}] mm 和表面方向。"
+            "请按红色 RIGHT、绿色 UP 固定二维码后再抓拍识别。"
         )
+        try:
+            _payload, nominal_edge, measured_edge, center, max_rms = self.owner._values()
+            self.owner._remember(nominal_edge, measured_edge, center, max_rms)
+            self.owner.owner._persist_profile(("qr_settings",))
+        except (OSError, ValueError):
+            # The selected geometry remains in the open dialog; invalid marker
+            # text can be corrected there before the next explicit save/apply.
+            pass
         from .logging_config import get_logger, log_event
 
         log_event(
@@ -1107,9 +1304,10 @@ class ModelAnchorPickerDialog:
             model_path=self.owner.owner.fields["model"].get(),
             object_id=self.selected_object_id,
             marker_center_world_mm=self.selected_point.tolist(),
-            view=self.view.get(),
-            print_right_world=self.projection["right_name"],
-            print_up_world=self.projection["up_name"],
+            marker_right_world=right.tolist(),
+            marker_up_world=up.tolist(),
+            marker_front_world=front.tolist(),
+            surface_roll_deg=float(self.roll_deg.get()),
         )
         self.window.destroy()
 
@@ -1124,8 +1322,9 @@ class QrRegistrationDialog:
         stored = owner.qr_settings
         self.window = tk.Toplevel(owner.window)
         self.window.title("相机二维码标定 · 距离、方向与倾斜")
-        self.window.geometry("760x670")
-        self.window.resizable(False, False)
+        self.window.geometry("820x880")
+        self.window.minsize(760, 760)
+        self.window.resizable(True, True)
         self.window.transient(owner.window)
         self.marker_id = tk.StringVar(value=str(stored.get("marker_id", "PIPE-TWIN-QR-001")))
         self.marker_edge = tk.StringVar(value=str(stored.get("marker_edge_mm", 120.0)))
@@ -1134,13 +1333,26 @@ class QrRegistrationDialog:
         )
         self.center = [
             tk.StringVar(value=str(value))
-            for value in stored.get("marker_center_world_mm", [0.0, 0.0, 0.0])
+            for value in stored.get("marker_center_world_mm", ["", "", ""])
         ]
         self.print_right = tk.StringVar(value=str(stored.get("print_right_world", "+X")))
         self.print_up = tk.StringVar(value=str(stored.get("print_up_world", "+Y")))
+        self.custom_right_world: np.ndarray | None = None
+        self.custom_up_world: np.ndarray | None = None
+        if "marker_right_world" in stored and "marker_up_world" in stored:
+            self.custom_right_world = _normalized_direction(
+                stored["marker_right_world"], "保存的二维码 RIGHT"
+            )
+            self.custom_up_world = _normalized_direction(
+                stored["marker_up_world"], "保存的二维码 UP"
+            )
+        self.orientation_text = tk.StringVar()
+        self._refresh_orientation_text()
         self.max_rms = tk.StringVar(value=str(stored.get("max_reprojection_rms_px", 2.0)))
         self.print_measured = tk.BooleanVar(value=False)
         self.cad_confirmed = tk.BooleanVar(value=False)
+        self.source_text = tk.StringVar(value="尚未指定本次二维码左目照片。")
+        self.source_preview_image: Any = None
         self.message = tk.StringVar(
             value="先生成并按 100% 打印；量具复核尺寸后，将二维码固定在已知 CAD 位置。"
         )
@@ -1193,48 +1405,81 @@ class QrRegistrationDialog:
                 side="left", padx=(0, 12)
             )
         ttk.Label(frame, text="纸面 RIGHT 对应 CAD").grid(row=6, column=0, sticky="w", pady=8)
-        ttk.Combobox(
+        right_chooser = ttk.Combobox(
             frame,
             textvariable=self.print_right,
             values=tuple(WORLD_DIRECTIONS),
             state="readonly",
             width=8,
-        ).grid(row=6, column=1, sticky="w", pady=8)
+        )
+        right_chooser.grid(row=6, column=1, sticky="w", pady=8)
         ttk.Label(frame, text="纸面 UP 对应 CAD").grid(row=6, column=2, sticky="e", pady=8)
-        ttk.Combobox(
+        up_chooser = ttk.Combobox(
             frame,
             textvariable=self.print_up,
             values=tuple(WORLD_DIRECTIONS),
             state="readonly",
             width=8,
-        ).grid(row=6, column=3, sticky="w", padx=(8, 0), pady=8)
+        )
+        up_chooser.grid(row=6, column=3, sticky="w", padx=(8, 0), pady=8)
+        right_chooser.bind("<<ComboboxSelected>>", self._manual_orientation_selected)
+        up_chooser.bind("<<ComboboxSelected>>", self._manual_orientation_selected)
+        ttk.Label(
+            frame,
+            textvariable=self.orientation_text,
+            wraplength=760,
+            foreground="#355371",
+        ).grid(row=7, column=0, columnspan=4, sticky="w", pady=(0, 7))
         ttk.Label(frame, text="允许的最大重投影 RMS / px").grid(
-            row=7, column=0, sticky="w", pady=5
+            row=8, column=0, sticky="w", pady=5
         )
         ttk.Entry(frame, textvariable=self.max_rms, width=12).grid(
-            row=7, column=1, sticky="w", pady=5
+            row=8, column=1, sticky="w", pady=5
         )
         ttk.Label(
             frame,
             text="建议 ≤ 2 px；数值越小，角点与位姿拟合越一致。",
             foreground="#4A6178",
-        ).grid(row=7, column=2, columnspan=2, sticky="w", pady=5)
+        ).grid(row=8, column=2, columnspan=2, sticky="w", pady=5)
         ttk.Checkbutton(
             frame,
             text="已按 100% 打印，并用量具复核 100 mm 校验线及二维码编码区实测边长",
             variable=self.print_measured,
-        ).grid(row=8, column=0, columnspan=4, sticky="w", pady=(14, 5))
+        ).grid(row=9, column=0, columnspan=4, sticky="w", pady=(14, 5))
         ttk.Checkbutton(
             frame,
             text="已确认二维码中心 CAD 坐标以及纸面 RIGHT / UP 的实际安装方向",
             variable=self.cad_confirmed,
-        ).grid(row=9, column=0, columnspan=4, sticky="w", pady=5)
+        ).grid(row=10, column=0, columnspan=4, sticky="w", pady=5)
+        source_group = ttk.LabelFrame(frame, text="本次二维码左目图像", padding=8)
+        source_group.grid(row=11, column=0, columnspan=4, sticky="ew", pady=(10, 2))
+        source_group.columnconfigure(1, weight=1)
+        self.source_preview = ttk.Label(
+            source_group, text="尚无图像", width=35, anchor="center"
+        )
+        self.source_preview.grid(row=0, column=0, rowspan=3, padx=(0, 10), sticky="nsew")
+        ttk.Label(
+            source_group,
+            textvariable=self.source_text,
+            wraplength=420,
+            foreground="#355371",
+        ).grid(row=0, column=1, columnspan=2, sticky="w", pady=(0, 6))
+        ttk.Button(
+            source_group,
+            text="连接双目相机并抓拍二维码…",
+            command=self.capture_qr_image,
+        ).grid(row=1, column=1, sticky="w", padx=(0, 6), pady=3)
+        ttk.Button(
+            source_group,
+            text="刷新现场页已有照片",
+            command=self.refresh_source_image,
+        ).grid(row=1, column=2, sticky="w", pady=3)
         ttk.Label(
             frame,
             textvariable=self.message,
             wraplength=710,
             foreground="#355371",
-        ).grid(row=10, column=0, columnspan=4, sticky="w", pady=(16, 8))
+        ).grid(row=12, column=0, columnspan=4, sticky="w", pady=(12, 6))
         ttk.Label(
             frame,
             text=(
@@ -1243,9 +1488,9 @@ class QrRegistrationDialog:
             ),
             wraplength=710,
             foreground="#8A4E00",
-        ).grid(row=11, column=0, columnspan=4, sticky="w", pady=8)
+        ).grid(row=13, column=0, columnspan=4, sticky="w", pady=6)
         buttons = ttk.Frame(frame)
-        buttons.grid(row=12, column=0, columnspan=4, sticky="e", pady=12)
+        buttons.grid(row=14, column=0, columnspan=4, sticky="e", pady=8)
         ttk.Button(buttons, text="关闭", command=self.window.destroy).pack(
             side="left", padx=4
         )
@@ -1254,6 +1499,111 @@ class QrRegistrationDialog:
             text="识别并完成相机二维码标定",
             command=self.apply,
         ).pack(side="left", padx=4)
+        self.refresh_source_image(silent=True)
+
+    @staticmethod
+    def _vector_text(vector: np.ndarray) -> str:
+        return "[" + ", ".join(f"{float(value):.4f}" for value in vector) + "]"
+
+    def _refresh_orientation_text(self) -> None:
+        if self.custom_right_world is not None and self.custom_up_world is not None:
+            front = np.cross(self.custom_right_world, self.custom_up_world)
+            self.orientation_text.set(
+                f"三维模型方向：RIGHT {self._vector_text(self.custom_right_world)}，"
+                f"UP {self._vector_text(self.custom_up_world)}，"
+                f"朝外法向 {self._vector_text(front)}"
+            )
+        else:
+            self.orientation_text.set(
+                f"手工坐标轴方向：RIGHT {self.print_right.get()}，UP {self.print_up.get()}"
+            )
+
+    def _manual_orientation_selected(self, _event: Any = None) -> None:
+        self.custom_right_world = None
+        self.custom_up_world = None
+        self.cad_confirmed.set(False)
+        self._refresh_orientation_text()
+
+    def refresh_source_image(self, *, silent: bool = False) -> None:
+        try:
+            path = _qr_source_image_path(self.owner.fields["left"].get())
+            image_bytes = path.read_bytes()
+            image = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+            if image is None:
+                raise QrRegistrationError(f"无法读取二维码左目照片：{path}")
+            height, width = image.shape[:2]
+            scale = min(300.0 / width, 170.0 / height, 1.0)
+            shown = (
+                cv2.resize(
+                    image,
+                    (max(1, round(width * scale)), max(1, round(height * scale))),
+                    interpolation=cv2.INTER_AREA,
+                )
+                if scale < 1.0
+                else image
+            )
+            ok, encoded = cv2.imencode(".png", shown)
+            if not ok:
+                raise QrRegistrationError("无法生成二维码左目照片预览")
+            self.source_preview_image = self.owner.app.tk.PhotoImage(
+                data=base64.b64encode(encoded).decode("ascii"), format="png"
+            )
+            self.source_preview.configure(image=self.source_preview_image, text="")
+            self.source_text.set(f"当前识别图：{path}\n图像尺寸：{width}×{height} px")
+        except (OSError, ValueError) as error:
+            self.source_preview_image = None
+            self.source_preview.configure(image="", text="尚无可用左目图像")
+            self.source_text.set(str(error))
+            if not silent:
+                self.owner.app.messagebox.showerror(
+                    "二维码图像不可用", str(error), parent=self.window
+                )
+
+    def _qr_capture_ready(
+        self,
+        paths: Mapping[str, Path],
+        pair: CapturedStereoPair,
+    ) -> None:
+        from .logging_config import get_logger, log_event
+
+        self.refresh_source_image(silent=True)
+        self.message.set(
+            f"二维码照片已抓拍：每目 {pair.left.shape[1]}×{pair.left.shape[0]}，"
+            f"左右时间差 {pair.sync_delta_ms:.3f} ms。请核对左目预览后开始识别。"
+        )
+        log_event(
+            get_logger("qr_registration"),
+            "qr_capture_ready",
+            left_image=paths["left"],
+            right_image=paths["right"],
+            image_width_px=pair.left.shape[1],
+            image_height_px=pair.left.shape[0],
+            sync_delta_ms=pair.sync_delta_ms,
+        )
+
+    def capture_qr_image(self) -> None:
+        try:
+            calibration = self.owner.calibration_override or load_calibration_json(
+                self.owner.fields["calibration"].get()
+            )
+            problem = field_calibration_problem(calibration)
+            if problem:
+                raise QrRegistrationError(problem)
+            from .calibration_wizard import rectifier_for_calibration
+
+            rectifier = rectifier_for_calibration(
+                calibration, getattr(self.owner, "profile", None)
+            )
+            StereoCameraDialog(
+                self.owner,
+                calibration,
+                rectifier,
+                on_capture=self._qr_capture_ready,
+            )
+        except (OSError, ValueError) as error:
+            self.owner.app.messagebox.showerror(
+                "二维码抓拍无法启动", str(error), parent=self.window
+            )
 
     def _values(self) -> tuple[str, float, float, list[float], float]:
         marker_id = self.marker_id.get().strip()
@@ -1262,7 +1612,14 @@ class QrRegistrationDialog:
         payload = qr_payload(marker_id, nominal_edge)
         if not np.isfinite(measured_edge) or not 30.0 <= measured_edge <= 160.0:
             raise QrRegistrationError("打印后实测边长应在 30 到 160 mm 之间")
-        center = [float(value.get()) for value in self.center]
+        try:
+            center = [float(value.get()) for value in self.center]
+        except ValueError as error:
+            raise QrRegistrationError(
+                "二维码中心 CAD 坐标未设置；请从三维模型选择安装点"
+            ) from error
+        if not np.all(np.isfinite(center)):
+            raise QrRegistrationError("二维码中心 CAD 坐标必须是三个有限毫米值")
         max_rms = float(self.max_rms.get())
         return payload, nominal_edge, measured_edge, center, max_rms
 
@@ -1282,6 +1639,9 @@ class QrRegistrationDialog:
             "print_up_world": self.print_up.get(),
             "max_reprojection_rms_px": max_rms,
         }
+        if self.custom_right_world is not None and self.custom_up_world is not None:
+            self.owner.qr_settings["marker_right_world"] = self.custom_right_world.tolist()
+            self.owner.qr_settings["marker_up_world"] = self.custom_up_world.tolist()
 
     def export_marker(self) -> None:
         from .logging_config import get_logger, log_event
@@ -1364,6 +1724,19 @@ class QrRegistrationDialog:
             if not self.cad_confirmed.get():
                 raise QrRegistrationError("请先确认二维码的 CAD 坐标和纸面方向")
             payload, nominal_edge, measured_edge, center, max_rms = self._values()
+            self._remember(nominal_edge, measured_edge, center, max_rms)
+            self.owner._persist_profile(("qr_settings",))
+            left_path = _qr_source_image_path(self.owner.fields["left"].get())
+            right_world: Any = (
+                self.custom_right_world.tolist()
+                if self.custom_right_world is not None
+                else self.print_right.get()
+            )
+            up_world: Any = (
+                self.custom_up_world.tolist()
+                if self.custom_up_world is not None
+                else self.print_up.get()
+            )
             log_event(
                 logger,
                 "qr_registration_start",
@@ -1371,10 +1744,11 @@ class QrRegistrationDialog:
                 nominal_edge_mm=nominal_edge,
                 measured_edge_mm=measured_edge,
                 marker_center_world_mm=center,
-                print_right_world=self.print_right.get(),
-                print_up_world=self.print_up.get(),
+                source_left_image=left_path,
+                print_right_world=right_world,
+                print_up_world=up_world,
             )
-            calibration = load_calibration_json(
+            calibration = self.owner.calibration_override or load_calibration_json(
                 self.owner.fields["calibration"].get()
             )
             from .stereo_analyzer import _calibration_from_manifest
@@ -1383,7 +1757,7 @@ class QrRegistrationDialog:
             if not parsed.validated:
                 raise QrRegistrationError("双目标定尚未标记 validated=true，不能进行毫米定位")
             estimate = detect_qr_pose(
-                self.owner.fields["left"].get(),
+                left_path,
                 expected_payload=payload,
                 marker_edge_mm=measured_edge,
                 # The selected QR image is an already-rectified capture; use
@@ -1395,8 +1769,8 @@ class QrRegistrationDialog:
                 calibration,
                 estimate,
                 marker_center_world_mm=center,
-                print_right_world=self.print_right.get(),
-                print_up_world=self.print_up.get(),
+                print_right_world=right_world,
+                print_up_world=up_world,
                 registration_validated=True,
                 max_reprojection_rms_px=max_rms,
             )

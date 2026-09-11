@@ -130,6 +130,47 @@ class QrRegistrationTests(unittest.TestCase):
             "qr_single_planar_control",
         )
 
+    def test_qr_registration_accepts_arbitrary_model_surface_directions(self):
+        edge = 120.0
+        points = np.asarray(
+            [[-60.0, 60.0, 0.0], [60.0, 60.0, 0.0], [60.0, -60.0, 0.0], [-60.0, -60.0, 0.0]],
+            dtype=np.float64,
+        )
+        rotation = np.diag([1.0, -1.0, -1.0])
+        rvec, _ = cv2.Rodrigues(rotation)
+        corners, _ = cv2.projectPoints(
+            points,
+            rvec,
+            np.asarray([0.0, 0.0, 1000.0]),
+            self.camera.intrinsic,
+            np.zeros(5),
+        )
+        estimate = estimate_square_pose(
+            corners_px=corners,
+            marker_edge_mm=edge,
+            intrinsic=self.camera.intrinsic,
+            decoded_payload=qr_payload("PIPE-ROOM-A", edge),
+            source_image_sha256="d" * 64,
+        )
+        diagonal = 2.0 ** -0.5
+        right_world = [diagonal, diagonal, 0.0]
+        up_world = [0.0, 0.0, 1.0]
+        result = register_calibration_from_qr(
+            self.calibration,
+            estimate,
+            marker_center_world_mm=[100.0, 200.0, 300.0],
+            print_right_world=right_world,
+            print_up_world=up_world,
+            registration_validated=True,
+        )
+        audit = result["registration_adjustment"]
+        np.testing.assert_allclose(audit["print_right_world"], right_world, atol=1e-9)
+        np.testing.assert_allclose(audit["print_up_world"], up_world, atol=1e-9)
+        np.testing.assert_allclose(
+            audit["marker_front_world"], [diagonal, -diagonal, 0.0], atol=1e-9
+        )
+        self.assertTrue(_calibration_from_manifest(result).registration_validated)
+
     def test_detector_decodes_a_generated_marker(self):
         payload = qr_payload("PIPE-ROOM-A", 120.0)
         marker = cv2.QRCodeEncoder_create().encode(payload)

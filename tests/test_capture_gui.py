@@ -15,8 +15,13 @@ import numpy as np
 from pipe_twin.capture_gui import (
     MODEL_ANCHOR_VIEWS,
     QrRegistrationDialog,
+    StereoCameraDialog,
     _model_anchor_projection,
+    _model_anchor_projection_basis,
+    _model_surface_orientation,
+    _orbit_view_basis,
     _pick_model_anchor_surface,
+    _qr_source_image_path,
     catalog_from_model,
     create_capture_dataset,
     field_calibration_problem,
@@ -27,6 +32,7 @@ from pipe_twin.capture_gui import (
 from pipe_twin.camera_pose import apply_camera_pose
 from pipe_twin.cli import build_parser
 from pipe_twin.stereo_analyzer import _load_cad_scene
+from pipe_twin.stereo_camera import CapturedStereoPair, LAYOUT_SIDE_BY_SIDE_LR
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -110,6 +116,93 @@ class CaptureInputTests(unittest.TestCase):
             MODEL_ANCHOR_VIEWS[label],
             (projection["right_name"], projection["up_name"]),
         )
+
+    def test_orbit_picker_derives_an_arbitrary_orthonormal_surface_basis(self):
+        mesh = SimpleNamespace(
+            object_id="sloped-surface",
+            color_srgb="#B0B0B0",
+            vertices_world_mm=np.asarray(
+                [[0.0, 0.0, 0.0], [10.0, 0.0, 10.0], [0.0, 10.0, 0.0]]
+            ),
+            triangles=np.asarray([[0, 1, 2]], dtype=np.int32),
+        )
+        right_view, up_view = _orbit_view_basis(35.0, 20.0)
+        projection = _model_anchor_projection_basis(
+            SimpleNamespace(objects=(mesh,)),
+            width=600,
+            height=400,
+            right_world=right_view,
+            up_world=up_view,
+            zoom=1.5,
+        )
+        right, up, front = _model_surface_orientation(
+            projection, 0, roll_deg=31.0
+        )
+        np.testing.assert_allclose(np.linalg.norm(right), 1.0, atol=1e-9)
+        np.testing.assert_allclose(np.linalg.norm(up), 1.0, atol=1e-9)
+        np.testing.assert_allclose(np.linalg.norm(front), 1.0, atol=1e-9)
+        np.testing.assert_allclose(np.dot(right, up), 0.0, atol=1e-9)
+        np.testing.assert_allclose(np.cross(right, up), front, atol=1e-9)
+        self.assertGreater(abs(float(front[0])), 0.5)
+        self.assertGreater(abs(float(front[2])), 0.5)
+
+    def test_blank_qr_source_is_not_reported_as_dot_directory(self):
+        with self.assertRaisesRegex(ValueError, "尚未抓拍二维码照片") as caught:
+            _qr_source_image_path("")
+        self.assertNotIn("不存在：.", str(caught.exception))
+
+    def test_direct_camera_capture_notifies_qr_dialog_with_saved_images(self):
+        pair = CapturedStereoPair(
+            left=np.zeros((8, 12, 3), dtype=np.uint8),
+            right=np.ones((8, 12, 3), dtype=np.uint8),
+            left_captured_at="2026-09-11T17:00:00.000+08:00",
+            right_captured_at="2026-09-11T17:00:00.001+08:00",
+            sync_delta_ms=1.0,
+            timestamp_source="HOST_SYSTEM_CLOCK",
+            provenance={"left": {}, "right": {}},
+        )
+        dialog = object.__new__(StereoCameraDialog)
+        dialog._opening = False
+        dialog.session = SimpleNamespace(read_pair=mock.Mock(return_value=pair))
+        dialog.rectifier = None
+        dialog.calibration = SimpleNamespace(
+            max_sync_delta_ms=10.0,
+            left=SimpleNamespace(width=12, height=8),
+        )
+        variables = {key: mock.Mock() for key in ("left", "right", "left_time", "right_time")}
+        owner = SimpleNamespace(
+            fields=variables,
+            timestamp_sources={},
+            camera_capture_provenance={},
+            confirmed=mock.Mock(),
+            message=mock.Mock(),
+            _persist_profile=mock.Mock(),
+        )
+        dialog.owner = owner
+        dialog.app = SimpleNamespace(messagebox=SimpleNamespace(showerror=mock.Mock()))
+        dialog.window = object()
+        dialog._layout = lambda: LAYOUT_SIDE_BY_SIDE_LR
+        dialog._indices = lambda: (0, None)
+        dialog.close = mock.Mock()
+        callback_paths = []
+
+        def receive(paths, received_pair):
+            self.assertIs(received_pair, pair)
+            self.assertTrue(paths["left"].is_file())
+            self.assertTrue(paths["right"].is_file())
+            callback_paths.append(paths)
+
+        dialog.on_capture = receive
+        with tempfile.TemporaryDirectory() as temp, mock.patch(
+            "pipe_twin.measurement_gui.OUTPUT_ROOT", Path(temp)
+        ):
+            dialog.capture()
+        self.assertEqual(len(callback_paths), 1)
+        variables["left"].set.assert_called_once()
+        variables["right"].set.assert_called_once()
+        owner.confirmed.set.assert_called_once_with(True)
+        dialog.close.assert_called_once()
+        dialog.app.messagebox.showerror.assert_not_called()
 
     def test_qr_print_export_does_not_require_cad_coordinates_first(self):
         dialog = object.__new__(QrRegistrationDialog)
