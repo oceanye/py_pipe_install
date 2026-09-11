@@ -33,6 +33,7 @@ def main():
         CameraPoseDialog,
         CaptureInputDialog,
         ColorPickDialog,
+        ModelAnchorPickerDialog,
         QrRegistrationDialog,
         StereoCameraDialog,
     )
@@ -140,6 +141,22 @@ def main():
         assert qr.marker_id.get() == "PIPE-TWIN-QR-001"
         assert qr.marker_edge.get() == "120.0"
         assert qr.measured_edge.get() == "120.0"
+        model_picker = ModelAnchorPickerDialog(qr)
+        root.update()
+        assert model_picker.projection is not None, [
+            model_picker.canvas.itemcget(item, "text")
+            for item in model_picker.canvas.find_all()
+            if model_picker.canvas.type(item) == "text"
+        ]
+        triangle = model_picker.projection["triangles_canvas"][0]
+        click = np.mean(triangle, axis=0)
+        model_picker._pick(
+            type("Event", (), {"x": float(click[0]), "y": float(click[1])})()
+        )
+        assert model_picker.selected_point is not None
+        model_picker._apply()
+        root.update()
+        assert qr.cad_confirmed.get()
         qr.window.destroy()
         pose = CameraPoseDialog(wizard, calibration)
         assert not pose.advanced_visible
@@ -244,6 +261,7 @@ def main():
                     "capture_dialog",
                     "stereo_camera_dialog",
                     "qr_registration_dialog",
+                    "qr_model_anchor_picker",
                     "side_view_pose",
                     "camera_pose_dialog",
                     "export",

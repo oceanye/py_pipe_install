@@ -7,8 +7,16 @@ import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
+
+import numpy as np
 
 from pipe_twin.capture_gui import (
+    MODEL_ANCHOR_VIEWS,
+    QrRegistrationDialog,
+    _model_anchor_projection,
+    _pick_model_anchor_surface,
     catalog_from_model,
     create_capture_dataset,
     field_calibration_problem,
@@ -62,6 +70,74 @@ class CaptureInputTests(unittest.TestCase):
             ["inspect-model", str(STL_MODEL), "--stl-unit", "millimeter"]
         )
         self.assertEqual(parsed.stl_unit, "millimeter")
+
+    def test_model_anchor_picker_selects_frontmost_surface_and_view_axes(self):
+        mesh = SimpleNamespace(
+            object_id="pipe-surface",
+            color_srgb="#B0B0B0",
+            vertices_world_mm=np.asarray(
+                [
+                    [0.0, 0.0, 0.0],
+                    [10.0, 0.0, 0.0],
+                    [0.0, 10.0, 0.0],
+                    [0.0, 0.0, 5.0],
+                    [10.0, 0.0, 5.0],
+                    [0.0, 10.0, 5.0],
+                ]
+            ),
+            triangles=np.asarray([[0, 1, 2], [3, 4, 5]], dtype=np.int32),
+        )
+        scene = SimpleNamespace(objects=(mesh,))
+        label = "从上往下（+Z → -Z）"
+        projection = _model_anchor_projection(
+            scene, width=600, height=400, view_label=label
+        )
+        expected_world = np.asarray([2.0, 2.0, 5.0])
+        click = (
+            float(expected_world @ projection["right_world"])
+            * projection["scale"]
+            + projection["offset_x"],
+            -float(expected_world @ projection["up_world"])
+            * projection["scale"]
+            + projection["offset_y"],
+        )
+        selected = _pick_model_anchor_surface(projection, click)
+        self.assertIsNotNone(selected)
+        point, triangle_index = selected
+        np.testing.assert_allclose(point, expected_world, atol=1e-8)
+        self.assertEqual(triangle_index, 1)
+        self.assertEqual(
+            MODEL_ANCHOR_VIEWS[label],
+            (projection["right_name"], projection["up_name"]),
+        )
+
+    def test_qr_print_export_does_not_require_cad_coordinates_first(self):
+        dialog = object.__new__(QrRegistrationDialog)
+        dialog.marker_id = mock.Mock()
+        dialog.marker_id.get.return_value = "PIPE-TWIN-QR-001"
+        dialog.marker_edge = mock.Mock()
+        dialog.marker_edge.get.return_value = "120"
+        dialog.message = mock.Mock()
+        dialog.window = object()
+        protector = mock.Mock()
+        dialog.owner = SimpleNamespace(
+            app=SimpleNamespace(
+                measurement_panel=SimpleNamespace(_protect_output=protector),
+                messagebox=SimpleNamespace(showerror=mock.Mock()),
+            )
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            generated = Path(temp) / "qr.png"
+            generated.write_bytes(b"png")
+            with mock.patch(
+                "pipe_twin.capture_gui.write_printable_qr_png",
+                return_value=generated,
+            ) as writer:
+                dialog.export_marker()
+        writer.assert_called_once()
+        protector.assert_called_once()
+        dialog.message.set.assert_called_once()
+        dialog.owner.app.messagebox.showerror.assert_not_called()
 
     def test_create_copies_original_assets_and_keeps_model_mapping(self):
         before = hashlib.sha256(self.arguments["left_path"].read_bytes()).hexdigest()

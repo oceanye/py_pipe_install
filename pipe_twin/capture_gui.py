@@ -9,7 +9,7 @@ import json
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 from uuid import uuid4
 
 import cv2
@@ -58,6 +58,130 @@ _CAPTURE_PROVENANCE_KEYS = {
     "side_by_side_order",
     "capture_sync_method",
 }
+
+_QR_PRINT_ROOT = (
+    Path(__file__).resolve().parents[1]
+    / "outputs"
+    / "measurement_workbench"
+    / "print_targets"
+)
+
+# The two printed in-plane axes also define the printed-front direction by
+# RIGHT x UP.  The labels describe where the camera is placed relative to CAD.
+MODEL_ANCHOR_VIEWS: dict[str, tuple[str, str]] = {
+    "从上往下（+Z → -Z）": ("+X", "+Y"),
+    "从下往上（-Z → +Z）": ("-X", "+Y"),
+    "从右往左（+X → -X）": ("+Y", "+Z"),
+    "从左往右（-X → +X）": ("-Y", "+Z"),
+    "从后往前（+Y → -Y）": ("-X", "+Z"),
+    "从前往后（-Y → +Y）": ("+X", "+Z"),
+}
+
+
+def _model_anchor_projection(
+    scene: Any,
+    *,
+    width: int,
+    height: int,
+    view_label: str,
+) -> dict[str, Any]:
+    """Project CAD triangles for an orthographic surface-point picker."""
+
+    if view_label not in MODEL_ANCHOR_VIEWS:
+        raise ValueError("未知的模型观察方向")
+    if width < 100 or height < 100:
+        raise ValueError("模型选点画布尺寸过小")
+    right_name, up_name = MODEL_ANCHOR_VIEWS[view_label]
+    right = WORLD_DIRECTIONS[right_name]
+    up = WORLD_DIRECTIONS[up_name]
+    front = np.cross(right, up)
+    triangles_world: list[np.ndarray] = []
+    colors: list[str] = []
+    object_ids: list[str] = []
+    for item in scene.objects:
+        vertices = np.asarray(item.vertices_world_mm, dtype=np.float64)
+        triangles = np.asarray(item.triangles, dtype=np.int32)
+        if not len(vertices) or not len(triangles):
+            continue
+        selected = vertices[triangles]
+        triangles_world.extend(selected)
+        colors.extend([str(item.color_srgb)] * len(selected))
+        object_ids.extend([str(item.object_id)] * len(selected))
+    if not triangles_world:
+        raise ValueError("三维模型中没有可选择的三角网格")
+    world = np.asarray(triangles_world, dtype=np.float64)
+    u = world @ right
+    v = world @ up
+    depth = world @ front
+    min_u, max_u = float(np.min(u)), float(np.max(u))
+    min_v, max_v = float(np.min(v)), float(np.max(v))
+    margin = 42.0
+    scale = min(
+        max(1.0, width - 2.0 * margin) / max(max_u - min_u, 1e-9),
+        max(1.0, height - 2.0 * margin) / max(max_v - min_v, 1e-9),
+    )
+    offset_x = (width - (max_u - min_u) * scale) / 2.0 - min_u * scale
+    offset_y = (height + (max_v - min_v) * scale) / 2.0 + min_v * scale
+    canvas = np.stack(
+        (u * scale + offset_x, -v * scale + offset_y), axis=-1
+    )
+    return {
+        "triangles_world": world,
+        "triangles_canvas": canvas,
+        "triangle_depths": depth,
+        "colors": colors,
+        "object_ids": object_ids,
+        "right_world": right.copy(),
+        "up_world": up.copy(),
+        "front_world": front.copy(),
+        "right_name": right_name,
+        "up_name": up_name,
+        "scale": float(scale),
+        "offset_x": float(offset_x),
+        "offset_y": float(offset_y),
+    }
+
+
+def _pick_model_anchor_surface(
+    projection: Mapping[str, Any],
+    canvas_point: tuple[float, float],
+) -> tuple[np.ndarray, int] | None:
+    """Return the frontmost CAD surface point under a projected canvas click."""
+
+    triangles = np.asarray(projection["triangles_canvas"], dtype=np.float64)
+    world = np.asarray(projection["triangles_world"], dtype=np.float64)
+    depths = np.asarray(projection["triangle_depths"], dtype=np.float64)
+    point = np.asarray(canvas_point, dtype=np.float64)
+    a, b, c = triangles[:, 0], triangles[:, 1], triangles[:, 2]
+    v0 = b - a
+    v1 = c - a
+    v2 = point - a
+    denominator = v0[:, 0] * v1[:, 1] - v1[:, 0] * v0[:, 1]
+    usable = np.abs(denominator) > 1e-9
+    first = np.full(len(triangles), np.nan, dtype=np.float64)
+    second = np.full(len(triangles), np.nan, dtype=np.float64)
+    first[usable] = (
+        v2[usable, 0] * v1[usable, 1]
+        - v1[usable, 0] * v2[usable, 1]
+    ) / denominator[usable]
+    second[usable] = (
+        v0[usable, 0] * v2[usable, 1]
+        - v2[usable, 0] * v0[usable, 1]
+    ) / denominator[usable]
+    third = 1.0 - first - second
+    inside = usable & (first >= -1e-7) & (second >= -1e-7) & (third >= -1e-7)
+    indexes = np.flatnonzero(inside)
+    if not len(indexes):
+        return None
+    interpolated_depth = (
+        third[:, None] * depths[:, 0:1]
+        + first[:, None] * depths[:, 1:2]
+        + second[:, None] * depths[:, 2:3]
+    ).reshape(-1)
+    selected = int(indexes[np.argmax(interpolated_depth[indexes])])
+    barycentric = np.asarray([third[selected], first[selected], second[selected]])
+    world_point = barycentric @ world[selected]
+    return np.asarray(world_point, dtype=np.float64), selected
 
 
 def normalize_capture_time(value: str, *, field: str = "拍摄时间") -> tuple[str, bool]:
@@ -768,6 +892,228 @@ class StereoCameraDialog:
         self.window.destroy()
 
 
+class ModelAnchorPickerDialog:
+    """Pick the QR centre and its axis-aligned printed-front from a CAD mesh."""
+
+    def __init__(self, owner: Any) -> None:
+        self.owner = owner
+        capture = owner.owner
+        model_path = Path(capture.fields["model"].get().strip())
+        if not model_path.is_file():
+            raise ValueError("请先在现场录入页面选择并读取三维模型")
+        self.scene = load_cad_scene(
+            model_path,
+            stl_unit=(
+                capture.stl_unit.get()
+                if model_path.suffix.lower() == ".stl"
+                else None
+            ),
+        )
+        app = capture.app
+        tk, ttk = app.tk, app.ttk
+        self.window = tk.Toplevel(owner.window)
+        self.window.title("从三维模型选择二维码中心和方向")
+        self.window.geometry("940x720")
+        self.window.minsize(760, 600)
+        self.window.transient(owner.window)
+        current_axes = (owner.print_right.get(), owner.print_up.get())
+        initial_view = next(
+            (
+                label
+                for label, axes in MODEL_ANCHOR_VIEWS.items()
+                if axes == current_axes
+            ),
+            next(iter(MODEL_ANCHOR_VIEWS)),
+        )
+        self.view = tk.StringVar(value=initial_view)
+        self.selection_text = tk.StringVar(
+            value="选择相机所在方向，然后点击二维码中心在模型上的安装位置。"
+        )
+        self.selected_point: np.ndarray | None = None
+        self.selected_object_id = ""
+        self.projection: dict[str, Any] | None = None
+
+        frame = ttk.Frame(self.window, padding=12)
+        frame.pack(fill="both", expand=True)
+        toolbar = ttk.Frame(frame)
+        toolbar.pack(fill="x", pady=(0, 8))
+        ttk.Label(toolbar, text="相机相对模型方向：").pack(side="left")
+        chooser = ttk.Combobox(
+            toolbar,
+            textvariable=self.view,
+            values=tuple(MODEL_ANCHOR_VIEWS),
+            state="readonly",
+            width=28,
+        )
+        chooser.pack(side="left", padx=(4, 12))
+        chooser.bind("<<ComboboxSelected>>", self._change_view)
+        ttk.Label(
+            toolbar,
+            text="视图会同步确定纸面 RIGHT / UP；轻微倾斜由二维码自动求解。",
+            foreground="#355371",
+        ).pack(side="left")
+        self.canvas = tk.Canvas(
+            frame,
+            background="#F4F6F8",
+            highlightthickness=1,
+            highlightbackground="#8A8A8A",
+        )
+        self.canvas.pack(fill="both", expand=True)
+        self.canvas.bind("<Configure>", self._draw)
+        self.canvas.bind("<Button-1>", self._pick)
+        ttk.Label(
+            frame,
+            textvariable=self.selection_text,
+            foreground="#244D70",
+        ).pack(fill="x", pady=(8, 4))
+        buttons = ttk.Frame(frame)
+        buttons.pack(fill="x")
+        ttk.Button(buttons, text="取消", command=self.window.destroy).pack(
+            side="right", padx=4
+        )
+        ttk.Button(
+            buttons,
+            text="使用所选点和方向",
+            command=self._apply,
+        ).pack(side="right", padx=4)
+        self._draw()
+
+    def _change_view(self, _event: Any = None) -> None:
+        self.selected_point = None
+        self.selected_object_id = ""
+        self.selection_text.set("方向已切换，请重新点击二维码中心安装位置。")
+        self._draw()
+
+    def _draw(self, _event: Any = None) -> None:
+        width = max(int(self.canvas.winfo_width()), 400)
+        height = max(int(self.canvas.winfo_height()), 300)
+        self.canvas.delete("all")
+        try:
+            projection = _model_anchor_projection(
+                self.scene,
+                width=width,
+                height=height,
+                view_label=self.view.get(),
+            )
+        except (OSError, ValueError) as error:
+            self.projection = None
+            self.canvas.create_text(
+                width / 2,
+                height / 2,
+                text=f"模型视图生成失败：{error}",
+                fill="#B3261E",
+            )
+            return
+        self.projection = projection
+        triangles = projection["triangles_canvas"]
+        depths = np.mean(projection["triangle_depths"], axis=1)
+        order = np.argsort(depths)
+        # Tk remains responsive for detailed engineering meshes while the
+        # full-resolution triangle set stays available for point picking.
+        stride = max(1, int(np.ceil(len(order) / 12000)))
+        for index in order[::stride]:
+            points = triangles[int(index)].reshape(-1).tolist()
+            color = projection["colors"][int(index)]
+            self.canvas.create_polygon(
+                *points,
+                fill=color,
+                outline="#6C747A",
+                width=1,
+            )
+        self.canvas.create_text(
+            12,
+            10,
+            anchor="nw",
+            text=f"{self.view.get()} · 单位 mm · 点击可见表面",
+            fill="#263238",
+            font=("Segoe UI", 11, "bold"),
+        )
+        if self.selected_point is not None:
+            x, y = self._canvas_point(self.selected_point)
+            self.canvas.create_oval(
+                x - 7,
+                y - 7,
+                x + 7,
+                y + 7,
+                outline="#D32F2F",
+                width=3,
+            )
+            self.canvas.create_line(x - 11, y, x + 11, y, fill="#D32F2F", width=2)
+            self.canvas.create_line(x, y - 11, x, y + 11, fill="#D32F2F", width=2)
+
+    def _canvas_point(self, world_point: np.ndarray) -> tuple[float, float]:
+        if self.projection is None:
+            raise ValueError("模型视图尚未生成")
+        point = np.asarray(world_point, dtype=np.float64)
+        x = (
+            float(point @ self.projection["right_world"])
+            * self.projection["scale"]
+            + self.projection["offset_x"]
+        )
+        y = (
+            -float(point @ self.projection["up_world"])
+            * self.projection["scale"]
+            + self.projection["offset_y"]
+        )
+        return x, y
+
+    def _pick(self, event: Any) -> None:
+        if self.projection is None:
+            return
+        selected = _pick_model_anchor_surface(
+            self.projection,
+            (float(event.x), float(event.y)),
+        )
+        if selected is None:
+            self.selection_text.set("该位置没有模型表面，请点击着色区域。")
+            return
+        point, triangle_index = selected
+        self.selected_point = point
+        self.selected_object_id = str(
+            self.projection["object_ids"][triangle_index]
+        )
+        coordinates = ", ".join(f"{value:.3f}" for value in point)
+        right_name = self.projection["right_name"]
+        up_name = self.projection["up_name"]
+        self.selection_text.set(
+            f"模型点 [{coordinates}] mm · 对象 {self.selected_object_id} · "
+            f"纸面 RIGHT={right_name}、UP={up_name}"
+        )
+        self._draw()
+
+    def _apply(self) -> None:
+        if self.selected_point is None or self.projection is None:
+            self.owner.owner.app.messagebox.showinfo(
+                "尚未选点",
+                "请先点击模型表面上的二维码中心安装位置。",
+                parent=self.window,
+            )
+            return
+        for variable, value in zip(self.owner.center, self.selected_point):
+            variable.set(f"{float(value):.6g}")
+        self.owner.print_right.set(str(self.projection["right_name"]))
+        self.owner.print_up.set(str(self.projection["up_name"]))
+        self.owner.cad_confirmed.set(True)
+        coordinates = ", ".join(f"{value:.3f}" for value in self.selected_point)
+        self.owner.message.set(
+            f"已从三维模型选择二维码中心 [{coordinates}] mm，"
+            f"方向为 {self.view.get()}。将二维码中心固定在该位置后再识别。"
+        )
+        from .logging_config import get_logger, log_event
+
+        log_event(
+            get_logger("qr_registration"),
+            "qr_model_anchor_selected",
+            model_path=self.owner.owner.fields["model"].get(),
+            object_id=self.selected_object_id,
+            marker_center_world_mm=self.selected_point.tolist(),
+            view=self.view.get(),
+            print_right_world=self.projection["right_name"],
+            print_up_world=self.projection["up_name"],
+        )
+        self.window.destroy()
+
+
 class QrRegistrationDialog:
     """Generate a physical QR target and register the camera rig from it."""
 
@@ -832,8 +1178,13 @@ class QrRegistrationDialog:
 
         ttk.Separator(frame).grid(row=3, column=0, columnspan=4, sticky="ew", pady=12)
         ttk.Label(frame, text="二维码中心 CAD 坐标 / mm").grid(
-            row=4, column=0, columnspan=4, sticky="w", pady=(0, 5)
+            row=4, column=0, columnspan=2, sticky="w", pady=(0, 5)
         )
+        ttk.Button(
+            frame,
+            text="从三维模型选择点和方向…",
+            command=self.pick_model_anchor,
+        ).grid(row=4, column=2, columnspan=2, sticky="e", pady=(0, 5))
         center_frame = ttk.Frame(frame)
         center_frame.grid(row=5, column=0, columnspan=4, sticky="w")
         for axis, variable in zip("XYZ", self.center):
@@ -933,32 +1284,74 @@ class QrRegistrationDialog:
         }
 
     def export_marker(self) -> None:
+        from .logging_config import get_logger, log_event
+
+        logger = get_logger("qr_registration")
         try:
-            _payload, nominal_edge, _measured_edge, center, max_rms = self._values()
-            initial = f"{self.marker_id.get().strip()}_{nominal_edge:g}mm_300dpi_1to1.png"
-            selected = self.owner.app.filedialog.asksaveasfilename(
-                parent=self.window,
-                title="保存 1:1 二维码定位板",
-                initialfile=initial,
-                defaultextension=".png",
-                filetypes=(("PNG", "*.png"),),
+            marker_id = self.marker_id.get().strip()
+            nominal_edge = float(self.marker_edge.get())
+            qr_payload(marker_id, nominal_edge)
+            initial = f"{marker_id}_{nominal_edge:g}mm_300dpi_1to1.png"
+            selected = _QR_PRINT_ROOT / initial
+            log_event(
+                logger,
+                "qr_print_export_start",
+                output=selected,
+                marker_id=self.marker_id.get().strip(),
+                nominal_edge_mm=nominal_edge,
             )
-            if not selected:
-                return
-            self.owner.app.measurement_panel._protect_output(Path(selected))
+            protect = getattr(
+                getattr(self.owner.app, "measurement_panel", None),
+                "_protect_output",
+                None,
+            )
+            if protect is not None:
+                protect(selected)
             path = write_printable_qr_png(
                 selected,
                 marker_id=self.marker_id.get(),
                 marker_edge_mm=nominal_edge,
             )
-            self.measured_edge.set(f"{nominal_edge:g}")
-            self._remember(nominal_edge, nominal_edge, center, max_rms)
             self.message.set(
-                f"打印文件已保存：{path}。打印选择 100%/实际大小，之后用量具复核。"
+                f"打印文件已生成：{path}。按 100%/实际大小打印，之后用量具复核。"
+            )
+            log_event(
+                logger,
+                "qr_print_export_finished",
+                output=path,
+                byte_count=path.stat().st_size,
             )
         except (OSError, ValueError) as error:
+            log_event(
+                logger,
+                "qr_print_export_failed",
+                error_type=type(error).__name__,
+                error=str(error),
+            )
             self.owner.app.messagebox.showerror(
                 "二维码生成失败", str(error), parent=self.window
+            )
+
+    def pick_model_anchor(self) -> None:
+        from .logging_config import get_logger, log_event
+
+        try:
+            picker = ModelAnchorPickerDialog(self)
+            log_event(
+                get_logger("qr_registration"),
+                "qr_model_anchor_picker_opened",
+                model_path=self.owner.fields["model"].get(),
+                object_count=picker.scene.object_count,
+            )
+        except (OSError, ValueError) as error:
+            log_event(
+                get_logger("qr_registration"),
+                "qr_model_anchor_picker_failed",
+                error_type=type(error).__name__,
+                error=str(error),
+            )
+            self.owner.app.messagebox.showerror(
+                "三维模型选点失败", str(error), parent=self.window
             )
 
     def apply(self) -> None:
