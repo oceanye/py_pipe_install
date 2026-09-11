@@ -1867,7 +1867,7 @@ def analyze_stereo_capture(
         from .elevation_depth import analyze_elevation_depth_manifest
 
         return analyze_elevation_depth_manifest(
-            manifest_file, report_output_path=report_output_path
+            manifest_file, report_output_path=report_output_path, evidence_dir=evidence_dir
         )
     dataset_id = _require_string(manifest.get("dataset_id"), "dataset_id")
     model_revision = _require_string(manifest.get("model_revision"), "model_revision")

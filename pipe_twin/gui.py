@@ -1438,6 +1438,7 @@ class _PipeTwinApplication:
         tk, ttk = self.tk, self.ttk
         toolbar = ttk.Frame(self.root, padding=8)
         toolbar.pack(fill="x")
+        ttk.Button(toolbar, text="基础立面评估", command=self._open_elevation).pack(side="left", padx=3)
         ttk.Button(toolbar, text="载入清单", command=self._choose_manifest).pack(
             side="left", padx=3
         )
@@ -1677,6 +1678,11 @@ class _PipeTwinApplication:
         log_event(_LOGGER, "gui_sources_load_start", manifest=manifest_path, report=report_path)
         try:
             manifest = _read_json_object(manifest_path, "manifest")
+            if isinstance(manifest.get("analysis"), Mapping) and manifest["analysis"].get("mode") == "elevation_depth":
+                # Region-based reports have their own presentation contract;
+                # keep the CAD dashboard's geometry validation unchanged.
+                self._open_elevation(manifest_path)
+                return
             report = _read_json_object(report_path, "report") if report_path else None
             manifest_sha256, model_actual_sha256 = _loaded_asset_hashes(
                 manifest_path, manifest
@@ -2448,6 +2454,23 @@ class _PipeTwinApplication:
         from .capture_gui import CaptureInputDialog
 
         CaptureInputDialog(self)
+
+    def _open_elevation(self, manifest_path: Path | None = None) -> None:
+        from .elevation_gui import ElevationCaptureDialog
+
+        try:
+            current = getattr(self, "elevation_dialog", None)
+            if current is not None and not current.closed:
+                if current.busy:
+                    current.window.lift()
+                    return
+                if manifest_path is not None:
+                    current.load_session(manifest_path)
+                current.window.lift()
+            else:
+                self.elevation_dialog = ElevationCaptureDialog(self, manifest_path)
+        except (OSError, ValueError) as error:
+            self.messagebox.showerror("基础立面评估", str(error))
 
     def _open_calibration_wizard(self) -> None:
         """Open the chessboard wizard; it needs only the app, not a manifest."""

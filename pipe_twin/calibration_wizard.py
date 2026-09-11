@@ -2799,7 +2799,9 @@ class ChessboardWizardDialog:
             value=(
                 "步骤：生成并 100% 打印棋盘格 → 量取实测格边长 → 打开预览，"
                 "把纸张固定在硬质平板上，覆盖各区域并改变远近、前后倾斜和左右倾斜，"
-                "抓拍 ≥10 组 → 完成标定。标定后仍需一次二维码定位。"
+                "抓拍 ≥10 组 → 完成标定。"
+                + ("基础模式标定后可直接抓拍并框选管道。" if getattr(self.owner, "analysis_mode", None) == "elevation_depth"
+                   else "标定后仍需一次二维码定位。")
             )
         )
 
@@ -4317,15 +4319,19 @@ class ChessboardWizardDialog:
                 f"{result.left_rms_px:.3f}/{result.right_rms_px:.3f} px，"
                 f"基线 {result.calibration['baseline_mm']:.2f} mm，共 {result.pair_count} 组。\n"
                 f"右目画面自动修正：{result.audit.get('right_frame_transform', 'none')}。\n"
-                "注意：尚未配准 CAD——请点击“二维码定位”（或设置相机方向），然后保存工作台配置。"
+                + ("基础立面模式无需二维码；请重新抓拍，并在左右矫正图中框选管道。"
+                   if getattr(self.owner, "analysis_mode", None) == "elevation_depth"
+                   else "注意：尚未配准 CAD——请点击“二维码定位”（或设置相机方向），然后保存工作台配置。")
                 + checkpoint_note
             )
-            if self.owner is not None:
+            if self.owner is not None and not getattr(self.owner, "closed", False):
                 self.owner.fields["calibration"].set(str(path))
                 self.owner.calibration_override = None
                 self.owner.pose_adjustment = {"mode": "keep"}
                 self.owner.message.set(
-                    "棋盘格标定已保存并选中；请继续“二维码定位”完成 CAD 配准。"
+                    "棋盘格标定已保存并选中；请双目抓拍并框选管道区域。"
+                    if getattr(self.owner, "analysis_mode", None) == "elevation_depth"
+                    else "棋盘格标定已保存并选中；请继续“二维码定位”完成 CAD 配准。"
                 )
                 if hasattr(self.owner, "refresh_calibration_status"):
                     from .workbench_profile import load_profile
