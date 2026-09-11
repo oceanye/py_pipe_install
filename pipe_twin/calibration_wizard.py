@@ -555,6 +555,45 @@ class CalibrationCaptureArchive:
         self._write_manifest()
 
 
+def _reconcile_restored_capture_status(
+    *,
+    previous_archive: CalibrationCaptureArchive | None,
+    previous_capture_ids: list[int | None],
+    restored_archive: CalibrationCaptureArchive | None,
+    restored_capture_ids: list[int | None],
+) -> None:
+    """Keep archive status aligned with the pairs restored into the solver."""
+
+    previous_ids = {
+        int(capture_id)
+        for capture_id in previous_capture_ids
+        if capture_id is not None
+    }
+    restored_ids = {
+        int(capture_id)
+        for capture_id in restored_capture_ids
+        if capture_id is not None
+    }
+    if previous_archive is not None:
+        replaced_ids = set(previous_ids)
+        if (
+            restored_archive is not None
+            and previous_archive.session_path == restored_archive.session_path
+        ):
+            replaced_ids -= restored_ids
+        previous_archive.mark_status(
+            sorted(replaced_ids),
+            status="excluded_restore_replaced",
+            reason="界面恢复了另一份最近照片组",
+        )
+    if restored_archive is not None:
+        restored_archive.mark_status(
+            sorted(restored_ids),
+            status="active",
+            reason="从最近诊断恢复并继续使用",
+        )
+
+
 def _canonicalize_corner_order(corners: np.ndarray, pattern: tuple[int, int]) -> np.ndarray:
     """Flip detector output so corner[0] is the top-left-most inner corner.
 
@@ -1467,6 +1506,7 @@ def solve_stereo_calibration(
     layout: str,
     expected_baseline_mm: float | None = None,
     _allow_outlier_pruning: bool = True,
+    _monocular_pruning_complete: bool = False,
     _input_pair_count: int | None = None,
     _discarded_pair_indices: list[int] | None = None,
     _pruning_audit: Mapping[str, Any] | None = None,
@@ -1476,6 +1516,33 @@ def solve_stereo_calibration(
         raise ChessboardCalibrationError("操作员代号只能包含字母、数字、点、下划线和连字符（≤32 字符）")
     if not pairs:
         raise ChessboardCalibrationError("没有可用的棋盘格照片对")
+    input_pair_count = int(_input_pair_count or len(pairs))
+    discarded_pair_indices = sorted(set(_discarded_pair_indices or []))
+    current_original_indices = [
+        index
+        for index in range(1, input_pair_count + 1)
+        if index not in set(discarded_pair_indices)
+    ]
+    if len(current_original_indices) != len(pairs):
+        raise ChessboardCalibrationError("异常组索引与当前照片组数量不一致")
+
+    def merge_pruning_audit(
+        step: Mapping[str, Any], combined_indices: list[int]
+    ) -> dict[str, Any]:
+        previous = dict(_pruning_audit or {})
+        if not previous:
+            merged = dict(step)
+        else:
+            previous_steps = previous.get("steps")
+            if isinstance(previous_steps, list):
+                steps = [dict(item) for item in previous_steps]
+            else:
+                steps = [previous]
+            steps.append(dict(step))
+            merged = {"stage": "multi_stage", "steps": steps}
+        merged["discarded_pair_indices"] = list(combined_indices)
+        return merged
+
     _validate_solve_inputs(
         pairs,
         image_size,
@@ -1546,7 +1613,11 @@ def solve_stereo_calibration(
     )
     mono_pair_scores = np.maximum(left_mono_per_pair, right_mono_per_pair)
     quality_target = float(max_reprojection_rms_px)
-    if _allow_outlier_pruning and len(pairs) > min_pairs:
+    if (
+        _allow_outlier_pruning
+        and not _monocular_pruning_complete
+        and len(pairs) > min_pairs
+    ):
         median = float(np.median(mono_pair_scores))
         mad = float(np.median(np.abs(mono_pair_scores - median)))
         robust_limit = max(median + 3.5 * 1.4826 * mad, 0.5)
@@ -1556,7 +1627,9 @@ def solve_stereo_calibration(
             if score > robust_limit
         ]
         maximum_removals = min(
-            len(pairs) - min_pairs, max(1, len(pairs) // 5)
+            len(pairs) - min_pairs,
+            max(1, len(pairs) // 5),
+            max(0, max(1, input_pair_count // 3) - len(discarded_pair_indices)),
         )
         if candidates and maximum_removals > 0:
             ranked = sorted(
@@ -1564,7 +1637,17 @@ def solve_stereo_calibration(
             )
             removed = sorted(ranked[:maximum_removals])
             retained = [pair for index, pair in enumerate(pairs) if index not in removed]
-            original_indices = [index + 1 for index in removed]
+            new_original_indices = [current_original_indices[index] for index in removed]
+            combined_indices = sorted(
+                set(discarded_pair_indices + new_original_indices)
+            )
+            pruning_step = {
+                "stage": "monocular_reprojection",
+                "threshold_px": robust_limit,
+                "left_per_pair_rms_px": left_mono_per_pair.tolist(),
+                "right_per_pair_rms_px": right_mono_per_pair.tolist(),
+                "discarded_pair_indices": new_original_indices,
+            }
             return solve_stereo_calibration(
                 pairs=retained,
                 image_size=image_size,
@@ -1576,16 +1659,13 @@ def solve_stereo_calibration(
                 max_sync_delta_ms=max_sync_delta_ms,
                 layout=layout,
                 expected_baseline_mm=expected_baseline_mm,
-                _allow_outlier_pruning=False,
-                _input_pair_count=_input_pair_count or len(pairs),
-                _discarded_pair_indices=original_indices,
-                _pruning_audit={
-                    "stage": "monocular_reprojection",
-                    "threshold_px": robust_limit,
-                    "left_per_pair_rms_px": left_mono_per_pair.tolist(),
-                    "right_per_pair_rms_px": right_mono_per_pair.tolist(),
-                    "discarded_pair_indices": original_indices,
-                },
+                _allow_outlier_pruning=True,
+                _monocular_pruning_complete=True,
+                _input_pair_count=input_pair_count,
+                _discarded_pair_indices=combined_indices,
+                _pruning_audit=merge_pruning_audit(
+                    pruning_step, combined_indices
+                ),
             )
     transform_audit: list[dict[str, Any]] = []
 
@@ -1870,7 +1950,7 @@ def solve_stereo_calibration(
         median = float(np.median(scores))
         mad = float(np.median(np.abs(scores - median)))
         robust_limit = max(
-            median + 4.5 * 1.4826 * mad,
+            median + 3.5 * 1.4826 * mad,
             quality_target * 2.0,
         )
         candidates = [
@@ -1878,12 +1958,25 @@ def solve_stereo_calibration(
             for index, score in enumerate(scores)
             if score > robust_limit and score > quality_target * 2.0
         ]
-        maximum_removals = min(len(pairs) - min_pairs, max(1, len(pairs) // 5))
+        maximum_removals = min(
+            len(pairs) - min_pairs,
+            max(1, len(pairs) // 5),
+            max(0, max(1, input_pair_count // 3) - len(discarded_pair_indices)),
+        )
         if candidates and maximum_removals > 0:
             ranked = sorted(candidates, key=lambda index: scores[index], reverse=True)
             removed = sorted(ranked[:maximum_removals])
             retained = [pair for index, pair in enumerate(pairs) if index not in removed]
-            original_indices = [index + 1 for index in removed]
+            new_original_indices = [current_original_indices[index] for index in removed]
+            combined_indices = sorted(
+                set(discarded_pair_indices + new_original_indices)
+            )
+            pruning_step = {
+                "stage": "stereo_reprojection",
+                "threshold_px": robust_limit,
+                "per_pair_rms_px": scores.tolist(),
+                "discarded_pair_indices": new_original_indices,
+            }
             return solve_stereo_calibration(
                 pairs=retained,
                 image_size=image_size,
@@ -1895,15 +1988,13 @@ def solve_stereo_calibration(
                 max_sync_delta_ms=max_sync_delta_ms,
                 layout=layout,
                 expected_baseline_mm=expected_baseline_mm,
-                _allow_outlier_pruning=False,
-                _input_pair_count=_input_pair_count or len(pairs),
-                _discarded_pair_indices=original_indices,
-                _pruning_audit={
-                    "stage": "stereo_reprojection",
-                    "threshold_px": robust_limit,
-                    "per_pair_rms_px": scores.tolist(),
-                    "discarded_pair_indices": original_indices,
-                },
+                _allow_outlier_pruning=True,
+                _monocular_pruning_complete=True,
+                _input_pair_count=input_pair_count,
+                _discarded_pair_indices=combined_indices,
+                _pruning_audit=merge_pruning_audit(
+                    pruning_step, combined_indices
+                ),
             )
 
     R1, R2, P1, P2, _Q, _roi1, _roi2 = cv2.stereoRectify(
@@ -1948,8 +2039,8 @@ def solve_stereo_calibration(
         "pattern_inner_corners": list(pattern),
         "square_mm": float(square_mm),
         "pair_count": len(pairs),
-        "input_pair_count": int(_input_pair_count or len(pairs)),
-        "discarded_pair_indices": list(_discarded_pair_indices or []),
+        "input_pair_count": input_pair_count,
+        "discarded_pair_indices": discarded_pair_indices,
         "image_size_px": [size[0], size[1]],
         "stereo_rms_px": float(stereo_rms),
         "fixed_intrinsic_stereo_rms_px": float(fixed_intrinsic_stereo_rms),
@@ -3006,16 +3097,8 @@ class ChessboardWizardDialog:
             if isinstance(saved_baseline, (int, float)) and float(saved_baseline) > 0:
                 self.expected_baseline_mm.set(f"{float(saved_baseline):g}")
 
-            if self.capture_archive is not None:
-                self.capture_archive.mark_status(
-                    [
-                        value
-                        for value in self._pair_capture_ids
-                        if value is not None
-                    ],
-                    status="excluded_restore_replaced",
-                    reason="界面恢复了另一份最近照片组",
-                )
+            previous_archive = self.capture_archive
+            previous_capture_ids = list(self._pair_capture_ids)
             restored_archive: CalibrationCaptureArchive | None = None
             restored_capture_ids: list[int | None] = [None] * len(retained)
             archive_note = ""
@@ -3060,6 +3143,12 @@ class ChessboardWizardDialog:
                     archive_note = "；原始左右 PNG 会话已重新关联"
                 except (OSError, ValueError) as error:
                     archive_note = f"；原始照片会话未关联：{error}"
+            _reconcile_restored_capture_status(
+                previous_archive=previous_archive,
+                previous_capture_ids=previous_capture_ids,
+                restored_archive=restored_archive,
+                restored_capture_ids=restored_capture_ids,
+            )
             self.capture_archive = restored_archive
             self.pairs = retained
             self._pair_capture_ids = restored_capture_ids
@@ -3091,6 +3180,16 @@ class ChessboardWizardDialog:
                 source=source,
                 restored_pair_count=len(retained),
                 discarded_pair_indices=sorted(discarded),
+                restored_capture_ids=[
+                    capture_id
+                    for capture_id in restored_capture_ids
+                    if capture_id is not None
+                ],
+                capture_session=(
+                    restored_archive.session_path
+                    if restored_archive is not None
+                    else None
+                ),
                 missing_zones=coverage["missing"],
             )
         except Exception as error:

@@ -18,6 +18,7 @@ from pipe_twin.calibration_wizard import (
     CalibrationCaptureArchive,
     ChessboardWizardDialog,
     Rectifier,
+    _reconcile_restored_capture_status,
     _canonicalize_corner_order,
     _baseline_anchored_pinhole_attempt,
     align_pair_orientation,
@@ -499,6 +500,31 @@ class ChessboardWizardTests(unittest.TestCase):
             )
             self.assertEqual(reopened.manifest["pairs"][0]["status"], "excluded_solver")
 
+    def test_restoring_same_archive_reactivates_retained_capture_ids(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = CalibrationCaptureArchive.create(
+                root=temp,
+                session_metadata={"hardware": {"expected_baseline_mm": 60.0}},
+            )
+            frame = np.full((24, 32, 3), 40, dtype=np.uint8)
+            capture_ids = [
+                archive.add_pair(frame, frame, metadata={"automatic": True})
+                for _index in range(3)
+            ]
+            _reconcile_restored_capture_status(
+                previous_archive=archive,
+                previous_capture_ids=capture_ids[:2],
+                restored_archive=archive,
+                restored_capture_ids=capture_ids[1:],
+            )
+            statuses = {
+                int(record["capture_id"]): record["status"]
+                for record in archive.manifest["pairs"]
+            }
+            self.assertEqual(statuses[capture_ids[0]], "excluded_restore_replaced")
+            self.assertEqual(statuses[capture_ids[1]], "active")
+            self.assertEqual(statuses[capture_ids[2]], "active")
+
     def test_reusable_diagnostic_omits_previously_rejected_views(self):
         pairs = _synthetic_pairs()
         result = _solve(pairs=pairs)
@@ -760,6 +786,42 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertEqual(
             result.audit["outlier_pruning"]["stage"],
             "monocular_reprojection",
+        )
+
+    def test_outlier_pruning_continues_from_monocular_to_stereo_stage(self):
+        noisy = _synthetic_pairs()
+        left, right = noisy[0]
+        rng = np.random.default_rng(20260910)
+        shared_warp = rng.normal(0.0, 3.0, left.corners_px.shape)
+        noisy[0] = (
+            BoardObservation(
+                left.corners_px + shared_warp,
+                left.sharpness,
+                left.centroid_zone,
+            ),
+            BoardObservation(
+                right.corners_px + shared_warp,
+                right.sharpness,
+                right.centroid_zone,
+            ),
+        )
+        left, right = noisy[1]
+        noisy[1] = (
+            left,
+            BoardObservation(
+                right.corners_px + np.asarray([15.0, 10.0]),
+                right.sharpness,
+                right.centroid_zone,
+            ),
+        )
+        result = _solve(pairs=noisy)
+        self.assertTrue(result.validated, result.rejection_reasons)
+        self.assertEqual(result.audit["discarded_pair_indices"], [1, 2])
+        pruning = result.audit["outlier_pruning"]
+        self.assertEqual(pruning["stage"], "multi_stage")
+        self.assertEqual(
+            [step["stage"] for step in pruning["steps"]],
+            ["monocular_reprojection", "stereo_reprojection"],
         )
 
     def test_wizard_rejects_insufficient_or_repeated_poses(self):
