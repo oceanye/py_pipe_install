@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import struct
 import tempfile
 import threading
@@ -19,6 +20,8 @@ from pipe_twin.calibration_wizard import (
     ChessboardWizardDialog,
     Rectifier,
     _reconcile_restored_capture_status,
+    _retain_successful_calibration_pairs,
+    _select_recent_recoverable_diagnostic,
     _canonicalize_corner_order,
     _baseline_anchored_pinhole_attempt,
     align_pair_orientation,
@@ -429,6 +432,46 @@ class ChessboardWizardTests(unittest.TestCase):
             restored, metadata = read_calibration_diagnostic(second)
             self.assertEqual(len(restored), 5)
             self.assertEqual(metadata["pattern_inner_corners"], [8, 6])
+
+    def test_restore_prefers_recent_solvable_set_over_newer_partial_autosave(self):
+        pairs = _synthetic_pairs()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            older = write_calibration_checkpoint(
+                pairs,
+                image_size=SIZE,
+                pattern=PATTERN,
+                square_mm=SQUARE_MM,
+                root=root / "older",
+            )
+            newer = write_calibration_checkpoint(
+                pairs[:2],
+                image_size=SIZE,
+                pattern=PATTERN,
+                square_mm=SQUARE_MM,
+                root=root / "newer",
+            )
+            os.utime(older, ns=(1_000_000_000, 1_000_000_000))
+            os.utime(newer, ns=(2_000_000_000, 2_000_000_000))
+            selected, inventory = _select_recent_recoverable_diagnostic(
+                [newer, older], minimum_pairs=10
+            )
+        self.assertEqual(selected, older)
+        self.assertEqual(
+            {Path(item["path"]): item.get("reusable_pair_count") for item in inventory},
+            {newer: 2, older: 12},
+        )
+
+    def test_successful_pair_subset_keeps_only_solver_accepted_capture_ids(self):
+        pairs = _synthetic_pairs(5)
+        retained, capture_ids, discarded_ids = _retain_successful_calibration_pairs(
+            pairs,
+            [32, 33, 34, 35, 36],
+            [1, 3, 5],
+        )
+        self.assertEqual(len(retained), 2)
+        self.assertEqual(capture_ids, [33, 35])
+        self.assertEqual(discarded_ids, [32, 34, 36])
 
     def test_checkpoint_replay_keeps_operator_solve_settings_and_explicit_override(self):
         pairs = _synthetic_pairs()

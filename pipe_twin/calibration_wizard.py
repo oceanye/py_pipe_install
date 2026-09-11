@@ -594,6 +594,42 @@ def _reconcile_restored_capture_status(
         )
 
 
+def _retain_successful_calibration_pairs(
+    pairs: list[tuple[BoardObservation, BoardObservation]],
+    capture_ids: list[int | None],
+    discarded_pair_indices: list[int],
+) -> tuple[
+    list[tuple[BoardObservation, BoardObservation]],
+    list[int | None],
+    list[int],
+]:
+    """Apply the solver's one-based rejection indices to the live pair set."""
+
+    discarded = {
+        int(index)
+        for index in discarded_pair_indices
+        if 1 <= int(index) <= len(pairs)
+    }
+    aligned_ids = list(capture_ids[: len(pairs)])
+    aligned_ids.extend([None] * (len(pairs) - len(aligned_ids)))
+    retained_pairs = [
+        pair
+        for index, pair in enumerate(pairs, start=1)
+        if index not in discarded
+    ]
+    retained_capture_ids = [
+        capture_id
+        for index, capture_id in enumerate(aligned_ids, start=1)
+        if index not in discarded
+    ]
+    discarded_capture_ids = [
+        int(capture_id)
+        for index, capture_id in enumerate(aligned_ids, start=1)
+        if index in discarded and capture_id is not None
+    ]
+    return retained_pairs, retained_capture_ids, discarded_capture_ids
+
+
 def _canonicalize_corner_order(corners: np.ndarray, pattern: tuple[int, int]) -> np.ndarray:
     """Flip detector output so corner[0] is the top-left-most inner corner.
 
@@ -2442,6 +2478,48 @@ def reusable_calibration_pairs(
     return retained, metadata, discarded
 
 
+def _select_recent_recoverable_diagnostic(
+    candidates: list[Path], *, minimum_pairs: int
+) -> tuple[Path, list[dict[str, Any]]]:
+    """Prefer the newest set that is large enough to run calibration."""
+
+    inventory: list[dict[str, Any]] = []
+    for source in candidates:
+        try:
+            retained, _metadata, discarded = reusable_calibration_pairs(source)
+            inventory.append(
+                {
+                    "path": source,
+                    "reusable_pair_count": len(retained),
+                    "discarded_pair_indices": list(discarded),
+                    "modified_time_ns": source.stat().st_mtime_ns,
+                }
+            )
+        except (OSError, ValueError, ChessboardCalibrationError) as error:
+            inventory.append(
+                {
+                    "path": source,
+                    "error": f"{type(error).__name__}: {error}",
+                    "modified_time_ns": (
+                        source.stat().st_mtime_ns if source.exists() else 0
+                    ),
+                }
+            )
+    readable = [item for item in inventory if "reusable_pair_count" in item]
+    if not readable:
+        raise ChessboardCalibrationError("没有可读取的标定照片组")
+    solvable = [
+        item
+        for item in readable
+        if int(item["reusable_pair_count"]) >= int(minimum_pairs)
+    ]
+    chosen = max(
+        solvable or readable,
+        key=lambda item: int(item["modified_time_ns"]),
+    )
+    return Path(chosen["path"]), inventory
+
+
 def _diagnostic_solve_options(metadata: Mapping[str, Any]) -> dict[str, Any]:
     """Prefer the completed solve audit, with checkpoint settings as fallback."""
     options = metadata.get("solve_options", {})
@@ -3064,7 +3142,13 @@ class ChessboardWizardDialog:
             )
             if not candidates:
                 raise ChessboardCalibrationError("没有找到可恢复的标定照片组")
-            source = candidates[0]
+            restore_minimum_pairs = self._int_value(
+                self.min_pairs, "最少组数", minimum=3
+            )
+            source, restore_inventory = _select_recent_recoverable_diagnostic(
+                candidates,
+                minimum_pairs=restore_minimum_pairs,
+            )
             retained, metadata, discarded_indices = reusable_calibration_pairs(source)
             audit = _diagnostic_solve_options(metadata)
             discarded = set(discarded_indices)
@@ -3170,9 +3254,14 @@ class ChessboardWizardDialog:
                 if coverage["missing"]
                 else "；区域覆盖已满足"
             )
+            selection_note = (
+                "；较新的自动保存不足最少组数，已恢复最近可求解的历史组"
+                if source != candidates[0]
+                else ""
+            )
             self.message.set(
                 f"已从 {source.name} 恢复 {len(retained)} 组{removal_note}"
-                f"{missing_note}{archive_note}。现有照片可继续使用。"
+                f"{missing_note}{archive_note}{selection_note}。现有照片可继续使用。"
             )
             log_event(
                 get_logger("calibration_wizard"),
@@ -3190,6 +3279,13 @@ class ChessboardWizardDialog:
                     if restored_archive is not None
                     else None
                 ),
+                candidate_inventory=[
+                    {
+                        **item,
+                        "path": str(item["path"]),
+                    }
+                    for item in restore_inventory
+                ],
                 missing_zones=coverage["missing"],
             )
         except Exception as error:
@@ -4156,12 +4252,29 @@ class ChessboardWizardDialog:
                     "wizard": wizard_section,
                 },
             )
+            discarded_indices = [
+                int(value)
+                for value in result.audit.get("discarded_pair_indices", [])
+            ]
+            (
+                retained_pairs,
+                retained_capture_ids,
+                discarded_capture_ids,
+            ) = _retain_successful_calibration_pairs(
+                list(self.pairs),
+                list(self._pair_capture_ids),
+                discarded_indices,
+            )
+            self.pairs = retained_pairs
+            self._pair_capture_ids = retained_capture_ids
+            self._last_left_observation = self.pairs[-1][0] if self.pairs else None
+            self._refresh_pairs()
+            checkpoint_path: Path | None = None
+            checkpoint_error = ""
             try:
-                (_DIAGNOSTIC_ROOT / "calibration_autosave.npz").unlink(
-                    missing_ok=True
-                )
-            except OSError:
-                pass
+                checkpoint_path = self._save_pair_checkpoint()
+            except (OSError, ValueError) as error:
+                checkpoint_error = f"{type(error).__name__}: {error}"
             if self.capture_archive is not None:
                 self.capture_archive.update_session(
                     {
@@ -4170,18 +4283,34 @@ class ChessboardWizardDialog:
                             "calibration_path": str(path),
                             "stereo_rms_px": result.stereo_rms_px,
                             "baseline_mm": result.calibration["baseline_mm"],
+                            "used_capture_ids": [
+                                value
+                                for value in retained_capture_ids
+                                if value is not None
+                            ],
+                            "discarded_capture_ids": discarded_capture_ids,
                         }
                     }
                 )
                 self.capture_archive.mark_status(
+                    discarded_capture_ids,
+                    status="excluded_solver",
+                    reason="标定求解判定为异常组",
+                )
+                self.capture_archive.mark_status(
                     [
                         value
-                        for value in self._pair_capture_ids
+                        for value in retained_capture_ids
                         if value is not None
                     ],
                     status="used_in_saved_calibration",
                     reason=result.calibration["calibration_id"],
                 )
+            checkpoint_note = (
+                f"\n可恢复照片组已保存：{checkpoint_path}。"
+                if checkpoint_path is not None
+                else f"\n可恢复照片组保存失败：{checkpoint_error}"
+            )
             self.message.set(
                 f"标定完成并已保存：{path}\n"
                 f"双目 RMS {result.stereo_rms_px:.3f} px，左右目 "
@@ -4189,6 +4318,7 @@ class ChessboardWizardDialog:
                 f"基线 {result.calibration['baseline_mm']:.2f} mm，共 {result.pair_count} 组。\n"
                 f"右目画面自动修正：{result.audit.get('right_frame_transform', 'none')}。\n"
                 "注意：尚未配准 CAD——请点击“二维码定位”（或设置相机方向），然后保存工作台配置。"
+                + checkpoint_note
             )
             if self.owner is not None:
                 self.owner.fields["calibration"].set(str(path))
@@ -4211,6 +4341,13 @@ class ChessboardWizardDialog:
                 stereo_rms_px=result.stereo_rms_px,
                 baseline_mm=result.calibration["baseline_mm"],
                 pair_count=result.pair_count,
+                discarded_pair_indices=discarded_indices,
+                discarded_capture_ids=discarded_capture_ids,
+                retained_capture_ids=[
+                    value for value in retained_capture_ids if value is not None
+                ],
+                checkpoint_path=checkpoint_path,
+                checkpoint_error=checkpoint_error,
                 right_frame_transform=result.audit.get(
                     "right_frame_transform", "none"
                 ),
