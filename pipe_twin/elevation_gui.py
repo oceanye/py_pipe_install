@@ -109,6 +109,7 @@ class RegionCanvas:
             self.photo = self.owner.app.tk.PhotoImage(data=base64.b64encode(payload).decode("ascii"), format="png")
             canvas.create_image(0, 0, image=self.photo, anchor="nw")
         selected = self.owner.selected_id()
+        drawn_observations: set[str] = set()
         for spec in self.owner.pipes:
             box = spec.get(f"{self.role}_region_px")
             if not box:
@@ -122,7 +123,10 @@ class RegionCanvas:
                             if observation.get("pipe_id") == spec.get("pipe_id") or (observation.get("pipe_id") is None and observation.get("color_srgb") == spec.get("color_srgb")):
                                 box = observation.get(f"{self.role}_region_px")
                                 label_override = observation.get("observation_id")
-                                if box: break
+                                if box:
+                                    if label_override:
+                                        drawn_observations.add(str(label_override))
+                                    break
                     if not box: continue
                 else:
                     continue
@@ -137,6 +141,28 @@ class RegionCanvas:
             if result:
                 label += " · " + result.get("installation_state_zh", "不确定")
             canvas.create_text(ox + x * scale + 2, max(12, oy + y * scale - 3), anchor="sw", text=label, fill=color)
+        # Before a rigid STL pose is solved, show every detected local surface
+        # with its OBS id.  Matching by STL colour is only a convenience and
+        # can hide observations when the physical pipe colour differs.
+        if self.owner.mode.get() == "elevation_auto":
+            report = self.owner.report if isinstance(self.owner.report, dict) else {}
+            registration = report.get("registration") if isinstance(report, dict) else None
+            if not isinstance(registration, dict) or registration.get("status") != "MATCHED":
+                surface = report.get("local_surface") if isinstance(report, dict) else None
+                for observation in (surface or {}).get("observations", []) if isinstance(surface, dict) else []:
+                    oid = str(observation.get("observation_id") or "")
+                    if not oid or oid in drawn_observations:
+                        continue
+                    box = observation.get(f"{self.role}_region_px")
+                    if not box:
+                        continue
+                    x, y, bw, bh = box
+                    color = observation.get("color_srgb") or "#66C2FF"
+                    canvas.create_rectangle(ox + x * scale, oy + y * scale,
+                                            ox + (x + bw) * scale, oy + (y + bh) * scale,
+                                            outline=color, width=2, dash=(3, 2))
+                    canvas.create_text(ox + x * scale + 2, max(12, oy + y * scale - 3),
+                                       anchor="sw", text=oid, fill=color)
 
     def start(self, event: Any) -> None:
         if (self.owner.mode.get() == "elevation_depth" and not self.owner.busy

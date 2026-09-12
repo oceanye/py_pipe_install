@@ -7,7 +7,9 @@ import numpy as np
 
 from pipe_twin.calibration_adapter import (
     CalibrationAdapterError,
+    adapt_legacy_camera_config,
     adapt_opencv_stereo_calibration,
+    extract_opencv_calibration_literals,
     validate_calibration,
 )
 from pipe_twin.stereo_analyzer import _calibration_from_manifest, _project_points
@@ -144,6 +146,55 @@ class CalibrationAdapterTests(unittest.TestCase):
         parsed = _calibration_from_manifest(result)
         np.testing.assert_allclose(parsed.left.rotation_world_to_rectified_camera, target_rotation, atol=1e-6)
         np.testing.assert_allclose(parsed.right.rotation_world_to_rectified_camera, target_rotation, atol=1e-6)
+
+    def test_legacy_camera_config_is_read_as_literals_without_importing_module(self) -> None:
+        path = "doc/双目测距、深度图、标定代码/BM_find_distance（测距）/camera_config.py"
+        source = extract_opencv_calibration_literals(path)
+        self.assertEqual(source["image_size"], [640, 480])
+        self.assertEqual(source["source_audit"]["capture_size_px"], [1280, 480])
+        self.assertEqual(source["source_audit"]["capture_layout"], "side_by_side_left_right")
+        np.testing.assert_allclose(source["K1"][0][0], 416.841180253704)
+        np.testing.assert_allclose(source["T"][0], -120.326603502087)
+        with self.assertRaisesRegex(CalibrationAdapterError, "translation_unit"):
+            adapt_opencv_stereo_calibration(source, calibration_id="legacy")
+
+    def test_legacy_adapter_requires_explicit_unit_and_preserves_capture_audit(self) -> None:
+        path = "doc/双目测距、深度图、标定代码/BM_find_distance（测距）/camera_config.py"
+        result = adapt_legacy_camera_config(
+            path,
+            calibration_id="legacy-mm",
+            translation_unit="mm",
+            left_camera_pose={
+                "rotation_world_to_camera": np.eye(3).tolist(),
+                "center_world_mm": [0.0, 0.0, 0.0],
+            },
+        )
+        self.assertTrue(result["rectified"])
+        self.assertEqual(result["source_audit"]["capture_size_px"], [1280, 480])
+        self.assertTrue(result["source_audit"]["translation_unit_required"])
+
+    def test_legacy_literal_parser_does_not_execute_calls(self) -> None:
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
+
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "camera_config.py"
+            path.write_text(
+                """
+import os
+K1 = np.array([[1,0,2],[0,1,3],[0,0,1]])
+K2 = get_matrix()
+D1 = np.array([0,0,0,0,0])
+D2 = np.array([0,0,0,0,0])
+R = np.eye(3)
+T = np.array([-1,0,0])
+size = (2, 3)
+os.system('do-not-run')
+""",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(CalibrationAdapterError, "K2"):
+                extract_opencv_calibration_literals(path)
 
 
 if __name__ == "__main__":

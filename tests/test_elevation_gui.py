@@ -161,6 +161,22 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(self.dialog.mode.get(), "elevation_depth")
         self.assertIn("手工", self.dialog.message.get())
 
+    def test_auto_canvas_draws_unmatched_observation_overlay(self):
+        self.dialog.mode.set("elevation_auto")
+        self.dialog.report = {
+            "registration": {"status": "INSUFFICIENT_OBSERVATIONS"},
+            "local_surface": {"observations": [{
+                "observation_id": "OBS-0007", "left_region_px": [24, 30, 80, 42],
+                "right_region_px": [20, 30, 78, 42], "color_srgb": "#00FF00",
+            }]},
+        }
+        self.dialog.views["left"].set_image(np.zeros((120, 160, 3), dtype=np.uint8))
+        items = self.dialog.views["left"].canvas.find_all()
+        rectangles = [item for item in items if self.dialog.views["left"].canvas.type(item) == "rectangle"]
+        labels = [self.dialog.views["left"].canvas.itemcget(item, "text") for item in items if self.dialog.views["left"].canvas.type(item) == "text"]
+        self.assertTrue(rectangles)
+        self.assertIn("OBS-0007", labels)
+
     def test_model_viewer_keeps_axis_in_stl_coordinates(self):
         model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"
         self.dialog.load_model(model)

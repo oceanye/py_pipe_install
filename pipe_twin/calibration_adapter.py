@@ -9,6 +9,7 @@ matrices auditable.  It deliberately refuses to guess units or CAD pose.
 from __future__ import annotations
 
 import copy
+import ast
 import json
 import math
 from pathlib import Path
@@ -20,6 +21,173 @@ import numpy as np
 
 class CalibrationAdapterError(ValueError):
     """Raised when a source calibration is incomplete or inconsistent."""
+
+
+_LEGACY_FIELDS: dict[str, tuple[str, ...]] = {
+    "K1": ("K1", "left_camera_matrix", "camera_matrix_left", "left_K",
+           "K_left", "cameraMatrixL", "mtxL"),
+    "K2": ("K2", "right_camera_matrix", "camera_matrix_right", "right_K",
+           "K_right", "cameraMatrixR", "mtxR"),
+    "D1": ("D1", "left_distortion", "distortion_left", "left_D",
+           "D_left", "distCoeffsL"),
+    "D2": ("D2", "right_distortion", "distortion_right", "right_D",
+           "D_right", "distCoeffsR"),
+    "R": ("R", "rotation_left_to_right", "stereo_R", "R_lr"),
+    "T": ("T", "translation_left_to_right", "stereo_T", "T_lr"),
+    "image_size": ("image_size", "size", "image_size_px", "imageSize", "img_size"),
+}
+
+
+def _safe_legacy_literal(node: ast.AST, *, resolve_name: Any = None) -> Any:
+    """Evaluate the small literal subset used by legacy camera_config.py.
+
+    The old examples are Python modules rather than JSON.  Importing one to
+    obtain its matrices would execute camera and GUI code, so this parser only
+    accepts constants, containers, unary signs and ``np.array``/``np.asarray``
+    calls.  Unsupported expressions are deliberately skipped and reported as
+    missing fields by :func:`extract_opencv_calibration_literals`.
+    """
+    if isinstance(node, ast.Constant) and type(node.value) in (int, float, str):
+        return node.value
+    if isinstance(node, ast.Name) and resolve_name is not None:
+        return resolve_name(node.id)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)):
+        value = _safe_legacy_literal(node.operand, resolve_name=resolve_name)
+        if type(value) not in (int, float):
+            raise ValueError("unary sign requires a numeric literal")
+        return -value if isinstance(node.op, ast.USub) else value
+    if isinstance(node, (ast.List, ast.Tuple)):
+        return [_safe_legacy_literal(item, resolve_name=resolve_name) for item in node.elts]
+    if isinstance(node, ast.Call):
+        func = node.func
+        is_array = (
+            isinstance(func, ast.Attribute)
+            and isinstance(func.value, ast.Name)
+            and func.value.id == "np"
+            and func.attr in {"array", "asarray"}
+        )
+        if not is_array or len(node.args) != 1:
+            raise ValueError("only np.array/np.asarray with one literal argument is allowed")
+        if any(keyword.arg not in {"dtype", "order", "ndmin"} for keyword in node.keywords):
+            raise ValueError("unsupported np.array keyword")
+        return _safe_legacy_literal(node.args[0], resolve_name=resolve_name)
+    raise ValueError(f"unsupported expression: {type(node).__name__}")
+
+
+def extract_opencv_calibration_literals(path: str | Path) -> dict[str, Any]:
+    """Read OpenCV matrices from a legacy ``camera_config.py`` safely.
+
+    The returned mapping is suitable as input to
+    :func:`adapt_opencv_stereo_calibration` after the caller adds an explicit
+    ``translation_unit`` and ``left_camera_pose``.  No unit or CAD pose is
+    inferred from the source.  The source's ``size=(w, h)`` is the per-eye
+    image size; the common 1280x480 side-by-side capture therefore has a
+    ``capture_size_px`` audit field of ``[2*w, h]``.
+    """
+    source_path = Path(path)
+    try:
+        tree = ast.parse(source_path.read_text(encoding="utf-8-sig"), filename=str(source_path))
+    except OSError as error:
+        raise CalibrationAdapterError(f"cannot read legacy camera config: {source_path}") from error
+    except UnicodeError as error:
+        raise CalibrationAdapterError(f"legacy camera config is not UTF-8 text: {source_path}") from error
+    except SyntaxError as error:
+        raise CalibrationAdapterError(f"legacy camera config is not valid Python: {error}") from error
+
+    assignment_nodes: dict[str, ast.AST] = {}
+    # Only consume module-level assignments.  A literal hidden inside a
+    # function or loop is not part of the import-time camera configuration and
+    # must not be mistaken for one merely because ast.walk can find it.
+    for statement in tree.body:
+        if not isinstance(statement, (ast.Assign, ast.AnnAssign)):
+            continue
+        value_node = statement.value
+        if value_node is None:
+            continue
+        targets = statement.targets if isinstance(statement, ast.Assign) else [statement.target]
+        for target in targets:
+            if not isinstance(target, ast.Name):
+                continue
+            assignment_nodes[target.id] = value_node
+
+    assignments: dict[str, Any] = {}
+
+    def resolve_name(name: str, stack: tuple[str, ...] = ()) -> Any:
+        if name in stack:
+            raise ValueError("cyclic legacy assignment")
+        if name not in assignment_nodes:
+            raise ValueError(f"unknown legacy name: {name}")
+        return _safe_legacy_literal(
+            assignment_nodes[name],
+            resolve_name=lambda child: resolve_name(child, stack + (name,)),
+        )
+
+    for name in assignment_nodes:
+        try:
+            assignments[name] = resolve_name(name)
+        except (TypeError, ValueError):
+            # Ignore executable expressions such as stereoRectify calls;
+            # required literals are checked below.
+            continue
+
+    result: dict[str, Any] = {}
+    for canonical, aliases in _LEGACY_FIELDS.items():
+        for alias in aliases:
+            if alias in assignments:
+                result[canonical] = assignments[alias]
+                break
+        if canonical not in result:
+            raise CalibrationAdapterError(
+                f"legacy camera config is missing a literal for {canonical} "
+                f"(accepted aliases: {', '.join(aliases)})"
+            )
+
+    size = result["image_size"]
+    if not isinstance(size, list) or len(size) != 2 or any(type(v) not in (int, float) for v in size):
+        raise CalibrationAdapterError("legacy image_size/size must be a two-number tuple or list")
+    width, height = int(size[0]), int(size[1])
+    if width <= 0 or height <= 0 or width != size[0] or height != size[1]:
+        raise CalibrationAdapterError("legacy image_size/size must contain positive integer pixels")
+    result["image_size"] = [width, height]
+    # The bundled script stores T as a 3x1 column vector.  The JSON adapter
+    # contract is a flat three-vector, so normalize only this unambiguous
+    # representation (without changing its numeric unit).
+    translation = np.asarray(result["T"], dtype=np.float64)
+    if translation.size == 3 and translation.shape != (3,):
+        result["T"] = translation.reshape(3).tolist()
+    result["source_audit"] = {
+        "adapter": "legacy_camera_config_literal_parser_v1",
+        "source_filename": source_path.name,
+        "capture_layout": "side_by_side_left_right",
+        "capture_size_px": [2 * width, height],
+        "per_eye_size_px": [width, height],
+        "translation_unit_required": True,
+        "left_camera_pose_required": True,
+    }
+    return result
+
+
+def adapt_legacy_camera_config(
+    path: str | Path,
+    *,
+    calibration_id: str,
+    translation_unit: str,
+    left_camera_pose: Mapping[str, Any],
+    **kwargs: Any,
+) -> dict[str, Any]:
+    """Adapt a legacy Python config with explicit unit and CAD left pose.
+
+    This convenience wrapper never guesses the old script's ``T`` unit.  In
+    particular, the bundled example stores a roughly 120-valued translation;
+    callers must decide whether that is millimetres or another unit from the
+    camera documentation.
+    """
+    source = extract_opencv_calibration_literals(path)
+    source["translation_unit"] = translation_unit
+    source["left_camera_pose"] = dict(left_camera_pose)
+    adapted = adapt_opencv_stereo_calibration(source, calibration_id=calibration_id, **kwargs)
+    adapted.setdefault("source_audit", {}).update(source["source_audit"])
+    return adapted
 
 
 def _matrix(value: Any, shape: tuple[int, ...], field: str) -> np.ndarray:
@@ -210,6 +378,8 @@ def load_json(path: str | Path) -> dict[str, Any]:
 __all__ = [
     "CalibrationAdapterError",
     "adapt_opencv_stereo_calibration",
+    "adapt_legacy_camera_config",
+    "extract_opencv_calibration_literals",
     "load_json",
     "validate_calibration",
 ]

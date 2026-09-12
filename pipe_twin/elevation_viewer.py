@@ -33,7 +33,7 @@ class ElevationModelViewer:
         self.info = tk.StringVar(value="两点拾取：左键点击同一根管道的两个端点；右键拖动旋转，滚轮缩放。")
         ttk.Label(self.window, textvariable=self.info).pack(fill="x", padx=8, pady=(3, 8))
         self.zoom, self.yaw, self.pitch, self.drag_start = 1.0, 0.0, 0.0, None
-        self.snapshot_hashes = dict(getattr(owner, "image_hashes", {})); self.snapshot_model = str(getattr(owner, "fields", {}).get("model").get()) if getattr(owner, "fields", {}).get("model") is not None else ""
+        self.snapshot_hashes = dict(getattr(owner, "image_hashes", {})); self.snapshot_generation = int(getattr(owner, "generation", 0)); self.snapshot_model = str(getattr(owner, "fields", {}).get("model").get()) if getattr(owner, "fields", {}).get("model") is not None else ""
         self.selected: list[tuple[int, int]] = []; self.axis = np.asarray(axis_world, dtype=float) if axis_world is not None else None
         self.source_lines = np.asarray([np.asarray(p["centerline_world_mm"], dtype=float) for p in pipes], dtype=float) if pipes else np.empty((0, 2, 3))
         self.report = report or {}; self.display_lines = self.source_lines.copy(); self.display_axis = self.axis; self.registration_rotation = None
@@ -121,6 +121,7 @@ class ElevationModelViewer:
         if hasattr(self.owner, "registration_settings"):
             self.owner.registration_settings["anchors"] = {}
             if hasattr(self.owner, "invalidate"): self.owner.invalidate()
+            self.snapshot_generation = int(getattr(self.owner, "generation", self.snapshot_generation))
             self.info.set("已清除基准对应；重新分析时使用自动身份匹配。")
     def bind_anchor(self) -> None:
         if not hasattr(self, "observation_var") or not hasattr(self.owner, "registration_settings") or not self._is_current():
@@ -130,12 +131,12 @@ class ElevationModelViewer:
         anchors = dict(self.owner.registration_settings.get("anchors") or {})
         if pipe in anchors.values() and anchors.get(observation) != pipe:
             self.info.set("同一模型管道只能绑定一个观察；请先清除旧基准对应。"); return
-        anchors[observation] = pipe; self.owner.registration_settings["anchors"] = anchors; self.owner.invalidate(); self.snapshot_hashes = dict(getattr(self.owner, "image_hashes", {})); self.info.set(f"已绑定 {observation} → {pipe}；该对应只对当前照片哈希有效。")
+        anchors[observation] = pipe; self.owner.registration_settings["anchors"] = anchors; self.owner.invalidate(); self.snapshot_hashes = dict(getattr(self.owner, "image_hashes", {})); self.snapshot_generation = int(getattr(self.owner, "generation", self.snapshot_generation)); self.info.set(f"已绑定 {observation} → {pipe}；该对应只对当前照片哈希有效。")
 
     def _is_current(self) -> bool:
         fields = getattr(self.owner, "fields", {})
         model = fields.get("model").get() if fields.get("model") is not None else ""
-        return (not getattr(self.owner, "closed", False) and model == self.snapshot_model and dict(getattr(self.owner, "image_hashes", {})) == self.snapshot_hashes)
+        return (not getattr(self.owner, "closed", False) and int(getattr(self.owner, "generation", 0)) == self.snapshot_generation and model == self.snapshot_model and dict(getattr(self.owner, "image_hashes", {})) == self.snapshot_hashes)
     def begin_orbit(self, event: Any) -> None: self.drag_start = (event.x, event.y, self.yaw, self.pitch)
     def orbit(self, event: Any) -> None:
         if self.drag_start is None: return
