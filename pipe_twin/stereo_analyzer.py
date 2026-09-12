@@ -1863,6 +1863,9 @@ def analyze_stereo_capture(
     if manifest.get("schema_version") != "2.0":
         raise StereoAnalysisError("Stereo manifests require schema_version='2.0'")
     analysis_payload = manifest.get("analysis")
+    if isinstance(analysis_payload, dict) and analysis_payload.get("mode") == "elevation_auto":
+        from .elevation_auto import analyze_elevation_auto_manifest
+        return analyze_elevation_auto_manifest(manifest_file, report_output_path=report_output_path, evidence_dir=evidence_dir)
     if isinstance(analysis_payload, dict) and analysis_payload.get("mode") == "elevation_depth":
         from .elevation_depth import analyze_elevation_depth_manifest
 

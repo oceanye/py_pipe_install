@@ -47,6 +47,9 @@ class ElevationGuiTests(unittest.TestCase):
         self.profile_patch.start()
         self.dialog = ElevationCaptureDialog(self.app, output_root=self.output, restore=False)
         self.dialog.window.withdraw()
+        # Legacy ROI tests exercise the compatibility classifier explicitly;
+        # production dialogs default to automatic STL matching.
+        self.dialog.mode.set("elevation_depth")
         self.dialog.calibration_override = _calibration()
         self.spec = {"pipe_id": "P001", "nominal_diameter_mm": 20.0, "color_srgb": "#FF0000",
                      "left_region_px": [200, 100, 100, 40], "right_region_px": [170, 100, 100, 40],
@@ -136,6 +139,43 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertTrue(all("left_region_px" not in row for row in self.dialog.pipes))
         self.dialog.show_catalog()
         self.root.update_idletasks()
+
+    def test_auto_mode_is_roi_free_and_direction_is_normalized(self):
+        model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"
+        self.dialog.load_model(model)
+        # The production default is automatic; switching from the legacy
+        # compatibility mode removes any stale hand-drawn rectangles.
+        self.dialog.pipes[0]["left_region_px"] = [20, 20, 20, 20]
+        self.dialog.mode.set("elevation_auto")
+        self.dialog.mode_changed()
+        self.assertTrue(all("left_region_px" not in row and "right_region_px" not in row for row in self.dialog.pipes))
+        self.dialog._set_axis_world([0.0, 0.0, 4.0])
+        self.assertEqual(self.dialog.registration_settings["axis_world"], [0.0, 0.0, 1.0])
+        self.assertEqual(self.dialog.registration_settings["anchors"], {})
+
+    def test_manual_mode_can_be_selected_after_auto(self):
+        self.dialog.mode.set("elevation_auto")
+        self.dialog.mode_changed()
+        self.dialog.mode.set("elevation_depth")
+        self.dialog.mode_changed()
+        self.assertEqual(self.dialog.mode.get(), "elevation_depth")
+        self.assertIn("手工", self.dialog.message.get())
+
+    def test_model_viewer_keeps_axis_in_stl_coordinates(self):
+        model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"
+        self.dialog.load_model(model)
+        self.dialog.open_model_viewer()
+        viewer = self.dialog.model_viewer
+        viewer.direction_mode.set("Z")
+        viewer.apply_direction()
+        self.assertTrue(np.allclose(self.dialog.registration_settings["axis_world"], [0, 0, 1]))
+
+    def test_restore_keeps_verified_registration_settings_after_photo_load(self):
+        manifest = {"model": {"source_unit": "millimeter", "path": None}, "capture": {"capture_groups": [{"views": {"left": {"timestamp_source": "MANIFEST_OPERATOR_CONFIRMED"}, "right": {"timestamp_source": "MANIFEST_OPERATOR_CONFIRMED"}}}]}}
+        loaded = {"manifest": manifest, "mode": "elevation_auto", "registration_settings": {"axis_world": [0, 0, 1], "anchors": {"OBS-0001": "P001"}}, "calibration": _calibration(), "pipe_specs": [copy.deepcopy(self.spec)], "left_path": Path(self.tmp.name) / "left.png", "right_path": Path(self.tmp.name) / "right.png", "left_time": "2026-09-12T10:00:00+08:00", "right_time": "2026-09-12T10:00:00+08:00", "rectification_recipe": None}
+        with mock.patch("pipe_twin.elevation_dataset.load_elevation_dataset", return_value=loaded), mock.patch.object(self.dialog, "load_images"):
+            self.dialog.load_session(Path(self.tmp.name) / "manifest.json")
+        self.assertEqual(self.dialog.registration_settings["anchors"], {"OBS-0001": "P001"})
 
     def test_calibration_change_requires_new_images_and_regions(self):
         self.dialog.fields["calibration"].set("new-calibration.json")

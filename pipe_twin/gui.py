@@ -1678,7 +1678,7 @@ class _PipeTwinApplication:
         log_event(_LOGGER, "gui_sources_load_start", manifest=manifest_path, report=report_path)
         try:
             manifest = _read_json_object(manifest_path, "manifest")
-            if isinstance(manifest.get("analysis"), Mapping) and manifest["analysis"].get("mode") == "elevation_depth":
+            if isinstance(manifest.get("analysis"), Mapping) and manifest["analysis"].get("mode") in {"elevation_depth", "elevation_auto"}:
                 # Region-based reports have their own presentation contract;
                 # keep the CAD dashboard's geometry validation unchanged.
                 self._open_elevation(manifest_path)

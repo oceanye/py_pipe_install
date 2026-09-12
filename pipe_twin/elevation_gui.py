@@ -36,6 +36,21 @@ REASON_TEXT = {
     "NO_FOREGROUND_COLOR": "无前景遮挡证据",
     "ELEVATION_INSUFFICIENT_OR_OCCLUDED_EVIDENCE": "遮挡或有效证据不足",
     "ELEVATION_REPEATED_FREE_SPACE": "连续独立照片确认空位",
+    "LOCAL_CYLINDER_MATCHED_TO_STL": "局部管道与模型几何匹配",
+    "REPEATED_REGISTERED_FREE_SPACE": "连续独立照片确认预期位置为空",
+    "NO_LOCAL_SURFACE_OBSERVATIONS": "当前视图没有足够局部表面",
+    "COLLINEAR_WITHOUT_TWO_ANCHORS": "可见管道布局不足以唯一对应",
+    "ALTERNATIVE_POSES_WITHIN_AMBIGUITY_GATE": "存在多个近似模型对应",
+    "FOREGROUND_OCCLUSION": "前景遮挡",
+    "CAPTURE_OR_DEPTH_UNHEALTHY": "同步或深度质量不足",
+    "OUT_OF_VIEW_OR_INSUFFICIENT_SURFACE_EVIDENCE": "出视野或局部表面证据不足",
+    "SEARCH_LIMIT": "模型匹配搜索范围不足",
+    "LOCAL_SURFACE_SEARCH_TRUNCATED": "局部候选过多，请缩小视野或调整拍摄",
+    "MULTIPLE_COMMON_AXIS_GROUPS": "存在多组不同管长方向，无法唯一匹配",
+    "ANCHOR_AXIS_MISMATCH": "基准管长方向不一致",
+    "ANCHOR_DIAMETER_OR_COLOR_MISMATCH": "基准管径或颜色不匹配",
+    "NO_RIGID_MATCH_WITHIN_RESIDUAL_GATE": "未找到满足几何误差的模型对应",
+    "SEARCH_SPACE_TRUNCATED": "模型匹配搜索范围不足",
 }
 
 
@@ -97,19 +112,35 @@ class RegionCanvas:
         for spec in self.owner.pipes:
             box = spec.get(f"{self.role}_region_px")
             if not box:
-                continue
+                if self.owner.mode.get() == "elevation_auto":
+                    evidence = (self.owner.results.get(spec["pipe_id"], {}) or {}).get("current_evidence", {})
+                    box = (evidence.get(self.role, {}) or {}).get("region_xywh")
+                    label_override = None
+                    if not box:
+                        surface = (self.owner.report or {}).get("local_surface", {}) if isinstance(self.owner.report, dict) else {}
+                        for observation in surface.get("observations", []) if isinstance(surface, dict) else []:
+                            if observation.get("pipe_id") == spec.get("pipe_id") or (observation.get("pipe_id") is None and observation.get("color_srgb") == spec.get("color_srgb")):
+                                box = observation.get(f"{self.role}_region_px")
+                                label_override = observation.get("observation_id")
+                                if box: break
+                    if not box: continue
+                else:
+                    continue
+            else:
+                label_override = None
             x, y, bw, bh = box
             result = self.owner.results.get(spec["pipe_id"], {})
             color = STATE_COLORS.get(result.get("installation_state"), "#58B6F2")
             canvas.create_rectangle(ox + x * scale, oy + y * scale, ox + (x + bw) * scale, oy + (y + bh) * scale,
                                     outline=color, width=3 if spec["pipe_id"] == selected else 1)
-            label = spec["pipe_id"]
+            label = label_override or spec["pipe_id"]
             if result:
                 label += " · " + result.get("installation_state_zh", "不确定")
             canvas.create_text(ox + x * scale + 2, max(12, oy + y * scale - 3), anchor="sw", text=label, fill=color)
 
     def start(self, event: Any) -> None:
-        if not self.owner.busy and self.image is not None and self.owner.selected_id():
+        if (self.owner.mode.get() == "elevation_depth" and not self.owner.busy
+                and self.image is not None and self.owner.selected_id()):
             self.drag = (event.x, event.y)
 
     def move(self, event: Any) -> None:
@@ -147,7 +178,9 @@ class RegionCanvas:
 class ElevationCaptureDialog:
     """STL catalog → two image regions per pipe → save/analyze/reopen."""
 
-    analysis_mode = "elevation_depth"
+    # Automatic model matching is the field default.  ``elevation_depth`` is
+    # retained as a compatibility path for older scenes with hand-drawn ROIs.
+    analysis_mode = "elevation_auto"
 
     def __init__(self, app: Any, manifest_path: Path | None = None, *, output_root: Path | None = None, restore: bool = True) -> None:
         from .workbench_profile import load_profile
@@ -166,11 +199,13 @@ class ElevationCaptureDialog:
         self.closed = False
         self.calibration_dialog = None
         self.camera_dialog = None
+        self.model_viewer = None
         self.messages: queue.Queue = queue.Queue()
         self.timestamp_sources = {role: "MANIFEST_OPERATOR_CONFIRMED" for role in ("left", "right")}
         self.camera_capture_provenance = {}
         self.image_paths: dict[str, str] = {}
         self.image_hashes: dict[str, str] = {}
+        self.registration_settings: dict[str, Any] = {"axis_world": None, "anchors": {}}
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
         self.window.title("基础立面评估 · 双目管道状态")
@@ -181,7 +216,9 @@ class ElevationCaptureDialog:
         self.stl_unit = tk.StringVar(value="millimeter")
         self.confirmed = tk.BooleanVar(value=False)
         self.history = tk.BooleanVar(value=True)
-        self.message = tk.StringVar(value="首次：导入 STL → 选择相机标定 → 抓拍 → 选管并框选左右区域。固定机位以后可直接重复抓拍。")
+        self.mode = tk.StringVar(value=self.analysis_mode)
+        self.mode_label = tk.StringVar(value="自动匹配立面")
+        self.message = tk.StringVar(value="首次：导入 STL → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
         self.calibration_status = tk.StringVar(value="尚未选择真实双目标定")
         self.summary = tk.StringVar(value="尚未建立管道目录")
 
@@ -196,6 +233,12 @@ class ElevationCaptureDialog:
         ttk.Button(bar, text="② 相机标定", command=self.browse_calibration).pack(side="left", padx=3)
         ttk.Button(bar, text="自动标定向导", command=self.open_calibration).pack(side="left", padx=3)
         ttk.Button(bar, text="③ 双目抓拍", command=self.capture_camera).pack(side="left", padx=3)
+        ttk.Label(bar, text="模式").pack(side="left", padx=(12, 3))
+        self.mode_box = ttk.Combobox(bar, textvariable=self.mode_label,
+                                     values=("自动匹配立面", "手工区域兼容"),
+                                     state="readonly", width=18)
+        self.mode_box.pack(side="left")
+        self.mode_box.bind("<<ComboboxSelected>>", lambda _e: self._mode_selected())
         ttk.Button(bar, text="打开基础现场", command=self.browse_session).pack(side="right", padx=3)
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
         photos = ttk.Frame(self.controls)
@@ -208,11 +251,11 @@ class ElevationCaptureDialog:
         panes = ttk.Panedwindow(frame, orient="horizontal")
         panes.pack(fill="both", expand=True, pady=8)
         self.views = {}
-        for role, title in (("left", "左目 · 按管道长度框选"), ("right", "右目 · 框选同一根管道")):
+        for role, title in (("left", "左目 · 自动匹配结果"), ("right", "右目 · 自动匹配结果")):
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role)
-        ttk.Label(frame, text="先选下方管道，再在左右图各拖一个框。滚轮缩放，右键平移。框选状态在固定机位下可保存复用。", foreground="#355371").pack(anchor="w")
+        ttk.Label(frame, text="自动模式会从可见双目点云匹配 STL 并绘制检查区域；手工兼容模式才需要逐管框选。滚轮缩放，右键平移。", foreground="#355371").pack(anchor="w")
 
         table_frame = ttk.Frame(frame)
         table_frame.pack(fill="x", pady=6)
@@ -233,7 +276,10 @@ class ElevationCaptureDialog:
         self.tree.bind("<Double-1>", lambda _e: self.edit_pipe())
         row = ttk.Frame(frame)
         row.pack(fill="x")
-        for name, action in (("修改管径/颜色/参考深度", self.edit_pipe), ("同径统一颜色", self.apply_diameter_color), ("清除所选区域", self.clear_regions), ("记住当前有效深度", self.remember_depth), ("查看模型管道编号", self.show_catalog)):
+        actions = [("设置颜色", self.edit_pipe), ("同径统一颜色", self.apply_diameter_color), ("设置管长方向", self.open_model_viewer), ("查看模型管道编号", self.show_catalog)]
+        if self.mode.get() == "elevation_depth":
+            actions.insert(2, ("清除所选区域", self.clear_regions))
+        for name, action in actions:
             ttk.Button(row, text=name, command=action).pack(side="left", padx=2)
         bottom = ttk.Frame(frame)
         bottom.pack(fill="x", pady=(8, 4))
@@ -280,6 +326,7 @@ class ElevationCaptureDialog:
         self.invalidate()
         if key == "calibration":
             self.calibration_override = None
+            self._clear_registration_anchors()
             self.confirmed.set(False)
             for spec in self.pipes:
                 spec.pop("expected_depth_mm", None)
@@ -315,25 +362,60 @@ class ElevationCaptureDialog:
         for view in self.views.values():
             view.draw()
 
+    def mode_changed(self) -> None:
+        """Switch classifier while preserving the model catalogue."""
+        if self.busy:
+            return
+        mode = self.mode.get()
+        if mode not in {"elevation_auto", "elevation_depth"}:
+            self.mode.set("elevation_auto")
+            mode = "elevation_auto"
+        self.mode_label.set("自动匹配立面" if mode == "elevation_auto" else "手工区域兼容")
+        if mode == "elevation_auto":
+            # Auto regions are derived by the analyzer and are never persisted
+            # into the STL catalogue.  Clear only stale manual rectangles.
+            for spec in self.pipes:
+                spec.pop("left_region_px", None)
+                spec.pop("right_region_px", None)
+                spec.pop("expected_depth_mm", None)
+            self._clear_registration_anchors()
+            self.message.set("自动匹配模式：抓拍后由局部点云与 STL 自动建立对应关系。")
+        else:
+            self.message.set("手工兼容模式：请选择管道，并在左右图各框选一个区域。")
+        self.confirmed.set(False)
+        self.invalidate()
+        self.refresh_table()
+
+    def _mode_selected(self) -> None:
+        self.mode.set("elevation_auto" if self.mode_label.get() == "自动匹配立面" else "elevation_depth")
+        self.mode_changed()
+
     def refresh_table(self) -> None:
         selected = self.selected_id()
         self.tree.delete(*self.tree.get_children())
         for spec in self.pipes:
             row = self.results.get(spec["pipe_id"], {})
+            evidence = row.get("current_evidence", {}) if isinstance(row, dict) else {}
+            left_region = spec.get("left_region_px")
+            right_region = spec.get("right_region_px")
+            if self.mode.get() == "elevation_auto" and isinstance(evidence, dict):
+                left_region = (evidence.get("left") or {}).get("region_xywh") or left_region
+                right_region = (evidence.get("right") or {}).get("region_xywh") or right_region
             reasons = row.get("reason_codes", [])
-            explanation = "、".join(REASON_TEXT.get(str(code), str(code)) for code in reasons) or REASON_TEXT.get(row.get("state_basis"), "框选左右区域后评估")
+            pending_text = "待匹配" if self.mode.get() == "elevation_auto" else "框选左右区域后评估"
+            explanation = "、".join(REASON_TEXT.get(str(code), str(code)) for code in reasons) or REASON_TEXT.get(row.get("state_basis"), pending_text)
             if row.get("state_basis") == "REFERENCE_DEPTH_REQUIRED_FOR_NEGATIVE":
                 explanation = REASON_TEXT[row["state_basis"]]
             elif row.get("installation_state") == "UNKNOWN" and row.get("current_evidence", {}).get("free_space_candidate"):
                 explanation = "当前为空位候选；需至少两次间隔 ≥1 秒的连续独立抓拍"
-            self.tree.insert("", "end", iid=spec["pipe_id"], text=spec["pipe_id"], tags=(row.get("installation_state", "UNKNOWN"),), values=(f"{spec['nominal_diameter_mm']:g}", spec["color_srgb"], "已选" if spec.get("left_region_px") else "待选", "已选" if spec.get("right_region_px") else "待选", f"{spec['expected_depth_mm']:g}" if spec.get("expected_depth_mm") else "可选", row.get("installation_state_zh", "待评估"), explanation))
+            self.tree.insert("", "end", iid=spec["pipe_id"], text=spec["pipe_id"], tags=(row.get("installation_state", "UNKNOWN"),), values=(f"{spec['nominal_diameter_mm']:g}", spec["color_srgb"], "自动" if left_region and self.mode.get() == "elevation_auto" else ("已选" if left_region else "待选"), "自动" if right_region and self.mode.get() == "elevation_auto" else ("已选" if right_region else "待选"), f"{spec['expected_depth_mm']:g}" if spec.get("expected_depth_mm") and self.mode.get() == "elevation_depth" else "自动", row.get("installation_state_zh", "待评估"), explanation))
         if self.pipes:
             self.tree.selection_set(selected if selected in self.tree.get_children() else self.pipes[0]["pipe_id"])
         self.redraw()
 
     def set_region(self, role: str, box: list[int]) -> None:
         spec = self.selected_pipe()
-        if self.busy or spec is None:
+        if self.busy or spec is None or self.mode.get() != "elevation_depth":
             return
         spec[f"{role}_region_px"] = box
         spec.pop("expected_depth_mm", None)
@@ -343,7 +425,9 @@ class ElevationCaptureDialog:
         self.message.set(f"{spec['pipe_id']} 已记录{'左' if role == 'left' else '右'}区域 {box}；区域变化后参考深度需重新确认。")
 
     def clear_regions(self) -> None:
-        if self.busy:
+        if self.busy or self.mode.get() != "elevation_depth":
+            if self.mode.get() == "elevation_auto":
+                self.message.set("自动模式不需要手工区域；区域由匹配结果生成。")
             return
         spec = self.selected_pipe()
         if spec:
@@ -373,11 +457,12 @@ class ElevationCaptureDialog:
             row["color_srgb"] = PALETTE[diameters.index(round(row["nominal_diameter_mm"], 1)) % len(PALETTE)]
             row["axis"] = "auto"
         self.pipes = pipes
+        self.registration_settings = {"axis_world": None, "anchors": {}}
         self.last_manifest = None
         self.confirmed.set(False)
         self.invalidate()
         self.refresh_table()
-        self.summary.set(f"识别 {len(pipes)} 根管；未纳入 {len(skipped)} 个组件。请核对颜色，并选管框选。")
+        self.summary.set(f"识别 {len(pipes)} 根管；未纳入 {len(skipped)} 个组件。颜色仅作显示/辅助线索，请设置共同管长方向。")
 
     def edit_pipe(self) -> None:
         spec = self.selected_pipe()
@@ -390,7 +475,12 @@ class ElevationCaptureDialog:
         box = ttk.Frame(dialog, padding=15)
         box.pack(fill="both", expand=True)
         fields = {}
-        for i, (key, label, value) in enumerate((("nominal_diameter_mm", "设计外径 mm", spec["nominal_diameter_mm"]), ("color_srgb", "目标颜色 #RRGGBB", spec["color_srgb"]), ("expected_depth_mm", "参考管道表面深度 mm（可留空）", spec.get("expected_depth_mm", "")))):
+        fields_spec = (("nominal_diameter_mm", "设计外径 mm", spec["nominal_diameter_mm"]), ("color_srgb", "目标颜色 #RRGGBB", spec["color_srgb"]))
+        if self.mode.get() == "elevation_auto":
+            fields_spec = (("color_srgb", "目标颜色 #RRGGBB", spec["color_srgb"]),)
+        if self.mode.get() == "elevation_depth":
+            fields_spec += (("expected_depth_mm", "参考管道表面深度 mm（可留空）", spec.get("expected_depth_mm", "")),)
+        for i, (key, label, value) in enumerate(fields_spec):
             fields[key] = tk.StringVar(value=str(value))
             ttk.Label(box, text=label).grid(row=i, column=0, sticky="w", pady=5)
             ttk.Entry(box, textvariable=fields[key], width=24).grid(row=i, column=1, pady=5)
@@ -399,16 +489,16 @@ class ElevationCaptureDialog:
             color = colorchooser.askcolor(fields["color_srgb"].get(), parent=dialog)[1]
             if color:
                 fields["color_srgb"].set(color.upper())
-        ttk.Button(box, text="选颜色", command=choose_color).grid(row=1, column=2, padx=6)
-        ttk.Label(box, text="参考深度可来自已知管道表面距离，或安装识别通过后自动记录。\n留空可识别安装；无法区分遮挡与空位时显示不确定。").grid(row=3, column=0, columnspan=3, pady=9)
+        ttk.Button(box, text="选颜色", command=choose_color).grid(row=0 if self.mode.get() == "elevation_auto" else 1, column=2, padx=6)
+        ttk.Label(box, text=("参考深度可来自已知管道表面距离，或安装识别通过后自动记录。\n留空可识别安装；无法区分遮挡与空位时显示不确定。" if self.mode.get() == "elevation_depth" else "自动模式只修改颜色；模型管径保持 STL 目录值，区域、深度和身份由双目局部点云匹配。")).grid(row=len(fields_spec), column=0, columnspan=3, pady=9)
         def apply() -> None:
             import re
             try:
                 if self.busy:
                     raise ValueError("正在分析，完成后再修改配置")
-                diameter = float(fields["nominal_diameter_mm"].get())
+                diameter = float(fields.get("nominal_diameter_mm", tk.StringVar(value=spec["nominal_diameter_mm"])).get())
                 color = fields["color_srgb"].get().strip().upper()
-                text = fields["expected_depth_mm"].get().strip()
+                text = fields.get("expected_depth_mm", tk.StringVar(value="")).get().strip()
                 expected = float(text) if text else None
                 if not math.isfinite(diameter) or diameter <= 0 or not re.fullmatch(r"#[0-9A-F]{6}", color):
                     raise ValueError("请输入正数管径和 #RRGGBB 颜色")
@@ -418,6 +508,7 @@ class ElevationCaptureDialog:
                 spec.pop("expected_depth_mm", None)
                 if expected is not None:
                     spec["expected_depth_mm"] = expected
+                self._clear_registration_anchors()
                 self.invalidate()
                 self.refresh_table()
                 dialog.destroy()
@@ -433,11 +524,14 @@ class ElevationCaptureDialog:
             for row in self.pipes:
                 if abs(row["nominal_diameter_mm"] - spec["nominal_diameter_mm"]) <= 0.2:
                     row["color_srgb"] = spec["color_srgb"]
+            self._clear_registration_anchors()
             self.invalidate()
             self.refresh_table()
 
     def remember_depth(self) -> None:
-        if self.busy:
+        if self.busy or self.mode.get() != "elevation_depth":
+            if self.mode.get() == "elevation_auto":
+                self.message.set("自动模式由局部点云估计深度，不需要手工记录参考深度。")
             return
         spec = self.selected_pipe()
         row = self.results.get(spec["pipe_id"], {}) if spec else {}
@@ -475,7 +569,38 @@ class ElevationCaptureDialog:
             radius = max(5, min(24, spec["nominal_diameter_mm"] * scale / 2))
             canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=spec["color_srgb"], outline="#273B51")
             canvas.create_text(x, y-radius-4, text=spec["pipe_id"], anchor="s")
-        canvas.create_text(12, 12, anchor="nw", text="仅用于核对模型编号与布局；照片中的左右区域由你指定。")
+        canvas.create_text(12, 12, anchor="nw", text=("仅用于核对模型编号与布局；自动模式会由点云匹配并生成区域。" if self.mode.get() == "elevation_auto" else "仅用于核对模型编号与布局；手工模式的照片区域由你指定。"))
+
+    def open_model_viewer(self) -> None:
+        if self.busy:
+            return
+        if not self.pipes:
+            self.message.set("请先导入 STL，再设置共同管长方向。")
+            return
+        from .elevation_viewer import ElevationModelViewer
+        if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
+            self.model_viewer.window.lift(); return
+        path = self.fields["model"].get().strip()
+        if not path:
+            self.message.set("请先导入 STL，再设置共同管长方向。")
+            return
+        self.model_viewer = ElevationModelViewer(self, model_path=Path(path), pipes=self.pipes,
+                                                 axis_world=self.registration_settings.get("axis_world"),
+                                                 report=self.report,
+                                                 on_axis=self._set_axis_world)
+
+    def _set_axis_world(self, axis: list[float]) -> None:
+        vector = np.asarray(axis, dtype=float)
+        norm = float(np.linalg.norm(vector))
+        if norm <= 1e-9 or not np.all(np.isfinite(vector)):
+            self.show_error(ValueError("管长方向必须是有限的非零三维向量")); return
+        self.registration_settings["axis_world"] = (vector / norm).tolist()
+        self.registration_settings["anchors"] = {}
+        self.invalidate()
+        self.message.set(f"已保存共同管长方向：{np.round(vector / norm, 4).tolist()}；下一次评估将自动匹配 STL。")
+
+    def _clear_registration_anchors(self) -> None:
+        self.registration_settings["anchors"] = {}
 
     def browse_calibration(self) -> None:
         if self.busy:
@@ -580,8 +705,13 @@ class ElevationCaptureDialog:
                     spec.pop("expected_depth_mm", None)
                 self.last_manifest = None
                 self.message.set("照片尺寸改变，已清除对应区域和参考深度，请重新框选。")
+            digest = hashlib.sha256(data).hexdigest()
+            if self.image_hashes.get(role) not in (None, digest):
+                # Observation anchors refer to one exact capture.  They must
+                # never silently carry over to a new pair.
+                self.registration_settings["anchors"] = {}
             self.image_paths[role] = str(Path(path).resolve())
-            self.image_hashes[role] = hashlib.sha256(data).hexdigest()
+            self.image_hashes[role] = digest
             view.set_image(image)
         self.invalidate()
         self.refresh_table()
@@ -604,6 +734,14 @@ class ElevationCaptureDialog:
         self.invalidate()
         loaded = load_elevation_dataset(path)
         manifest = loaded["manifest"]
+        loaded_mode = str(loaded.get("mode") or (manifest.get("analysis") or {}).get("mode") or "elevation_depth")
+        self.mode.set(loaded_mode if loaded_mode in {"elevation_auto", "elevation_depth"} else "elevation_depth")
+        self.mode_label.set("自动匹配立面" if self.mode.get() == "elevation_auto" else "手工区域兼容")
+        restored_registration = copy.deepcopy(loaded.get("registration_settings") or {"axis_world": None, "anchors": {}})
+        # Field traces and image loading can invalidate anchors.  Keep the
+        # verified package settings aside and restore them only after all
+        # snapshot checks have completed below.
+        self.registration_settings = {"axis_world": None, "anchors": {}}
         self.pipes = []
         self.fields["calibration"].set(str(path))
         self.calibration_override = loaded["calibration"]
@@ -621,14 +759,16 @@ class ElevationCaptureDialog:
         self.pipes = copy.deepcopy(loaded["pipe_specs"])
         self.last_manifest = path.resolve()
         self.camera_capture_provenance = {}
+        self.image_paths.clear(); self.image_hashes.clear()
         views = manifest["capture"]["capture_groups"][-1]["views"]
         self.timestamp_sources = {role: views[role]["timestamp_source"] for role in ("left", "right")}
         self.load_images()
+        self.registration_settings = restored_registration
         self.confirmed.set(False)
         self.refresh_table()
         self.refresh_calibration_status()
-        self.summary.set(f"已恢复 {len(self.pipes)} 根管的左右区域；更换机位需重新框选")
-        self.message.set(f"已打开 {path}。可重新分析，或抓拍新照片沿用区域。")
+        self.summary.set(f"已恢复 {len(self.pipes)} 根管；" + ("自动匹配会重新生成区域" if self.mode.get() == "elevation_auto" else "可复用左右区域"))
+        self.message.set(f"已打开 {path}。" + ("可直接重新分析，自动匹配 STL。" if self.mode.get() == "elevation_auto" else "可重新分析，或抓拍新照片沿用区域。"))
 
     def submit(self, analyze: bool) -> None:
         if self.busy:
@@ -636,7 +776,7 @@ class ElevationCaptureDialog:
         try:
             calibration = copy.deepcopy(self.current_calibration())
             if not self.confirmed.get():
-                raise ValueError("请确认左右同步、固定机位及区域位置")
+                raise ValueError("请确认左右图来自同一次同步拍摄，且相机机位未改变")
             if not self.pipes:
                 raise ValueError("请先导入 STL 管道目录")
             left, right = self.views["left"].image, self.views["right"].image
@@ -650,9 +790,15 @@ class ElevationCaptureDialog:
                 if hashlib.sha256(Path(self.fields[role].get()).read_bytes()).hexdigest() != self.image_hashes.get(role):
                     self.invalidate()
                     raise ValueError("照片文件在预览后已改变，请重新载入并核对区域")
-            from .elevation_depth import validate_elevation_specs
-            height, width = self.views["left"].image.shape[:2]
-            validate_elevation_specs(self.pipes, width, height)
+            mode = self.mode.get()
+            if mode not in {"elevation_auto", "elevation_depth"}:
+                raise ValueError("未知的立面评估模式")
+            if mode == "elevation_depth":
+                from .elevation_depth import validate_elevation_specs
+                height, width = self.views["left"].image.shape[:2]
+                validate_elevation_specs(self.pipes, width, height)
+            elif not self.fields["model"].get().strip():
+                raise ValueError("自动匹配模式必须提供 STL 模型")
             arguments = dict(output_root=self.output_root / "captures", calibration=calibration,
                 left_path=Path(self.fields["left"].get()), right_path=Path(self.fields["right"].get()),
                 left_time=self.fields["left_time"].get(), right_time=self.fields["right_time"].get(),
@@ -663,6 +809,11 @@ class ElevationCaptureDialog:
                 rectification_recipe=copy.deepcopy((self.profile or {}).get("rectification_recipe")),
                 camera_capture_provenance=copy.deepcopy(self.camera_capture_provenance),
                 _preview_hashes=copy.deepcopy(self.image_hashes))
+            # New dataset writers accept the explicit mode/registration
+            # contract.  Keep the call shape compatible with older manual
+            # writers while automatic mode always carries its settings.
+            if mode == "elevation_auto":
+                arguments.update(mode=mode, registration_settings=copy.deepcopy(self.registration_settings))
             self.invalidate()
             self.busy = True
             self._set_controls(False)
@@ -676,10 +827,12 @@ class ElevationCaptureDialog:
     def _worker(self, arguments: dict, analyze: bool, generation: int) -> None:
         try:
             from .elevation_dataset import create_elevation_dataset, elevation_history_compatible, load_elevation_dataset
-            from .elevation_depth import analyze_elevation_depth_manifest
             expected_hashes = arguments.pop("_preview_hashes")
             previous = arguments["previous_manifest"]
-            reset_history = bool(previous and not elevation_history_compatible(previous, calibration=arguments["calibration"], pipe_specs=arguments["pipe_specs"], model_path=arguments["model_path"], stl_unit=arguments["stl_unit"], rectification_recipe=arguments["rectification_recipe"]))
+            history_kwargs = dict(calibration=arguments["calibration"], pipe_specs=arguments["pipe_specs"], model_path=arguments["model_path"], stl_unit=arguments["stl_unit"], rectification_recipe=arguments["rectification_recipe"])
+            if arguments.get("mode") == "elevation_auto":
+                history_kwargs.update(mode="elevation_auto", registration_settings=arguments.get("registration_settings"))
+            reset_history = bool(previous and not elevation_history_compatible(previous, **history_kwargs))
             if reset_history:
                 arguments["previous_manifest"] = None
             path = create_elevation_dataset(**arguments)
@@ -687,7 +840,8 @@ class ElevationCaptureDialog:
             latest = loaded["manifest"]["capture"]["capture_groups"][-1]["views"]
             if any(latest[role]["sha256"] != expected_hashes[role] for role in ("left", "right")):
                 raise ValueError("保存期间照片发生变化，请重新载入")
-            report = analyze_elevation_depth_manifest(path, report_output_path=path.parent / "report.json", evidence_dir=path.parent / "evidence") if analyze else None
+            from .stereo_analyzer import analyze_stereo_capture
+            report = analyze_stereo_capture(path, report_output_path=path.parent / "report.json", evidence_dir=path.parent / "evidence") if analyze else None
             self.messages.put((generation, "ok", (path, report, reset_history)))
         except Exception as error:
             log_event(LOGGER, "elevation_gui_run_failed", error=str(error), saved_manifest=str(locals().get("path", "")))
@@ -745,7 +899,7 @@ class ElevationCaptureDialog:
 
     def close(self) -> None:
         self.closed = True
-        for dialog in (self.camera_dialog, self.calibration_dialog):
+        for dialog in (self.camera_dialog, self.calibration_dialog, self.model_viewer):
             if dialog is not None and dialog.window.winfo_exists():
                 dialog.close()
         if getattr(self, "poll_id", None):

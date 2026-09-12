@@ -1,8 +1,8 @@
-"""Self-contained field packages for the registration-free elevation mode.
+"""Portable packages for automatic STL elevation and manual ROI compatibility.
 
-The elevation workflow only needs a rectified stereo calibration, one paired
-left/right image and a small pipe-region catalogue.  This module deliberately
-keeps that package independent from the CAD mesh and QR registration formats.
+Automatic packages bind the full straight-pipe catalogue to the actual STL,
+and store only direction/optional correspondence settings rather than ROIs.
+Both modes are independent of full CAD/QR world registration.
 """
 
 from __future__ import annotations
@@ -61,7 +61,9 @@ def _canonical(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def _specs(value: Any, width: int, height: int) -> list[dict[str, Any]]:
+def _specs(value: Any, width: int, height: int, *, mode: str = "elevation_depth") -> list[dict[str, Any]]:
+    if mode not in {"elevation_depth", "elevation_auto"}:
+        raise ValueError("未知基础评估模式")
     if not isinstance(value, list) or not value:
         raise ValueError("pipe_specs必须是非空列表")
     result: list[dict[str, Any]] = []
@@ -88,6 +90,8 @@ def _specs(value: Any, width: int, height: int) -> list[dict[str, Any]]:
             "nominal_diameter_mm": float(diameter),
         }
         for role in ("left", "right"):
+            if mode == "elevation_auto":
+                continue
             region = raw.get(f"{role}_region_px")
             if not isinstance(region, (list, tuple)) or len(region) != 4 or any(type(x) is not int for x in region):
                 raise ValueError(f"{pipe_id}.{role}_region_px必须是整数[x,y,width,height]")
@@ -95,12 +99,12 @@ def _specs(value: Any, width: int, height: int) -> list[dict[str, Any]]:
             if x < 0 or y < 0 or w < 8 or h < 8 or x + w > width or y + h > height:
                 raise ValueError(f"{pipe_id}.{role}_region_px超出图像范围")
             item[f"{role}_region_px"] = [x, y, w, h]
-        if "expected_depth_mm" in raw:
+        if "expected_depth_mm" in raw and mode == "elevation_depth":
             depth = raw["expected_depth_mm"]
             if type(depth) not in (int, float) or not math.isfinite(float(depth)) or float(depth) <= 0:
                 raise ValueError(f"{pipe_id}.expected_depth_mm必须为正数")
             item["expected_depth_mm"] = float(depth)
-        if "axis" in raw:
+        if "axis" in raw and mode == "elevation_depth":
             axis = raw["axis"]
             if axis not in ("auto", "horizontal", "vertical"):
                 raise ValueError(f"{pipe_id}.axis必须为auto、horizontal或vertical")
@@ -109,9 +113,7 @@ def _specs(value: Any, width: int, height: int) -> list[dict[str, Any]]:
             if not isinstance(raw["cad_object_id"], str) or not raw["cad_object_id"].strip():
                 raise ValueError(f"{pipe_id}.cad_object_id必须是非空字符串")
             item["cad_object_id"] = raw["cad_object_id"]
-        # GUI previews may carry a design centreline or other JSON metadata.
-        # Keep it in the package, while the elevation engine intentionally
-        # consumes only the required colour/region/diameter fields.
+        # Keep the STL centreline for automatic matching and model previews.
         for key in ("centerline_world_mm", "source_label"):
             if key in raw:
                 item[key] = copy.deepcopy(raw[key])
@@ -119,9 +121,67 @@ def _specs(value: Any, width: int, height: int) -> list[dict[str, Any]]:
             if not isinstance(raw["extra"], Mapping):
                 raise ValueError(f"{pipe_id}.extra必须是对象")
             item["extra"] = copy.deepcopy(dict(raw["extra"]))
+        if mode == "elevation_auto":
+            line = np.asarray(item.get("centerline_world_mm"), dtype=float)
+            if line.shape != (2, 3) or not np.isfinite(line).all() or np.linalg.norm(line[1] - line[0]) < 1e-6:
+                raise ValueError(f"{pipe_id}缺少有效的STL管道中心线")
+            if not item.get("cad_object_id"):
+                raise ValueError(f"{pipe_id}缺少STL组件编号")
         seen.add(pipe_id)
         result.append(item)
     return result
+
+
+def normalize_registration_settings(payload: Mapping | None = None) -> dict:
+    """Small, portable UI contract; direction is expressed in STL coordinates."""
+    if payload is not None and (not isinstance(payload, Mapping) or set(payload) - {"axis_world", "anchors"}):
+        raise ValueError("立面匹配配置只能包含axis_world和anchors")
+    payload = dict(payload or {})
+    axis = payload.get("axis_world")
+    if axis is not None:
+        if not isinstance(axis, (list, tuple)) or len(axis) != 3 or any(type(v) not in (int, float) for v in axis):
+            raise ValueError("管长方向必须为三个数值")
+        vector = np.asarray(axis, float)
+        length = np.linalg.norm(vector)
+        if not np.isfinite(vector).all() or not np.isfinite(length) or length < 1e-9:
+            raise ValueError("管长方向不能为零或非有限数")
+        axis = (vector / length).tolist()
+    anchors = payload.get("anchors", {})
+    if not isinstance(anchors, Mapping) or any(not isinstance(k, str) or not k or not isinstance(v, str) or not v for k, v in anchors.items()):
+        raise ValueError("基准对应必须为观测编号到管道编号的映射")
+    if len(set(anchors.values())) != len(anchors):
+        raise ValueError("不同观测不能指定同一根模型管道")
+    return {"axis_world": axis, "anchors": dict(anchors)}
+
+
+def validate_auto_model_binding(model_path: Path, stl_unit: str | None, specs: list[dict]) -> None:
+    """Bind automatic geometry to the actual STL, including absent components."""
+    from .capture_gui import catalog_from_model
+    actual, skipped = catalog_from_model(model_path, stl_unit=stl_unit)
+    by_id = {p["cad_object_id"]: p for p in actual}
+    supplied = [p.get("cad_object_id") for p in specs]
+    if len(set(supplied)) != len(supplied) or set(supplied) != set(by_id):
+        raise ValueError("自动模式管道目录与STL独立直管组件不一致，请重新导入模型")
+    for item in specs:
+        reference = by_id[item["cad_object_id"]]
+        line = np.asarray(item["centerline_world_mm"], float)
+        truth = np.asarray(reference["centerline_world_mm"], float)
+        if not (np.allclose(line, truth, atol=1e-4, rtol=0) or np.allclose(line[::-1], truth, atol=1e-4, rtol=0)):
+            raise ValueError("自动匹配中心线与STL几何不一致")
+        if abs(item["nominal_diameter_mm"] - reference["nominal_diameter_mm"]) > max(.2, reference["nominal_diameter_mm"] * .01):
+            raise ValueError("自动模式管径与STL几何不一致，请核对模型单位")
+
+
+def _validate_auto_axis(specs: list[dict], registration: Mapping) -> None:
+    lines = np.asarray([p["centerline_world_mm"] for p in specs], float)
+    directions = lines[:, 1] - lines[:, 0]
+    directions /= np.linalg.norm(directions, axis=1)[:, None]
+    axis = registration["axis_world"]
+    if axis is None:
+        _, vectors = np.linalg.eigh(directions.T @ directions)
+        axis = vectors[:, -1]
+    if np.any(np.abs(directions @ np.asarray(axis)) < math.cos(math.radians(2))):
+        raise ValueError("自动立面模式需要平行直管；指定方向须沿管长，可选择同一根中心线的两个端点")
 
 
 def _read_photo(path: Path, role: str, calibration_camera: Any, timestamp: str,
@@ -201,7 +261,9 @@ def _history(old_path: Path, old: Mapping[str, Any], root_name: str) -> tuple[li
 def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
                                   pipe_specs: list[dict], model_path: Path | None = None,
                                   stl_unit: str | None = None,
-                                  rectification_recipe: Mapping[str, Any] | None = None) -> bool:
+                                  rectification_recipe: Mapping[str, Any] | None = None,
+                                  mode: str = "elevation_depth",
+                                  registration_settings: Mapping | None = None) -> bool:
     """Return whether a prior package can be reused under this configuration.
 
     A changed configuration returns ``False``.  A tampered or malformed prior
@@ -215,7 +277,7 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
     old = loaded["manifest"]
     parsed = _calibration_ok(calibration)
     old_specs = loaded["pipe_specs"]
-    new_specs = _specs(pipe_specs, parsed.left.width, parsed.left.height)
+    new_specs = _specs(pipe_specs, parsed.left.width, parsed.left.height, mode=mode)
     # load_elevation_dataset checked the old calibration, recipe, model and
     # every image against their own snapshot before comparing the new setup.
     old_recipe = loaded["rectification_recipe"]
@@ -235,7 +297,8 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
                   bool(old_model.get("path")) == bool(model_path) and
                   (model_path is None or old_model.get("source_unit") == stl_unit))
     return bool(old.get("stereo_calibration") == dict(calibration) and old_specs == new_specs and
-                same_model and old_recipe == current_recipe)
+                same_model and old_recipe == current_recipe and loaded["mode"] == mode and
+                loaded["registration_settings"] == normalize_registration_settings(registration_settings))
 
 
 def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path: Path,
@@ -245,8 +308,10 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
                              stl_unit: str | None = None,
                              rectification_recipe: dict | None = None,
                              camera_capture_provenance: dict | None = None,
-                             timestamp_sources: dict | None = None) -> Path:
-    """Validate and atomically create a minimal ``elevation_depth`` package."""
+                             timestamp_sources: dict | None = None,
+                             mode: str = "elevation_depth",
+                             registration_settings: Mapping | None = None) -> Path:
+    """Validate and atomically create a portable basic elevation package."""
     if pair_confirmed is not True:
         raise ValueError("请确认左右照片来自同一次同步拍摄")
     parsed = _calibration_ok(calibration)
@@ -266,7 +331,14 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
         raise ValueError(f"左右照片时间差{sync_delta:.3f}ms超过标定允许值{parsed.max_sync_delta_ms:.3f}ms")
     if _hash(source_left) == _hash(source_right):
         raise ValueError("左右照片内容相同")
-    specs = _specs(pipe_specs, parsed.left.width, parsed.left.height)
+    specs = _specs(pipe_specs, parsed.left.width, parsed.left.height, mode=mode)
+    registration = normalize_registration_settings(registration_settings)
+    if set(registration["anchors"].values()) - {p["pipe_id"] for p in specs}:
+        raise ValueError("基准指定的模型管道不存在")
+    if mode == "elevation_auto" and model_path is None:
+        raise ValueError("自动立面匹配需要STL模型")
+    if mode == "elevation_auto":
+        _validate_auto_axis(specs, registration)
     model_data: bytes | None = None
     model_record: dict[str, Any] = {"kind": "optional_reference"}
     if model_path is not None:
@@ -277,17 +349,25 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
         model_record.update({"path": f"model/{model.name}", "sha256": _hash(model_data), "unit": "millimeter"})
         if stl_unit is not None:
             model_record["source_unit"] = str(stl_unit)
+        if mode == "elevation_auto":
+            validate_auto_model_binding(model, stl_unit, specs)
+            if _hash(model.read_bytes()) != model_record["sha256"]:
+                raise ValueError("STL在建立目录时发生变化")
     spec_hash = _hash(_canonical(specs).encode())
     run_id = f"elevation-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
     manifest: dict[str, Any] = {
         "schema_version": "2.0", "dataset_id": run_id,
         "model_revision": (model_record.get("sha256", spec_hash))[:16],
-        "validation_scope": "ELEVATION_DEPTH_CAPTURE_PENDING_ACCEPTANCE",
+        "validation_scope": f"{mode.upper()}_CAPTURE_PENDING_ACCEPTANCE",
         "model": model_record, "stereo_calibration": copy.deepcopy(dict(calibration)),
-        "analysis": {"mode": "elevation_depth", "elevation_depth": {"pipes": copy.deepcopy(specs)}},
+        "analysis": {"mode": mode, mode: {"pipes": copy.deepcopy(specs)}},
         "capture": {"kind": "stereo_still_capture_set", "camera_layout": "stereo",
                      "capture_group_id": run_id, "interval_minutes": 5, "capture_groups": []},
     }
+    if mode == "elevation_auto":
+        manifest["analysis"][mode]["registration"] = registration
+        if registration["anchors"]:
+            manifest["analysis"][mode]["anchor_pair_sha256"] = {"left": view_left["sha256"], "right": view_right["sha256"]}
     if recipe is not None:
         manifest["rectification_recipe"] = copy.deepcopy(recipe)
     assets: dict[str, bytes] = {view_left["path"]: source_left, view_right["path"]: source_right}
@@ -315,7 +395,8 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
             and old_model.get("source_unit") == model_record.get("source_unit")
         )
         if (old.get("stereo_calibration") != calibration or old_specs != specs or
-                loaded["rectification_recipe"] != recipe or not same_model):
+                loaded["rectification_recipe"] != recipe or not same_model or loaded["mode"] != mode or
+                loaded["registration_settings"] != registration):
             raise ValueError("历史数据只能在标定、管道配置和模型完全相同时复用")
         old_records, old_assets = _history(old_path, old, run_id)
         manifest["capture"]["capture_groups"].extend(old_records)
@@ -356,8 +437,9 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
     if manifest_path.is_dir():
         manifest_path /= "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != "2.0" or (manifest.get("analysis") or {}).get("mode") != "elevation_depth":
-        raise ValueError("不是schema2.0 elevation_depth数据包")
+    mode = (manifest.get("analysis") or {}).get("mode")
+    if manifest.get("schema_version") != "2.0" or mode not in {"elevation_depth", "elevation_auto"}:
+        raise ValueError("不是schema2.0基础立面数据包")
     calibration = _calibration_ok(manifest.get("stereo_calibration"))
     recipe = manifest.get("rectification_recipe")
     if recipe is not None:
@@ -387,8 +469,14 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
         expected_model_hash = model.get("sha256")
         if not isinstance(expected_model_hash, str) or _hash(model_file.read_bytes()) != expected_model_hash:
             raise ValueError("模型SHA-256不匹配")
-    specs = ((manifest.get("analysis") or {}).get("elevation_depth") or {}).get("pipes")
-    specs = _specs(specs, calibration.left.width, calibration.left.height)
+    settings = manifest["analysis"].get(mode) or {}
+    specs = _specs(settings.get("pipes"), calibration.left.width, calibration.left.height, mode=mode)
+    registration = normalize_registration_settings(settings.get("registration"))
+    if mode == "elevation_auto":
+        if not model.get("path"):
+            raise ValueError("自动立面数据包缺少STL模型")
+        validate_auto_model_binding(model_file, model.get("source_unit"), specs)
+        _validate_auto_axis(specs, registration)
     groups = (manifest.get("capture") or {}).get("capture_groups")
     if not isinstance(groups, list) or not groups:
         raise ValueError("数据包没有拍摄组")
@@ -406,7 +494,7 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
             "left_path": resolve_photo_path(manifest_path, left["path"]),
             "right_path": resolve_photo_path(manifest_path, right["path"]),
             "left_time": left["captured_at"], "right_time": right["captured_at"],
-            "rectification_recipe": recipe}
+            "rectification_recipe": recipe, "mode": mode, "registration_settings": registration}
 
 
-__all__ = ["create_elevation_dataset", "load_elevation_dataset", "elevation_history_compatible"]
+__all__ = ["create_elevation_dataset", "load_elevation_dataset", "elevation_history_compatible", "normalize_registration_settings"]

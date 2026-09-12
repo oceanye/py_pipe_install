@@ -270,7 +270,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
         )
         counts = report["counts"]
         print(
-            "Stereo CAD analysis completed: "
+            f"Stereo {report.get('mode', 'CAD')} analysis completed: "
             f"installed={counts['INSTALLED']}, "
             f"not_installed={counts['NOT_INSTALLED']}, "
             f"unknown={counts['UNKNOWN']}"
