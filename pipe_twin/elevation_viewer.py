@@ -96,7 +96,7 @@ class ElevationModelViewer:
         mode = self.direction_mode.get(); values = {"X": [1,0,0], "Y": [0,1,0], "Z": [0,0,1]}
         if mode == "自动":
             if not len(self.source_lines): return
-            lines = self.source_lines[:,1] - self.source_lines[:,0]; vector = np.mean(lines/np.linalg.norm(lines, axis=1)[:,None], axis=0)
+            lines = self.source_lines[:,1] - self.source_lines[:,0]; lines = lines/np.linalg.norm(lines, axis=1)[:,None]; lines[np.dot(lines, lines[0]) < 0] *= -1; vector = np.mean(lines, axis=0)
         elif mode in values: vector = np.asarray(values[mode], float)
         elif mode == "自定义":
             try: vector = np.asarray([float(v.strip()) for v in self.custom.get().split(",")], float)

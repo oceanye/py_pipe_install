@@ -164,8 +164,11 @@ class ElevationGuiTests(unittest.TestCase):
     def test_model_viewer_keeps_axis_in_stl_coordinates(self):
         model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"
         self.dialog.load_model(model)
+        self.dialog.report = {"registration": {"status": "MATCHED", "rotation_model_to_camera": [[1, 0, 0], [0, -1, 0], [0, 0, -1]], "translation_model_to_camera_mm": [0, 0, 1000]}, "local_surface": {"point_cloud": {"points_camera_mm": [[0, 0, 1000]], "colors_srgb": ["#FFFFFF"]}}}
+        self.dialog.registration_settings["axis_world"] = [0, 0, 1]
         self.dialog.open_model_viewer()
         viewer = self.dialog.model_viewer
+        self.assertTrue(np.allclose(viewer.display_axis, [0, 0, -1]))
         viewer.direction_mode.set("Z")
         viewer.apply_direction()
         self.assertTrue(np.allclose(self.dialog.registration_settings["axis_world"], [0, 0, 1]))
