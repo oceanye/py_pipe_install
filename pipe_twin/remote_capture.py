@@ -1,0 +1,262 @@
+"""Unattended stereo image capture for a remote field computer.
+
+The command deliberately stores raw camera pixels.  It does not calibrate or
+rectify images; the resulting JSON is an auditable hand-off that can be
+converted into a field capture manifest after calibration has been selected.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable
+from uuid import uuid4
+
+import cv2
+import numpy as np
+
+from .pipeline import atomic_write_text
+from .calibration_wizard import detect_board_corners
+from .stereo_camera import (
+    LAYOUT_SIDE_BY_SIDE_LR,
+    LAYOUT_SIDE_BY_SIDE_RL,
+    StereoCameraSession,
+)
+
+
+def _timestamp() -> str:
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="milliseconds")
+
+
+def _chessboard_status(
+    image: np.ndarray,
+    *,
+    columns: int,
+    rows: int,
+) -> dict[str, Any]:
+    errors: list[dict[str, str]] = []
+    observation = detect_board_corners(
+        image,
+        pattern=(columns, rows),
+        sb_accuracy=False,
+        on_cv_error=lambda stage, error: errors.append({"stage": stage, "error": str(error)}),
+    )
+    result: dict[str, Any] = {
+        "found": observation is not None,
+        "inner_corners": [int(columns), int(rows)],
+        "detector": observation.detector if observation is not None else None,
+        "errors": errors,
+    }
+    if observation is not None:
+        corners = observation.corners_px
+        # Keep only a compact quality signal; raw images remain the source of
+        # truth and can be fed to the calibration wizard later.
+        result["corner_count"] = int(len(corners))
+        result["image_center_distance_px"] = round(
+            float(
+                np.linalg.norm(
+                    np.mean(corners.reshape(-1, 2), axis=0)
+                    - np.asarray([image.shape[1] / 2, image.shape[0] / 2])
+                )
+            ),
+            3,
+        )
+    return result
+
+
+def _encode_png(image: np.ndarray) -> bytes:
+    if not isinstance(image, np.ndarray) or image.ndim != 3 or image.shape[2] != 3:
+        raise ValueError("camera frame must be a three-channel BGR image")
+    ok, encoded = cv2.imencode(".png", image)
+    if not ok:
+        raise RuntimeError("OpenCV could not encode a camera frame as PNG")
+    return bytes(encoded)
+
+
+def capture_stereo_pairs(
+    output_dir: str | Path,
+    *,
+    left_index: int = 0,
+    right_index: int | None = None,
+    layout: str = LAYOUT_SIDE_BY_SIDE_LR,
+    eye_width: int = 640,
+    eye_height: int = 480,
+    count: int | None = None,
+    interval_s: float = 0.0,
+    duration_s: float | None = None,
+    detect_chessboard: bool = False,
+    board_columns: int = 11,
+    board_rows: int = 7,
+    backend: int | None = None,
+    session_factory: Callable[..., Any] = StereoCameraSession,
+    sleep: Callable[[float], None] = time.sleep,
+    clock: Callable[[], float] = time.monotonic,
+) -> Path:
+    """Capture paired images and return the generated ``capture.json`` path.
+
+    ``count`` limits the number of pairs.  ``duration_s`` is checked between
+    reads and is not a hard timeout for blocking camera or detector calls;
+    when both are supplied the first limit reached wins.  With neither set a
+    single pair is captured.  Existing output directories are rejected to
+    prevent accidental mixing of runs.
+    """
+    if count is None and duration_s is None:
+        count = 1
+    if count is not None and (type(count) is not int or count <= 0):
+        raise ValueError("count must be a positive integer or None")
+    if duration_s is not None and (
+        isinstance(duration_s, bool) or not np.isfinite(float(duration_s)) or duration_s <= 0
+    ):
+        raise ValueError("duration_s must be a positive finite number")
+    if not np.isfinite(float(interval_s)) or interval_s < 0:
+        raise ValueError("interval_s must be a non-negative finite number")
+    if type(board_columns) is not int or board_columns < 3 or type(board_rows) is not int or board_rows < 3:
+        raise ValueError("board_columns and board_rows must be integers >= 3")
+
+    root = Path(output_dir).resolve()
+    if root.exists() and any(root.iterdir()):
+        raise FileExistsError(f"capture output directory is not empty: {root}")
+    root.mkdir(parents=True, exist_ok=True)
+    run_id = f"remote-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
+    records: list[dict[str, Any]] = []
+    payload: dict[str, Any] = {
+        "schema_version": "1.0",
+        "capture_kind": "remote_stereo_raw",
+        "run_id": run_id,
+        "status": "RUNNING",
+        "started_at": _timestamp(),
+        "camera_opened_at": None,
+        "first_frame_at": None,
+        "finished_at": None,
+        "pixel_policy": "RAW_CAMERA_BGR_PIXELS_NO_TRANSFORM",
+        "rectified": False,
+        "calibration_validated": False,
+        "validation_scope": "RAW_CAPTURE_ONLY_NOT_CALIBRATION_VALIDATION",
+        "camera_layout": layout,
+        "camera": {
+            "layout": layout,
+            "left_index": int(left_index),
+            "right_index": None if right_index is None else int(right_index),
+            "backend": None if backend is None else int(backend),
+        },
+        "requested_eye_size_px": [int(eye_width), int(eye_height)],
+        "requested_frame_size_px": [int(eye_width * 2), int(eye_height)]
+        if layout in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}
+        else [int(eye_width), int(eye_height)],
+        "pair_count": 0,
+        "requested_pair_count": count,
+        "discarded_pair_count": 0,
+        "interval_s": float(interval_s),
+        "duration_limit_s": None if duration_s is None else float(duration_s),
+        "duration_policy": "CHECK_BETWEEN_READS_NOT_HARD_TIMEOUT",
+        "interval_buffer_policy": "CONTINUOUS_READ_AND_DISCARD",
+        "chessboard_detection": {
+            "enabled": bool(detect_chessboard),
+            "inner_corners": [int(board_columns), int(board_rows)],
+        },
+        "captures": records,
+    }
+    manifest = root / "capture.json"
+
+    def persist() -> None:
+        payload["pair_count"] = len(records)
+        atomic_write_text(manifest, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+
+    # This record exists even if constructing/opening a camera session fails.
+    persist()
+    session_kwargs = {
+        "layout": layout,
+        "left_index": left_index,
+        "right_index": right_index,
+        "eye_width": eye_width,
+        "eye_height": eye_height,
+        "backend": backend,
+    }
+    stage = "open_camera"
+    try:
+        with session_factory(**session_kwargs) as session:
+            started = clock()
+            payload["camera_opened_at"] = _timestamp()
+            persist()
+            while (count is None or len(records) < count) and (
+                duration_s is None or (clock() - started) < duration_s
+            ):
+                stage = "read_pair"
+                pair = session.read_pair()
+                stage = "encode_png"
+                left_data = _encode_png(pair.left)
+                right_data = _encode_png(pair.right)
+                sequence = len(records) + 1
+                left_name = f"pair_{sequence:04d}_left.png"
+                right_name = f"pair_{sequence:04d}_right.png"
+                stage = "write_png"
+                (root / left_name).write_bytes(left_data)
+                (root / right_name).write_bytes(right_data)
+                record: dict[str, Any] = {
+                    "capture_id": f"{run_id}-{sequence:04d}",
+                    "left": {
+                        "path": left_name,
+                        "sha256": hashlib.sha256(left_data).hexdigest(),
+                        "width": int(pair.left.shape[1]),
+                        "height": int(pair.left.shape[0]),
+                        "captured_at": pair.left_captured_at,
+                    },
+                    "right": {
+                        "path": right_name,
+                        "sha256": hashlib.sha256(right_data).hexdigest(),
+                        "width": int(pair.right.shape[1]),
+                        "height": int(pair.right.shape[0]),
+                        "captured_at": pair.right_captured_at,
+                    },
+                    "sync_delta_ms": float(pair.sync_delta_ms),
+                    "timestamp_source": pair.timestamp_source,
+                    "provenance": pair.provenance,
+                }
+                records.append(record)
+                if len(records) == 1:
+                    payload["first_frame_at"] = pair.left_captured_at
+                # Make the completed image pair reviewable before potentially
+                # slow chessboard detection or another camera read.
+                persist()
+                if detect_chessboard:
+                    stage = "detect_chessboard"
+                    record["chessboard"] = {
+                        "left": _chessboard_status(pair.left, columns=board_columns, rows=board_rows),
+                        "right": _chessboard_status(pair.right, columns=board_columns, rows=board_rows),
+                    }
+                    persist()
+                if interval_s and (count is None or len(records) < count):
+                    next_capture_at = clock() + interval_s
+                    if duration_s is not None:
+                        next_capture_at = min(next_capture_at, started + duration_s)
+                    # CAP_PROP_BUFFERSIZE is advisory for many UVC drivers.
+                    # Continue consuming frames instead of sleeping through a
+                    # growing queue of stale frames between saved captures.
+                    while clock() < next_capture_at:
+                        stage = "drain_interval_frames"
+                        session.read_pair()
+                        payload["discarded_pair_count"] += 1
+                        remaining = next_capture_at - clock()
+                        if remaining > 0:
+                            sleep(min(0.005, remaining))
+            stage = "close_camera"
+        if not records:
+            stage = "check_pair_count"
+            raise RuntimeError("no stereo pairs captured before the duration limit")
+    except (Exception, KeyboardInterrupt) as error:
+        payload["status"] = "INTERRUPTED" if isinstance(error, KeyboardInterrupt) else "FAILED"
+        payload["error"] = {"stage": stage, "type": type(error).__name__, "message": str(error)}
+        payload["finished_at"] = _timestamp()
+        persist()
+        raise
+    payload["status"] = "COMPLETED"
+    payload["stop_reason"] = "COUNT_LIMIT" if count is not None and len(records) >= count else "DURATION_LIMIT"
+    payload["finished_at"] = _timestamp()
+    persist()
+    return manifest
+
+
+__all__ = ["capture_stereo_pairs"]

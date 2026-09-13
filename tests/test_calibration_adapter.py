@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import cv2
 import numpy as np
@@ -18,6 +20,34 @@ from pipe_twin.qr_registration import QrPoseEstimate, register_calibration_from_
 
 
 class CalibrationAdapterTests(unittest.TestCase):
+    @staticmethod
+    def legacy_config_text() -> str:
+        """Small self-contained stand-in for the user's legacy module."""
+        return """
+import numpy as np
+K_left = np.array([[416.841180253704, 0.0, 338.485167779639],
+                   [0.0, 416.465934495134, 230.419201769346],
+                   [0.0, 0.0, 1.0]])
+K_right = np.array([[417.765094485395, 0.0, 315.061245379892],
+                    [0.0, 417.845058291483, 238.181766936442],
+                    [0.0, 0.0, 1.0]])
+D_left = np.array([-0.0170280933781798, 0.0643596519467521,
+                    -0.00161785356900972, -0.00330684695473645, 0])
+D_right = np.array([-0.0394089328586398, 0.131112076868352,
+                     -0.00133793245429668, -0.00188957913931929, 0])
+R_lr = np.array([[0.999962872853149, 0.00187779299260463, -0.00840992323112715],
+                 [-0.0018408858041373, 0.999988651353238, 0.00439412154902114],
+                 [0.00841807904053251, -0.00437847669953504, 0.999954981430194]])
+T_lr = np.array([[-120.326603502087], [0.199732192805711], [-0.203594457929446]])
+imageSize = (640, 480)
+"""
+
+    @classmethod
+    def write_legacy_fixture(cls, directory: str | Path) -> Path:
+        path = Path(directory) / "camera_config.py"
+        path.write_text(cls.legacy_config_text(), encoding="utf-8")
+        return path
+
     @staticmethod
     def source() -> dict:
         return {
@@ -148,35 +178,34 @@ class CalibrationAdapterTests(unittest.TestCase):
         np.testing.assert_allclose(parsed.right.rotation_world_to_rectified_camera, target_rotation, atol=1e-6)
 
     def test_legacy_camera_config_is_read_as_literals_without_importing_module(self) -> None:
-        path = "doc/双目测距、深度图、标定代码/BM_find_distance（测距）/camera_config.py"
-        source = extract_opencv_calibration_literals(path)
-        self.assertEqual(source["image_size"], [640, 480])
-        self.assertEqual(source["source_audit"]["capture_size_px"], [1280, 480])
-        self.assertEqual(source["source_audit"]["capture_layout"], "side_by_side_left_right")
-        np.testing.assert_allclose(source["K1"][0][0], 416.841180253704)
-        np.testing.assert_allclose(source["T"][0], -120.326603502087)
-        with self.assertRaisesRegex(CalibrationAdapterError, "translation_unit"):
-            adapt_opencv_stereo_calibration(source, calibration_id="legacy")
+        with TemporaryDirectory() as directory:
+            path = self.write_legacy_fixture(directory)
+            source = extract_opencv_calibration_literals(path)
+            self.assertEqual(source["image_size"], [640, 480])
+            self.assertEqual(source["source_audit"]["capture_size_px"], [1280, 480])
+            self.assertEqual(source["source_audit"]["capture_layout"], "side_by_side_left_right")
+            np.testing.assert_allclose(source["K1"][0][0], 416.841180253704)
+            np.testing.assert_allclose(source["T"][0], -120.326603502087)
+            with self.assertRaisesRegex(CalibrationAdapterError, "translation_unit"):
+                adapt_opencv_stereo_calibration(source, calibration_id="legacy")
 
     def test_legacy_adapter_requires_explicit_unit_and_preserves_capture_audit(self) -> None:
-        path = "doc/双目测距、深度图、标定代码/BM_find_distance（测距）/camera_config.py"
-        result = adapt_legacy_camera_config(
-            path,
-            calibration_id="legacy-mm",
-            translation_unit="mm",
-            left_camera_pose={
-                "rotation_world_to_camera": np.eye(3).tolist(),
-                "center_world_mm": [0.0, 0.0, 0.0],
-            },
-        )
-        self.assertTrue(result["rectified"])
-        self.assertEqual(result["source_audit"]["capture_size_px"], [1280, 480])
-        self.assertTrue(result["source_audit"]["translation_unit_required"])
+        with TemporaryDirectory() as directory:
+            path = self.write_legacy_fixture(directory)
+            result = adapt_legacy_camera_config(
+                path,
+                calibration_id="legacy-mm",
+                translation_unit="mm",
+                left_camera_pose={
+                    "rotation_world_to_camera": np.eye(3).tolist(),
+                    "center_world_mm": [0.0, 0.0, 0.0],
+                },
+            )
+            self.assertTrue(result["rectified"])
+            self.assertEqual(result["source_audit"]["capture_size_px"], [1280, 480])
+            self.assertTrue(result["source_audit"]["translation_unit_required"])
 
     def test_legacy_literal_parser_does_not_execute_calls(self) -> None:
-        from pathlib import Path
-        from tempfile import TemporaryDirectory
-
         with TemporaryDirectory() as directory:
             path = Path(directory) / "camera_config.py"
             path.write_text(

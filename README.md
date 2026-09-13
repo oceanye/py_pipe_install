@@ -1,5 +1,7 @@
 # py_pipe_install
 
+远程主机无人值守采集与回传：请执行 [交接任务文件](doc/HANDOFF-REMOTE-CAPTURE.md)。它要求保存原始左右照片、元数据和完整日志，将报告索引推送到 `main`，把完整证据包上传 GitHub Release 并下载校验。现场历史配置为每目 `1920×1080`、棋盘 `8×6` 内角点，不能直接套用新增资料中的 `640×480` / `11×7` 示例。
+
 2026-09-11 实测复核：已复算 GitHub 上传的四份标定诊断，并检查现场照片与算法。结论、修复和补拍步骤见 [实测素材与标定复算评估](doc/FIELD-20260911-实测素材与标定复算评估.md)。当前素材尚未通过标定质量检查，旧现场包使用的演示标定不能用于真实精度验收。
 
 基础立面评估默认采用自动匹配：双击 `run_gui.bat`，点击左上角 **基础立面评估**。程序从双目有效深度拟合可见管道的局部圆柱，将其与 STL 的管径和截面排列匹配，自动定位检查区域；斜视时可指定模型管长方向，不要求逐管框选或二维码定位。完整操作见 [基础立面深度模式](doc/基础立面深度模式.md)。
@@ -233,7 +235,12 @@ python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millime
   python -m pipe_twin adapt-calibration --source calibration/opencv_stereo.json --output calibration/manifest_stereo_calibration.json --calibration-id field-rig-202609 --validated --registration-validated
   python -m pipe_twin validate-calibration --calibration calibration/manifest_stereo_calibration.json
 
+  # 远程主机无人值守采集：先核实实际设备编号、分辨率与棋盘；下面沿用现场历史配置
+  python -m pipe_twin capture-stereo --output-dir outputs/remote_capture --left-index 0 --eye-width 1920 --eye-height 1080 --count 30 --interval-s 2 --detect-chessboard --board-columns 8 --board-rows 6
+
 `calibrate-stereo` 会统一使用 classic 检测器处理所有棋盘照片，固定分别求得的两目内参后求双目外参和 `stereoRectify`，并输出同时包含标定与原始帧矫正配方的便携 JSON。照片质量、姿态跨度、RMS、内参、基线、极线残差或视差方向任一不合格都会拒绝输出；需要不同规格时显式传 `--board-columns/--board-rows/--square-size-mm`，建议用 `--expected-baseline-mm` 填写实测镜头中心距。输出会在质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘与极线几何通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
+
+`capture-stereo` 只保存原始采集证据，不会猜测标定、STL 位姿或单位，也不会自动把未矫正图送入分析器。按交接文件将整个采集包和日志上传后，再绑定正确标定和模型生成现场 manifest。`--duration-s` 是采集循环的时长限制，驱动阻塞需执行器另设进程超时；`--detect-chessboard` 默认规格来自资料中的 11×7 内角点，现场必须显式填当前板规格。该命令本身不执行 GitHub 上传，上传与回读校验由交接任务的执行者完成。
 
 建议的自动标定顺序是：打印一张已知方格边长的棋盘格；让棋盘在近/中/远距离、画面四角和不同倾角各拍一组左右同步照片（建议 8–15 组）；把左目照片放入 `calibration/left`、右目照片放入 `calibration/right`，两边按同一序号命名；运行上面的命令后，在快速双目评估窗口使用二维码配准。程序会报告每一组被接受或剔除的原因和 RMS 重投影误差，失败时只需补拍提示的照片。
 运行分析：

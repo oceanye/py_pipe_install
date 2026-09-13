@@ -174,6 +174,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="measured lens-centre distance in mm; 0 means unknown",
     )
 
+    capture_parser = subparsers.add_parser(
+        "capture-stereo",
+        help="unattended capture of paired raw stereo PNGs from a UVC camera",
+    )
+    capture_parser.add_argument("--output-dir", required=True, help="empty directory for PNGs and capture.json")
+    capture_parser.add_argument("--left-index", type=int, default=0, help="camera index (side-by-side stream by default)")
+    capture_parser.add_argument("--right-index", type=int, help="right camera index when using separate devices")
+    capture_parser.add_argument(
+        "--layout", choices=("side_by_side_left_right", "side_by_side_right_left", "separate_devices"),
+        default="side_by_side_left_right",
+    )
+    capture_parser.add_argument("--eye-width", type=int, default=640)
+    capture_parser.add_argument("--eye-height", type=int, default=480)
+    capture_parser.add_argument("--count", type=int, help="number of pairs; defaults to one unless --duration-s is set")
+    capture_parser.add_argument("--interval-s", type=float, default=0.0, help="delay between captures")
+    capture_parser.add_argument("--duration-s", type=float, help="capture until this duration elapses")
+    capture_parser.add_argument("--detect-chessboard", action="store_true", help="record optional 11x7 chessboard detection status")
+    capture_parser.add_argument("--board-columns", type=int, default=11)
+    capture_parser.add_argument("--board-rows", type=int, default=7)
+
     gui_parser = subparsers.add_parser(
         "gui", help="open the local CAD-bound pipe status dashboard"
     )
@@ -235,6 +255,25 @@ def _main(argv: Sequence[str] | None = None) -> int:
             f"RMS={quality['rms_stereo_px']:.3f}px"
         )
         print(f"标定 JSON 已写入 {output.resolve()}；下一步请用 QR/位姿完成 CAD 配准。")
+        return 0
+    if args.command == "capture-stereo":
+        from .remote_capture import capture_stereo_pairs
+
+        manifest = capture_stereo_pairs(
+            args.output_dir,
+            left_index=args.left_index,
+            right_index=args.right_index,
+            layout=args.layout,
+            eye_width=args.eye_width,
+            eye_height=args.eye_height,
+            count=args.count,
+            interval_s=args.interval_s,
+            duration_s=args.duration_s,
+            detect_chessboard=args.detect_chessboard,
+            board_columns=args.board_columns,
+            board_rows=args.board_rows,
+        )
+        print(f"已采集并保存 {json.loads(manifest.read_text(encoding='utf-8'))['pair_count']} 对照片：{manifest}")
         return 0
     if args.command == "inspect-model":
         if args.output:
