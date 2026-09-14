@@ -1,0 +1,172 @@
+{
+  "schema_version": "1.0",
+  "run_id": "field-20260913-134819-23493dc3",
+  "generated_at": "2026-09-14T17:31:31+08:00",
+  "summary_status": {
+    "capture": "PASS",
+    "analysis": "PARTIAL",
+    "upload": "PASS"
+  },
+  "checks": [
+    {
+      "id": "camera_open_and_complete",
+      "status": "PASS",
+      "metrics": {
+        "manifest_status": "COMPLETED",
+        "stop_reason": "COUNT_LIMIT"
+      },
+      "reason": "正式采集打开相机并按数量上限正常结束。"
+    },
+    {
+      "id": "primary_pair_count",
+      "status": "PASS",
+      "metrics": {
+        "requested": 30,
+        "saved": 30,
+        "png_count": 60
+      },
+      "reason": "正式 attempt-02 保存 30 组、60 张原始 PNG。"
+    },
+    {
+      "id": "raw_image_integrity",
+      "status": "PASS",
+      "metrics": {
+        "errors": [],
+        "all_manifest_hashes_match": true,
+        "all_images_decode": true,
+        "all_expected_1920x1080": true,
+        "png_inventory_matches": true,
+        "exact_identical_left_right_pairs": 0,
+        "near_black_saved_images": 0,
+        "unique_left_hashes": 30,
+        "unique_right_hashes": 30
+      },
+      "reason": "已逐图重算 SHA-256、解码、核对尺寸和清单。"
+    },
+    {
+      "id": "startup_frame_health",
+      "status": "PASS",
+      "metrics": {
+        "discarded_at_start": 6,
+        "accepted_read": 7,
+        "near_black_saved_images": 0,
+        "exact_identical_left_right_pairs": 0
+      },
+      "reason": "修复后自动丢弃 6 帧全黑启动帧；正式保存图无全黑图、无左右完全相同图。"
+    },
+    {
+      "id": "chessboard_visibility",
+      "status": "FAIL",
+      "metrics": {
+        "inner_corners": [
+          8,
+          6
+        ],
+        "pairs_detected_both": 0,
+        "pair_detection_rate": 0.0,
+        "method": "capture-stereo 中的 OpenCV 棋盘格检测，结果读取自 capture.json"
+      },
+      "reason": "正式 30 组中左右同时检测到 8×6 内角点的数量为 0；本轮画面不能作为棋盘格几何复核依据。"
+    },
+    {
+      "id": "qr_visibility",
+      "status": "FAIL",
+      "metrics": {
+        "performed": true,
+        "scope": "正式 attempt-02 的全部左右原图",
+        "detector_candidates": [
+          {
+            "pair": 9,
+            "role": "left",
+            "decoded": false,
+            "value": null,
+            "corners_detected": true
+          },
+          {
+            "pair": 26,
+            "role": "right",
+            "decoded": false,
+            "value": null,
+            "corners_detected": true
+          },
+          {
+            "pair": 27,
+            "role": "right",
+            "decoded": false,
+            "value": null,
+            "corners_detected": true
+          }
+        ],
+        "decoded_count": 0,
+        "binocular_decoded_pair_count": 0,
+        "interpretation": "OpenCV 有 3 次单目角点候选但均未解码，人工抽查为管件/支架误检；没有可用于配准的双目二维码。"
+      },
+      "reason": "对正式 30 组全部左右原图扫描，没有任何成功解码，也没有同组双目可用二维码。3 次单目角点候选人工抽查为误检。"
+    },
+    {
+      "id": "saved_calibration_compatibility",
+      "status": "PASS",
+      "metrics": {
+        "calibration_id": "field-chess-fb5dc0f71ee5",
+        "image_size_px": [
+          1920,
+          1080
+        ],
+        "baseline_mm": 60.64461423948321,
+        "historical_stereo_rms_px": 1.2717313798515921,
+        "registration_validated": false
+      },
+      "reason": "既有标定分辨率与本轮原图一致，且标称基线接近 60 mm；该检查只验证文件兼容性。"
+    },
+    {
+      "id": "current_run_epipolar_validation",
+      "status": "NOT_RUN",
+      "metrics": null,
+      "reason": "本轮正式原图没有棋盘格对应点，无法计算本轮矫正后的垂直视差中位数、RMS 和 P95。"
+    },
+    {
+      "id": "current_run_depth_stability",
+      "status": "NOT_RUN",
+      "metrics": null,
+      "reason": "没有固定平面棋盘格检测，也没有本轮已验证的几何控制目标。"
+    },
+    {
+      "id": "cad_registration",
+      "status": "NOT_RUN",
+      "metrics": {
+        "saved_registration_validated": false
+      },
+      "reason": "现有标定明确记录 registration_validated=false，正式原图也未检测到二维码，不能建立本轮相机到 STL 的可靠位姿。"
+    },
+    {
+      "id": "pipe_state_assessment",
+      "status": "NOT_RUN",
+      "metrics": null,
+      "reason": "按交接规则，深度和自动 STL 配准未通过前不能输出管径、净距、定位或状态判定。"
+    },
+    {
+      "id": "software_fix_tests",
+      "status": "PASS",
+      "metrics": {
+        "targeted": "13 passed",
+        "full": "361 passed, 1 skipped, 224 subtests passed"
+      },
+      "reason": "启动黑帧拦截修复已提交并通过定向及完整测试。"
+    },
+    {
+      "id": "release_upload_and_readback",
+      "status": "PASS",
+      "metrics": {
+        "release_tag": "field-capture-field-20260913-134819-23493dc3",
+        "asset_name": "field-20260913-134819-23493dc3.zip",
+        "size_bytes": 324655315,
+        "sha256": "33f4214cba37ab703ade05c8b90ed7a79b08c6a47bbcfc798e724bd1f6210509",
+        "manifest_file_count": 154,
+        "primary_pair_count": 30,
+        "primary_png_count": 60,
+        "readback_verified": true
+      },
+      "reason": "Release 上传成功；从 GitHub 回读后 ZIP 哈希及包内逐文件清单全部验证通过。"
+    }
+  ]
+}

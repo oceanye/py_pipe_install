@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "run_id": "field-20260913-134819-23493dc3",
+  "generated_at": "2026-09-14T17:31:31+08:00",
+  "code_sha": "0e5ff9ed44a57b02cc098aa88d77503fefde18c0",
+  "statuses": {
+    "capture": "PASS",
+    "analysis": "PARTIAL",
+    "upload": "PASS"
+  },
+  "release": {
+    "tag": "field-capture-field-20260913-134819-23493dc3",
+    "url": "https://github.com/oceanye/py_pipe_install/releases/tag/field-capture-field-20260913-134819-23493dc3",
+    "prerelease": true,
+    "latest": false,
+    "target_commitish": "0e5ff9ed44a57b02cc098aa88d77503fefde18c0"
+  },
+  "assets": [
+    {
+      "name": "field-20260913-134819-23493dc3.zip",
+      "url": "https://github.com/oceanye/py_pipe_install/releases/download/field-capture-field-20260913-134819-23493dc3/field-20260913-134819-23493dc3.zip",
+      "api_asset_id": 562925832,
+      "size_bytes": 324655315,
+      "sha256": "33f4214cba37ab703ade05c8b90ed7a79b08c6a47bbcfc798e724bd1f6210509",
+      "upload_status": "PASS",
+      "github_digest": "sha256:33f4214cba37ab703ade05c8b90ed7a79b08c6a47bbcfc798e724bd1f6210509"
+    }
+  ],
+  "readback": {
+    "status": "PASS",
+    "verified_at": "2026-09-14T17:31:31+08:00",
+    "downloaded_size_bytes": 324655315,
+    "downloaded_sha256": "33f4214cba37ab703ade05c8b90ed7a79b08c6a47bbcfc798e724bd1f6210509",
+    "archive_hash_match": true,
+    "manifest_file_count": 154,
+    "manifest_verification": "PASS",
+    "primary_pair_count": 30,
+    "primary_png_count": 60,
+    "method": "GitHub release asset API download after gh release download API EOF through proxy",
+    "failed_attempt_logs": [
+      "outputs/release-download-field-20260913-134819-23493dc3.log.txt",
+      "outputs/release-download-field-20260913-134819-23493dc3-retry.log.txt"
+    ],
+    "verification_result_local": "outputs/verify-field-20260913-134819-23493dc3/verification-result.json"
+  },
+  "report_url": "https://github.com/oceanye/py_pipe_install/blob/main/field_reports/field-20260913-134819-23493dc3/report.md"
+}

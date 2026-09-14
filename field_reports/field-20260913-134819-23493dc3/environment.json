@@ -1,0 +1,74 @@
+{
+  "run_id": "field-20260913-134819-23493dc3",
+  "generated_at": "2026-09-14T13:34:47+08:00",
+  "timezone": "Asia/Shanghai (UTC+08:00)",
+  "branch": "main",
+  "initial_pulled_code_sha": "1ff6daf1219e5d592543a437af46b2c0e095df12",
+  "capture_code_sha": "0e5ff9ed44a57b02cc098aa88d77503fefde18c0",
+  "code_change": {
+    "commit": "0e5ff9ed44a57b02cc098aa88d77503fefde18c0",
+    "summary": "reject invalid stereo startup frames",
+    "patch": "code.diff"
+  },
+  "os": "Windows-10-10.0.17763-SP0",
+  "python": "3.12.10",
+  "opencv": "4.13.0",
+  "pip_check": "No broken requirements found.",
+  "pip_freeze": "pip-freeze.txt",
+  "tests": {
+    "targeted": "13 passed",
+    "full": "361 passed, 1 skipped, 224 subtests passed in 153.60s"
+  },
+  "disk_free_bytes_at_start": 144572035072,
+  "camera_device": {
+    "pnp_name": "USB Camera",
+    "vid": "1BCF",
+    "pid": "0B15",
+    "index": 0,
+    "layout": "side_by_side_left_right",
+    "requested_frame_size_px": [
+      3840,
+      1080
+    ],
+    "requested_eye_size_px": [
+      1920,
+      1080
+    ]
+  },
+  "hardware_history": {
+    "expected_baseline_mm": 60.0,
+    "nominal_fov_deg": 80.0,
+    "nominal_focal_length_mm": 3.0
+  },
+  "target_history": {
+    "inner_corners": [
+      8,
+      6
+    ],
+    "squares": [
+      9,
+      7
+    ],
+    "measured_square_mm": 19.0
+  },
+  "calibration": {
+    "id": "field-chess-fb5dc0f71ee5",
+    "baseline_mm": 60.64461423948321,
+    "historical_stereo_rms_px": 1.2717313798515921,
+    "used_historical_pair_count": 15,
+    "registration_validated": false,
+    "copied_files": [
+      "calibration/calibration_current.json",
+      "calibration/rectification_recipe.json",
+      "calibration/source_session.json",
+      "calibration/source.json"
+    ]
+  },
+  "primary_capture": {
+    "attempt": "attempt-02",
+    "started_at": "2026-09-14T13:17:38.315+08:00",
+    "finished_at": "2026-09-14T13:20:18.837+08:00",
+    "pair_count": 30,
+    "stop_reason": "COUNT_LIMIT"
+  }
+}

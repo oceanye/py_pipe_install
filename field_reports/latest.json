@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "run_id": "field-20260913-134819-23493dc3",
+  "updated_at": "2026-09-14T17:31:31+08:00",
+  "statuses": {
+    "capture": "PASS",
+    "analysis": "PARTIAL",
+    "upload": "PASS"
+  },
+  "code_sha": "0e5ff9ed44a57b02cc098aa88d77503fefde18c0",
+  "report_path": "field_reports/field-20260913-134819-23493dc3/report.md",
+  "report_url": "https://github.com/oceanye/py_pipe_install/blob/main/field_reports/field-20260913-134819-23493dc3/report.md",
+  "release_tag": "field-capture-field-20260913-134819-23493dc3",
+  "release_url": "https://github.com/oceanye/py_pipe_install/releases/tag/field-capture-field-20260913-134819-23493dc3",
+  "asset_name": "field-20260913-134819-23493dc3.zip",
+  "asset_url": "https://github.com/oceanye/py_pipe_install/releases/download/field-capture-field-20260913-134819-23493dc3/field-20260913-134819-23493dc3.zip",
+  "asset_sha256": "33f4214cba37ab703ade05c8b90ed7a79b08c6a47bbcfc798e724bd1f6210509",
+  "readback_verified": true
+}
