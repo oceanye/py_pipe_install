@@ -76,6 +76,25 @@ def _encode_png(image: np.ndarray) -> bytes:
     return bytes(encoded)
 
 
+def _startup_pair_health(pair: Any) -> tuple[str | None, dict[str, Any]]:
+    """Reject deterministic UVC startup frames before they enter evidence."""
+
+    left = np.asarray(pair.left)
+    right = np.asarray(pair.right)
+    stats = {
+        "left_mean": round(float(np.mean(left)), 3),
+        "right_mean": round(float(np.mean(right)), 3),
+        "left_max": int(np.max(left)),
+        "right_max": int(np.max(right)),
+        "left_right_identical": bool(np.array_equal(left, right)),
+    }
+    if stats["left_max"] <= 2 and stats["right_max"] <= 2:
+        return "BOTH_EYES_NEAR_BLACK", stats
+    if stats["left_right_identical"]:
+        return "LEFT_RIGHT_IDENTICAL", stats
+    return None, stats
+
+
 def capture_stereo_pairs(
     output_dir: str | Path,
     *,
@@ -94,6 +113,7 @@ def capture_stereo_pairs(
     session_factory: Callable[..., Any] = StereoCameraSession,
     sleep: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.monotonic,
+    startup_max_reads: int = 20,
 ) -> Path:
     """Capture paired images and return the generated ``capture.json`` path.
 
@@ -115,6 +135,8 @@ def capture_stereo_pairs(
         raise ValueError("interval_s must be a non-negative finite number")
     if type(board_columns) is not int or board_columns < 3 or type(board_rows) is not int or board_rows < 3:
         raise ValueError("board_columns and board_rows must be integers >= 3")
+    if type(startup_max_reads) is not int or startup_max_reads <= 0:
+        raise ValueError("startup_max_reads must be a positive integer")
 
     root = Path(output_dir).resolve()
     if root.exists() and any(root.iterdir()):
@@ -149,6 +171,11 @@ def capture_stereo_pairs(
         "pair_count": 0,
         "requested_pair_count": count,
         "discarded_pair_count": 0,
+        "startup_warmup": {
+            "max_reads": startup_max_reads,
+            "discarded": [],
+            "accepted_read": None,
+        },
         "interval_s": float(interval_s),
         "duration_limit_s": None if duration_s is None else float(duration_s),
         "duration_policy": "CHECK_BETWEEN_READS_NOT_HARD_TIMEOUT",
@@ -181,11 +208,36 @@ def capture_stereo_pairs(
             started = clock()
             payload["camera_opened_at"] = _timestamp()
             persist()
+            pending_pair = None
+            for startup_read in range(1, startup_max_reads + 1):
+                stage = "startup_warmup"
+                candidate = session.read_pair()
+                issue, stats = _startup_pair_health(candidate)
+                if issue is None:
+                    payload["startup_warmup"]["accepted_read"] = startup_read
+                    payload["startup_warmup"]["accepted_stats"] = stats
+                    pending_pair = candidate
+                    persist()
+                    break
+                payload["startup_warmup"]["discarded"].append(
+                    {"read": startup_read, "reason": issue, **stats}
+                )
+                payload["discarded_pair_count"] += 1
+                persist()
+            if pending_pair is None:
+                raise RuntimeError(
+                    f"camera did not produce a non-black distinct stereo pair "
+                    f"within {startup_max_reads} startup reads"
+                )
             while (count is None or len(records) < count) and (
                 duration_s is None or (clock() - started) < duration_s
             ):
                 stage = "read_pair"
-                pair = session.read_pair()
+                if pending_pair is not None:
+                    pair = pending_pair
+                    pending_pair = None
+                else:
+                    pair = session.read_pair()
                 stage = "encode_png"
                 left_data = _encode_png(pair.left)
                 right_data = _encode_png(pair.right)

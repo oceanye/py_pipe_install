@@ -57,6 +57,8 @@ def test_capture_writes_pair_pngs_and_hashed_metadata(tmp_path: Path):
     assert payload["first_frame_at"] == payload["captures"][0]["left"]["captured_at"]
     assert payload["requested_frame_size_px"] == [12, 4]
     assert payload["chessboard_detection"]["enabled"] is True
+    assert payload["startup_warmup"]["accepted_read"] == 1
+    assert payload["startup_warmup"]["discarded"] == []
     first = payload["captures"][0]
     for role in ("left", "right"):
         path = manifest_path.parent / first[role]["path"]
@@ -141,6 +143,63 @@ def test_duration_exhausted_before_first_frame_is_failure(tmp_path: Path):
     payload = json.loads((output / "capture.json").read_text(encoding="utf-8"))
     assert payload["status"] == "FAILED"
     assert payload["pair_count"] == 0
+
+
+def test_startup_warmup_discards_black_and_identical_pairs(tmp_path: Path):
+    class WarmingSession(_FakeSession):
+        def read_pair(self):
+            pair = super().read_pair()
+            if self.index <= 2:
+                black = np.zeros_like(pair.left)
+                return CapturedStereoPair(
+                    left=black,
+                    right=black.copy(),
+                    left_captured_at=pair.left_captured_at,
+                    right_captured_at=pair.right_captured_at,
+                    sync_delta_ms=pair.sync_delta_ms,
+                    timestamp_source=pair.timestamp_source,
+                    provenance=pair.provenance,
+                )
+            return pair
+
+    manifest = capture_stereo_pairs(
+        tmp_path / "run", count=2, session_factory=WarmingSession
+    )
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    assert payload["pair_count"] == 2
+    assert payload["startup_warmup"]["accepted_read"] == 3
+    assert [item["reason"] for item in payload["startup_warmup"]["discarded"]] == [
+        "BOTH_EYES_NEAR_BLACK",
+        "BOTH_EYES_NEAR_BLACK",
+    ]
+    assert payload["discarded_pair_count"] == 2
+    assert payload["captures"][0]["left"]["captured_at"].endswith("03.000+08:00")
+
+
+def test_startup_warmup_fails_closed_when_all_pairs_are_identical(tmp_path: Path):
+    class IdenticalSession(_FakeSession):
+        def read_pair(self):
+            pair = super().read_pair()
+            return CapturedStereoPair(
+                left=pair.left,
+                right=pair.left.copy(),
+                left_captured_at=pair.left_captured_at,
+                right_captured_at=pair.right_captured_at,
+                sync_delta_ms=pair.sync_delta_ms,
+                timestamp_source=pair.timestamp_source,
+                provenance=pair.provenance,
+            )
+
+    output = tmp_path / "run"
+    with pytest.raises(RuntimeError, match="non-black distinct stereo pair"):
+        capture_stereo_pairs(
+            output, count=1, startup_max_reads=3, session_factory=IdenticalSession
+        )
+    payload = json.loads((output / "capture.json").read_text(encoding="utf-8"))
+    assert payload["status"] == "FAILED"
+    assert payload["pair_count"] == 0
+    assert payload["error"]["stage"] == "startup_warmup"
+    assert payload["discarded_pair_count"] == 3
 
 
 def test_interval_continuously_drains_old_camera_frames(tmp_path: Path):
