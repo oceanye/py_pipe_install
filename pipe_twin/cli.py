@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from pathlib import Path
 from typing import Sequence
 
@@ -194,6 +195,55 @@ def build_parser() -> argparse.ArgumentParser:
     capture_parser.add_argument("--board-columns", type=int, default=11)
     capture_parser.add_argument("--board-rows", type=int, default=7)
 
+    fetch_parser = subparsers.add_parser(
+        "fetch-stereo", help="download a completed remote run and verify all file hashes over HTTP",
+    )
+    fetch_parser.add_argument("--url", required=True, help="run directory URL containing evidence_manifest.json")
+    fetch_parser.add_argument("--output-dir", required=True, help="local directory for the complete run")
+    fetch_parser.add_argument("--timeout-s", type=float, default=45.0)
+    fetch_parser.add_argument("--workers", type=int, default=4)
+    agent_parser = subparsers.add_parser(
+        "serve-capture",
+        help="serve an authenticated, bounded remote stereo-capture control plane",
+    )
+    agent_parser.add_argument("--bind", default="127.0.0.1", help="bind address; use the Tailscale address on the office PC")
+    agent_parser.add_argument("--port", type=int, default=8770)
+    agent_parser.add_argument("--token-file", required=True, help="file containing one bearer token line")
+    agent_parser.add_argument("--output-root", required=True, help="fixed root for generated remote run directories")
+    agent_parser.add_argument("--file-base-url", help="read-only 8765 base URL used to build run_url responses")
+    agent_parser.add_argument("--left-index", type=int, default=0)
+    agent_parser.add_argument("--right-index", type=int)
+    agent_parser.add_argument(
+        "--layout",
+        choices=("side_by_side_left_right", "side_by_side_right_left", "separate_devices"),
+        default="side_by_side_left_right",
+    )
+    agent_parser.add_argument("--eye-width", type=int, default=1920)
+    agent_parser.add_argument("--eye-height", type=int, default=1080)
+    agent_parser.add_argument("--backend", type=int)
+    agent_parser.add_argument("--default-count", type=int, default=1)
+    agent_parser.add_argument("--max-count", type=int, default=30)
+    agent_parser.add_argument("--default-interval-s", type=float, default=0.0)
+    agent_parser.add_argument("--max-interval-s", type=float, default=60.0)
+    agent_parser.add_argument("--max-duration-s", type=float, default=300.0)
+
+    remote_parser = subparsers.add_parser(
+        "remote-capture",
+        help="submit a bounded capture job to a remote capture agent",
+    )
+    remote_parser.add_argument("--agent-url", required=True, help="capture-agent base URL, for example http://100.103.31.118:8770")
+    remote_parser.add_argument("--token-file", required=True)
+    remote_parser.add_argument("--count", type=int)
+    remote_parser.add_argument("--interval-s", type=float)
+    remote_parser.add_argument("--duration-s", type=float)
+    remote_parser.add_argument("--detect-chessboard", action="store_true")
+    remote_parser.add_argument("--board-columns", type=int, default=8)
+    remote_parser.add_argument("--board-rows", type=int, default=6)
+    remote_parser.add_argument("--timeout-s", type=float, default=15.0)
+    remote_parser.add_argument("--wait", action="store_true", help="poll until the job reaches a terminal state")
+    remote_parser.add_argument("--poll-s", type=float, default=1.0)
+
+
     gui_parser = subparsers.add_parser(
         "gui", help="open the local CAD-bound pipe status dashboard"
     )
@@ -275,6 +325,77 @@ def _main(argv: Sequence[str] | None = None) -> int:
         )
         print(f"已采集并保存 {json.loads(manifest.read_text(encoding='utf-8'))['pair_count']} 对照片：{manifest}")
         return 0
+    if args.command == "fetch-stereo":
+        from .remote_fetch import fetch_stereo_run
+
+        def show_progress(done: int, total: int, name: str) -> None:
+            if done == total or done % 10 == 0:
+                print(f"远程文件校验 {done}/{total}: {name}", flush=True)
+
+        report_path = fetch_stereo_run(args.url, args.output_dir, timeout_s=args.timeout_s,
+                                       workers=args.workers, progress=show_progress)
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        print(f"远程数据下载校验通过：{len(report['files'])} 个文件，{report['verified_bytes']} 字节；报告：{report_path}")
+        return 0
+    if args.command == "serve-capture":
+        from .capture_agent import CaptureAgentConfig, serve_capture_agent
+
+        config = CaptureAgentConfig(
+            output_root=Path(args.output_root),
+            left_index=args.left_index,
+            right_index=args.right_index,
+            layout=args.layout,
+            eye_width=args.eye_width,
+            eye_height=args.eye_height,
+            backend=args.backend,
+            default_count=args.default_count,
+            max_count=args.max_count,
+            default_interval_s=args.default_interval_s,
+            max_interval_s=args.max_interval_s,
+            max_duration_s=args.max_duration_s,
+            file_base_url=args.file_base_url,
+        )
+        serve_capture_agent(
+            bind=args.bind,
+            port=args.port,
+            token_file=args.token_file,
+            config=config,
+        )
+        return 0
+    if args.command == "remote-capture":
+        from .capture_agent import get_remote_capture, read_token, submit_remote_capture
+
+        request = {}
+        for key, value in (
+            ("count", args.count),
+            ("interval_s", args.interval_s),
+            ("duration_s", args.duration_s),
+        ):
+            if value is not None:
+                request[key] = value
+        if args.detect_chessboard:
+            request.update(
+                detect_chessboard=True,
+                board_columns=args.board_columns,
+                board_rows=args.board_rows,
+            )
+        token = read_token(args.token_file)
+        result = submit_remote_capture(args.agent_url, token, request, timeout_s=args.timeout_s)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        if not args.wait:
+            return 0
+        job_id = result.get("job_id")
+        if not isinstance(job_id, str):
+            raise RuntimeError("remote capture response did not contain a job_id")
+        if isinstance(args.poll_s, bool) or not 0.1 <= float(args.poll_s) <= 60.0:
+            raise ValueError("poll-s must be between 0.1 and 60 seconds")
+        while True:
+            time.sleep(float(args.poll_s))
+            result = get_remote_capture(args.agent_url, token, job_id, timeout_s=args.timeout_s)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            if result.get("state") in {"COMPLETED", "FAILED"}:
+                return 0 if result.get("state") == "COMPLETED" else 1
+
     if args.command == "inspect-model":
         if args.output:
             ensure_paths_distinct(model=args.model, output=args.output)

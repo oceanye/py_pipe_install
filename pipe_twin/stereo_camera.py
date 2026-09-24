@@ -13,6 +13,8 @@ from typing import Any, Callable
 import cv2
 import numpy as np
 
+from .camera_lock import CameraLease
+
 
 LAYOUT_SIDE_BY_SIDE_LR = "side_by_side_left_right"
 LAYOUT_SIDE_BY_SIDE_RL = "side_by_side_right_left"
@@ -269,6 +271,7 @@ class StereoCameraSession:
         backend: int | None = None,
         capture_factory: Callable[..., Any] = cv2.VideoCapture,
         clock_ns: Callable[[], int] = time.time_ns,
+        camera_lease_factory: Callable[[list[int]], Any] = CameraLease,
     ) -> None:
         if layout not in SUPPORTED_LAYOUTS:
             raise StereoCameraError(f"unsupported stereo camera layout: {layout!r}")
@@ -288,22 +291,32 @@ class StereoCameraSession:
         self.backend = _default_backend() if backend is None else backend
         self.capture_factory = capture_factory
         self.clock_ns = clock_ns
+        indices = (
+            [left_index]
+            if layout in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}
+            else [left_index, int(right_index)]
+        )
+        self.camera_lease = camera_lease_factory(indices)
         self.left_capture: Any | None = None
         self.right_capture: Any | None = None
 
     def _open_one(self, index: int, width: int, height: int) -> Any:
         capture = self.capture_factory(index, self.backend)
-        if not capture.isOpened():
+        try:
+            if not capture.isOpened():
+                raise StereoCameraError(f"无法打开相机索引 {index}")
+            capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+            capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        except BaseException:
             capture.release()
-            raise StereoCameraError(f"无法打开相机索引 {index}")
-        capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
-        capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            raise
         return capture
 
     def open(self) -> None:
         self.close()
+        self.camera_lease.acquire()
         try:
             if self.layout in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}:
                 self.left_capture = self._open_one(
@@ -318,16 +331,25 @@ class StereoCameraSession:
                 self.right_capture = self._open_one(
                     int(self.right_index), self.eye_width, self.eye_height
                 )
-        except Exception:
+        except BaseException:
             self.close()
             raise
 
     def close(self) -> None:
-        for capture in (self.left_capture, self.right_capture):
-            if capture is not None:
-                capture.release()
-        self.left_capture = None
-        self.right_capture = None
+        release_error: BaseException | None = None
+        try:
+            for capture in (self.left_capture, self.right_capture):
+                if capture is not None:
+                    try:
+                        capture.release()
+                    except BaseException as error:
+                        release_error = release_error or error
+        finally:
+            self.left_capture = None
+            self.right_capture = None
+            self.camera_lease.release()
+        if release_error is not None:
+            raise release_error
 
     def _side_by_side_pair(self) -> CapturedStereoPair:
         capture = self.left_capture
