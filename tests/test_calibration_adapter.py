@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import unittest
+import json
+import hashlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -224,6 +226,38 @@ os.system('do-not-run')
             )
             with self.assertRaisesRegex(CalibrationAdapterError, "K2"):
                 extract_opencv_calibration_literals(path)
+
+    def test_cli_converts_legacy_python_with_explicit_pose_and_unit(self) -> None:
+        from pipe_twin.cli import main
+
+        with TemporaryDirectory() as directory:
+            source = self.write_legacy_fixture(directory)
+            pose = Path(directory) / "left_pose.json"
+            pose.write_text(
+                json.dumps({
+                    "rotation_world_to_camera": np.eye(3).tolist(),
+                    "center_world_mm": [0.0, 0.0, 0.0],
+                }),
+                encoding="utf-8",
+            )
+            output = Path(directory) / "calibration.json"
+            self.assertEqual(
+                main([
+                    "adapt-legacy-calibration",
+                    "--source", str(source),
+                    "--output", str(output),
+                    "--calibration-id", "legacy-cli",
+                    "--translation-unit", "mm",
+                    "--left-pose-json", str(pose),
+                ]),
+                0,
+            )
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(
+                payload["source_audit"]["source_sha256"],
+                hashlib.sha256(source.read_bytes()).hexdigest(),
+            )
+            self.assertFalse(payload["validated"])
 
 
 if __name__ == "__main__":

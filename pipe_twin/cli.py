@@ -143,6 +143,27 @@ def build_parser() -> argparse.ArgumentParser:
     adapt_parser.add_argument("--validated", action="store_true")
     adapt_parser.add_argument("--registration-validated", action="store_true")
 
+    legacy_parser = subparsers.add_parser(
+        "adapt-legacy-calibration",
+        help="safely convert a legacy camera_config.py after explicit unit and CAD pose review",
+    )
+    legacy_parser.add_argument("--source", required=True, help="legacy camera_config.py")
+    legacy_parser.add_argument("--output", required=True, help="manifest calibration JSON output")
+    legacy_parser.add_argument("--calibration-id", required=True)
+    legacy_parser.add_argument(
+        "--translation-unit",
+        required=True,
+        choices=("mm", "cm", "m"),
+        help="unit of the legacy T vector; the adapter will not infer this",
+    )
+    legacy_parser.add_argument(
+        "--left-pose-json",
+        required=True,
+        help="JSON object with rotation_world_to_camera and center_world_mm",
+    )
+    legacy_parser.add_argument("--validated", action="store_true")
+    legacy_parser.add_argument("--registration-validated", action="store_true")
+
     validate_parser = subparsers.add_parser(
         "validate-calibration",
         help="validate a manifest-bound calibration and print repair guidance",
@@ -268,6 +289,26 @@ def _main(argv: Sequence[str] | None = None) -> int:
         )
         _write_json(args.output, calibration)
         print(f"Calibration written to {Path(args.output).resolve()}")
+        return 0
+    if args.command == "adapt-legacy-calibration":
+        from .calibration_adapter import adapt_legacy_camera_config, load_json
+
+        pose = load_json(args.left_pose_json)
+        required_pose = {"rotation_world_to_camera", "center_world_mm"}
+        if set(pose) != required_pose:
+            raise ValueError(
+                "--left-pose-json must contain exactly rotation_world_to_camera and center_world_mm"
+            )
+        calibration = adapt_legacy_camera_config(
+            args.source,
+            calibration_id=args.calibration_id,
+            translation_unit=args.translation_unit,
+            left_camera_pose=pose,
+            validated=args.validated,
+            registration_validated=args.registration_validated,
+        )
+        _write_json(args.output, calibration)
+        print(f"Legacy calibration converted to {Path(args.output).resolve()}")
         return 0
     if args.command == "validate-calibration":
         from .calibration_adapter import load_json, validate_calibration

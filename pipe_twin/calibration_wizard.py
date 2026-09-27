@@ -72,6 +72,26 @@ class ChessboardCalibrationError(ValueError):
     """Raised when the wizard cannot produce a trustworthy calibration."""
 
 
+def read_calibration_image(path: str | Path) -> np.ndarray | None:
+    """Read a calibration image from a Unicode-safe filesystem path.
+
+    ``cv2.imread`` still fails for many non-ASCII Windows paths. The vendor
+    bundle lives below a Chinese directory, so decode bytes after Python has
+    opened the path instead of passing the path string to OpenCV.
+    """
+
+    try:
+        encoded = np.frombuffer(Path(path).read_bytes(), dtype=np.uint8)
+    except OSError:
+        return None
+    if encoded.size == 0:
+        return None
+    try:
+        return cv2.imdecode(encoded, cv2.IMREAD_COLOR)
+    except cv2.error:
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Printable target
 # ---------------------------------------------------------------------------
@@ -244,11 +264,12 @@ def calibrate_stereo_from_folders(
     if len(left) != len(right):
         raise CalibrationWizardError(f"左右照片数量不同（左 {len(left)} 张，右 {len(right)} 张）；请按同一批次补齐。")
     pattern = (int(board_columns), int(board_rows))
-    pairs: list[tuple[BoardObservation, BoardObservation]] = []
+    image_pairs: list[tuple[Path, Path, np.ndarray, np.ndarray]] = []
     image_size: tuple[int, int] | None = None
     rejected: list[dict[str, str]] = []
     for left_path, right_path in zip(left, right):
-        left_image, right_image = cv2.imread(str(left_path)), cv2.imread(str(right_path))
+        left_image = read_calibration_image(left_path)
+        right_image = read_calibration_image(right_path)
         if left_image is None or right_image is None:
             rejected.append({"left": str(left_path), "right": str(right_path), "reason": "无法读取照片"})
             continue
@@ -260,20 +281,41 @@ def calibrate_stereo_from_folders(
         if size != image_size:
             rejected.append({"left": str(left_path), "right": str(right_path), "reason": "照片分辨率不一致"})
             continue
-        # Use one deterministic detector for the complete offline data set.
-        # Mixing SB and classic sub-pixel conventions between folders/pairs
-        # can create a small systematic stereo residual that looks like a rig
-        # geometry problem.
-        left_observation = detect_board_corners(
-            left_image, pattern=pattern, use_sb=False
-        )
-        right_observation = detect_board_corners(
-            right_image, pattern=pattern, use_sb=False
-        )
-        if left_observation is None or right_observation is None:
-            rejected.append({"left": str(left_path), "right": str(right_path), "reason": "未同时检测到完整棋盘"})
-            continue
-        pairs.append((left_observation, right_observation))
+        image_pairs.append((left_path, right_path, left_image, right_image))
+
+    def detect_pairs(
+        *, use_sb: bool
+    ) -> tuple[list[tuple[BoardObservation, BoardObservation]], list[dict[str, str]]]:
+        pairs: list[tuple[BoardObservation, BoardObservation]] = []
+        detection_rejected: list[dict[str, str]] = []
+        for left_path, right_path, left_image, right_image in image_pairs:
+            left_observation = detect_board_corners(
+                left_image, pattern=pattern, use_sb=use_sb, sb_accuracy=use_sb
+            )
+            right_observation = detect_board_corners(
+                right_image, pattern=pattern, use_sb=use_sb, sb_accuracy=use_sb
+            )
+            if left_observation is None or right_observation is None:
+                detection_rejected.append(
+                    {
+                        "left": str(left_path),
+                        "right": str(right_path),
+                        "reason": "未同时检测到完整棋盘",
+                    }
+                )
+                continue
+            pairs.append((left_observation, right_observation))
+        return pairs, detection_rejected
+
+    # Use one detector for the complete offline data set. The vendor's
+    # printed R-C.jpg is detected by SB, while classic remains the
+    # deterministic first pass for ordinary calibration sets. If any valid
+    # pair needs the fallback, rerun every valid pair with SB so the solver
+    # never receives a mixture of detector conventions across pairs.
+    pairs, detector_rejected = detect_pairs(use_sb=False)
+    if detector_rejected:
+        pairs, detector_rejected = detect_pairs(use_sb=True)
+    rejected.extend(detector_rejected)
     if image_size is None or len(pairs) < int(min_pairs):
         raise CalibrationWizardError(f"有效左右棋盘照片只有 {len(pairs)} 对，至少需要 {int(min_pairs)} 对；请补拍不同位置和角度。")
     result = solve_stereo_calibration(

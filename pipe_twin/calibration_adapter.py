@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 import ast
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -158,6 +159,7 @@ def extract_opencv_calibration_literals(path: str | Path) -> dict[str, Any]:
     result["source_audit"] = {
         "adapter": "legacy_camera_config_literal_parser_v1",
         "source_filename": source_path.name,
+        "source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
         "capture_layout": "side_by_side_left_right",
         "capture_size_px": [2 * width, height],
         "per_eye_size_px": [width, height],

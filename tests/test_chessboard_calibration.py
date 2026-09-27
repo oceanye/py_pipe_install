@@ -614,7 +614,7 @@ class ChessboardWizardTests(unittest.TestCase):
                 (right_dir / f"{index:02}.png").write_bytes(b"x")
             with (
                 mock.patch(
-                    "pipe_twin.calibration_wizard.cv2.imread",
+                    "pipe_twin.calibration_wizard.read_calibration_image",
                     return_value=np.zeros((SIZE[1], SIZE[0], 3), dtype=np.uint8),
                 ),
                 mock.patch(
