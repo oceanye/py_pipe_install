@@ -242,7 +242,7 @@ python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millime
   # 远程主机无人值守采集：先核实实际设备编号、分辨率与棋盘；下面沿用现场历史配置
   python -m pipe_twin capture-stereo --output-dir outputs/remote_capture --left-index 0 --eye-width 1920 --eye-height 1080 --count 30 --interval-s 2 --detect-chessboard --board-columns 8 --board-rows 6
 
-`calibrate-stereo` 默认先用 classic 检测器处理所有棋盘照片；如果一对照片任一目未检出，则把整对一起重试为 OpenCV SB，避免混用检测器。随后固定分别求得的两目内参，再求双目外参和 `stereoRectify`，并输出同时包含标定与原始帧矫正配方的便携 JSON。照片质量、姿态跨度、RMS、内参、基线、极线残差或视差方向任一不合格都会拒绝输出；需要不同规格时显式传 `--board-columns/--board-rows/--square-size-mm`，建议用 `--expected-baseline-mm` 填写实测镜头中心距。输出会在质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘与极线几何通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
+`calibrate-stereo` 默认先用 classic 检测器处理所有棋盘照片；如果任一有效照片对未检出，则把整批有效照片一起重试为 OpenCV SB，避免跨照片对混用检测器。随后固定分别求得的两目内参，再求双目外参和 `stereoRectify`，并输出同时包含标定与原始帧矫正配方的便携 JSON。照片质量、姿态跨度、RMS、内参、基线、极线残差或视差方向任一不合格都会拒绝输出；需要不同规格时显式传 `--board-columns/--board-rows/--square-size-mm`，建议用 `--expected-baseline-mm` 填写实测镜头中心距。输出会在质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘与极线几何通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
 
 原厂 `camera_config.py` 可以安全转换为 manifest 标定，但不会执行旧 Python 文件，也不会猜测平移单位或 CAD 位姿。先准备只含 `rotation_world_to_camera` 和 `center_world_mm` 的 `left_pose.json`，再运行：
 
