@@ -17,6 +17,9 @@ import cv2
 import numpy as np
 
 from .cad_model import load_cad_scene
+from .camera_exposure import (
+    DEFAULT_EXPOSURE_PRESET, EXPOSURE_PRESETS, exposure_preset_label,
+)
 from .camera_pose import (
     POSE_MODE_LABELS,
     SIDE_ELEVATION_VIEWS,
@@ -424,7 +427,7 @@ def _capture_provenance(
                 raise ValueError(f"camera_capture_provenance.{role}.{key} is invalid")
             continue
         if key == "capture_exposure_status" and (
-            not isinstance(value, str) or value not in {"DRIVER_REPORTED", "UNCONFIRMED"}
+            not isinstance(value, str) or value not in {"DRIVER_REPORTED", "UNCONFIRMED", "AUTO"}
         ):
             raise ValueError(f"camera_capture_provenance.{role}.{key} is invalid")
         if key != "capture_device_index" and (
@@ -651,9 +654,11 @@ class StereoCameraDialog:
         self.mode = tk.StringVar(value=_CAMERA_LAYOUT_LABELS[LAYOUT_SIDE_BY_SIDE_LR])
         self.left_index = tk.StringVar(value="0")
         self.right_index = tk.StringVar(value="1")
+        self.exposure_preset = tk.StringVar(value=DEFAULT_EXPOSURE_PRESET)
         # Reuse the device selection saved in the workbench profile when valid.
         camera_state = (getattr(owner, "profile", None) or {}).get("camera")
         if isinstance(camera_state, dict):
+            self.exposure_preset.set(exposure_preset_label(camera_state.get("exposure_ms", 5.0)))
             layout = camera_state.get("layout")
             if layout in _CAMERA_LAYOUT_LABELS:
                 self.mode.set(_CAMERA_LAYOUT_LABELS[layout])
@@ -709,7 +714,15 @@ class StereoCameraDialog:
         ttk.Label(main, textvariable=self.message, foreground="#355371").pack(
             fill="x", pady=(0, 8)
         )
-        self.exposure_status = tk.StringVar(value="快门目标 ≤1/200 秒（5 ms）；待连接")
+        shutter_row = ttk.Frame(main)
+        shutter_row.pack(fill="x", pady=(0, 4))
+        ttk.Label(shutter_row, text="快门：").pack(side="left")
+        shutter = ttk.Combobox(shutter_row, textvariable=self.exposure_preset,
+                               values=tuple(EXPOSURE_PRESETS), state="readonly", width=28)
+        shutter.pack(side="left", padx=(3, 10))
+        shutter.bind("<<ComboboxSelected>>", lambda _e: self._apply_exposure())
+        ttk.Label(shutter_row, text="预览中可直接切换；画面过暗可选自动或更慢档位。").pack(side="left")
+        self.exposure_status = tk.StringVar(value="快门待连接；默认不慢于 1/200 秒")
         ttk.Label(main, textvariable=self.exposure_status, foreground="#8A4E00", wraplength=950).pack(
             fill="x", pady=(0, 6)
         )
@@ -737,6 +750,16 @@ class StereoCameraDialog:
             text="同步抓拍并使用",
             command=self.capture,
         ).pack(side="right", padx=4)
+
+    def _apply_exposure(self) -> None:
+        try:
+            if self.session is not None:
+                self.session.set_exposure(EXPOSURE_PRESETS[self.exposure_preset.get()])
+                self.exposure_status.set(self.session.exposure_summary)
+            else:
+                self.exposure_status.set(f"已选择 {self.exposure_preset.get()}；打开相机后生效")
+        except Exception as error:
+            self.app.messagebox.showerror("快门设置失败", str(error), parent=self.window)
 
     def _layout(self) -> str:
         inverse = {label: layout for layout, label in _CAMERA_LAYOUT_LABELS.items()}
@@ -805,13 +828,14 @@ class StereoCameraDialog:
         try:
             left, right = self._indices()
             layout = self._layout()
+            exposure_ms = EXPOSURE_PRESETS[self.exposure_preset.get()]
         except StereoCameraError as error:
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
             return False
         self.stop()
         self._opening = True
         self._pending_capture = auto_capture
-        self.exposure_status.set("快门目标 ≤1/200 秒（5 ms）；正在连接并设置")
+        self.exposure_status.set(f"快门 {self.exposure_preset.get()}；正在连接并设置")
         self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
         outcome: dict[str, Any] = {}
 
@@ -822,6 +846,7 @@ class StereoCameraDialog:
                 right_index=right,
                 eye_width=self.calibration.left.width,
                 eye_height=self.calibration.left.height,
+                exposure_ms=exposure_ms,
             )
             session.open()
             return session
@@ -850,11 +875,13 @@ class StereoCameraDialog:
         self._opening = False
         session, error = outcome["done"]
         if error is not None:
-            self.exposure_status.set("快门目标 ≤1/200 秒（5 ms）；相机未连接")
+            self.exposure_status.set("相机未连接；请检查设备连接与占用")
             self.message.set(f"相机打开失败：{error}")
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
             return
         self.session = session
+        if session.exposure_ms != EXPOSURE_PRESETS[self.exposure_preset.get()]:
+            self._apply_exposure()
         self.exposure_status.set(session.exposure_summary)
         self.message.set("相机已打开，正在显示左右目实时预览。")
         self._update_preview()
@@ -994,6 +1021,7 @@ class StereoCameraDialog:
                     "layout": self._layout(),
                     "left_index": left_index,
                     "right_index": right_index,
+                    "exposure_ms": EXPOSURE_PRESETS[self.exposure_preset.get()],
                 },
             )
             if self._layout() in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}:

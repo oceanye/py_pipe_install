@@ -36,6 +36,7 @@ from typing import Any, Callable, Mapping
 import cv2
 import numpy as np
 
+from .camera_exposure import EXPOSURE_PRESETS, exposure_preset_label
 from .workbench_profile import (
     calibration_ids_match,
     validate_rectification_recipe,
@@ -2835,6 +2836,7 @@ class ChessboardWizardDialog:
         self.mode = tk.StringVar(value=str(camera.get("layout", "side_by_side_left_right")))
         self.left_index = tk.StringVar(value=str(camera.get("left_index", 0)))
         self.right_index = tk.StringVar(value=str(camera.get("right_index", 1)))
+        self.exposure_preset = tk.StringVar(value=exposure_preset_label(camera.get("exposure_ms", 5.0)))
         self.session: Any | None = None
         self.after_id: str | None = None
         self.open_after_id: str | None = None
@@ -2898,8 +2900,10 @@ class ChessboardWizardDialog:
             variable.trace_add("write", lambda *_e: self._update_fit_hint())
         self._update_fit_hint()
 
-        camera_row = ttk.LabelFrame(main, text="相机", padding=8)
-        camera_row.pack(fill="x", pady=(0, 6))
+        camera_box = ttk.LabelFrame(main, text="相机", padding=8)
+        camera_box.pack(fill="x", pady=(0, 6))
+        camera_row = ttk.Frame(camera_box)
+        camera_row.pack(fill="x")
         ttk.Label(camera_row, text="采集方式：").pack(side="left")
         self.layout_combo = ttk.Combobox(
             camera_row,
@@ -2920,7 +2924,7 @@ class ChessboardWizardDialog:
         ttk.Button(camera_row, text="检测设备", command=self.detect).pack(side="left", padx=3)
         ttk.Button(camera_row, text="打开预览", command=self.start).pack(side="left", padx=3)
         ttk.Button(camera_row, text="停止", command=self.stop).pack(side="left", padx=3)
-        mode_row = ttk.Frame(camera_row)
+        mode_row = ttk.Frame(camera_box)
         mode_row.pack(fill="x", pady=(6, 0))
         ttk.Label(mode_row, text="流分辨率：").pack(side="left")
         from .stereo_camera import STEREO_MODE_CANDIDATES
@@ -2951,7 +2955,7 @@ class ChessboardWizardDialog:
             text="并排双目只在特定分辨率输出；选错会只看到单目画面。",
             foreground="#8A4E00",
         ).pack(side="left")
-        hardware_row = ttk.Frame(camera_row)
+        hardware_row = ttk.Frame(camera_box)
         hardware_row.pack(fill="x", pady=(4, 0))
         ttk.Label(hardware_row, text="硬件规格（随原始照片保存）：视场角/°").pack(
             side="left"
@@ -2971,11 +2975,19 @@ class ChessboardWizardDialog:
             foreground="#4A6178",
         ).pack(side="left")
         self.sync_gate_label = tk.StringVar(value="标定阶段为静态棋盘，同步容差只用于记录。")
-        ttk.Label(camera_row, textvariable=self.sync_gate_label, foreground="#4A6178").pack(
+        ttk.Label(camera_box, textvariable=self.sync_gate_label, foreground="#4A6178").pack(
             anchor="w", pady=(2, 0)
         )
-        self.exposure_status = tk.StringVar(value="快门目标 ≤1/200 秒（5 ms）；待连接")
-        ttk.Label(camera_row, textvariable=self.exposure_status, foreground="#8A4E00", wraplength=1040).pack(
+        shutter_row = ttk.Frame(camera_box)
+        shutter_row.pack(fill="x", pady=(4, 0))
+        ttk.Label(shutter_row, text="快门：").pack(side="left")
+        shutter = ttk.Combobox(shutter_row, textvariable=self.exposure_preset,
+                               values=tuple(EXPOSURE_PRESETS), state="readonly", width=28)
+        shutter.pack(side="left", padx=(3, 10))
+        shutter.bind("<<ComboboxSelected>>", lambda _e: self._apply_exposure())
+        ttk.Label(shutter_row, text="预览中可直接切换；自动或慢快门下请保持棋盘静止。").pack(side="left")
+        self.exposure_status = tk.StringVar(value="快门待连接；默认不慢于 1/200 秒")
+        ttk.Label(camera_box, textvariable=self.exposure_status, foreground="#8A4E00", wraplength=1040).pack(
             anchor="w", pady=(2, 0)
         )
 
@@ -3573,6 +3585,16 @@ class ChessboardWizardDialog:
             f"{self.eye_width.get()}×{self.eye_height.get()} 打开。"
         )
 
+    def _apply_exposure(self) -> None:
+        try:
+            if self.session is not None:
+                self.session.set_exposure(EXPOSURE_PRESETS[self.exposure_preset.get()])
+                self.exposure_status.set(self.session.exposure_summary)
+            else:
+                self.exposure_status.set(f"已选择 {self.exposure_preset.get()}；打开相机后生效")
+        except Exception as error:
+            self.app.messagebox.showerror("快门设置失败", str(error), parent=self.window)
+
     def start(self) -> bool:
         from .logging_config import get_logger, log_event
         from .stereo_camera import StereoCameraSession, run_in_background
@@ -3594,6 +3616,7 @@ class ChessboardWizardDialog:
             layout = self._layout()
             left, right = self._indices()
             eye_width, eye_height = self._eye_size()
+            exposure_ms = EXPOSURE_PRESETS[self.exposure_preset.get()]
         except ValueError as error:
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
             return False
@@ -3603,7 +3626,7 @@ class ChessboardWizardDialog:
         self._sb_disabled_roles.clear()
         self._opening = True
         self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
-        self.exposure_status.set("快门目标 ≤1/200 秒（5 ms）；正在连接并设置")
+        self.exposure_status.set(f"快门 {self.exposure_preset.get()}；正在连接并设置")
         self.left_status.set("左目：正在打开相机…")
         self.right_status.set("右目：正在打开相机…")
         logger = get_logger("calibration_wizard")
@@ -3625,6 +3648,7 @@ class ChessboardWizardDialog:
                 right_index=right,
                 eye_width=eye_width,
                 eye_height=eye_height,
+                exposure_ms=exposure_ms,
             )
             session.open()
             return session
@@ -3656,7 +3680,7 @@ class ChessboardWizardDialog:
 
         logger = get_logger("calibration_wizard")
         if error is not None:
-            self.exposure_status.set("快门目标 ≤1/200 秒（5 ms）；相机未连接")
+            self.exposure_status.set("相机未连接；请检查设备连接与占用")
             log_event(logger, "wizard_camera_open_failed", error=str(error))
             self.message.set(f"相机打开失败：{error}")
             self.left_status.set("左目：未打开")
@@ -3664,6 +3688,8 @@ class ChessboardWizardDialog:
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
             return
         self.session = session
+        if session.exposure_ms != EXPOSURE_PRESETS[self.exposure_preset.get()]:
+            self._apply_exposure()
         self.exposure_status.set(session.exposure_summary)
         log_event(logger, "wizard_camera_open_finished")
         self.message.set("相机已打开；持棋盘格覆盖画面各区域，点击“抓拍一组”。")
@@ -4318,6 +4344,7 @@ class ChessboardWizardDialog:
                         "layout": layout,
                         "left_index": self._indices()[0],
                         "right_index": self._indices()[1],
+                        "exposure_ms": EXPOSURE_PRESETS[self.exposure_preset.get()],
                     },
                     "chessboard": chessboard,
                     "wizard": wizard_section,

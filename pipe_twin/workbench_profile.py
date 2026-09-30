@@ -358,6 +358,7 @@ def _validate_camera(payload: Any) -> dict:
         "left_index",
         "right_index",
         "right_frame_transform",
+        "exposure_ms",
     }:
         raise ValueError("camera 包含不支持的字段")
     legacy_transform = payload.get("right_frame_transform", "none")
@@ -382,7 +383,15 @@ def _validate_camera(payload: Any) -> dict:
             raise ValueError("独立设备模式下左右相机索引不能相同")
     elif right_index is not None and (type(right_index) is not int or right_index < 0):
         raise ValueError("camera.right_index 必须是非负整数")
-    return {"layout": layout, "left_index": left_index, "right_index": right_index}
+    result = {"layout": layout, "left_index": left_index, "right_index": right_index}
+    if "exposure_ms" in payload:
+        exposure_ms = payload["exposure_ms"]
+        if exposure_ms is not None:
+            exposure_ms = _number(exposure_ms, "camera.exposure_ms", positive=True)
+            if not 0.1 <= exposure_ms <= 250:
+                raise ValueError("camera.exposure_ms 必须在 0.1 到 250 ms 之间")
+        result["exposure_ms"] = exposure_ms
+    return result
 
 
 def _validate_chessboard(payload: Any) -> dict:
