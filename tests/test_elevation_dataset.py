@@ -72,6 +72,32 @@ class ElevationDatasetTests(unittest.TestCase):
         loaded = load_elevation_dataset(path)
         self.assertEqual(loaded["rectification_recipe"]["calibration_id"], "FIELD-USB-001")
 
+    def test_live_camera_exposure_provenance_survives_package_roundtrip(self):
+        for exposure in (
+            {"capture_exposure_status": "AUTO"},
+            {"capture_exposure_status": "DRIVER_REPORTED", "capture_exposure_target_ms": 5.0,
+             "capture_exposure_ms": 3.90625},
+        ):
+            with self.subTest(exposure=exposure):
+                provenance = {role: {"capture_device_index": 0,
+                                     "capture_sync_method": "SAME_UVC_FRAME", **exposure}
+                              for role in ("left", "right")}
+                path = self._create(camera_capture_provenance=provenance)
+                loaded = load_elevation_dataset(path)
+                views = loaded["manifest"]["capture"]["capture_groups"][0]["views"]
+                for role in ("left", "right"):
+                    for key, value in provenance[role].items():
+                        self.assertEqual(views[role][key], value)
+                    if exposure["capture_exposure_status"] == "AUTO":
+                        self.assertNotIn("capture_exposure_ms", views[role])
+
+    def test_invalid_exposure_provenance_is_rejected_before_export(self):
+        for key, value in (("capture_exposure_ms", float("nan")),
+                           ("capture_exposure_target_ms", True),
+                           ("capture_exposure_status", "FAKE_SUCCESS")):
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self._create(camera_capture_provenance={"left": {key: value}})
+
     def test_history_is_copied_and_hash_checked(self):
         first = self._create()
         second = create_elevation_dataset(output_root=Path(self.tmp.name) / "out", calibration=_calibration(),
