@@ -2974,6 +2974,10 @@ class ChessboardWizardDialog:
         ttk.Label(camera_row, textvariable=self.sync_gate_label, foreground="#4A6178").pack(
             anchor="w", pady=(2, 0)
         )
+        self.exposure_status = tk.StringVar(value="快门目标 ≤1/200 秒（5 ms）；待连接")
+        ttk.Label(camera_row, textvariable=self.exposure_status, foreground="#8A4E00", wraplength=1040).pack(
+            anchor="w", pady=(2, 0)
+        )
 
         previews = ttk.Frame(main)
         previews.pack(fill="both", expand=True)
@@ -3136,6 +3140,10 @@ class ChessboardWizardDialog:
                 "left_index": self._indices()[0],
                 "right_index": self._indices()[1],
                 "eye_size_px": list(self._eye_size()),
+                "exposure": {
+                    str(index): dict(record)
+                    for index, record in getattr(getattr(self, "session", None), "exposure_settings", {}).items()
+                },
             },
             "target": {
                 "pattern_inner_corners": list(self._pattern()),
@@ -3595,6 +3603,7 @@ class ChessboardWizardDialog:
         self._sb_disabled_roles.clear()
         self._opening = True
         self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
+        self.exposure_status.set("快门目标 ≤1/200 秒（5 ms）；正在连接并设置")
         self.left_status.set("左目：正在打开相机…")
         self.right_status.set("右目：正在打开相机…")
         logger = get_logger("calibration_wizard")
@@ -3647,6 +3656,7 @@ class ChessboardWizardDialog:
 
         logger = get_logger("calibration_wizard")
         if error is not None:
+            self.exposure_status.set("快门目标 ≤1/200 秒（5 ms）；相机未连接")
             log_event(logger, "wizard_camera_open_failed", error=str(error))
             self.message.set(f"相机打开失败：{error}")
             self.left_status.set("左目：未打开")
@@ -3654,6 +3664,7 @@ class ChessboardWizardDialog:
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
             return
         self.session = session
+        self.exposure_status.set(session.exposure_summary)
         log_event(logger, "wizard_camera_open_finished")
         self.message.set("相机已打开；持棋盘格覆盖画面各区域，点击“抓拍一组”。")
         # Show raw frames before running a full-resolution detector so opening

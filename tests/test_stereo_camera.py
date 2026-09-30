@@ -78,6 +78,7 @@ class StereoCameraTests(unittest.TestCase):
         self.assertEqual(pair.provenance["left"]["capture_sync_method"], "SAME_UVC_FRAME")
         self.assertEqual(capture.properties[cv2.CAP_PROP_FRAME_WIDTH], 6)
         self.assertEqual(capture.properties[cv2.CAP_PROP_FRAME_HEIGHT], 2)
+        self.assertEqual(pair.provenance["left"]["capture_exposure_status"], "UNCONFIRMED")
         session.close()
         self.assertTrue(capture.released)
 
@@ -122,6 +123,7 @@ class StereoCameraTests(unittest.TestCase):
             right_index=5,
             eye_width=3,
             eye_height=2,
+            backend=cv2.CAP_DSHOW,
             capture_factory=lambda index, _backend: captures[index],
             clock_ns=lambda: 2_000_000_000,
         )
@@ -132,6 +134,11 @@ class StereoCameraTests(unittest.TestCase):
         self.assertEqual(pair.sync_delta_ms, 0.0)
         self.assertEqual(pair.provenance["left"]["capture_device_index"], 2)
         self.assertEqual(pair.provenance["right"]["capture_device_index"], 5)
+        for role, index in (("left", 2), ("right", 5)):
+            self.assertEqual(captures[index].properties[cv2.CAP_PROP_EXPOSURE], -8)
+            self.assertEqual(captures[index].properties[cv2.CAP_PROP_AUTO_EXPOSURE], 0)
+            self.assertEqual(pair.provenance[role]["capture_exposure_ms"], 3.90625)
+            self.assertEqual(pair.provenance[role]["capture_exposure_status"], "DRIVER_REPORTED")
         session.close()
 
     def test_invalid_indices_or_frame_dimensions_fail_closed(self):

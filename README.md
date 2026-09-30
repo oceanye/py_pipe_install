@@ -138,6 +138,8 @@ CLI 和桌面 GUI 启动时会自动写入结构化 JSONL 日志，默认位置�
 
 ### Windows PowerShell
 
+现场相机在打开时自动请求不慢于 **1/200 秒（5 ms）** 的手动快门；Windows DirectShow 使用 **1/256 秒** 档位。标定向导和采集预览显示驱动回读结果，不支持时明确提示未确认。详见[相机快门设置](doc/CAMERA-EXPOSURE.md)。
+
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
