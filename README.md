@@ -143,7 +143,8 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
+python -m pip install pytest==9.1.1
+python -m pytest tests -v
 ```
 
 ### Linux/macOS
@@ -153,7 +154,8 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
+python -m pip install pytest==9.1.1
+python -m pytest tests -v
 ```
 
 Windows/Python 3.12 的验证锁文件为 `requirements-lock-windows-py312.txt`。新增或升级依赖时必须同步更新 `requirements.txt`、锁文件、干净环境安装结果和 smoke/test 结果。
@@ -327,7 +329,8 @@ python -m pipe_twin simulate-stereo --manifest test_model/pipe_group2_manifest.j
 ## Smoke 测试
 
 ```powershell
-python -m unittest discover -s tests -v
+python -m pip install pytest==9.1.1
+python -m pytest tests -v
 ```
 
 Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入校验、历史 3MF/MKV 回放、M1 合成几何/遮挡契约、3DM GUID/单位/缓存网格读取、STL 单位/连通组件/稳定 ID、相机方向与倾斜外参、M2 双目视差与三态安全门禁、GUI 的报告绑定，以及棋盘格向导的标定数学（合成刚体恢复已知内参与基线）、极线矫正配方 fail-closed 门禁和工作台配置档案的校验/持久化；不代表真实相机、标定、物理管径或业务状态指标已经验收。

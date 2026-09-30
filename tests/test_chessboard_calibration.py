@@ -239,6 +239,22 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertIsNotNone(observation)
         self.assertEqual(failures, [("find_chessboard_corners_sb", str(native_error))])
 
+    def test_strict_sb_does_not_fall_back_when_detection_fails(self):
+        image = np.zeros((120, 160, 3), dtype=np.uint8)
+        for failure in (None, cv2.error("SB backend failure")):
+            with (
+                self.subTest(failure=failure),
+                mock.patch.object(
+                    cv2, "findChessboardCornersSB",
+                    return_value=(False, None), side_effect=failure,
+                ),
+                mock.patch.object(cv2, "findChessboardCorners") as classic,
+            ):
+                self.assertIsNone(detect_board_corners(
+                    image, pattern=PATTERN, use_sb=True, fallback_to_classic=False,
+                ))
+                classic.assert_not_called()
+
     def test_sb_detector_does_not_enable_partial_board_mode(self):
         image = np.zeros((120, 160, 3), dtype=np.uint8)
         seen_flags: list[int] = []
@@ -1003,7 +1019,7 @@ class ChessboardWizardTests(unittest.TestCase):
                 from pipe_twin.calibration_wizard import save_wizard_result
 
                 path = save_wizard_result(result)
-                self.assertEqual(path, root / "calibration_current.json")
+                self.assertEqual(path, (root / "calibration_current.json").resolve())
                 payload = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(payload["stereo_calibration"]["validated"], True)
                 profile, problem = load_profile()
