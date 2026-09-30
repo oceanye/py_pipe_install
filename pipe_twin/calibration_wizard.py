@@ -290,10 +290,18 @@ def calibrate_stereo_from_folders(
         detection_rejected: list[dict[str, str]] = []
         for left_path, right_path, left_image, right_image in image_pairs:
             left_observation = detect_board_corners(
-                left_image, pattern=pattern, use_sb=use_sb, sb_accuracy=use_sb
+                left_image,
+                pattern=pattern,
+                use_sb=use_sb,
+                sb_accuracy=use_sb,
+                fallback_to_classic=not use_sb,
             )
             right_observation = detect_board_corners(
-                right_image, pattern=pattern, use_sb=use_sb, sb_accuracy=use_sb
+                right_image,
+                pattern=pattern,
+                use_sb=use_sb,
+                sb_accuracy=use_sb,
+                fallback_to_classic=not use_sb,
             )
             if left_observation is None or right_observation is None:
                 detection_rejected.append(
@@ -307,14 +315,17 @@ def calibrate_stereo_from_folders(
             pairs.append((left_observation, right_observation))
         return pairs, detection_rejected
 
-    # Use one detector for the complete offline data set. The vendor's
-    # printed R-C.jpg is detected by SB, while classic remains the
-    # deterministic first pass for ordinary calibration sets. If any valid
-    # pair needs the fallback, rerun every valid pair with SB so the solver
-    # never receives a mixture of detector conventions across pairs.
+    # Use one detector for the complete offline data set. Classic is the
+    # deterministic first pass. Only when it cannot produce the configured
+    # minimum number of complete stereo pairs do we retry the complete readable
+    # set with strict SB detection. The SB pass is not allowed to fall back to
+    # classic, otherwise a nominally-SB solve can still contain mixed detector
+    # conventions and be rejected by the solver's own consistency gate.
     pairs, detector_rejected = detect_pairs(use_sb=False)
-    if detector_rejected:
+    detector_mode = "classic"
+    if len(pairs) < int(min_pairs):
         pairs, detector_rejected = detect_pairs(use_sb=True)
+        detector_mode = "sb"
     rejected.extend(detector_rejected)
     if image_size is None or len(pairs) < int(min_pairs):
         raise CalibrationWizardError(f"有效左右棋盘照片只有 {len(pairs)} 对，至少需要 {int(min_pairs)} 对；请补拍不同位置和角度。")
@@ -372,8 +383,12 @@ def calibrate_stereo_from_folders(
         "method": "opencv_chessboard_stereo_calibrate_v2",
         "board_inner_corners": [pattern[0], pattern[1]],
         "square_size_mm": float(square_size_mm),
-        "candidate_pairs": len(left), "accepted_pairs": len(pairs),
+        "candidate_pairs": len(left),
+        "detected_pairs": len(pairs),
+        "accepted_pairs": result.pair_count,
+        "corner_detector": detector_mode,
         "rejected_pairs": rejected,
+        "solver_discarded_pair_indices": result.audit.get("discarded_pair_indices", []),
         "rms_left_px": result.left_rms_px, "rms_right_px": result.right_rms_px,
         "rms_stereo_px": result.stereo_rms_px,
         "right_frame_transform": result.audit["right_frame_transform"],
@@ -701,6 +716,7 @@ def detect_board_corners(
     on_cv_error: Callable[[str, Exception], None] | None = None,
     use_sb: bool = True,
     sb_accuracy: bool = True,
+    fallback_to_classic: bool = True,
 ) -> BoardObservation | None:
     """Detect inner corners; return ``None`` when the board is not found."""
     if image is None or not isinstance(image, np.ndarray) or image.ndim not in {2, 3}:
@@ -741,7 +757,7 @@ def detect_board_corners(
             # The classic detector remains safe for calibration and keeps a
             # transient SB backend failure from taking down the live preview.
             _report("find_chessboard_corners_sb", error)
-    if corners is None:
+    if corners is None and (not use_sb or fallback_to_classic):
         try:
             found, candidate = cv2.findChessboardCorners(
                 gray,
