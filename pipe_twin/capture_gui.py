@@ -6,6 +6,7 @@ import base64
 import copy
 import hashlib
 import json
+import math
 import re
 from datetime import datetime
 from pathlib import Path
@@ -57,6 +58,9 @@ _CAPTURE_PROVENANCE_KEYS = {
     "capture_device_index",
     "side_by_side_order",
     "capture_sync_method",
+    "capture_exposure_target_ms",
+    "capture_exposure_ms",
+    "capture_exposure_status",
 }
 
 _QR_PRINT_ROOT = (
@@ -415,6 +419,14 @@ def _capture_provenance(
     ):
         raise ValueError(f"camera_capture_provenance.{role}.capture_device_index is invalid")
     for key, value in record.items():
+        if key in {"capture_exposure_target_ms", "capture_exposure_ms"}:
+            if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
+                raise ValueError(f"camera_capture_provenance.{role}.{key} is invalid")
+            continue
+        if key == "capture_exposure_status" and (
+            not isinstance(value, str) or value not in {"DRIVER_REPORTED", "UNCONFIRMED"}
+        ):
+            raise ValueError(f"camera_capture_provenance.{role}.{key} is invalid")
         if key != "capture_device_index" and (
             not isinstance(value, str) or not value.strip() or len(value) > 128
         ):
@@ -697,6 +709,10 @@ class StereoCameraDialog:
         ttk.Label(main, textvariable=self.message, foreground="#355371").pack(
             fill="x", pady=(0, 8)
         )
+        self.exposure_status = tk.StringVar(value="快门目标 ≤1/200 秒（5 ms）；待连接")
+        ttk.Label(main, textvariable=self.exposure_status, foreground="#8A4E00", wraplength=950).pack(
+            fill="x", pady=(0, 6)
+        )
         previews = ttk.Frame(main)
         previews.pack(fill="both", expand=True)
         previews.columnconfigure(0, weight=1)
@@ -795,6 +811,7 @@ class StereoCameraDialog:
         self.stop()
         self._opening = True
         self._pending_capture = auto_capture
+        self.exposure_status.set("快门目标 ≤1/200 秒（5 ms）；正在连接并设置")
         self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
         outcome: dict[str, Any] = {}
 
@@ -833,10 +850,12 @@ class StereoCameraDialog:
         self._opening = False
         session, error = outcome["done"]
         if error is not None:
+            self.exposure_status.set("快门目标 ≤1/200 秒（5 ms）；相机未连接")
             self.message.set(f"相机打开失败：{error}")
             self.app.messagebox.showerror("相机打开失败", str(error), parent=self.window)
             return
         self.session = session
+        self.exposure_status.set(session.exposure_summary)
         self.message.set("相机已打开，正在显示左右目实时预览。")
         self._update_preview()
         if self._pending_capture:

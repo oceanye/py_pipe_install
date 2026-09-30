@@ -251,6 +251,9 @@ class CaptureInputTests(unittest.TestCase):
                 "capture_device_index": 0,
                 "side_by_side_order": "LEFT_THEN_RIGHT",
                 "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_target_ms": 5.0,
+                "capture_exposure_ms": 3.90625,
+                "capture_exposure_status": "DRIVER_REPORTED",
             }
             for role in ("left", "right")
         }
@@ -272,6 +275,9 @@ class CaptureInputTests(unittest.TestCase):
                 self.assertEqual(views[role]["timestamp_source"], "HOST_SYSTEM_CLOCK")
                 self.assertEqual(views[role]["capture_device_index"], 0)
                 self.assertEqual(views[role]["capture_sync_method"], "SAME_UVC_FRAME")
+                self.assertEqual(views[role]["capture_exposure_ms"], 3.90625)
+                self.assertEqual(views[role]["capture_exposure_target_ms"], 5.0)
+                self.assertEqual(views[role]["capture_exposure_status"], "DRIVER_REPORTED")
 
         with tempfile.TemporaryDirectory() as temp:
             with self.assertRaisesRegex(ValueError, "合成演示"):

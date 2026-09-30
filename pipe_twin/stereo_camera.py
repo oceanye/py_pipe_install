@@ -13,7 +13,9 @@ from typing import Any, Callable
 import cv2
 import numpy as np
 
+from .camera_exposure import configure_exposure, exposure_summary
 from .camera_lock import CameraLease
+from .logging_config import get_logger, log_event
 
 
 LAYOUT_SIDE_BY_SIDE_LR = "side_by_side_left_right"
@@ -299,6 +301,21 @@ class StereoCameraSession:
         self.camera_lease = camera_lease_factory(indices)
         self.left_capture: Any | None = None
         self.right_capture: Any | None = None
+        self.exposure_settings: dict[int, dict[str, Any]] = {}
+
+    @property
+    def exposure_summary(self) -> str:
+        return exposure_summary(self.exposure_settings)
+
+    def _exposure_provenance(self, index: int) -> dict[str, Any]:
+        record = self.exposure_settings[index]
+        result = {
+            "capture_exposure_target_ms": record["target_ms"],
+            "capture_exposure_status": record["status"],
+        }
+        if record["reported_ms"] is not None:
+            result["capture_exposure_ms"] = record["reported_ms"]
+        return result
 
     def _open_one(self, index: int, width: int, height: int) -> Any:
         capture = self.capture_factory(index, self.backend)
@@ -309,6 +326,13 @@ class StereoCameraSession:
             capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            # Stream size/format changes can reset UVC controls; apply last.
+            exposure = configure_exposure(capture, self.backend)
+            self.exposure_settings[index] = exposure
+            log_event(
+                get_logger("stereo_camera"), "camera_exposure_configured",
+                device_index=index, **exposure,
+            )
         except BaseException:
             capture.release()
             raise
@@ -316,6 +340,7 @@ class StereoCameraSession:
 
     def open(self) -> None:
         self.close()
+        self.exposure_settings.clear()
         self.camera_lease.acquire()
         try:
             if self.layout in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}:
@@ -382,6 +407,7 @@ class StereoCameraSession:
             "capture_device_index": self.left_index,
             "side_by_side_order": order,
             "capture_sync_method": "SAME_UVC_FRAME",
+            **self._exposure_provenance(self.left_index),
         }
         return CapturedStereoPair(
             left=left,
@@ -435,8 +461,14 @@ class StereoCameraSession:
             sync_delta_ms=sync_delta_ms,
             timestamp_source="HOST_SYSTEM_CLOCK",
             provenance={
-                "left": common | {"capture_device_index": self.left_index},
-                "right": common | {"capture_device_index": self.right_index},
+                "left": {
+                    **common, "capture_device_index": self.left_index,
+                    **self._exposure_provenance(self.left_index),
+                },
+                "right": {
+                    **common, "capture_device_index": self.right_index,
+                    **self._exposure_provenance(int(self.right_index)),
+                },
             },
         )
 
