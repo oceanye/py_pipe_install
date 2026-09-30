@@ -291,6 +291,10 @@ def adapt_opencv_stereo_calibration(
     T = _matrix(_value(source, "T", "translation_left_to_right"), (3,), "T")
     scale = _unit_scale_to_mm(source.get("translation_unit", source.get("T_unit")))
     T_mm = T * scale
+    # Keep geometry as a flat vector internally, but pass OpenCV the canonical
+    # 3x1 translation shape. This is accepted by OpenCV 4.x and avoids the
+    # stricter matrix-shape path seen in OpenCV 5 stereoRectify.
+    T_cv = T_mm.reshape(3, 1)
     left_rotation, left_center = _camera_pose(source)
     right_rotation = R @ left_rotation
     right_center = left_center - right_rotation.T @ T_mm
@@ -300,7 +304,7 @@ def adapt_opencv_stereo_calibration(
     flags = int(source.get("stereo_rectify_flags", cv2.CALIB_ZERO_DISPARITY))
     alpha = float(source.get("stereo_rectify_alpha", 0.0))
     R1, R2, P1, P2, _Q, _roi1, _roi2 = cv2.stereoRectify(
-        K1, D1, K2, D2, (width, height), R, T_mm,
+        K1, D1, K2, D2, (width, height), R, T_cv,
         flags=flags, alpha=alpha,
     )
     encoded_baseline = -float(P2[0, 3]) / float(P2[0, 0])
