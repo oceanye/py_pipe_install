@@ -5,7 +5,8 @@
 ## 验证
 
 - [ ] `python -m pip install -r requirements.txt`
-- [ ] `python -m unittest discover -s tests -v`
+- [ ] `python -m pip install pytest==9.1.1`
+- [ ] `python -m pytest tests -v`
 - [ ] 已记录相机/CAD/标定/配置/模型 revision 或说明不适用
 - [ ] 未提交虚拟环境、凭据、原始人员影像或大型采集数据
 

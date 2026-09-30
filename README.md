@@ -143,7 +143,8 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
+python -m pip install pytest==9.1.1
+python -m pytest tests -v
 ```
 
 ### Linux/macOS
@@ -153,7 +154,8 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
+python -m pip install pytest==9.1.1
+python -m pytest tests -v
 ```
 
 Windows/Python 3.12 的验证锁文件为 `requirements-lock-windows-py312.txt`。新增或升级依赖时必须同步更新 `requirements.txt`、锁文件、干净环境安装结果和 smoke/test 结果。
@@ -242,7 +244,7 @@ python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millime
   # 远程主机无人值守采集：先核实实际设备编号、分辨率与棋盘；下面沿用现场历史配置
   python -m pipe_twin capture-stereo --output-dir outputs/remote_capture --left-index 0 --eye-width 1920 --eye-height 1080 --count 30 --interval-s 2 --detect-chessboard --board-columns 8 --board-rows 6
 
-`calibrate-stereo` 默认先用 classic 检测器处理所有棋盘照片；如果任一有效照片对未检出，则把整批有效照片一起重试为 OpenCV SB，避免跨照片对混用检测器。随后固定分别求得的两目内参，再求双目外参和 `stereoRectify`，并输出同时包含标定与原始帧矫正配方的便携 JSON。照片质量、姿态跨度、RMS、内参、基线、极线残差或视差方向任一不合格都会拒绝输出；需要不同规格时显式传 `--board-columns/--board-rows/--square-size-mm`，建议用 `--expected-baseline-mm` 填写实测镜头中心距。输出会在质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘与极线几何通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
+`calibrate-stereo` 默认先用 classic 检测器处理所有棋盘照片；先严格使用 classic；只有 classic 同时检出的有效照片对少于 `--min-pairs` 时，才把整批可读照片严格改用 OpenCV SB 重试（SB 阶段不再回退 classic），避免跨照片对混用检测器。随后固定分别求得的两目内参，再求双目外参和 `stereoRectify`，并输出同时包含标定与原始帧矫正配方的便携 JSON。照片质量、姿态跨度、RMS、内参、基线、极线残差或视差方向任一不合格都会拒绝输出；需要不同规格时显式传 `--board-columns/--board-rows/--square-size-mm`，建议用 `--expected-baseline-mm` 填写实测镜头中心距。输出会在质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘与极线几何通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
 
 原厂 `camera_config.py` 可以安全转换为 manifest 标定，但不会执行旧 Python 文件，也不会猜测平移单位或 CAD 位姿。先准备只含 `rotation_world_to_camera` 和 `center_world_mm` 的 `left_pose.json`，再运行：
 
@@ -327,7 +329,8 @@ python -m pipe_twin simulate-stereo --manifest test_model/pipe_group2_manifest.j
 ## Smoke 测试
 
 ```powershell
-python -m unittest discover -s tests -v
+python -m pip install pytest==9.1.1
+python -m pytest tests -v
 ```
 
 Smoke 测试验证仓库交付、定时单目照片的 manifest 绑定与输入校验、历史 3MF/MKV 回放、M1 合成几何/遮挡契约、3DM GUID/单位/缓存网格读取、STL 单位/连通组件/稳定 ID、相机方向与倾斜外参、M2 双目视差与三态安全门禁、GUI 的报告绑定，以及棋盘格向导的标定数学（合成刚体恢复已知内参与基线）、极线矫正配方 fail-closed 门禁和工作台配置档案的校验/持久化；不代表真实相机、标定、物理管径或业务状态指标已经验收。

@@ -11,7 +11,8 @@
 
 ```powershell
 python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
+python -m pip install pytest==9.1.1
+python -m pytest tests -v
 ```
 
 涉及依赖变更时：

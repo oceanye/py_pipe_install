@@ -282,7 +282,7 @@ class WorkbenchProfileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "calibration_current.json"
             written = write_standalone_calibration(_calibration(), path=path)
-            self.assertEqual(written, path)
+            self.assertEqual(written, path.resolve())
             payload = json.loads(path.read_text(encoding="utf-8"))
             self.assertIn("note", payload)
             self.assertEqual(payload["stereo_calibration"]["calibration_id"], "FIELD-CHESS-TEST-001")
