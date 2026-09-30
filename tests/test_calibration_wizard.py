@@ -100,8 +100,10 @@ class CalibrationWizardTests(unittest.TestCase):
             )
             detector_modes = []
 
-            def detector(_image, *, use_sb=True, **_kwargs):
-                detector_modes.append(use_sb)
+            def detector(_image, *, use_sb=True, **kwargs):
+                detector_modes.append(
+                    (use_sb, kwargs.get("fallback_to_classic"))
+                )
                 return sb_observation if use_sb else None
 
             with (
@@ -120,7 +122,55 @@ class CalibrationWizardTests(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(CalibrationWizardError, "质量门禁未通过"):
                     calibrate_stereo_from_folders(left, right)
-            self.assertEqual(detector_modes, [False] * 16 + [True] * 16)
+            self.assertEqual(
+                detector_modes,
+                [(False, True)] * 16 + [(True, False)] * 16,
+            )
+
+    def test_offline_keeps_classic_when_minimum_pair_count_is_available(self):
+        with tempfile.TemporaryDirectory() as root:
+            left = Path(root) / "left"
+            right = Path(root) / "right"
+            left.mkdir()
+            right.mkdir()
+            for index in range(9):
+                (left / f"{index:02}.png").write_bytes(b"x")
+                (right / f"{index:02}.png").write_bytes(b"x")
+            classic_observation = BoardObservation(
+                np.zeros((54, 2), dtype=float), 100.0, (1, 1), "classic"
+            )
+            rejected = SimpleNamespace(
+                validated=False,
+                rejection_reasons=["测试质量门禁"],
+            )
+            detector_modes = []
+
+            def detector(_image, *, use_sb=True, **kwargs):
+                detector_modes.append(
+                    (use_sb, kwargs.get("fallback_to_classic"))
+                )
+                # First eight stereo pairs are enough for min_pairs=8; the
+                # ninth pair fails classic but must not switch the whole batch
+                # to SB.
+                return classic_observation if len(detector_modes) <= 16 else None
+
+            with (
+                mock.patch(
+                    "pipe_twin.calibration_wizard.read_calibration_image",
+                    return_value=np.zeros((480, 640, 3), dtype=np.uint8),
+                ),
+                mock.patch(
+                    "pipe_twin.calibration_wizard.detect_board_corners",
+                    side_effect=detector,
+                ),
+                mock.patch(
+                    "pipe_twin.calibration_wizard.solve_stereo_calibration",
+                    return_value=rejected,
+                ),
+            ):
+                with self.assertRaisesRegex(CalibrationWizardError, "质量门禁未通过"):
+                    calibrate_stereo_from_folders(left, right)
+            self.assertEqual(detector_modes, [(False, True)] * 18)
 
 
 if __name__ == "__main__":
