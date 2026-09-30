@@ -1,4 +1,4 @@
 numpy==2.5.2
 opencv-python-headless==4.13.0.92
-rhino3dm==8.32.1
+rhino3dm==8.35.0
 ezdxf==1.4.4
