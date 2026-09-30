@@ -163,6 +163,8 @@ class CaptureInputTests(unittest.TestCase):
         )
         dialog = object.__new__(StereoCameraDialog)
         dialog._opening = False
+        dialog.exposure_preset = mock.Mock()
+        dialog.exposure_preset.get.return_value = "自动曝光"
         dialog.session = SimpleNamespace(read_pair=mock.Mock(return_value=pair))
         dialog.rectifier = None
         dialog.calibration = SimpleNamespace(
@@ -201,6 +203,7 @@ class CaptureInputTests(unittest.TestCase):
         variables["left"].set.assert_called_once()
         variables["right"].set.assert_called_once()
         owner.confirmed.set.assert_called_once_with(True)
+        self.assertIsNone(owner._persist_profile.call_args.kwargs["camera"]["exposure_ms"])
         dialog.close.assert_called_once()
         dialog.app.messagebox.showerror.assert_not_called()
 

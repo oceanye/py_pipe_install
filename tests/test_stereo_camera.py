@@ -243,7 +243,7 @@ class StereoCameraTests(unittest.TestCase):
 
         started = time.time()
         modes = probe_video_modes(
-            index=0,
+            index=30,
             candidates=[(2560, 720)],
             capture_factory=hanging_factory,
             per_mode_timeout_s=0.2,

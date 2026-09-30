@@ -13,8 +13,8 @@ from typing import Any, Callable
 import cv2
 import numpy as np
 
-from .camera_exposure import configure_exposure, exposure_summary
-from .camera_lock import CameraLease
+from .camera_exposure import TARGET_EXPOSURE_MS, configure_exposure, exposure_summary
+from .camera_lock import CameraBusyError, CameraLease
 from .logging_config import get_logger, log_event
 
 
@@ -108,7 +108,9 @@ def probe_video_devices(
 
     def _probe_one(index: int) -> dict[str, Any] | None:
         capture: Any | None = None
+        lease = CameraLease([index])
         try:
+            lease.acquire()
             capture = capture_factory(index, selected_backend)
             if not capture.isOpened():
                 return None
@@ -123,8 +125,11 @@ def probe_video_devices(
             # Driver errors behave like "no device here"; never kill the worker.
             return None
         finally:
-            if capture is not None:
-                capture.release()
+            try:
+                if capture is not None:
+                    capture.release()
+            finally:
+                lease.release()
 
     for index in range(maximum_index + 1):
         if cancelled is not None and cancelled():
@@ -133,7 +138,7 @@ def probe_video_devices(
             progress(index, "opening")
         outcome: dict[str, Any] = {}
         worker = threading.Thread(
-            target=lambda i=index: outcome.setdefault("device", _probe_one(i)),
+            target=lambda i=index, result=outcome: result.setdefault("device", _probe_one(i)),
             daemon=True,
         )
         worker.start()
@@ -172,7 +177,7 @@ def probe_video_modes(
     candidates: list[tuple[int, int]] | None = None,
     backend: int | None = None,
     capture_factory: Callable[..., Any] = cv2.VideoCapture,
-    per_mode_timeout_s: float = 6.0,
+    per_mode_timeout_s: float = 12.0,
     cancelled: Callable[[], bool] | None = None,
 ) -> list[tuple[int, int]]:
     """Return stream sizes ``index`` actually delivers, best stereo first.
@@ -186,21 +191,29 @@ def probe_video_modes(
     """
     selected_backend = _default_backend() if backend is None else backend
     sizes: list[tuple[int, int]] = []
-    for width, height in candidates or list(STEREO_MODE_CANDIDATES):
-        if cancelled is not None and cancelled():
-            break
-        if sizes:
-            time.sleep(0.3)
+    aborted = threading.Event()
+    finished = threading.Event()
+    progress = {"at": time.monotonic()}
 
-        def _task(w: int = width, h: int = height) -> tuple[int, int] | None:
-            if cancelled is not None and cancelled():
-                return None
-            capture: Any | None = None
-            try:
-                capture = capture_factory(index, selected_backend)
-                if not capture.isOpened():
-                    return None
-                capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+    def stopped() -> bool:
+        return aborted.is_set() or (cancelled is not None and cancelled())
+
+    def _task() -> None:
+        capture: Any | None = None
+        lease = CameraLease([index])
+        try:
+            if stopped():
+                return
+            lease.acquire()
+            # Reuse one handle. Rapid reopen cycles can leave UVC drivers busy.
+            capture = capture_factory(index, selected_backend)
+            if not capture.isOpened():
+                return
+            capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+            for w, h in candidates or list(STEREO_MODE_CANDIDATES):
+                if stopped():
+                    break
+                progress["at"] = time.monotonic()
                 capture.set(cv2.CAP_PROP_FRAME_WIDTH, w)
                 capture.set(cv2.CAP_PROP_FRAME_HEIGHT, h)
                 # The driver switches modes asynchronously: the first frames
@@ -208,31 +221,34 @@ def probe_video_modes(
                 # up before trusting the delivered size.
                 frame: np.ndarray | None = None
                 for _ in range(6):
-                    if cancelled is not None and cancelled():
-                        return None
+                    if stopped():
+                        return
                     ok, frame = capture.read()
                     if not ok or not isinstance(frame, np.ndarray) or frame.ndim != 3:
-                        return None
-                if frame is None:
-                    return None
-                return int(frame.shape[1]), int(frame.shape[0])
-            except Exception:
-                return None
-            finally:
+                        break
+                else:
+                    if frame is not None and not stopped():
+                        size = (int(frame.shape[1]), int(frame.shape[0]))
+                        if size not in sizes:
+                            sizes.append(size)
+        except Exception:
+            return
+        finally:
+            try:
                 if capture is not None:
                     capture.release()
+            finally:
+                lease.release()
+                finished.set()
 
-        outcome: dict[str, Any] = {}
-        worker = threading.Thread(
-            target=lambda task=_task: outcome.setdefault("size", task()),
-            daemon=True,
-        )
-        worker.start()
-        worker.join(per_mode_timeout_s)
-        size = outcome.get("size")
-        if size is not None and size not in sizes:
-            sizes.append(size)
-    return sizes
+    threading.Thread(target=_task, daemon=True).start()
+    while not finished.wait(0.05):
+        if stopped() or time.monotonic() - progress["at"] >= per_mode_timeout_s:
+            aborted.set()
+            break
+    # A timed-out worker retains its lease until the native call returns and
+    # release finishes. A new preview must wait rather than open concurrently.
+    return list(sizes)
 
 
 def run_in_background(
@@ -274,6 +290,7 @@ class StereoCameraSession:
         capture_factory: Callable[..., Any] = cv2.VideoCapture,
         clock_ns: Callable[[], int] = time.time_ns,
         camera_lease_factory: Callable[[list[int]], Any] = CameraLease,
+        exposure_ms: float | None = TARGET_EXPOSURE_MS,
     ) -> None:
         if layout not in SUPPORTED_LAYOUTS:
             raise StereoCameraError(f"unsupported stereo camera layout: {layout!r}")
@@ -293,6 +310,7 @@ class StereoCameraSession:
         self.backend = _default_backend() if backend is None else backend
         self.capture_factory = capture_factory
         self.clock_ns = clock_ns
+        self.exposure_ms = exposure_ms
         indices = (
             [left_index]
             if layout in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}
@@ -310,38 +328,67 @@ class StereoCameraSession:
     def _exposure_provenance(self, index: int) -> dict[str, Any]:
         record = self.exposure_settings[index]
         result = {
-            "capture_exposure_target_ms": record["target_ms"],
             "capture_exposure_status": record["status"],
         }
+        if record["target_ms"] is not None:
+            result["capture_exposure_target_ms"] = record["target_ms"]
         if record["reported_ms"] is not None:
             result["capture_exposure_ms"] = record["reported_ms"]
         return result
 
     def _open_one(self, index: int, width: int, height: int) -> Any:
-        capture = self.capture_factory(index, self.backend)
+        capture = None
         try:
-            if not capture.isOpened():
-                raise StereoCameraError(f"无法打开相机索引 {index}")
+            for attempt in range(3):
+                capture = self.capture_factory(index, self.backend)
+                if capture.isOpened():
+                    break
+                capture.release()
+                capture = None
+                if attempt < 2:
+                    time.sleep(0.4 * (attempt + 1))
+            if capture is None:
+                raise StereoCameraError(f"无法打开相机索引 {index}；请关闭其他占用相机的程序后重试")
             capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
             capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
             capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             # Stream size/format changes can reset UVC controls; apply last.
-            exposure = configure_exposure(capture, self.backend)
+            exposure = configure_exposure(capture, self.backend, self.exposure_ms)
             self.exposure_settings[index] = exposure
             log_event(
                 get_logger("stereo_camera"), "camera_exposure_configured",
                 device_index=index, **exposure,
             )
         except BaseException:
-            capture.release()
+            if capture is not None:
+                capture.release()
             raise
         return capture
+
+    def set_exposure(self, exposure_ms: float | None) -> None:
+        """Apply to live handles; changing shutter does not reopen the device."""
+        self.exposure_ms = exposure_ms
+        for index, capture in ((self.left_index, self.left_capture),
+                               (self.right_index, self.right_capture)):
+            if capture is not None and index is not None:
+                record = configure_exposure(capture, self.backend, exposure_ms)
+                self.exposure_settings[index] = record
+                log_event(get_logger("stereo_camera"), "camera_exposure_configured",
+                          device_index=index, **record)
 
     def open(self) -> None:
         self.close()
         self.exposure_settings.clear()
-        self.camera_lease.acquire()
+        deadline = time.monotonic() + 10.0
+        while True:
+            try:
+                self.camera_lease.acquire()
+                break
+            except CameraBusyError as error:
+                if time.monotonic() >= deadline:
+                    raise StereoCameraError("相机仍被探测任务或采集程序占用，请停止其他任务后重试") from error
+                time.sleep(0.1)
         try:
             if self.layout in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}:
                 self.left_capture = self._open_one(
