@@ -24,6 +24,7 @@ STATE_COLORS = {"INSTALLED": "#228B55", "NOT_INSTALLED": "#D84A40", "UNKNOWN": "
 PALETTE = ("#E74C3C", "#3498DB", "#FFFFFF", "#2ECC71", "#F1C40F", "#9B59B6")
 LOGGER = get_logger("elevation_gui")
 REASON_TEXT = {
+    "OBSERVATIONS_EXCEED_PRESENT_PIPE_COUNT": "观测数量超过已知现场管数，请核对误检",
     "LOW_LIGHT": "图像偏暗，请增加照明或调整曝光",
     "DARK_REGION_DOMINANT": "目标区域大部分接近黑色",
     "LOW_TEXTURE": "目标纹理不足，双目匹配困难",
@@ -56,6 +57,38 @@ REASON_TEXT = {
     "NO_RIGID_MATCH_WITHIN_RESIDUAL_GATE": "未找到满足几何误差的模型对应",
     "SEARCH_SPACE_TRUNCATED": "模型匹配搜索范围不足",
 }
+
+
+def measurement_summary_lines(spec: dict, result: dict | None) -> list[str]:
+    """Human-readable reference points; never label a raw median as an axis."""
+    measurement = (result or {}).get("measurement") or {}
+    lines = [f"管道：{spec['pipe_id']}", f"模型/配置外径：{spec['nominal_diameter_mm']:.2f} mm",
+             "距离原点：左目矫正相机光心；Z 深度与空间直线距离分别列出。",
+             "截面位置：左右共同观测管段的中部，不代表整根管道端点。"]
+    measured = measurement.get("measured_section") if measurement.get("status") == "MEASURED" else None
+    if not measured:
+        lines += ["当前实测外径：未获得", "中心线 / 最近表面：未获得可靠实测"]
+    def metric(value):
+        return f"{value / 1000:.4f} m（{value:.1f} mm）"
+    for label, geometry in (("双目拟合", measured), ("模型配准预测（非实测）", measurement.get("model_predicted_section"))):
+        if geometry is None:
+            continue
+        lines += ["", label, f"外径：{geometry['diameter_mm']:.2f} mm",
+                  "中心线 Z 深度：" + metric(geometry["centerline"]["depth_z_mm"]),
+                  "中心线空间距离：" + metric(geometry["centerline"]["range_mm"]),
+                  "该截面表面最小 Z 深度：" + metric(geometry["minimum_surface_depth_z_mm"]),
+                  "该截面最近表面空间距离：" + metric(geometry["nearest_surface_range_mm"])]
+        tangents = geometry.get("silhouette_tangent_points") or []
+        if tangents:
+            lines.append("两侧投影轮廓切点 Z 深度：" + " / ".join(metric(p["depth_z_mm"]) for p in tangents))
+    samples = measurement.get("surface_samples") or {}
+    if samples:
+        lines += ["", "原始可见表面匹配点（仅诊断，不是中心线或顶点）："]
+        for role, data in samples.items():
+            value = data.get("depth_z_median_mm")
+            lines.append(f"{'左目' if role == 'left' else '右目'}深度中位数：" + (metric(value) if value is not None else "无"))
+    lines += ["", "模型尺寸不会自动转成实测值；颜色仅辅助对应。"]
+    return lines
 
 
 def image_region(start: tuple[float, float], end: tuple[float, float], transform: tuple[float, float, float], size: tuple[int, int]) -> list[int] | None:
@@ -257,6 +290,7 @@ class ElevationCaptureDialog:
         self.summary = tk.StringVar(value="尚未建立管道目录")
         self.matching_preset = tk.StringVar(value="原始灰度")
         self.disparity_count = tk.StringVar(value="256")
+        self.present_pipe_count = tk.StringVar(value="")
 
         frame = ttk.Frame(self.window, padding=12)
         frame.pack(fill="both", expand=True)
@@ -291,6 +325,11 @@ class ElevationCaptureDialog:
         ttk.Label(matching_bar, text="视差搜索范围（像素，16 的倍数）").pack(side="left")
         ttk.Entry(matching_bar, textvariable=self.disparity_count, width=7).pack(side="left", padx=6)
         ttk.Label(matching_bar, text="近距离需扩大范围；弱光处理保留原始照片与颜色", foreground="#355371").pack(side="left")
+        scene_bar = ttk.Frame(self.controls)
+        scene_bar.pack(fill="x", pady=3)
+        ttk.Label(scene_bar, text="现场实际管数（未知可留空）").pack(side="left")
+        ttk.Entry(scene_bar, textvariable=self.present_pipe_count, width=5).pack(side="left", padx=6)
+        ttk.Label(scene_bar, text="模型目录可多于现场实物；数量不代替管道身份确认", foreground="#355371").pack(side="left")
 
         panes = ttk.Panedwindow(frame, orient="horizontal")
         panes.pack(fill="both", expand=True, pady=8)
@@ -323,6 +362,7 @@ class ElevationCaptureDialog:
         actions = [("设置颜色", self.edit_pipe), ("同径统一颜色", self.apply_diameter_color), ("设置管长方向", self.open_model_viewer), ("查看模型管道编号", self.show_catalog)]
         if self.mode.get() == "elevation_depth":
             actions.insert(2, ("清除所选区域", self.clear_regions))
+        actions.append(("尺寸与测距", self.show_measurement))
         for name, action in actions:
             ttk.Button(row, text=name, command=action).pack(side="left", padx=2)
         bottom = ttk.Frame(frame)
@@ -341,6 +381,7 @@ class ElevationCaptureDialog:
         self.confirmed.trace_add("write", lambda *_args: self.invalidate())
         self.matching_preset.trace_add("write", lambda *_args: self.invalidate())
         self.disparity_count.trace_add("write", lambda *_args: self.invalidate())
+        self.present_pipe_count.trace_add("write", lambda *_args: self.invalidate())
         if self.profile:
             self.fields["calibration"].set(self.profile.get("calibration_path", ""))
             self.calibration_override = copy.deepcopy(self.profile.get("calibration_current"))
@@ -463,7 +504,7 @@ class ElevationCaptureDialog:
             if self.mode.get() == "elevation_auto" and isinstance(evidence, dict) and evidence.get("measured_diameter_mm") is not None:
                 diameter_text = f"实测外径 {float(evidence['measured_diameter_mm']):.1f} mm"
                 distance = evidence.get("observed_distance_to_left_camera_mm")
-                distance_text = f"；距左目 {float(distance):.0f} mm" if isinstance(distance, (int, float)) else ""
+                distance_text = f"；截面中心线距左目 {float(distance):.0f} mm" if isinstance(distance, (int, float)) else ""
                 explanation = f"{diameter_text}{distance_text}；{explanation}"
             self.tree.insert("", "end", iid=spec["pipe_id"], text=spec["pipe_id"], tags=(row.get("installation_state", "UNKNOWN"),), values=(f"{spec['nominal_diameter_mm']:g}", spec["color_srgb"], "自动" if left_region and self.mode.get() == "elevation_auto" else ("已选" if left_region else "待选"), "自动" if right_region and self.mode.get() == "elevation_auto" else ("已选" if right_region else "待选"), f"{spec['expected_depth_mm']:g}" if spec.get("expected_depth_mm") and self.mode.get() == "elevation_depth" else "自动", row.get("installation_state_zh", "待评估"), explanation))
         if self.pipes:
@@ -480,6 +521,20 @@ class ElevationCaptureDialog:
         self.invalidate()
         self.refresh_table()
         self.message.set(f"{spec['pipe_id']} 已记录{'左' if role == 'left' else '右'}区域 {box}；区域变化后参考深度需重新确认。")
+
+    def show_measurement(self) -> None:
+        spec = self.selected_pipe()
+        if spec is None:
+            return
+        tk, ttk = self.app.tk, self.app.ttk
+        dialog = tk.Toplevel(self.window)
+        dialog.title(f"{spec['pipe_id']} · 模型尺寸与距离定义")
+        dialog.geometry("850x660")
+        text = tk.Text(dialog, wrap="word", padx=15, pady=15, font=("Microsoft YaHei", 10))
+        text.pack(fill="both", expand=True)
+        text.insert("1.0", "\n".join(measurement_summary_lines(spec, self.results.get(spec["pipe_id"]))))
+        text.configure(state="disabled")
+        ttk.Button(dialog, text="关闭", command=dialog.destroy).pack(pady=6)
 
     def clear_regions(self) -> None:
         if self.busy or self.mode.get() != "elevation_depth":
@@ -855,6 +910,7 @@ class ElevationCaptureDialog:
         self.timestamp_sources = {role: views[role]["timestamp_source"] for role in ("left", "right")}
         self.load_images()
         self.registration_settings = restored_registration
+        self.present_pipe_count.set(str(restored_registration.get("present_pipe_count", "")))
         self.confirmed.set(False)
         self.refresh_table()
         self.refresh_calibration_status()
@@ -917,7 +973,16 @@ class ElevationCaptureDialog:
             # contract.  Keep the call shape compatible with older manual
             # writers while automatic mode always carries its settings.
             if mode == "elevation_auto":
-                arguments.update(mode=mode, registration_settings=copy.deepcopy(self.registration_settings))
+                registration = copy.deepcopy(self.registration_settings)
+                count_text = self.present_pipe_count.get().strip()
+                registration.pop("present_pipe_count", None)
+                if count_text:
+                    try:
+                        registration["present_pipe_count"] = int(count_text)
+                    except ValueError as error:
+                        raise ValueError("现场实际管数需为正整数") from error
+                from .elevation_dataset import normalize_registration_settings
+                arguments.update(mode=mode, registration_settings=normalize_registration_settings(registration))
             self.invalidate()
             self.busy = True
             self._set_controls(False)
@@ -987,6 +1052,9 @@ class ElevationCaptureDialog:
             self.refresh_table()
             counts = report["counts"] if report else {}
             self.summary.set(f"安装 {counts.get('INSTALLED', 0)} · 未安装 {counts.get('NOT_INSTALLED', 0)} · 不确定 {counts.get('UNKNOWN', 0)}" if report else "基础现场已保存")
+            inventory = report.get("scene_inventory", {}) if report else {}
+            if inventory.get("present_pipe_count") is not None:
+                self.summary.set(f"现场实物 {inventory['present_pipe_count']} 根；模型候选 {inventory['model_candidate_count']} 个管位 · 已对应 {counts.get('INSTALLED', 0)} · 待确认 {counts.get('UNKNOWN', 0)}")
             self.message.set(f"已保存：{path.parent}。JSON 报告和叠图在同一目录。" if report else f"已保存：{path}")
             if report:
                 audits = report.get("capture_audit", {}).get("groups", [])

@@ -15,6 +15,7 @@ import cv2
 import numpy as np
 
 from .metrology import fit_local_cylinder
+from .pipe_geometry import cylinder_section_geometry
 
 
 class LocalSurfaceError(ValueError):
@@ -475,6 +476,16 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
             "point_count": int(lf["point_count"] + rf["point_count"]),
             "left_right_diameter_difference_mm": abs(lf["diameter_mm"] - rf["diameter_mm"]),
             "visible_arc_degrees": float(min(lf["visible_arc_degrees"], rf["visible_arc_degrees"])),
+            "distance_geometry": cylinder_section_geometry(
+                geometry["center_camera_mm"], geometry["axis_camera"], measured,
+                section_definition="MIDPOINT_OF_COMMON_STEREO_OBSERVED_AXIS_SEGMENT",
+                intrinsic=_intrinsic(calibration.left)),
+            "surface_samples": {role: {
+                "depth_z_median_mm": fit["depth_median_mm"],
+                "depth_z_mad_mm": fit["depth_mad_mm"],
+                "point_count": fit["point_count"],
+                "definition": "OBSERVED_COMPONENT_DEPTH_PIXELS_NOT_AXIS_OR_APEX",
+            } for role, fit in (("left", lf), ("right", rf))},
             "pair_score": score, **geometry,
         })
     cloud = _CloudBudget(cfg["maximum_cloud_points"])

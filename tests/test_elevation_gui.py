@@ -127,6 +127,15 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(analysis["stereo_matching"]["num_disparities"], 256)
         self.assertEqual(analysis["minimum_depth_mm"], 350)
 
+    def test_measurement_detail_opens_without_inventing_field_dimensions(self):
+        self.dialog.show_measurement()
+        self.root.update_idletasks()
+        dialogs = [w for w in self.dialog.window.winfo_children() if w.winfo_class() == "Toplevel"]
+        self.assertTrue(dialogs)
+        widget = next(w for w in dialogs[-1].winfo_children() if w.winfo_class() == "Text")
+        self.assertIn("未获得可靠实测", widget.get("1.0", "end"))
+        dialogs[-1].destroy()
+
     def test_external_photo_change_is_rejected_and_old_result_removed(self):
         self.dialog.report = {"old": True}
         self.dialog.results = {"P001": {"installation_state": "INSTALLED"}}

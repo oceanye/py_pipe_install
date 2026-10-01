@@ -361,6 +361,16 @@ def analyze_local_geometry(pipes: Any, projections: Mapping, images: Mapping, de
         if item["pipe_id"] in ambiguous:
             item["status"] = "UNKNOWN"
             item["reason_codes"].append("SHARED_OR_OVERLAPPING_OBSERVATION")
+        if item["status"] == "MEASURED":
+            from .pipe_geometry import cylinder_section_geometry
+            camera = calibration.left
+            rotation = camera.rotation_world_to_rectified_camera
+            center_camera = rotation @ (np.asarray(item["center_world_mm"]) - camera.center_world_mm)
+            item["distance_geometry"] = cylinder_section_geometry(
+                center_camera, rotation @ np.asarray(item["axis_direction_world"]), item["diameter_mm"],
+                section_definition="MIDPOINT_OF_COMMON_STEREO_OBSERVED_AXIS_SEGMENT",
+                intrinsic=camera.rectified_intrinsic)
+            item["camera_depth_definition"] = "CENTERLINE_Z_AT_COMMON_OBSERVED_SECTION"
     pairs = [pair_geometry(a, b, calibration.left, config["tolerance_mm"]) for a, b in combinations(results, 2)]
     return {"schema_version": "1.0", "method": "LOCAL_BIDIRECTIONAL_STEREO_CYLINDER_FIT",
             "coordinate_frame": "CAD_WORLD_MM", "accuracy_validated": False,
