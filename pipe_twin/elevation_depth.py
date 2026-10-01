@@ -175,6 +175,8 @@ def _region_evidence(image: np.ndarray, depth_values: np.ndarray, valid: np.ndar
                      spec: Mapping[str, Any], role: str, config: Mapping[str, Any], fx: float) -> dict[str, Any]:
     x, y, w, h = spec[role]
     crop = image[y:y+h, x:x+w]
+    from .stereo_analyzer import _image_signal_diagnostics
+    signal = _image_signal_diagnostics(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY))
     lab = cv2.cvtColor(crop, cv2.COLOR_BGR2LAB).astype(np.float32)
     target = cv2.cvtColor(_hex_bgr(spec["color_srgb"]), cv2.COLOR_BGR2LAB).astype(np.float32)[0, 0]
     color_mask = np.linalg.norm(lab - target, axis=2) <= float(config["color_delta_lab"])
@@ -219,7 +221,7 @@ def _region_evidence(image: np.ndarray, depth_values: np.ndarray, valid: np.ndar
              "component": bool(component and component["axis_ok"] and
                                 component["elongation"] >= _HARD_MIN_ELONGATION),
              "width": bool(width_error is not None and width_error <= config["maximum_width_relative_error"])}
-    return {"region_xywh": list(spec[role]), "color_support_fraction": color_fraction,
+    return {"region_xywh": list(spec[role]), "image_signal": signal, "color_support_fraction": color_fraction,
             "valid_depth_fraction": valid_fraction, "joint_support_fraction": joint_fraction,
             "median_depth_mm": median_depth, "median_valid_depth_mm": median_valid_depth,
             "target_depth_median_mm": median_depth,
@@ -274,6 +276,9 @@ def _one_capture(group: Mapping[str, Any], specs: list[dict[str, Any]], config: 
         else:
             evidence = "INCONCLUSIVE"
             reasons = ["PAIR_UNHEALTHY" if not pair_healthy else "INSUFFICIENT_COLOR_DEPTH_GEOMETRY"]
+            for warning in ("LOW_LIGHT", "DARK_REGION_DOMINANT", "LOW_TEXTURE"):
+                if any(warning in ev["image_signal"]["warning_codes"] for ev in (lev, rev)):
+                    reasons.append(warning)
         result["pipes"][spec["pipe_id"]] = {"left": lev, "right": rev, "installed_candidate": installed,
             "free_space_candidate": free, "evidence": evidence, "reason_codes": reasons,
             "left_right_position_consistent": same_position, "left_right_depth_consistent": depth_consistent}
@@ -393,6 +398,10 @@ def analyze_elevation_depth_manifest(manifest_path: str | Path, *, report_output
     for public, evidence in zip(result["capture_audit"]["groups"], engine_groups):
         public["pipes"] = evidence["pipes"]
         public["pair_signature"] = evidence["pair_signature"]
+    for public, group in zip(result["capture_audit"]["groups"], groups_for_engine):
+        public["depth_audit"] = group["depth"].audit
+    result["stereo_analysis_config"] = {k: v for k, v in config.items()
+                                        if k not in {"mode", "elevation_depth", "elevation_auto"}}
     output = Path(report_output_path).resolve() if report_output_path is not None else None
     input_paths = [path]
     model = manifest.get("model")

@@ -61,6 +61,7 @@ _MAX_SGBM_BLOCK_SIZE = 255
 _MAX_SGBM_SPECKLE_WINDOW = 1_000_000
 _MAX_SGBM_DISP12_DIFF = 4096
 _MAX_MORPH_RADIUS_PIXELS = 1024
+STEREO_ALGORITHM_REVISION = "sgbm-low-light-v1"
 
 
 class StereoAnalysisError(ValueError):
@@ -695,6 +696,7 @@ def _analysis_config(payload: object) -> dict[str, Any]:
         "maximum_depth_mm": 5000.0,
         "left_right_consistency_px": 2.0,
         "stereo_matching": {
+            "preprocessing": "none",
             "min_disparity": 0,
             "num_disparities": 128,
             "block_size": 5,
@@ -764,6 +766,8 @@ def _analysis_config(payload: object) -> dict[str, Any]:
     matching = config["stereo_matching"]
     if not isinstance(matching, dict):
         raise StereoAnalysisError("analysis.stereo_matching must be an object")
+    if matching.get("preprocessing") not in ("none", "low_light"):
+        raise StereoAnalysisError("stereo preprocessing must be 'none' or 'low_light'")
     for key in (
         "min_disparity",
         "num_disparities",
@@ -916,6 +920,7 @@ def _quality(image: np.ndarray, config: dict[str, Any]) -> dict[str, Any]:
         reasons.append("DARK_EXPOSURE")
     if p95 > config["maximum_luminance_p95"]:
         reasons.append("BRIGHT_EXPOSURE")
+    diagnostics = _image_signal_diagnostics(gray)
     return {
         "passed": passed,
         "reason_codes": reasons,
@@ -923,7 +928,42 @@ def _quality(image: np.ndarray, config: dict[str, Any]) -> dict[str, Any]:
         "luminance_p05": p05,
         "luminance_p50": p50,
         "luminance_p95": p95,
+        **diagnostics,
     }
+
+
+def _image_signal_diagnostics(gray: np.ndarray) -> dict[str, Any]:
+    """Describe raw signal, without mistaking sensor noise for useful texture.
+
+    Warnings are diagnostic, not relaxed or additional installation gates.
+    Dark pipe paint can resemble underexposure, so keep the measured values.
+    """
+    smooth = cv2.GaussianBlur(gray.astype(np.float32), (5, 5), 1.0)
+    mean = cv2.boxFilter(smooth, -1, (9, 9))
+    variance = np.maximum(cv2.boxFilter(smooth * smooth, -1, (9, 9)) - mean * mean, 0)
+    residual = gray.astype(np.float32) - smooth
+    noise = float(np.median(np.abs(residual - np.median(residual))) / 0.67448975)
+    dark = float(np.mean(gray <= 16))
+    texture = float(np.mean(np.sqrt(variance) >= max(2.0, 2.0 * noise)))
+    warnings = []
+    if float(np.median(gray)) < 32:
+        warnings.append("LOW_LIGHT")
+    if dark > 0.5:
+        warnings.append("DARK_REGION_DOMINANT")
+    if texture < 0.1:
+        warnings.append("LOW_TEXTURE")
+    return {"dark_pixel_fraction": dark, "saturated_pixel_fraction": float(np.mean(gray >= 250)),
+            "high_frequency_noise_estimate": noise, "textured_fraction": texture,
+            "warning_codes": warnings}
+
+
+def _stereo_gray(image: np.ndarray, preprocessing: str) -> np.ndarray:
+    """Enhance only the matching copy; color evidence always uses original BGR."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if preprocessing == "low_light":
+        gray = cv2.fastNlMeansDenoising(gray, None, 5.0, 7, 21)
+        gray = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)
+    return gray
 
 
 def _rectify(
@@ -958,13 +998,20 @@ def _compute_stereo_depth(
     invalid_depth = np.full((height, width), np.nan, dtype=np.float32)
     invalid_mask = np.zeros((height, width), dtype=bool)
     matching = config["stereo_matching"]
-    if matching["num_disparities"] >= width:
+    audit_metadata = {
+        "algorithm_revision": STEREO_ALGORITHM_REVISION,
+        "opencv_version": cv2.__version__,
+        "matcher": dict(matching),
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+    }
+    if matching["min_disparity"] + matching["num_disparities"] >= width:
         return StereoDepthResult(
             invalid_depth,
             invalid_depth.copy(),
             invalid_mask,
             invalid_mask.copy(),
             {
+                **audit_metadata,
                 "status": "INVALID",
                 "reason_codes": ["DISPARITY_RANGE_EXCEEDS_IMAGE_WIDTH"],
                 "valid_left_fraction": 0.0,
@@ -985,9 +1032,9 @@ def _compute_stereo_depth(
         "speckleRange": matching["speckle_range"],
         "mode": cv2.STEREO_SGBM_MODE_SGBM_3WAY,
     }
-    left_gray = cv2.cvtColor(left_bgr, cv2.COLOR_BGR2GRAY)
-    right_gray = cv2.cvtColor(right_bgr, cv2.COLOR_BGR2GRAY)
     try:
+        left_gray = _stereo_gray(left_bgr, matching["preprocessing"])
+        right_gray = _stereo_gray(right_bgr, matching["preprocessing"])
         left_matcher = cv2.StereoSGBM_create(
             minDisparity=matching["min_disparity"], **common
         )
@@ -1004,6 +1051,7 @@ def _compute_stereo_depth(
             invalid_mask,
             invalid_mask.copy(),
             {
+                **audit_metadata,
                 "status": "INVALID",
                 "reason_codes": ["OPENCV_STEREO_MATCHING_FAILED"],
                 "opencv_error": str(error),
@@ -1079,6 +1127,7 @@ def _compute_stereo_depth(
         left_valid,
         right_valid,
         {
+            **audit_metadata,
             "status": "VALID" if np.any(left_valid) and np.any(right_valid) else "INVALID",
             "reason_codes": (
                 []
@@ -1087,7 +1136,9 @@ def _compute_stereo_depth(
             ),
             "valid_left_fraction": float(np.mean(left_valid)),
             "valid_right_fraction": float(np.mean(right_valid)),
-            "matcher": dict(matching),
+            "searchable_depth_min_mm": float(calibration.left.fx * calibration.baseline_mm /
+                                               (matching["min_disparity"] + matching["num_disparities"] - 1)),
+            "warning_codes": (["LOW_STEREO_COVERAGE"] if min(float(np.mean(left_valid)), float(np.mean(right_valid))) < 0.25 else []),
             "left_right_consistency_px": consistency_limit,
             "depth_convention": "camera_z_mm",
         },

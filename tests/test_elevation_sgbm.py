@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import cv2
 import numpy as np
+import pytest
 
 from pipe_twin.local_surface import extract_local_pipes
 from pipe_twin.elevation_auto import analyze_elevation_auto_groups
@@ -73,11 +74,12 @@ def textured_cylinder_scene():
     return images, truth, calibration, specs
 
 
-def test_real_sgbm_reconstructs_visible_local_pipe_cylinders():
+@pytest.mark.parametrize("preprocessing", ["none", "low_light"])
+def test_real_sgbm_reconstructs_visible_local_pipe_cylinders(preprocessing):
     images, truth, calibration, specs = textured_cylinder_scene()
     # The maximum physical disparity is about 205 px.  Only the search range
     # is enlarged from the normal matcher defaults to cover this metric rig.
-    config = _analysis_config({"stereo_matching": {"num_disparities": 256}})
+    config = _analysis_config({"stereo_matching": {"num_disparities": 256, "preprocessing": preprocessing}})
     depth = _compute_stereo_depth(images["left"], images["right"], calibration, config)
     surface = extract_local_pipes(images["left"], images["right"], depth, calibration, specs)
     assert len(surface["observations"]) == 3, surface["rejected"]

@@ -72,6 +72,31 @@ class ElevationDatasetTests(unittest.TestCase):
         loaded = load_elevation_dataset(path)
         self.assertEqual(loaded["rectification_recipe"]["calibration_id"], "FIELD-USB-001")
 
+    def test_matching_settings_survive_reopen_and_history_resave(self):
+        settings = {"stereo_matching": {"num_disparities": 256, "preprocessing": "low_light"},
+                    "minimum_depth_mm": 350.0, "left_right_consistency_px": 1.0}
+        first = self._create(analysis_settings=settings)
+        second = self._create(previous_manifest=first)
+        analysis = load_elevation_dataset(second)["manifest"]["analysis"]
+        self.assertEqual(analysis["stereo_matching"]["num_disparities"], 256)
+        self.assertEqual(analysis["stereo_matching"]["preprocessing"], "low_light")
+        self.assertEqual(analysis["minimum_depth_mm"], 350.0)
+        self.assertEqual(analysis["left_right_consistency_px"], 1.0)
+        third = self._create(previous_manifest=second, analysis_settings={"stereo_matching": {"num_disparities": 64}})
+        self.assertEqual(load_elevation_dataset(third)["manifest"]["analysis"]["stereo_matching"]["num_disparities"], 64)
+
+    def test_invalid_matching_settings_rejected_on_save_and_load(self):
+        with self.assertRaises(ValueError):
+            self._create(analysis_settings={"mode": "override"})
+        with self.assertRaises(ValueError):
+            self._create(analysis_settings={"stereo_matching": {"num_disparities": 255}})
+        path = self._create()
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload["analysis"]["stereo_matching"]["preprocessing"] = "unknown"
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            load_elevation_dataset(path)
+
     def test_live_camera_exposure_provenance_survives_package_roundtrip(self):
         for exposure in (
             {"capture_exposure_status": "AUTO"},

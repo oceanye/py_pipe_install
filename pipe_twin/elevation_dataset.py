@@ -313,11 +313,25 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
                              camera_capture_provenance: dict | None = None,
                              timestamp_sources: dict | None = None,
                              mode: str = "elevation_depth",
+                             analysis_settings: Mapping | None = None,
                              registration_settings: Mapping | None = None) -> Path:
     """Validate and atomically create a portable basic elevation package."""
     if pair_confirmed is not True:
         raise ValueError("请确认左右照片来自同一次同步拍摄")
     parsed = _calibration_ok(calibration)
+    # Reopening/re-saving a scene must not silently replace a tuned search
+    # range with 128 pixels.  Store validated settings, separate from mode data.
+    from .stereo_analyzer import _analysis_config
+    if analysis_settings is None and previous_manifest is not None:
+        previous_analysis = load_elevation_dataset(previous_manifest)["manifest"]["analysis"]
+        analysis_settings = {k: v for k, v in previous_analysis.items()
+                             if k not in {"mode", "elevation_depth", "elevation_auto"}}
+    if analysis_settings is not None and not isinstance(analysis_settings, Mapping):
+        raise ValueError("analysis_settings必须是对象")
+    settings = dict(analysis_settings or {})
+    if set(settings) - set(_analysis_config({})):
+        raise ValueError("analysis_settings包含未知字段")
+    settings = _analysis_config(settings)
     recipe = None
     if rectification_recipe is not None:
         from .workbench_profile import validate_rectification_recipe
@@ -363,7 +377,7 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
         "model_revision": (model_record.get("sha256", spec_hash))[:16],
         "validation_scope": f"{mode.upper()}_CAPTURE_PENDING_ACCEPTANCE",
         "model": model_record, "stereo_calibration": copy.deepcopy(dict(calibration)),
-        "analysis": {"mode": mode, mode: {"pipes": copy.deepcopy(specs)}},
+        "analysis": {**settings, "mode": mode, mode: {"pipes": copy.deepcopy(specs)}},
         "capture": {"kind": "stereo_still_capture_set", "camera_layout": "stereo",
                      "capture_group_id": run_id, "interval_minutes": 5, "capture_groups": []},
     }
@@ -446,6 +460,8 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
     if manifest.get("schema_version") != "2.0" or mode not in {"elevation_depth", "elevation_auto"}:
         raise ValueError("不是schema2.0基础立面数据包")
     calibration = _calibration_ok(manifest.get("stereo_calibration"))
+    from .stereo_analyzer import _analysis_config
+    _analysis_config(manifest["analysis"])
     recipe = manifest.get("rectification_recipe")
     if recipe is not None:
         from .workbench_profile import validate_rectification_recipe
