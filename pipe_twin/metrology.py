@@ -160,6 +160,8 @@ def fit_local_cylinder(points_mm: np.ndarray, settings: Mapping | None = None) -
         raise ValueError("DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS")
     return {
         "diameter_mm": diameter,
+        "diameter_source": "ROBUST_OUTER_CYLINDER_FIT_VISIBLE_SURFACE",
+        "diameter_includes_near_surface": True,
         "center_world_mm": (center + axis * ((low + high) / 2)).tolist(),
         "axis_direction_world": axis.tolist(),
         "observed_segment_world_mm": [(center + axis * low).tolist(), (center + axis * high).tolist()],

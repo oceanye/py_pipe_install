@@ -1,4 +1,4 @@
-"""Observed pipe surfaces -> STL line layout -> elevation installation states.
+"""Observed pipe surfaces -> STL/DXF line layout -> elevation installation states.
 
 Registration is expressed in the LEFT RECTIFIED CAMERA frame.  Pipe endpoints
 are deliberately not used: translation along parallel pipe axes is not
@@ -123,23 +123,44 @@ def _view_evidence(spec: Mapping, center: np.ndarray, axis: np.ndarray, camera: 
 
 
 def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, registration: Mapping,
-                                 images: Mapping, depth: Any, calibration: Any, *, healthy: bool) -> dict:
+                                images: Mapping, depth: Any, calibration: Any, *, healthy: bool) -> dict:
     """Compare current observed geometry to automatically placed model lines."""
     matched = registration.get("status") == "MATCHED"
     associations = {m["pipe_id"]: m for m in registration.get("matches", [])} if matched else {}
+    observations = {str(item.get("observation_id")): item for item in surface.get("observations", [])
+                    if isinstance(item, Mapping) and item.get("observation_id")}
     interval = _common_observed_interval(surface, registration) if matched else None
     common_axis = np.asarray(registration.get("camera_axis", [1, 0, 0]), float)
     step = max(1, math.ceil(max(calibration.left.width, calibration.left.height)/640))
     result = {}
     for spec in pipe_specs:
         evidence: dict[str, Any] = {}
+        association = associations.get(spec["pipe_id"])
+        observation = observations.get(str(association.get("observation_id"))) if association else None
+        if observation is not None:
+            measured_diameter = float(observation["diameter_mm"])
+            center_camera = np.asarray(observation["center_camera_mm"], dtype=float)
+            evidence.update(
+                measured_diameter_mm=measured_diameter,
+                diameter_error_mm=measured_diameter - float(spec["nominal_diameter_mm"]),
+                observed_center_camera_mm=center_camera.tolist(),
+                observed_distance_to_left_camera_mm=float(np.linalg.norm(center_camera)),
+                position_residual_mm=float(association.get("residual_mm")) if association.get("residual_mm") is not None else None,
+                measured_color_srgb=str(observation.get("measured_color_srgb", observation.get("color_srgb", ""))).upper(),
+                color_used_as="AUXILIARY_HINT_ONLY",
+                diameter_match_basis="STEREO_LOCAL_CYLINDER_OUTER_SURFACE",
+            )
         if matched:
             center, axis = _line_geometry(spec, registration)
+            if observation is not None:
+                evidence["model_center_camera_mm"] = center.tolist()
+                evidence["model_distance_to_left_camera_mm"] = float(np.linalg.norm(center))
+                evidence["center_distance_error_mm"] = float(np.linalg.norm(center_camera) - np.linalg.norm(center))
             for role in ("left", "right"):
                 evidence[role] = _view_evidence(spec, center, axis, getattr(calibration, role), images[role],
                     getattr(depth, f"{role}_depth_mm"), getattr(depth, f"{role}_valid"),
                     calibration.baseline_mm if role == "right" else 0., interval, common_axis, step)
-        positive = bool(healthy and matched and spec["pipe_id"] in associations)
+        positive = bool(healthy and matched and association is not None)
         free = bool(healthy and matched and not positive and all(evidence[r]["free_space_candidate"] for r in ("left", "right")))
         evidence.update(installed_candidate=positive, free_space_candidate=free,
                         observation_id=associations.get(spec["pipe_id"], {}).get("observation_id"))

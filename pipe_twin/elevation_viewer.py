@@ -1,4 +1,4 @@
-"""Dependency-free 3-D STL viewer for elevation registration."""
+"""Dependency-free 3-D STL/DXF layout viewer for elevation registration."""
 from __future__ import annotations
 import math
 from pathlib import Path
@@ -7,7 +7,7 @@ import numpy as np
 
 
 class ElevationModelViewer:
-    """Orbitable STL preview; axis picks always remain in STL source coordinates."""
+    """Orbitable STL/DXF layout preview; axis picks remain model coordinates."""
     def __init__(self, owner: Any, *, model_path: Path, pipes: list[dict[str, Any]], axis_world: list[float] | None = None, on_axis: Callable[[list[float]], None] | None = None, report: dict[str, Any] | None = None) -> None:
         self.owner, self.pipes, self.on_axis = owner, pipes, on_axis
         tk, ttk = owner.app.tk, owner.app.ttk
@@ -16,7 +16,8 @@ class ElevationModelViewer:
         controls = ttk.Frame(self.window); controls.pack(fill="x", padx=8)
         ttk.Label(controls, text="方向").pack(side="left")
         self.direction_mode = tk.StringVar(value="自动")
-        ttk.Combobox(controls, textvariable=self.direction_mode, values=("自动", "X", "Y", "Z", "两点拾取", "自定义"), state="readonly", width=10).pack(side="left", padx=5)
+        direction_values = ("自动", "Z", "自定义") if getattr(owner, "model_kind", "") == "dxf" else ("自动", "X", "Y", "Z", "两点拾取", "自定义")
+        ttk.Combobox(controls, textvariable=self.direction_mode, values=direction_values, state="readonly", width=10).pack(side="left", padx=5)
         self.custom = tk.StringVar(value="0,0,1"); ttk.Entry(controls, textvariable=self.custom, width=16).pack(side="left")
         ttk.Button(controls, text="应用方向", command=self.apply_direction).pack(side="left", padx=5)
         ttk.Button(controls, text="反向", command=self.reverse_axis).pack(side="left")
@@ -30,7 +31,7 @@ class ElevationModelViewer:
             ttk.Combobox(controls, textvariable=self.pipe_var, values=[str(p.get("pipe_id")) for p in pipes], state="readonly", width=12).pack(side="left")
             ttk.Button(controls, text="绑定", command=self.bind_anchor).pack(side="left", padx=3)
         ttk.Button(controls, text="清除基准对应", command=self.clear_anchors).pack(side="right")
-        self.info = tk.StringVar(value="两点拾取：左键点击同一根管道的两个端点；右键拖动旋转，滚轮缩放。")
+        self.info = tk.StringVar(value=("DXF 圆形截面按模型 ±Z 作为管轴；相机俯视角度由双目配准估计。右键拖动旋转，滚轮缩放。" if getattr(owner, "model_kind", "") == "dxf" else "两点拾取：左键点击同一根管道的两个端点；右键拖动旋转，滚轮缩放。"))
         ttk.Label(self.window, textvariable=self.info).pack(fill="x", padx=8, pady=(3, 8))
         self.zoom, self.yaw, self.pitch, self.drag_start = 1.0, 0.0, 0.0, None
         self.snapshot_hashes = dict(getattr(owner, "image_hashes", {})); self.snapshot_generation = int(getattr(owner, "generation", 0)); self.snapshot_model = str(getattr(owner, "fields", {}).get("model").get()) if getattr(owner, "fields", {}).get("model") is not None else ""
@@ -88,7 +89,7 @@ class ElevationModelViewer:
         if hit is None: return
         self.selected = [x for x in self.selected if x != hit] + [hit]; self.selected = self.selected[-2:]
         if len(self.selected) == 2 and self.selected[0][0] == self.selected[1][0] and self.selected[0][1] != self.selected[1][1]:
-            vector = self.source_lines[self.selected[1][0], self.selected[1][1]] - self.source_lines[self.selected[0][0], self.selected[0][1]]; norm = float(np.linalg.norm(vector)); self.axis = vector/norm if norm > 1e-6 else self.axis; self.info.set(f"已从 STL 源坐标选择管长方向 {np.round(self.axis, 4).tolist()}；点击应用方向保存。")
+            vector = self.source_lines[self.selected[1][0], self.selected[1][1]] - self.source_lines[self.selected[0][0], self.selected[0][1]]; norm = float(np.linalg.norm(vector)); self.axis = vector/norm if norm > 1e-6 else self.axis; self.info.set(f"已从模型源坐标选择管长方向 {np.round(self.axis, 4).tolist()}；点击应用方向保存。")
         elif len(self.selected) == 2: self.info.set("请选择同一根管道的两个端点，避免把截面方向误存为管长方向。")
         self.draw()
 
@@ -103,7 +104,7 @@ class ElevationModelViewer:
             except ValueError: self.info.set("自定义方向格式应为 x,y,z"); return
         else: vector = self.axis
         if vector is None or np.asarray(vector).shape != (3,) or not np.all(np.isfinite(vector)) or np.linalg.norm(vector) <= 1e-9: self.info.set("方向必须是有限的非零三维向量"); return
-        self.axis = np.asarray(vector, float)/np.linalg.norm(vector); self.display_axis = self.registration_rotation @ self.axis if self.registration_rotation is not None else self.axis; self.selected = []; self.info.set(f"已选择 STL 管长方向 {np.round(self.axis, 4).tolist()}；点击应用方向保存。"); self.draw()
+        self.axis = np.asarray(vector, float)/np.linalg.norm(vector); self.display_axis = self.registration_rotation @ self.axis if self.registration_rotation is not None else self.axis; self.selected = []; self.info.set(f"已选择模型管长方向 {np.round(self.axis, 4).tolist()}；点击应用方向保存。"); self.draw()
 
     def apply_direction(self) -> None:
         if not self._is_current(): self.info.set("现场输入已改变，请关闭窗口后重新打开模型预览。"); return
@@ -116,7 +117,7 @@ class ElevationModelViewer:
         if self.axis is None:
             self.info.set("请先选择方向")
             return
-        self.axis = -np.asarray(self.axis, float); self.display_axis = self.registration_rotation @ self.axis if self.registration_rotation is not None else self.axis; self.info.set(f"已反向 STL 管长方向 {np.round(self.axis, 4).tolist()}"); self.draw()
+        self.axis = -np.asarray(self.axis, float); self.display_axis = self.registration_rotation @ self.axis if self.registration_rotation is not None else self.axis; self.info.set(f"已反向模型管长方向 {np.round(self.axis, 4).tolist()}"); self.draw()
     def clear_anchors(self) -> None:
         if hasattr(self.owner, "registration_settings"):
             self.owner.registration_settings["anchors"] = {}

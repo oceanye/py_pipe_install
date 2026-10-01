@@ -1,7 +1,9 @@
-"""Portable packages for automatic STL elevation and manual ROI compatibility.
+"""Portable packages for automatic STL/DXF elevation and manual ROI compatibility.
 
-Automatic packages bind the full straight-pipe catalogue to the actual STL,
-and store only direction/optional correspondence settings rather than ROIs.
+Automatic packages bind the full straight-pipe catalogue to the actual STL or
+DXF layout, and store only direction/optional correspondence settings rather
+than ROIs.  A DXF catalogue uses full circles as pipe cross-sections and a
+configurable common axis for its 3-D depth projection.
 Both modes are independent of full CAD/QR world registration.
 """
 
@@ -116,7 +118,7 @@ def _specs(value: Any, width: int, height: int, *, mode: str = "elevation_depth"
             if not isinstance(raw["cad_object_id"], str) or not raw["cad_object_id"].strip():
                 raise ValueError(f"{pipe_id}.cad_object_id必须是非空字符串")
             item["cad_object_id"] = raw["cad_object_id"]
-        # Keep the STL centreline for automatic matching and model previews.
+        # Keep the model centreline for automatic matching and model previews.
         for key in ("centerline_world_mm", "source_label"):
             if key in raw:
                 item[key] = copy.deepcopy(raw[key])
@@ -127,16 +129,16 @@ def _specs(value: Any, width: int, height: int, *, mode: str = "elevation_depth"
         if mode == "elevation_auto":
             line = np.asarray(item.get("centerline_world_mm"), dtype=float)
             if line.shape != (2, 3) or not np.isfinite(line).all() or np.linalg.norm(line[1] - line[0]) < 1e-6:
-                raise ValueError(f"{pipe_id}缺少有效的STL管道中心线")
+                raise ValueError(f"{pipe_id}缺少有效的管道中心线")
             if not item.get("cad_object_id"):
-                raise ValueError(f"{pipe_id}缺少STL组件编号")
+                raise ValueError(f"{pipe_id}缺少模型组件编号")
         seen.add(pipe_id)
         result.append(item)
     return result
 
 
 def normalize_registration_settings(payload: Mapping | None = None) -> dict:
-    """Small, portable UI contract; direction is expressed in STL coordinates."""
+    """Small, portable UI contract; direction is expressed in model coordinates."""
     if payload is not None and (not isinstance(payload, Mapping) or set(payload) - {"axis_world", "anchors"}):
         raise ValueError("立面匹配配置只能包含axis_world和anchors")
     payload = dict(payload or {})
@@ -157,22 +159,43 @@ def normalize_registration_settings(payload: Mapping | None = None) -> dict:
     return {"axis_world": axis, "anchors": dict(anchors)}
 
 
-def validate_auto_model_binding(model_path: Path, stl_unit: str | None, specs: list[dict]) -> None:
-    """Bind automatic geometry to the actual STL, including absent components."""
+def _model_source_unit(model_path: Path, supplied_unit: str | None) -> str | None:
+    if model_path.suffix.lower() == ".dxf":
+        from .dxf_elevation import dxf_source_unit, read_dxf_elevation
+        return dxf_source_unit(read_dxf_elevation(model_path), supplied_unit)
+    return supplied_unit
+
+
+def _model_catalog(model_path: Path, stl_unit: str | None) -> tuple[list[dict], list[Any]]:
+    """Read the model catalogue used by automatic elevation validation."""
+    if model_path.suffix.lower() == ".dxf":
+        from .dxf_elevation import catalog_from_dxf
+        return catalog_from_dxf(model_path, unitless_unit=stl_unit)
+    if not _supported_model_suffix(model_path):
+        raise ValueError("model_path必须是 STL 或 DXF 文件")
     from .capture_gui import catalog_from_model
-    actual, skipped = catalog_from_model(model_path, stl_unit=stl_unit)
+    return catalog_from_model(model_path, stl_unit=stl_unit)
+
+
+def _supported_model_suffix(path: Path) -> bool:
+    return path.suffix.lower() in {".stl", ".dxf"}
+
+
+def validate_auto_model_binding(model_path: Path, stl_unit: str | None, specs: list[dict]) -> None:
+    """Bind automatic geometry to the actual STL or DXF, including absent components."""
+    actual, _ = _model_catalog(model_path, stl_unit)
     by_id = {p["cad_object_id"]: p for p in actual}
     supplied = [p.get("cad_object_id") for p in specs]
     if len(set(supplied)) != len(supplied) or set(supplied) != set(by_id):
-        raise ValueError("自动模式管道目录与STL独立直管组件不一致，请重新导入模型")
+        raise ValueError("自动模式管道目录与模型独立直管组件不一致，请重新导入模型")
     for item in specs:
         reference = by_id[item["cad_object_id"]]
         line = np.asarray(item["centerline_world_mm"], float)
         truth = np.asarray(reference["centerline_world_mm"], float)
         if not (np.allclose(line, truth, atol=1e-4, rtol=0) or np.allclose(line[::-1], truth, atol=1e-4, rtol=0)):
-            raise ValueError("自动匹配中心线与STL几何不一致")
+            raise ValueError("自动匹配中心线与模型几何不一致")
         if abs(item["nominal_diameter_mm"] - reference["nominal_diameter_mm"]) > max(.2, reference["nominal_diameter_mm"] * .01):
-            raise ValueError("自动模式管径与STL几何不一致，请核对模型单位")
+            raise ValueError("自动模式管径与模型几何不一致，请核对模型单位")
 
 
 def _validate_auto_axis(specs: list[dict], registration: Mapping) -> None:
@@ -291,14 +314,16 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
         current_recipe = None
     old_model = old.get("model") or {}
     current_hash = None
+    source_unit = None
     if model_path is not None:
         model = Path(model_path).resolve()
-        if not model.is_file() or model.suffix.lower() != ".stl":
-            raise ValueError("model_path必须是STL文件")
+        if not model.is_file() or not _supported_model_suffix(model):
+            raise ValueError("model_path必须是 STL 或 DXF 文件")
         current_hash = _hash(model.read_bytes())
+        source_unit = _model_source_unit(model, stl_unit)
     same_model = (old_model.get("sha256") == current_hash and
                   bool(old_model.get("path")) == bool(model_path) and
-                  (model_path is None or old_model.get("source_unit") == stl_unit))
+                  (model_path is None or old_model.get("source_unit") == source_unit))
     return bool(old.get("stereo_calibration") == dict(calibration) and old_specs == new_specs and
                 same_model and old_recipe == current_recipe and loaded["mode"] == mode and
                 loaded["registration_settings"] == normalize_registration_settings(registration_settings))
@@ -353,23 +378,32 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
     if set(registration["anchors"].values()) - {p["pipe_id"] for p in specs}:
         raise ValueError("基准指定的模型管道不存在")
     if mode == "elevation_auto" and model_path is None:
-        raise ValueError("自动立面匹配需要STL模型")
+        raise ValueError("自动立面匹配需要 STL 或 DXF 管道模型")
     if mode == "elevation_auto":
         _validate_auto_axis(specs, registration)
     model_data: bytes | None = None
     model_record: dict[str, Any] = {"kind": "optional_reference"}
     if model_path is not None:
         model = Path(model_path).resolve()
-        if not model.is_file() or model.suffix.lower() != ".stl":
-            raise ValueError("model_path必须是STL文件")
+        if not model.is_file() or not _supported_model_suffix(model):
+            raise ValueError("model_path必须是 STL 或 DXF 文件")
         model_data = model.read_bytes()
-        model_record.update({"path": f"model/{model.name}", "sha256": _hash(model_data), "unit": "millimeter"})
-        if stl_unit is not None:
-            model_record["source_unit"] = str(stl_unit)
+        model_record.update({"path": f"model/{model.name}", "sha256": _hash(model_data), "unit": "millimeter",
+                             "format": model.suffix.lower().lstrip(".")})
+        source_unit = _model_source_unit(model, stl_unit)
+        if source_unit is not None:
+            model_record["source_unit"] = str(source_unit)
+        if model.suffix.lower() == ".dxf":
+            from .dxf_elevation import DXF_PREVIEW_HALF_LENGTH_MM
+            # The DXF stores cross-section centres only.  The centreline
+            # length is a preview/registration gauge; depth evaluation uses
+            # the infinite-cylinder intersection in elevation_auto.py.
+            model_record.update({"geometry": "circle_layout_xy", "longitudinal_extent_known": False,
+                                 "pipe_half_length_mm": DXF_PREVIEW_HALF_LENGTH_MM})
         if mode == "elevation_auto":
-            validate_auto_model_binding(model, stl_unit, specs)
+            validate_auto_model_binding(model, source_unit, specs)
             if _hash(model.read_bytes()) != model_record["sha256"]:
-                raise ValueError("STL在建立目录时发生变化")
+                raise ValueError("模型在建立目录时发生变化")
     spec_hash = _hash(_canonical(specs).encode())
     run_id = f"elevation-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
     manifest: dict[str, Any] = {
@@ -495,7 +529,7 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
     registration = normalize_registration_settings(settings.get("registration"))
     if mode == "elevation_auto":
         if not model.get("path"):
-            raise ValueError("自动立面数据包缺少STL模型")
+            raise ValueError("自动立面数据包缺少 STL 或 DXF 模型")
         validate_auto_model_binding(model_file, model.get("source_unit"), specs)
         _validate_auto_axis(specs, registration)
     groups = (manifest.get("capture") or {}).get("capture_groups")

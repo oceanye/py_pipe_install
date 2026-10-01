@@ -1,4 +1,4 @@
-"""Small, dependency-free ASCII DXF side-elevation reader.
+"""Small ASCII DXF side-elevation reader and pipe-layout catalogue builder.
 
 The reader intentionally handles the 2-D entities useful for a pipe elevation
 (LINE, CIRCLE, ARC and lightweight polylines).  Layer ACI colours are exposed
@@ -12,7 +12,9 @@ import hashlib
 import math
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping, Sequence
+
+import numpy as np
 
 
 class DxfError(ValueError):
@@ -29,6 +31,8 @@ class DxfEntity:
     radius: float | None = None
     start_angle: float = 0.0
     end_angle: float = 360.0
+    elevation: float = 0.0
+    normal: tuple[float, float, float] = (0.0, 0.0, 1.0)
 
 
 @dataclass(frozen=True)
@@ -45,6 +49,9 @@ _ACI = {
     1: "#FF0000", 2: "#FFFF00", 3: "#00FF00", 4: "#00FFFF",
     5: "#0000FF", 6: "#FF00FF", 7: "#FFFFFF", 8: "#808080", 9: "#C0C0C0",
 }
+
+_UNIT_SCALES = {"millimeter": 1.0, "centimeter": 10.0, "meter": 1000.0, "inch": 25.4, "foot": 304.8}
+DXF_PREVIEW_HALF_LENGTH_MM = 1000.0
 
 
 def _aci_color(index: int) -> str:
@@ -176,7 +183,8 @@ def read_dxf_elevation(path: str | Path) -> DxfElevation:
             radius = _float(values, 40)
             if radius <= 0:
                 continue
-            entities.append(DxfEntity(kind=kind, layer=layer, color=color, points=((_float(values, 10), _float(values, 20)),), radius=radius, start_angle=_float(values, 50), end_angle=_float(values, 51, 360.0) if kind == "ARC" else 360.0))
+            entities.append(DxfEntity(kind=kind, layer=layer, color=color, points=((_float(values, 10), _float(values, 20)),), radius=radius, start_angle=_float(values, 50), end_angle=_float(values, 51, 360.0) if kind == "ARC" else 360.0,
+                                      elevation=_float(values, 30), normal=(_float(values, 210), _float(values, 220), _float(values, 230, 1.0))))
         else:
             points = []
             current_x: float | None = None
@@ -240,7 +248,9 @@ def _read_with_ezdxf(source: Path, raw: bytes) -> DxfElevation:
         except (TypeError, ValueError):
             aci = 256
         entity_color = true_color or (_aci_color(aci) if aci not in (0, 256) else layers.get(layer, "#FFFFFF"))
-        entities.append(DxfEntity(kind=kind, layer=layer, color=entity_color, points=points, radius=radius, start_angle=float(getattr(entity.dxf, "start_angle", 0.0)), end_angle=float(getattr(entity.dxf, "end_angle", 360.0))))
+        entities.append(DxfEntity(kind=kind, layer=layer, color=entity_color, points=points, radius=radius, start_angle=float(getattr(entity.dxf, "start_angle", 0.0)), end_angle=float(getattr(entity.dxf, "end_angle", 360.0)),
+                                  elevation=float(entity.dxf.center.z) if kind in {"CIRCLE", "ARC"} else 0.0,
+                                  normal=tuple(entity.dxf.extrusion) if kind in {"CIRCLE", "ARC"} else (0.0, 0.0, 1.0)))
     if not entities:
         raise DxfError("DXF contains no supported 2-D side-elevation entities")
     unit_code = int(getattr(document.header, "__getitem__", lambda key: 0)("$INSUNITS") or 0)
@@ -252,11 +262,11 @@ def _read_with_ezdxf(source: Path, raw: bytes) -> DxfElevation:
 
 
 def _scale_entity(entity: DxfEntity, scale: float) -> DxfEntity:
-    return DxfEntity(entity.kind, entity.layer, entity.color, entity.entity_id, tuple((x * scale, y * scale) for x, y in entity.points), None if entity.radius is None else entity.radius * scale, entity.start_angle, entity.end_angle)
+    return DxfEntity(entity.kind, entity.layer, entity.color, entity.entity_id, tuple((x * scale, y * scale) for x, y in entity.points), None if entity.radius is None else entity.radius * scale, entity.start_angle, entity.end_angle, entity.elevation * scale, entity.normal)
 
 
 def _number_entity(entity: DxfEntity, index: int) -> DxfEntity:
-    return DxfEntity(entity.kind, entity.layer, entity.color, entity.entity_id or f"P{index:03d}", entity.points, entity.radius, entity.start_angle, entity.end_angle)
+    return DxfEntity(entity.kind, entity.layer, entity.color, entity.entity_id or f"P{index:03d}", entity.points, entity.radius, entity.start_angle, entity.end_angle, entity.elevation, entity.normal)
 
 
 def arc_points(entity: DxfEntity, segments: int = 48) -> tuple[tuple[float, float], ...]:
@@ -270,4 +280,87 @@ def arc_points(entity: DxfEntity, segments: int = 48) -> tuple[tuple[float, floa
     return tuple((cx + entity.radius * math.cos(math.radians(start + (end - start) * i / (count - 1))), cy + entity.radius * math.sin(math.radians(start + (end - start) * i / (count - 1)))) for i in range(count))
 
 
-__all__ = ["DxfError", "DxfEntity", "DxfElevation", "arc_points", "read_dxf_elevation"]
+def _unit_axis(value: Sequence[float] | None) -> np.ndarray:
+    """Validate the common pipe axis used to lift a 2-D DXF layout into 3-D."""
+    axis = np.asarray((0.0, 0.0, 1.0) if value is None else value, dtype=float)
+    if axis.shape != (3,) or not np.all(np.isfinite(axis)):
+        raise DxfError("DXF 管长方向必须是有限的三维向量")
+    length = float(np.linalg.norm(axis))
+    if not math.isfinite(length) or length <= 1.0e-9:
+        raise DxfError("DXF 管长方向不能为零向量")
+    axis /= length
+    if not np.allclose(np.abs(axis), [0.0, 0.0, 1.0], atol=1e-9, rtol=0):
+        raise DxfError("DXF 圆形截面的管轴固定垂直于 XY 图面（±Z）；俯视角度由双目配准估计，无需改成 X/Y")
+    return axis
+
+
+def dxf_source_unit(document: DxfElevation, unitless_unit: str | None = None) -> str:
+    """Use the drawing's declared units; require an explicit fallback otherwise."""
+    unit = document.source_unit if document.source_unit != "unitless" else unitless_unit
+    if unit not in _UNIT_SCALES:
+        raise DxfError("DXF 未声明有效单位，请在基础立面评估中选择原始单位后导入")
+    return str(unit)
+
+
+def catalog_from_dxf(path: str | Path, *, axis_world: Sequence[float] | None = None,
+                     half_length_mm: float = DXF_PREVIEW_HALF_LENGTH_MM,
+                     unitless_unit: str | None = None,
+                     diameter_colors: Mapping[str, str] | None = None) -> tuple[list[dict], list[DxfEntity]]:
+    """Create an automatic-elevation pipe catalogue from DXF pipe circles.
+
+    A side-elevation DXF contains cross-section/layout information, rather than
+    a full 3-D solid.  Each full ``CIRCLE`` therefore becomes a finite display
+    centreline centred at its DXF XY position and aligned with ``axis_world``.
+    The depth matcher evaluates an *infinite* cylinder, so ``half_length_mm``
+    only controls the catalogue preview and the registration gauge.  Non-circle
+    entities (for example the rectangular drawing border) are returned as
+    ``skipped`` and are never treated as pipes.
+    """
+    document = read_dxf_elevation(path)
+    axis = _unit_axis(axis_world)
+    unit = dxf_source_unit(document, unitless_unit)
+    scale = _UNIT_SCALES[unit] if document.source_unit == "unitless" else 1.0
+    if type(half_length_mm) not in (int, float) or not math.isfinite(float(half_length_mm)) or float(half_length_mm) <= 0:
+        raise DxfError("DXF 管道显示半长必须为正数")
+    half = float(half_length_mm)
+    overrides = {f"{float(key):.6f}": value for key, value in (diameter_colors or {}).items()}
+    pipes: list[dict] = []
+    skipped: list[DxfEntity] = []
+    for entity in document.entities:
+        if entity.kind != "CIRCLE" or entity.radius is None or not entity.points:
+            skipped.append(entity)
+            continue
+        if (not math.isfinite(entity.elevation) or abs(entity.elevation) > 1e-6
+                or not np.allclose(entity.normal, [0.0, 0.0, 1.0], atol=1e-9, rtol=0)):
+            raise DxfError(f"{entity.entity_id} 不在受支持的 XY 截面中，请先将 DXF 圆形截面展开到 XY 图面")
+        cx, cy = (value * scale for value in entity.points[0])
+        if not all(math.isfinite(value) for value in (cx, cy, entity.radius)) or entity.radius <= 0:
+            raise DxfError(f"{entity.entity_id} 圆心或半径无效")
+        center = np.asarray([cx, cy, 0.0], dtype=float)
+        line = np.stack((center - axis * half, center + axis * half))
+        diameter = float(2.0 * entity.radius * scale)
+        key = f"{diameter:.6f}"
+        color = str(overrides.get(key, entity.color)).upper()
+        if len(color) != 7 or color[0] != "#":
+            raise DxfError(f"DXF 管径 {key} 的颜色必须是 #RRGGBB")
+        try:
+            int(color[1:], 16)
+        except ValueError as error:
+            raise DxfError(f"DXF 管径 {key} 的颜色必须是 #RRGGBB") from error
+        pipes.append({
+            "instance_id": len(pipes) + 1,
+            "pipe_id": entity.entity_id,
+            "cad_object_id": entity.entity_id,
+            "layer_id": entity.layer,
+            "color_class": entity.layer,
+            "color_srgb": color,
+            "nominal_diameter_mm": diameter,
+            "centerline_world_mm": line.tolist(),
+            "source_label": f"DXF {entity.entity_id} {entity.kind}",
+        })
+    if not pipes:
+        raise DxfError("DXF 中没有可作为管道目录的完整 CIRCLE")
+    return pipes, skipped
+
+
+__all__ = ["DXF_PREVIEW_HALF_LENGTH_MM", "DxfError", "DxfEntity", "DxfElevation", "arc_points", "catalog_from_dxf", "dxf_source_unit", "read_dxf_elevation"]

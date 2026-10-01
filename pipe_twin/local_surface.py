@@ -412,7 +412,8 @@ def _pair(left: list[dict[str, Any]], right: list[dict[str, Any]], cfg: Mapping[
 def _component_audit(fit: Mapping[str, Any]) -> dict[str, Any]:
     return {key: fit[key] for key in ("role", "region_px", "point_count", "valid_fraction", "fit_rms_mm",
                                      "visible_arc_degrees", "measured_color_srgb", "segmentation_sources", "depth_median_mm", "depth_mad_mm",
-                                     "support_region_pixels", "valid_region_pixels", "fit_support_fraction", "valid_fraction_basis")}
+                                     "support_region_pixels", "valid_region_pixels", "fit_support_fraction", "valid_fraction_basis",
+                                     "diameter_source", "diameter_includes_near_surface") if key in fit}
 
 
 def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibration: Any,
@@ -450,7 +451,10 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
     observations = []
     for lf, rf, score, geometry in pairs:
         measured = (float(lf["diameter_mm"]) + float(rf["diameter_mm"])) / 2.0
-        candidates = [spec for spec in specs if abs(spec["nominal_diameter_mm"] - measured) <= max(3.0, 0.15 * spec["nominal_diameter_mm"])]
+        # Diameter is the primary physical identity gate.  Keep the same
+        # tolerance used by registration; colour remains a segmentation hint
+        # and is never allowed to replace a diameter/distance match.
+        candidates = [spec for spec in specs if abs(spec["nominal_diameter_mm"] - measured) <= max(3.0, 0.10 * spec["nominal_diameter_mm"])]
         diameter_classes = sorted({spec["nominal_diameter_mm"] for spec in candidates})
         rgb = (np.asarray(_hex_bgr(lf["measured_color_srgb"])[0, 0], dtype=float)
                + np.asarray(_hex_bgr(rf["measured_color_srgb"])[0, 0], dtype=float)) / 2.0
@@ -465,6 +469,8 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
             "segmentation_source": "depth_connected_surface" if "depth_connected_surface" in sources else "rgb_component",
             "segmentation_sources": sources,
             "fit_rms_mm": float(max(lf["fit_rms_mm"], rf["fit_rms_mm"])),
+            "diameter_source": "ROBUST_OUTER_CYLINDER_FIT_VISIBLE_SURFACE",
+            "diameter_includes_near_surface": True,
             "left_region_px": lf["region_px"], "right_region_px": rf["region_px"],
             "point_count": int(lf["point_count"] + rf["point_count"]),
             "left_right_diameter_difference_mm": abs(lf["diameter_mm"] - rf["diameter_mm"]),

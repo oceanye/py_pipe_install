@@ -145,8 +145,8 @@ class RegionCanvas:
             if result:
                 label += " · " + result.get("installation_state_zh", "不确定")
             canvas.create_text(ox + x * scale + 2, max(12, oy + y * scale - 3), anchor="sw", text=label, fill=color)
-        # Before a rigid STL pose is solved, show every detected local surface
-        # with its OBS id.  Matching by STL colour is only a convenience and
+        # Before a rigid model pose is solved, show every detected local surface
+        # with its OBS id.  Matching by model colour is only a convenience and
         # can hide observations when the physical pipe colour differs.
         if self.owner.mode.get() == "elevation_auto":
             report = self.owner.report if isinstance(self.owner.report, dict) else {}
@@ -206,13 +206,14 @@ class RegionCanvas:
 
 
 class ElevationCaptureDialog:
-    """STL catalog → two image regions per pipe → save/analyze/reopen."""
+    """STL/DXF pipe layout → stereo capture → save/analyze/reopen."""
 
     # Automatic model matching is the field default.  ``elevation_depth`` is
     # retained as a compatibility path for older scenes with hand-drawn ROIs.
     analysis_mode = "elevation_auto"
 
-    def __init__(self, app: Any, manifest_path: Path | None = None, *, output_root: Path | None = None, restore: bool = True) -> None:
+    def __init__(self, app: Any, manifest_path: Path | None = None, *, output_root: Path | None = None,
+                 restore: bool = True, model_path: Path | None = None) -> None:
         from .workbench_profile import load_profile
 
         self.app = app
@@ -236,6 +237,8 @@ class ElevationCaptureDialog:
         self.image_paths: dict[str, str] = {}
         self.image_hashes: dict[str, str] = {}
         self.registration_settings: dict[str, Any] = {"axis_world": None, "anchors": {}}
+        self.model_kind = ""
+        self.model_half_length_mm = 1000.0
         self.analysis_settings: dict[str, Any] = {}
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
@@ -249,7 +252,7 @@ class ElevationCaptureDialog:
         self.history = tk.BooleanVar(value=True)
         self.mode = tk.StringVar(value=self.analysis_mode)
         self.mode_label = tk.StringVar(value="自动匹配立面")
-        self.message = tk.StringVar(value="首次：导入 STL → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
+        self.message = tk.StringVar(value="首次：导入 STL 或 DXF → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
         self.calibration_status = tk.StringVar(value="尚未选择真实双目标定")
         self.summary = tk.StringVar(value="尚未建立管道目录")
         self.matching_preset = tk.StringVar(value="原始灰度")
@@ -261,7 +264,7 @@ class ElevationCaptureDialog:
         self.controls.pack(fill="x")
         bar = ttk.Frame(self.controls)
         bar.pack(fill="x", pady=(0, 7))
-        ttk.Button(bar, text="① 导入 STL", command=self.browse_model).pack(side="left", padx=3)
+        ttk.Button(bar, text="① 导入 STL/DXF", command=self.browse_model).pack(side="left", padx=3)
         ttk.Combobox(bar, textvariable=self.stl_unit, values=("millimeter", "centimeter", "meter", "inch"), state="readonly", width=11).pack(side="left")
         ttk.Button(bar, text="② 相机标定", command=self.browse_calibration).pack(side="left", padx=3)
         ttk.Button(bar, text="自动标定向导", command=self.open_calibration).pack(side="left", padx=3)
@@ -296,7 +299,7 @@ class ElevationCaptureDialog:
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role)
-        ttk.Label(frame, text="自动模式会从可见双目点云匹配 STL 并绘制检查区域；手工兼容模式才需要逐管框选。滚轮缩放，右键平移。", foreground="#355371").pack(anchor="w")
+        ttk.Label(frame, text="自动模式会从可见双目点云匹配 STL/DXF 并绘制检查区域；手工兼容模式才需要逐管框选。滚轮缩放，右键平移。", foreground="#355371").pack(anchor="w")
 
         table_frame = ttk.Frame(frame)
         table_frame.pack(fill="x", pady=6)
@@ -355,6 +358,11 @@ class ElevationCaptureDialog:
                 pass
             except (OSError, ValueError, KeyError) as error:
                 self.message.set(f"上次基础现场未恢复：{error}")
+        if manifest_path is None and model_path is not None:
+            # The main GUI may already have an imported DXF.  Carry that
+            # selection into the elevation dialog so the operator does not
+            # have to browse for the same layout twice.
+            self.load_model(Path(model_path).resolve())
         self.refresh_calibration_status()
         self.poll_id = self.window.after(100, self.poll)
 
@@ -389,10 +397,11 @@ class ElevationCaptureDialog:
     def unit_changed(self) -> None:
         if self.pipes and self.fields["model"].get():
             self.pipes.clear()
+            self.model_kind = ""
             self.last_manifest = None
             self.invalidate()
             self.refresh_table()
-            self.message.set("模型单位已改变，请重新导入 STL")
+            self.message.set("模型单位已改变，请重新导入 STL 或 DXF")
 
     def selected_id(self) -> str | None:
         selected = self.tree.selection()
@@ -416,13 +425,13 @@ class ElevationCaptureDialog:
         self.mode_label.set("自动匹配立面" if mode == "elevation_auto" else "手工区域兼容")
         if mode == "elevation_auto":
             # Auto regions are derived by the analyzer and are never persisted
-            # into the STL catalogue.  Clear only stale manual rectangles.
+            # into the model catalogue.  Clear only stale manual rectangles.
             for spec in self.pipes:
                 spec.pop("left_region_px", None)
                 spec.pop("right_region_px", None)
                 spec.pop("expected_depth_mm", None)
             self._clear_registration_anchors()
-            self.message.set("自动匹配模式：抓拍后由局部点云与 STL 自动建立对应关系。")
+            self.message.set("自动匹配模式：抓拍后由局部点云与 STL/DXF 自动建立对应关系。")
         else:
             self.message.set("手工兼容模式：请选择管道，并在左右图各框选一个区域。")
         self.confirmed.set(False)
@@ -451,6 +460,11 @@ class ElevationCaptureDialog:
                 explanation = REASON_TEXT[row["state_basis"]]
             elif row.get("installation_state") == "UNKNOWN" and row.get("current_evidence", {}).get("free_space_candidate"):
                 explanation = "当前为空位候选；需至少两次间隔 ≥1 秒的连续独立抓拍"
+            if self.mode.get() == "elevation_auto" and isinstance(evidence, dict) and evidence.get("measured_diameter_mm") is not None:
+                diameter_text = f"实测外径 {float(evidence['measured_diameter_mm']):.1f} mm"
+                distance = evidence.get("observed_distance_to_left_camera_mm")
+                distance_text = f"；距左目 {float(distance):.0f} mm" if isinstance(distance, (int, float)) else ""
+                explanation = f"{diameter_text}{distance_text}；{explanation}"
             self.tree.insert("", "end", iid=spec["pipe_id"], text=spec["pipe_id"], tags=(row.get("installation_state", "UNKNOWN"),), values=(f"{spec['nominal_diameter_mm']:g}", spec["color_srgb"], "自动" if left_region and self.mode.get() == "elevation_auto" else ("已选" if left_region else "待选"), "自动" if right_region and self.mode.get() == "elevation_auto" else ("已选" if right_region else "待选"), f"{spec['expected_depth_mm']:g}" if spec.get("expected_depth_mm") and self.mode.get() == "elevation_depth" else "自动", row.get("installation_state_zh", "待评估"), explanation))
         if self.pipes:
             self.tree.selection_set(selected if selected in self.tree.get_children() else self.pipes[0]["pipe_id"])
@@ -482,7 +496,7 @@ class ElevationCaptureDialog:
     def browse_model(self) -> None:
         if self.busy:
             return
-        path = self.app.filedialog.askopenfilename(parent=self.window, title="选择 STL 管道模型", filetypes=(("STL", "*.stl"),))
+        path = self.app.filedialog.askopenfilename(parent=self.window, title="选择 STL 或 DXF 管道模型", filetypes=(("STL/DXF", "*.stl *.dxf"), ("STL", "*.stl"), ("DXF", "*.dxf")))
         if path:
             try:
                 self.load_model(Path(path))
@@ -490,22 +504,35 @@ class ElevationCaptureDialog:
                 self.show_error(error)
 
     def load_model(self, path: Path) -> None:
-        from .capture_gui import catalog_from_model
-        pipes, skipped = catalog_from_model(path, stl_unit=self.stl_unit.get() if path.suffix.lower() == ".stl" else None)
+        suffix = path.suffix.lower()
+        if suffix == ".dxf":
+            from .dxf_elevation import catalog_from_dxf
+            pipes, skipped = catalog_from_dxf(path, axis_world=(0.0, 0.0, 1.0),
+                                              unitless_unit=self.stl_unit.get())
+            self.model_kind = "dxf"
+            self.model_half_length_mm = 1000.0
+        elif suffix == ".stl":
+            from .capture_gui import catalog_from_model
+            pipes, skipped = catalog_from_model(path, stl_unit=self.stl_unit.get())
+            self.model_kind = "stl"
+        else:
+            raise ValueError("模型必须是 STL 或 DXF 文件")
         if not pipes:
             raise ValueError("模型没有可识别的独立直管组件")
         self.fields["model"].set(str(path.resolve()))
         diameters = sorted({round(row["nominal_diameter_mm"], 1) for row in pipes})
         for row in pipes:
-            row["color_srgb"] = PALETTE[diameters.index(round(row["nominal_diameter_mm"], 1)) % len(PALETTE)]
+            if suffix == ".stl":
+                row["color_srgb"] = PALETTE[diameters.index(round(row["nominal_diameter_mm"], 1)) % len(PALETTE)]
             row["axis"] = "auto"
         self.pipes = pipes
-        self.registration_settings = {"axis_world": None, "anchors": {}}
+        self.registration_settings = {"axis_world": [0.0, 0.0, 1.0] if suffix == ".dxf" else None, "anchors": {}}
         self.last_manifest = None
         self.confirmed.set(False)
         self.invalidate()
         self.refresh_table()
-        self.summary.set(f"识别 {len(pipes)} 根管；未纳入 {len(skipped)} 个组件。颜色仅作显示/辅助线索，请设置共同管长方向。")
+        skipped_count = len(skipped)
+        self.summary.set(f"识别 {len(pipes)} 根管；未纳入 {skipped_count} 个图元。" + (" DXF 对象颜色已保留；请核对共同管长方向。" if suffix == ".dxf" else " 颜色仅作显示/辅助线索，请设置共同管长方向。"))
 
     def edit_pipe(self) -> None:
         spec = self.selected_pipe()
@@ -533,7 +560,7 @@ class ElevationCaptureDialog:
             if color:
                 fields["color_srgb"].set(color.upper())
         ttk.Button(box, text="选颜色", command=choose_color).grid(row=0 if self.mode.get() == "elevation_auto" else 1, column=2, padx=6)
-        ttk.Label(box, text=("参考深度可来自已知管道表面距离，或安装识别通过后自动记录。\n留空可识别安装；无法区分遮挡与空位时显示不确定。" if self.mode.get() == "elevation_depth" else "自动模式只修改颜色；模型管径保持 STL 目录值，区域、深度和身份由双目局部点云匹配。")).grid(row=len(fields_spec), column=0, columnspan=3, pady=9)
+        ttk.Label(box, text=("参考深度可来自已知管道表面距离，或安装识别通过后自动记录。\n留空可识别安装；无法区分遮挡与空位时显示不确定。" if self.mode.get() == "elevation_depth" else "自动模式只修改颜色；模型管径保持 STL/DXF 目录值，区域、深度和身份由双目局部点云匹配。")).grid(row=len(fields_spec), column=0, columnspan=3, pady=9)
         def apply() -> None:
             import re
             try:
@@ -594,7 +621,7 @@ class ElevationCaptureDialog:
     def show_catalog(self) -> None:
         specs = [row for row in self.pipes if row.get("centerline_world_mm")]
         if not specs:
-            self.message.set("当前现场只保存图像区域；导入 STL 后可查看模型管道编号。")
+            self.message.set("当前现场只保存图像区域；导入 STL 或 DXF 后可查看模型管道编号。")
             return
         window = self.app.tk.Toplevel(self.window)
         window.title("模型管道编号 · 沿共同长度轴观察的截面")
@@ -618,14 +645,14 @@ class ElevationCaptureDialog:
         if self.busy:
             return
         if not self.pipes:
-            self.message.set("请先导入 STL，再设置共同管长方向。")
+            self.message.set("请先导入 STL 或 DXF，再设置共同管长方向。")
             return
         from .elevation_viewer import ElevationModelViewer
         if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
             self.model_viewer.window.lift(); return
         path = self.fields["model"].get().strip()
         if not path:
-            self.message.set("请先导入 STL，再设置共同管长方向。")
+            self.message.set("请先导入 STL 或 DXF，再设置共同管长方向。")
             return
         self.model_viewer = ElevationModelViewer(self, model_path=Path(path), pipes=self.pipes,
                                                  axis_world=self.registration_settings.get("axis_world"),
@@ -637,10 +664,23 @@ class ElevationCaptureDialog:
         norm = float(np.linalg.norm(vector))
         if norm <= 1e-9 or not np.all(np.isfinite(vector)):
             self.show_error(ValueError("管长方向必须是有限的非零三维向量")); return
-        self.registration_settings["axis_world"] = (vector / norm).tolist()
+        axis = vector / norm
+        if self.model_kind == "dxf" and not np.allclose(np.abs(axis), [0.0, 0.0, 1.0], atol=1e-9, rtol=0):
+            self.show_error(ValueError("当前 DXF 是 XY 平面圆形管道布置，管轴应保持模型 ±Z；俯视角度由双目配准估计。")); return
+        if self.model_kind == "dxf":
+            # DXF stores cross-section centres in XY and has no 3-D pipe
+            # endpoints.  Keep the centre fixed while changing only the
+            # common axis used to construct the registration centreline.
+            for pipe in self.pipes:
+                line = np.asarray(pipe.get("centerline_world_mm"), dtype=float)
+                if line.shape == (2, 3):
+                    center = line.mean(axis=0)
+                    pipe["centerline_world_mm"] = np.stack((center - axis * self.model_half_length_mm,
+                                                               center + axis * self.model_half_length_mm)).tolist()
+        self.registration_settings["axis_world"] = axis.tolist()
         self.registration_settings["anchors"] = {}
         self.invalidate()
-        self.message.set(f"已保存共同管长方向：{np.round(vector / norm, 4).tolist()}；下一次评估将自动匹配 STL。")
+        self.message.set(f"已保存共同管长方向：{np.round(axis, 4).tolist()}；下一次评估将自动匹配 {self.model_kind.upper() or '模型'}。")
 
     def _clear_registration_anchors(self) -> None:
         self.registration_settings["anchors"] = {}
@@ -801,6 +841,8 @@ class ElevationCaptureDialog:
         self.stl_unit.set(manifest.get("model", {}).get("source_unit", "millimeter"))
         model = manifest.get("model", {}).get("path")
         self.fields["model"].set(str(path.parent / model) if model else "")
+        self.model_kind = Path(str(model)).suffix.lower().lstrip(".") if model else ""
+        self.model_half_length_mm = float((manifest.get("model") or {}).get("pipe_half_length_mm", 1000.0))
         # Reset images before loading so old image dimensions cannot discard
         # regions already verified by the dataset loader.
         for view in self.views.values():
@@ -817,7 +859,7 @@ class ElevationCaptureDialog:
         self.refresh_table()
         self.refresh_calibration_status()
         self.summary.set(f"已恢复 {len(self.pipes)} 根管；" + ("自动匹配会重新生成区域" if self.mode.get() == "elevation_auto" else "可复用左右区域"))
-        self.message.set(f"已打开 {path}。" + ("可直接重新分析，自动匹配 STL。" if self.mode.get() == "elevation_auto" else "可重新分析，或抓拍新照片沿用区域。"))
+        self.message.set(f"已打开 {path}。" + (f"可直接重新分析，自动匹配 {self.model_kind.upper() or '模型'}。" if self.mode.get() == "elevation_auto" else "可重新分析，或抓拍新照片沿用区域。"))
 
     def submit(self, analyze: bool) -> None:
         if self.busy:
@@ -827,7 +869,7 @@ class ElevationCaptureDialog:
             if not self.confirmed.get():
                 raise ValueError("请确认左右图来自同一次同步拍摄，且相机机位未改变")
             if not self.pipes:
-                raise ValueError("请先导入 STL 管道目录")
+                raise ValueError("请先导入 STL 或 DXF 管道目录")
             left, right = self.views["left"].image, self.views["right"].image
             if left is None or right is None:
                 raise ValueError("请先载入完整的左右照片或完成一次双目抓拍")
@@ -847,7 +889,7 @@ class ElevationCaptureDialog:
                 height, width = self.views["left"].image.shape[:2]
                 validate_elevation_specs(self.pipes, width, height)
             elif not self.fields["model"].get().strip():
-                raise ValueError("自动匹配模式必须提供 STL 模型")
+                raise ValueError("自动匹配模式必须提供 STL 或 DXF 模型")
             from .stereo_analyzer import _analysis_config
             settings = copy.deepcopy(self.analysis_settings)
             try:

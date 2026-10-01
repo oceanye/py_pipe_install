@@ -14,6 +14,8 @@ from pipe_twin.elevation_auto import analyze_elevation_auto_groups, cylinder_dep
 from pipe_twin.elevation_dataset import create_elevation_dataset, load_elevation_dataset, elevation_history_compatible
 from pipe_twin.stereo_analyzer import _calibration_from_manifest, analyze_stereo_capture
 from pipe_twin.capture_gui import catalog_from_model
+from pipe_twin.dxf_elevation import catalog_from_dxf
+from pipe_twin.elevation_registration import register_elevation
 from test_elevation_dataset import _calibration
 
 
@@ -191,6 +193,52 @@ def test_auto_package_needs_no_regions_and_restores_stl_axis_and_anchor_hashes(t
     common=dict(model_path=settings["model_path"],stl_unit="millimeter",mode="elevation_auto")
     assert elevation_history_compatible(path,settings["calibration"],settings["pipe_specs"],registration_settings=loaded["registration_settings"],**common)
     assert not elevation_history_compatible(path,settings["calibration"],settings["pipe_specs"],registration_settings={"axis_world":[0,0,1]},**common)
+
+
+def test_real_dxf_layout_is_an_automatic_model_without_stl_or_mesh(tmp_path):
+    model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.dxf"
+    specs, skipped = catalog_from_dxf(model)
+    assert len(specs) == 12 and len(skipped) == 4
+    left = np.zeros((480, 640, 3), np.uint8)
+    right = np.full_like(left, 16)
+    left_path, right_path = tmp_path / "left.png", tmp_path / "right.png"
+    cv2.imwrite(str(left_path), left); cv2.imwrite(str(right_path), right)
+    path = create_elevation_dataset(
+        output_root=tmp_path / "packages", calibration=_calibration(),
+        left_path=left_path, right_path=right_path,
+        left_time="2026-09-12T10:00:00+08:00", right_time="2026-09-12T10:00:00.001+08:00",
+        pipe_specs=specs, pair_confirmed=True, model_path=model,
+        stl_unit="millimeter", mode="elevation_auto",
+        registration_settings={"axis_world": [0, 0, 1]},
+    )
+    loaded = load_elevation_dataset(path)
+    assert loaded["manifest"]["model"]["format"] == "dxf"
+    assert len(loaded["pipe_specs"]) == 12
+    assert {round(p["nominal_diameter_mm"]): p["color_srgb"] for p in loaded["pipe_specs"]} == {26: "#FFFFFF", 41: "#FF0000", 51: "#0000FF"}
+
+
+def test_three_visible_dxf_pipes_are_identified_by_diameter_and_distance_before_color():
+    model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.dxf"
+    specs, _ = catalog_from_dxf(model)
+    rotation, _ = cv2.Rodrigues(np.array([.12, 1.25, .08]))
+    translation = np.array([0.0, -10.0, 2650.0])
+    observations = []
+    for index in (0, 1, 2):
+        spec = specs[index]
+        center = rotation @ np.mean(np.asarray(spec["centerline_world_mm"], dtype=float), axis=0) + translation
+        observations.append({
+            "observation_id": f"OBS-{index}",
+            "center_camera_mm": center.tolist(),
+            "axis_camera": (rotation @ np.array([0.0, 0.0, 1.0])).tolist(),
+            "diameter_mm": spec["nominal_diameter_mm"],
+            # Deliberately different display colour: color is auxiliary.
+            "color_srgb": "#808080",
+            "color_identity_validated": False,
+        })
+    result = register_elevation(specs, observations, axis_world=[0, 0, 1])
+    assert result["status"] == "MATCHED"
+    assert {row["pipe_id"] for row in result["matches"]} == {"P001", "P002", "P003"}
+    assert result["rms_mm"] < 1e-6
 
 
 def test_tampered_auto_geometry_and_omitted_stl_components_are_rejected(tmp_path):

@@ -85,6 +85,9 @@ class LocalSurfaceTests(unittest.TestCase):
         self.assertNotIn("pipe_id", observation)
         self.assertEqual(observation["candidate_pipe_ids"], ["P1"])
         self.assertAlmostEqual(observation["diameter_mm"], 50.0, delta=3.0)
+        self.assertEqual(observation["diameter_source"], "ROBUST_OUTER_CYLINDER_FIT_VISIBLE_SURFACE")
+        self.assertTrue(observation["diameter_includes_near_surface"])
+        self.assertGreaterEqual(observation["visible_arc_degrees"], 70.0)
         self.assertLess(observation["fit_rms_mm"], 2.0)
         self.assertGreater(observation["point_count"], 150)
 

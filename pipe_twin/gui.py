@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any
 
 from .logging_config import get_logger, log_event
-from .dxf_elevation import DxfElevation, arc_points, read_dxf_elevation
+from .dxf_elevation import DxfElevation, arc_points, catalog_from_dxf, read_dxf_elevation
 
 _LOGGER = get_logger("gui")
 
@@ -2091,20 +2091,15 @@ class _PipeTwinApplication:
         if self.dxf_elevation is None:
             self.messagebox.showinfo("未导入 DXF", "请先导入 DXF 侧立面。")
             return
-        pipes: list[dict[str, Any]] = []
-        for index, entity in enumerate(self.dxf_elevation.entities, 1):
-            points = arc_points(entity) if entity.kind == "ARC" else entity.points
-            if entity.kind in {"CIRCLE", "ARC"} and entity.radius is not None:
-                cx, cy = entity.points[0]
-                centerline = [[cx - entity.radius, cy, 0.0], [cx + entity.radius, cy, 0.0]]
-                diameter = entity.radius * 2.0
-            elif len(points) >= 2:
-                centerline = [[points[0][0], points[0][1], 0.0], [points[-1][0], points[-1][1], 0.0]]
-                diameter = 1.0
-            else:
-                continue
-            entity_id = entity.entity_id or f"P{index:03d}"
-            pipes.append({"instance_id": index, "pipe_id": entity_id, "cad_object_id": entity_id, "layer_id": entity.layer, "color_class": entity.layer, "color_srgb": self.dxf_diameter_colors.get(self._dxf_entity_diameter_key(entity), entity.color), "nominal_diameter_mm": round(float(diameter), 6), "centerline_world_mm": centerline})
+        try:
+            pipes, skipped = catalog_from_dxf(
+                self.dxf_elevation.source_path,
+                axis_world=(0.0, 0.0, 1.0),
+                diameter_colors=self.dxf_diameter_colors,
+            )
+        except (OSError, ValueError) as error:
+            self.messagebox.showerror("无法生成草稿", str(error))
+            return
         if not pipes:
             self.messagebox.showerror("无法生成草稿", "DXF 中没有可转换为管道目录的图元。")
             return
@@ -2116,7 +2111,7 @@ class _PipeTwinApplication:
         if relative.startswith("../") or relative == "..":
             self.messagebox.showerror("保存失败", "DXF 文件必须位于 manifest 草稿目录或其子目录内。")
             return
-        payload = {"schema_version": "dxf-elevation-draft-v1", "dataset_id": f"dxf-draft-{self.dxf_elevation.source_sha256[:12]}", "model_revision": self.dxf_elevation.source_sha256[:16], "validation_scope": "DXF_ELEVATION_DRAFT", "scope": {"layer_model": "elevation", "layer_id": "DXF", "identity_features": ["dxf_entity_id", "layer_id"], "metric_calibrated": False, "supports_stereo": False, "supports_occlusion_reasoning": False}, "model": {"path": relative, "sha256": self.dxf_elevation.source_sha256, "unit": "millimeter", "pipes": pipes}, "elevation": {"format": "dxf", "path": relative, "sha256": self.dxf_elevation.source_sha256, "diameter_colors": dict(self.dxf_diameter_colors), "entity_bindings": {entity["pipe_id"]: entity["pipe_id"] for entity in pipes}}}
+        payload = {"schema_version": "dxf-elevation-draft-v1", "dataset_id": f"dxf-draft-{self.dxf_elevation.source_sha256[:12]}", "model_revision": self.dxf_elevation.source_sha256[:16], "validation_scope": "DXF_ELEVATION_DRAFT", "scope": {"layer_model": "elevation", "layer_id": "DXF", "identity_features": ["dxf_entity_id", "layer_id"], "metric_calibrated": False, "supports_stereo": False, "supports_occlusion_reasoning": False}, "model": {"path": relative, "sha256": self.dxf_elevation.source_sha256, "unit": "millimeter", "source_unit": self.dxf_elevation.source_unit, "format": "dxf", "geometry": "circle_layout_xy", "longitudinal_extent_known": False, "axis_world": [0.0, 0.0, 1.0], "pipe_half_length_mm": 1000.0, "pipes": pipes}, "elevation": {"format": "dxf", "path": relative, "sha256": self.dxf_elevation.source_sha256, "diameter_colors": dict(self.dxf_diameter_colors), "entity_bindings": {entity["pipe_id"]: entity["pipe_id"] for entity in pipes}, "skipped_entity_ids": [entity.entity_id for entity in skipped]}}
         selected_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         self._load_sources(selected_path, None)
         self.projection_mode.set("dxf")
@@ -2339,7 +2334,7 @@ class _PipeTwinApplication:
             self.messagebox.showinfo("尚未载入数据", "请先载入现场清单或打开合成示例。")
             return
         if self.manifest.get("validation_scope") == "DXF_ELEVATION_DRAFT":
-            self.messagebox.showinfo("DXF 草稿不能直接双目分析", "请先在现场数据录入中补充真实 3DM/3MF 模型、双目标定和左右照片。")
+            self.messagebox.showinfo("DXF 草稿不能直接双目分析", "请在基础立面评估中直接导入该 DXF，补充真实双目标定和左右照片；无需 3DM/3MF。")
             return
         try:
             options = self.measurement_panel.analysis_options()
@@ -2468,7 +2463,8 @@ class _PipeTwinApplication:
                     current.load_session(manifest_path)
                 current.window.lift()
             else:
-                self.elevation_dialog = ElevationCaptureDialog(self, manifest_path)
+                imported_dxf = self.dxf_elevation.source_path if manifest_path is None and self.dxf_elevation is not None else None
+                self.elevation_dialog = ElevationCaptureDialog(self, manifest_path, model_path=imported_dxf)
         except (OSError, ValueError) as error:
             self.messagebox.showerror("基础立面评估", str(error))
 
