@@ -316,6 +316,33 @@ class LocalSurfaceTests(unittest.TestCase):
             self.assertEqual(result["audit"]["candidate_budgets"][role]["attempted"], 3)
         self.assertTrue(any(row.get("skipped_components", 0) > 0 for row in result["rejected"]))
 
+    def test_background_fragments_do_not_starve_tube_candidate_or_colour_source(self):
+        left, right, depth, calibration = _pair()
+        # Simulate the sparse stereo failure seen in the field replay: many
+        # small, disconnected background depth islands surround one real pipe.
+        # The total candidate work must remain bounded, while the elongated
+        # pipe component still reaches cylinder fitting and the colour source
+        # receives its reserved slot.
+        for image, z, valid in ((left, depth.left_depth_mm, depth.left_valid),
+                                (right, depth.right_depth_mm, depth.right_valid)):
+            for y in list(range(0, 55, 12)) + list(range(190, 235, 12)):
+                for x in range(0, 320, 13):
+                    image[y:y + 9, x:x + 9] = 70
+                    z[y:y + 9, x:x + 9] = 800.0
+                    valid[y:y + 9, x:x + 9] = True
+        result = extract_local_pipes(
+            left, right, depth, calibration,
+            [{"pipe_id": "P1", "nominal_diameter_mm": 50.0, "color_srgb": "#FF0000"}],
+        )
+        self.assertEqual(len(result["observations"]), 1, result)
+        for role in ("left", "right"):
+            budget = result["audit"]["candidate_budgets"][role]
+            self.assertLessEqual(budget["attempted"], 96)
+            self.assertGreater(budget["sources"]["rgb_component:#FF0000"]["attempted"], 0)
+            self.assertEqual(budget["sources"]["depth_connected_surface"]["attempted"], 72)
+        self.assertTrue(result["audit"]["truncated"])
+        self.assertGreater(result["audit"]["depth_surfaces"]["left"]["attempted_candidates"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
