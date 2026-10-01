@@ -24,6 +24,10 @@ STATE_COLORS = {"INSTALLED": "#228B55", "NOT_INSTALLED": "#D84A40", "UNKNOWN": "
 PALETTE = ("#E74C3C", "#3498DB", "#FFFFFF", "#2ECC71", "#F1C40F", "#9B59B6")
 LOGGER = get_logger("elevation_gui")
 REASON_TEXT = {
+    "LOW_LIGHT": "图像偏暗，请增加照明或调整曝光",
+    "DARK_REGION_DOMINANT": "目标区域大部分接近黑色",
+    "LOW_TEXTURE": "目标纹理不足，双目匹配困难",
+    "LOW_STEREO_COVERAGE": "有效深度覆盖不足",
     "ELEVATION_IDENTITY_AMBIGUOUS": "同色管区域重叠，无法唯一对应",
     "REFERENCE_DEPTH_REQUIRED_FOR_NEGATIVE": "缺少参考深度，无法区分空位与遮挡",
     "PAIR_UNHEALTHY": "同步、图像或深度质量不足",
@@ -232,6 +236,7 @@ class ElevationCaptureDialog:
         self.image_paths: dict[str, str] = {}
         self.image_hashes: dict[str, str] = {}
         self.registration_settings: dict[str, Any] = {"axis_world": None, "anchors": {}}
+        self.analysis_settings: dict[str, Any] = {}
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
         self.window.title("基础立面评估 · 双目管道状态")
@@ -247,6 +252,8 @@ class ElevationCaptureDialog:
         self.message = tk.StringVar(value="首次：导入 STL → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
         self.calibration_status = tk.StringVar(value="尚未选择真实双目标定")
         self.summary = tk.StringVar(value="尚未建立管道目录")
+        self.matching_preset = tk.StringVar(value="原始灰度")
+        self.disparity_count = tk.StringVar(value="256")
 
         frame = ttk.Frame(self.window, padding=12)
         frame.pack(fill="both", expand=True)
@@ -273,6 +280,14 @@ class ElevationCaptureDialog:
             ttk.Button(photos, text=f"导入{name}矫正图", command=lambda r=role: self.browse_photo(r)).pack(side="left", padx=3)
             ttk.Entry(photos, textvariable=self.fields[f"{role}_time"], width=29).pack(side="left")
         ttk.Checkbutton(self.controls, text="左右图来自同一次同步拍摄；机位、镜头设置和区域位置正确", variable=self.confirmed).pack(anchor="w")
+        matching_bar = ttk.Frame(self.controls)
+        matching_bar.pack(fill="x", pady=3)
+        ttk.Label(matching_bar, text="深度处理").pack(side="left")
+        ttk.Combobox(matching_bar, textvariable=self.matching_preset, values=("原始灰度", "弱光降噪"),
+                     state="readonly", width=12).pack(side="left", padx=6)
+        ttk.Label(matching_bar, text="视差搜索范围（像素，16 的倍数）").pack(side="left")
+        ttk.Entry(matching_bar, textvariable=self.disparity_count, width=7).pack(side="left", padx=6)
+        ttk.Label(matching_bar, text="近距离需扩大范围；弱光处理保留原始照片与颜色", foreground="#355371").pack(side="left")
 
         panes = ttk.Panedwindow(frame, orient="horizontal")
         panes.pack(fill="both", expand=True, pady=8)
@@ -321,6 +336,8 @@ class ElevationCaptureDialog:
             variable.trace_add("write", lambda *_args, k=key: self._field_changed(k))
         self.stl_unit.trace_add("write", lambda *_args: self.unit_changed())
         self.confirmed.trace_add("write", lambda *_args: self.invalidate())
+        self.matching_preset.trace_add("write", lambda *_args: self.invalidate())
+        self.disparity_count.trace_add("write", lambda *_args: self.invalidate())
         if self.profile:
             self.fields["calibration"].set(self.profile.get("calibration_path", ""))
             self.calibration_override = copy.deepcopy(self.profile.get("calibration_current"))
@@ -760,6 +777,12 @@ class ElevationCaptureDialog:
         self.invalidate()
         loaded = load_elevation_dataset(path)
         manifest = loaded["manifest"]
+        from .stereo_analyzer import _analysis_config
+        self.analysis_settings = {k: v for k, v in (manifest.get("analysis") or {}).items()
+                                  if k not in {"mode", "elevation_depth", "elevation_auto"}}
+        matching = _analysis_config(self.analysis_settings)["stereo_matching"]
+        self.matching_preset.set("弱光降噪" if matching["preprocessing"] == "low_light" else "原始灰度")
+        self.disparity_count.set(str(matching["num_disparities"]))
         loaded_mode = str(loaded.get("mode") or (manifest.get("analysis") or {}).get("mode") or "elevation_depth")
         self.mode.set(loaded_mode if loaded_mode in {"elevation_auto", "elevation_depth"} else "elevation_depth")
         self.mode_label.set("自动匹配立面" if self.mode.get() == "elevation_auto" else "手工区域兼容")
@@ -825,7 +848,20 @@ class ElevationCaptureDialog:
                 validate_elevation_specs(self.pipes, width, height)
             elif not self.fields["model"].get().strip():
                 raise ValueError("自动匹配模式必须提供 STL 模型")
+            from .stereo_analyzer import _analysis_config
+            settings = copy.deepcopy(self.analysis_settings)
+            try:
+                count = int(self.disparity_count.get())
+            except ValueError as error:
+                raise ValueError("视差搜索范围需为 16 的正整数倍") from error
+            settings["stereo_matching"] = {**settings.get("stereo_matching", {}),
+                "num_disparities": count,
+                "preprocessing": "low_light" if self.matching_preset.get() == "弱光降噪" else "none"}
+            settings = _analysis_config(settings)
+            if count + settings["stereo_matching"]["min_disparity"] >= left.shape[1]:
+                raise ValueError("视差搜索范围必须小于每目图像宽度")
             arguments = dict(output_root=self.output_root / "captures", calibration=calibration,
+                analysis_settings=settings,
                 left_path=Path(self.fields["left"].get()), right_path=Path(self.fields["right"].get()),
                 left_time=self.fields["left_time"].get(), right_time=self.fields["right_time"].get(),
                 pipe_specs=copy.deepcopy(self.pipes), pair_confirmed=True,
@@ -910,6 +946,14 @@ class ElevationCaptureDialog:
             counts = report["counts"] if report else {}
             self.summary.set(f"安装 {counts.get('INSTALLED', 0)} · 未安装 {counts.get('NOT_INSTALLED', 0)} · 不确定 {counts.get('UNKNOWN', 0)}" if report else "基础现场已保存")
             self.message.set(f"已保存：{path.parent}。JSON 报告和叠图在同一目录。" if report else f"已保存：{path}")
+            if report:
+                audits = report.get("capture_audit", {}).get("groups", [])
+                latest = audits[-1] if audits else {}
+                warnings = set(latest.get("depth_audit", {}).get("warning_codes", []))
+                for quality in (latest.get("quality") or {}).values():
+                    warnings.update(quality.get("warning_codes", []))
+                if warnings:
+                    self.message.set(self.message.get() + " " + "；".join(REASON_TEXT.get(w, w) for w in sorted(warnings)))
             if reset_history:
                 self.message.set(self.message.get() + " 配置已改变，已开始新历史。")
             log_event(LOGGER, "elevation_gui_run_finished", manifest=str(path), counts=counts, history_reset=reset_history)

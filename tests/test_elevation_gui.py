@@ -107,6 +107,26 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertTrue((self.dialog.last_manifest.parent / "report.json").is_file())
         self.assertEqual(len(self.dialog.report["evidence_files"]), 2)
 
+    def test_matching_controls_roundtrip_and_preserve_other_settings(self):
+        self.dialog.analysis_settings = {"minimum_depth_mm": 350, "stereo_matching": {"block_size": 7}}
+        self.dialog.disparity_count.set("256")
+        self.dialog.matching_preset.set("弱光降噪")
+        self.dialog.submit(False)
+        self.finish_worker()
+        saved = self.dialog.last_manifest
+        self.dialog.disparity_count.set("64")
+        self.dialog.load_session(saved)
+        self.assertEqual(self.dialog.disparity_count.get(), "256")
+        self.assertEqual(self.dialog.matching_preset.get(), "弱光降噪")
+        self.assertEqual(self.dialog.analysis_settings["minimum_depth_mm"], 350)
+        self.assertEqual(self.dialog.analysis_settings["stereo_matching"]["block_size"], 7)
+        self.dialog.confirmed.set(True)
+        self.dialog.submit(False)
+        self.finish_worker()
+        analysis = json.loads(self.dialog.last_manifest.read_text(encoding="utf-8"))["analysis"]
+        self.assertEqual(analysis["stereo_matching"]["num_disparities"], 256)
+        self.assertEqual(analysis["minimum_depth_mm"], 350)
+
     def test_external_photo_change_is_rejected_and_old_result_removed(self):
         self.dialog.report = {"old": True}
         self.dialog.results = {"P001": {"installation_state": "INSTALLED"}}
