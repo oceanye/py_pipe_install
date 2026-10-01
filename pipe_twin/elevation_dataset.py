@@ -31,7 +31,10 @@ _TIMESTAMP_SOURCES = {
     "HOST_SYSTEM_CLOCK", "MANIFEST_OPERATOR_CONFIRMED",
 }
 _MARKERS = ("SYNTHETIC", "DEMO", "EXAMPLE", "REPLACE_WITH_REAL")
-_PROVENANCE_KEYS = {"capture_backend", "capture_layout", "capture_device_index", "side_by_side_order", "capture_sync_method"}
+_PROVENANCE_KEYS = {
+    "capture_backend", "capture_layout", "capture_device_index", "side_by_side_order", "capture_sync_method",
+    "capture_exposure_target_ms", "capture_exposure_ms", "capture_exposure_status",
+}
 
 
 def _timestamp(value: str, field: str) -> str:
@@ -380,7 +383,9 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
             provenance = camera_capture_provenance.get(role, {})
             if not isinstance(provenance, Mapping) or set(provenance) - _PROVENANCE_KEYS:
                 raise ValueError(f"camera_capture_provenance.{role}字段无效")
-            view.update(copy.deepcopy(dict(provenance)))
+            from .capture_gui import _capture_provenance
+
+            view.update(_capture_provenance({role: dict(provenance)}, role))
     if previous_manifest is not None:
         old_path = Path(previous_manifest).resolve()
         if old_path.is_dir():
