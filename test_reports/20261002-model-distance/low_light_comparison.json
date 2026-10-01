@@ -1,0 +1,55 @@
+{
+  "source_revision": "sgbm-low-light-v1",
+  "reference": "SPARSE_BOARD_DISPARITY_PLANE_NOT_INDEPENDENT_DISTANCE_GROUND_TRUTH",
+  "same_stationary_pose": true,
+  "aggregates": [
+    {
+      "variant": "baseline256",
+      "frame_count": 6,
+      "valid_fraction": 0.09374582047325103,
+      "pipe_valid_fraction": 0.021103268776141118,
+      "board_bad_gt3px_fraction": 0.8034473957067165,
+      "seconds": 2.3403282166691497
+    },
+    {
+      "variant": "default128",
+      "frame_count": 6,
+      "valid_fraction": 0.1399802276234568,
+      "pipe_valid_fraction": 0.0653357428623386,
+      "board_bad_gt3px_fraction": 1.0,
+      "seconds": 1.4150264166722384
+    },
+    {
+      "variant": "gaussian",
+      "frame_count": 6,
+      "valid_fraction": 0.12179623199588477,
+      "pipe_valid_fraction": 0.03470233224222586,
+      "board_bad_gt3px_fraction": 0.8037724434581321,
+      "seconds": 2.2870396166690625
+    },
+    {
+      "variant": "gaussian_clahe",
+      "frame_count": 6,
+      "valid_fraction": 0.1060375675154321,
+      "pipe_valid_fraction": 0.033270253682487726,
+      "board_bad_gt3px_fraction": 0.6977009390008069,
+      "seconds": 2.2721606999984942
+    },
+    {
+      "variant": "half_gaussian_clahe",
+      "frame_count": 6,
+      "valid_fraction": 0.22665123456790123,
+      "pipe_valid_fraction": 0.07650254591743953,
+      "board_bad_gt3px_fraction": 0.7014670213400914,
+      "seconds": 0.20455253332814513
+    },
+    {
+      "variant": "nlm_clahe",
+      "frame_count": 6,
+      "valid_fraction": 0.14071164480452675,
+      "pipe_valid_fraction": 0.03159097108565194,
+      "board_bad_gt3px_fraction": 0.34823818020126746,
+      "seconds": 4.324666249982935
+    }
+  ]
+}

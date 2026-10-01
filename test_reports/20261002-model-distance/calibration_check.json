@@ -1,0 +1,82 @@
+{
+  "calibration_strategy": "REUSED_EXISTING_MULTIPOSE_CALIBRATION",
+  "calibration_id": "field-chess-fb5dc0f71ee5",
+  "calibration_parameter_sha256": "051586bdf86103d204597da105c677c449a16472430666f16a36c480522d30ee",
+  "source_session": "20260911_093318_857348_a4d6b097",
+  "original_used_pose_count": 15,
+  "current_frame_pairs": 6,
+  "current_distinct_poses": 1,
+  "pattern_inner_corners": [
+    8,
+    6
+  ],
+  "printed_nominal_square_mm": 19,
+  "user_measured_square_mm": 17,
+  "current_board_checks": [
+    {
+      "frame": 0,
+      "vertical_p95": 2.0990079231910643,
+      "square_median_mm": 17.046859755100847,
+      "square_p5_p95_mm": [
+        16.726743475008007,
+        17.738083518165542
+      ],
+      "depth_median_mm": 1290.1978454807022
+    },
+    {
+      "frame": 1,
+      "vertical_p95": 2.1596288205022716,
+      "square_median_mm": 17.06921184432042,
+      "square_p5_p95_mm": [
+        16.721624818262107,
+        17.963441389604103
+      ],
+      "depth_median_mm": 1290.8240459058218
+    },
+    {
+      "frame": 2,
+      "vertical_p95": 2.1656136966470965,
+      "square_median_mm": 17.027717445553932,
+      "square_p5_p95_mm": [
+        16.70667257820706,
+        17.822603197897564
+      ],
+      "depth_median_mm": 1290.6886752510054
+    },
+    {
+      "frame": 3,
+      "vertical_p95": 2.2349236463579985,
+      "square_median_mm": 17.036920910846284,
+      "square_p5_p95_mm": [
+        16.671482011920347,
+        17.791876311347934
+      ],
+      "depth_median_mm": 1290.1147115565013
+    },
+    {
+      "frame": 4,
+      "vertical_p95": 2.152832840962702,
+      "square_median_mm": 17.014153374777237,
+      "square_p5_p95_mm": [
+        16.644566140612095,
+        17.822749184808075
+      ],
+      "depth_median_mm": 1290.5594109630933
+    },
+    {
+      "frame": 5,
+      "vertical_p95": 2.148086651755017,
+      "square_median_mm": 17.01666475452938,
+      "square_p5_p95_mm": [
+        16.72277479841596,
+        17.927728120636385
+      ],
+      "depth_median_mm": 1290.9420169486698
+    }
+  ],
+  "limitations": [
+    "Current samples cover one stationary board pose only; no new unconstrained full-camera solve.",
+    "Existing calibration reused unchanged; local board agreement is not whole-field accuracy certification.",
+    "No CAD registration or pipe identity validation; pipe nominal diameter is assumed for flow exercise."
+  ]
+}

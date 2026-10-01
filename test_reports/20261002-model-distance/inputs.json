@@ -1,0 +1,144 @@
+{
+  "schema_version": "1",
+  "note": "Hashes/index only. LOCAL_ONLY files and raw images are not uploaded with this handoff.",
+  "files": [
+    {
+      "path": "test_model/管道布置.stl",
+      "bytes": 55284,
+      "sha256": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+      "availability": "GIT"
+    },
+    {
+      "path": "test_model/管道布置.dxf",
+      "bytes": 297532,
+      "sha256": "af437a277fffacd4078cd68ed4035f6a5c041b3e904a45b82186ff99b4802c23",
+      "availability": "GIT"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/left/00.png",
+      "bytes": 2393728,
+      "sha256": "0e3d104bc0e96cf3eb5fc0dd392a48cf1cf395374c55a08dc356ed6849e94b6d",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/left/01.png",
+      "bytes": 2438822,
+      "sha256": "838df961da9a1403f0699dc94501be0c498f322633030e8c42e3294ced65abc5",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/left/02.png",
+      "bytes": 2394145,
+      "sha256": "c0bda11254a1390ae206b56d7ffb5e108c5a4955dee4a421b3bdc191a5e93fa3",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/left/03.png",
+      "bytes": 2373211,
+      "sha256": "7cd3b7b00d1521e70077e10a295de08854174b66d12d37b8a5c2627bdab785dc",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/left/04.png",
+      "bytes": 2389070,
+      "sha256": "c7449bbaf4efddef994c4a0911e4966fa9c47b0c98a1171977d033b497046154",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/left/05.png",
+      "bytes": 2389932,
+      "sha256": "2dffe941a7e4233965726177cd5ab3a621991a158e9962c2b222baa977333cb9",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/right/00.png",
+      "bytes": 2641842,
+      "sha256": "b561655fb9e0f768d9b1ca3aad7a423402f9218f3620cd93484105cc0ef4f72e",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/right/01.png",
+      "bytes": 2664410,
+      "sha256": "11c3fa3358ab9e9024aad080e0c864a86a77c914215ff0f0d065a5a93bda18d9",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/right/02.png",
+      "bytes": 2660720,
+      "sha256": "0d8385469c623c255a4982213e13fc812edad89894c648b540a280282f0cdd11",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/right/03.png",
+      "bytes": 2665845,
+      "sha256": "edeb01a32afbf8bd08983970fd41dab7996579acc27f9538f2373b4f758cbb71",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/right/04.png",
+      "bytes": 2697751,
+      "sha256": "2f959fbb88e114d8cfa6e7dbeb7c42de9d64b55cd110afd3fcf22dc531b84447",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/capture-070621/right/05.png",
+      "bytes": 2640755,
+      "sha256": "00f2030710adfb9e823e6ba32f8258ba3829f577aaeb4ff283f152379390c9c6",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/quick-calibration-20261001/camera_calibration.json",
+      "bytes": 3839,
+      "sha256": "7be2e3ae2e7c60fe9384b2ff037f925477f4d9b8cab9bd21970a60a027f1372f",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/model-distance-20261002/workflow/elevation-20261002-063355-bdba3608/manifest.json",
+      "bytes": 15541,
+      "sha256": "e728720ec3cbba6744b69621b1785bc2d5fdd69c911aea4a511f8241044d484c",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/model-distance-20261002/workflow/elevation-20261002-063355-bdba3608/report.json",
+      "bytes": 147064,
+      "sha256": "9d9cc36d5fb4093345bf9cd2553bbd3e6682ed248b8e66f99f04c75e5362011f",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/model-distance-20261002/workflow/elevation-20261002-063355-bdba3608/photos/left.png",
+      "bytes": 2263309,
+      "sha256": "82368f9b72828c9832595dc4b38c5eb19e006576efa28eb57cee263483e56268",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/model-distance-20261002/workflow/elevation-20261002-063355-bdba3608/photos/right.png",
+      "bytes": 2470914,
+      "sha256": "3c95228316f17c0cf515374923c13168e8464ed7056695d1d778b602e0a758c6",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/model-distance-20261002/workflow-dxf/elevation-20261002-064314-145775ab/manifest.json",
+      "bytes": 13220,
+      "sha256": "49e20b1a13fbba3e9dd415fcefb1397ae706b40682bfac05e60ae355917b3878",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/model-distance-20261002/workflow-dxf/elevation-20261002-064314-145775ab/report.json",
+      "bytes": 146176,
+      "sha256": "46d945e67447445d9fb070c914acbc0cf6e8b2cb9835a7dc371580a11a4e4be7",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/model-distance-20261002/workflow-dxf/elevation-20261002-064314-145775ab/photos/left.png",
+      "bytes": 2263309,
+      "sha256": "82368f9b72828c9832595dc4b38c5eb19e006576efa28eb57cee263483e56268",
+      "availability": "LOCAL_ONLY"
+    },
+    {
+      "path": "outputs/model-distance-20261002/workflow-dxf/elevation-20261002-064314-145775ab/photos/right.png",
+      "bytes": 2470914,
+      "sha256": "3c95228316f17c0cf515374923c13168e8464ed7056695d1d778b602e0a758c6",
+      "availability": "LOCAL_ONLY"
+    }
+  ]
+}

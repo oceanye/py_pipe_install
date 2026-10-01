@@ -1,0 +1,45 @@
+{
+  "scope": "HANDOFF_NUMERIC_REPORTS_NO_RAW_IMAGES",
+  "files": [
+    {
+      "path": "calibration_check.json",
+      "bytes": 2382,
+      "sha256": "2291c7f6c96ab5d8d6bfd61a34dc449c92057b2be39c5894e3aaf7528f3c1139"
+    },
+    {
+      "path": "checks.json",
+      "bytes": 3392,
+      "sha256": "79a5b0242286e0dcb2dd264c03b9fa5840d07b316fff75991a3c052632f70205"
+    },
+    {
+      "path": "environment.json",
+      "bytes": 942,
+      "sha256": "657fd41125477ef923fce59782fa1a55dc5433ec6b0b35ee1bd05faec2bd7239"
+    },
+    {
+      "path": "field_replay.json",
+      "bytes": 14629,
+      "sha256": "bcdf365e3e48f1d21caa8a9908cc44059c571834584959478dac509127ebeba5"
+    },
+    {
+      "path": "inputs.json",
+      "bytes": 5705,
+      "sha256": "3035f87614aef41cc965b2cc41778a487a433f61bc17b1ba0208a46dab2eb411"
+    },
+    {
+      "path": "low_light_comparison.json",
+      "bytes": 1698,
+      "sha256": "2bd9952988eb962b13a88ac1736d2ab8c9ad9de8e1d793897cc924786b190dab"
+    },
+    {
+      "path": "model_mapping.json",
+      "bytes": 2857,
+      "sha256": "5db8a19e60b2d14b8e2cebf8fe3dfd6b6f7b0c67fbd52df28a9533cfa3cbec2b"
+    },
+    {
+      "path": "report.md",
+      "bytes": 5597,
+      "sha256": "584ced2f012b099d9713a81912a9cdb35cfb499425e486c6f61fcbb05d1645a4"
+    }
+  ]
+}
