@@ -45,7 +45,7 @@ python -m pipe_twin capture-stereo --help
 
 应记录完整代码 SHA、Python/OpenCV 版本、相机索引、实际并排流尺寸、左右顺序、快门请求值和驱动回读值。不能把 `AUTO` 的回读写成已经满足 1/200 秒；Windows 驱动可能以约 1/256 秒表示短快门。
 
-如果使用远程控制通道，办公室端使用 Tailscale 地址绑定 8770，8765 仍只读提供 `D:\pipe_twin_runs`。不要把控制端口暴露到公网，不要把 token 放入仓库或证据包。完整服务部署见 [远程抓拍控制通道](REMOTE-CAPTURE-AGENT.md)。
+推荐直接双击仓库根目录 `run_gui.bat`，它会启动 GUI、8770 控制服务和 8765 只读文件服务；命令行等价入口是 `python -m pipe_twin office-client`。客户端自动检测 Tailscale 地址、生成/复用 token，并尝试创建仅限 `100.64.0.0/10` 的防火墙规则。若启动状态为 `LOCAL_ONLY` 或 `NEEDS_ADMINISTRATOR`，远程端不能开始正式采集，先按 [远程抓拍控制通道](REMOTE-CAPTURE-AGENT.md) 修正网络/权限。不要把 token 放入仓库或证据包。
 
 首次启动服务后，先从办公室本机做一对小抓拍，再从家中验证状态查询和下载。不要先提交 30 对任务来排查端口或设备问题。
 
@@ -197,4 +197,3 @@ LIMITATIONS_AND_NEXT_ACTION:
 - 原始照片和 token 不进入 Git；报告索引和哈希可以进入 Git。
 - 现场失败也要回传失败报告、stderr、日志和证据清单，不能只回传一张报错截图。
 - 下一轮分析端先执行 `git pull --ff-only origin main`，再用 `fetch-stereo` 下载对应运行目录，核验 `evidence_manifest.json` 后才开始离线分析。
-

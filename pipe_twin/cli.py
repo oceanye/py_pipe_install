@@ -248,6 +248,19 @@ def build_parser() -> argparse.ArgumentParser:
     agent_parser.add_argument("--max-interval-s", type=float, default=60.0)
     agent_parser.add_argument("--max-duration-s", type=float, default=300.0)
 
+    office_parser = subparsers.add_parser(
+        "office-client",
+        help="start the office GUI together with the remote capture and evidence services",
+    )
+    office_parser.add_argument("--bind", help="Tailscale IPv4 address; detected automatically when omitted")
+    office_parser.add_argument("--capture-port", type=int, default=8770)
+    office_parser.add_argument("--file-port", type=int, default=8765)
+    office_parser.add_argument("--token-file", help="office token file; generated outside the evidence root")
+    office_parser.add_argument("--output-root", help="office evidence root; defaults to D:\\pipe_twin_runs on Windows")
+    office_parser.add_argument("--manifest")
+    office_parser.add_argument("--report")
+    office_parser.add_argument("--no-gui", action="store_true", help="keep services alive without opening Tk")
+
     remote_parser = subparsers.add_parser(
         "remote-capture",
         help="submit a bounded capture job to a remote capture agent",
@@ -403,6 +416,21 @@ def _main(argv: Sequence[str] | None = None) -> int:
             config=config,
         )
         return 0
+    if args.command == "office-client":
+        from .office_client import OfficeClient, OfficeClientConfig
+
+        config = OfficeClientConfig(
+            bind=args.bind or "",
+            capture_port=args.capture_port,
+            file_port=args.file_port,
+            token_file=Path(args.token_file).expanduser() if args.token_file else None,
+            output_root=Path(args.output_root).expanduser() if args.output_root else None,
+        )
+        return OfficeClient(config).run(
+            manifest=args.manifest,
+            report=args.report,
+            gui=not args.no_gui,
+        )
     if args.command == "remote-capture":
         from .capture_agent import get_remote_capture, read_token, submit_remote_capture
 

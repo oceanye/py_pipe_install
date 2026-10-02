@@ -72,6 +72,10 @@ class CaptureInputTests(unittest.TestCase):
 
     def test_gui_can_start_without_a_manifest(self):
         self.assertIsNone(build_parser().parse_args(["gui"]).manifest)
+        office = build_parser().parse_args(["office-client", "--no-gui"])
+        self.assertTrue(office.no_gui)
+        self.assertEqual(office.capture_port, 8770)
+        self.assertEqual(office.file_port, 8765)
         parsed = build_parser().parse_args(
             ["inspect-model", str(STL_MODEL), "--stl-unit", "millimeter"]
         )
