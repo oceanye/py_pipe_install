@@ -255,7 +255,11 @@ def build_parser() -> argparse.ArgumentParser:
     office_parser.add_argument("--bind", help="Tailscale IPv4 address; detected automatically when omitted")
     office_parser.add_argument("--capture-port", type=int, default=8770)
     office_parser.add_argument("--file-port", type=int, default=8765)
-    office_parser.add_argument("--token-file", help="office token file; generated outside the evidence root")
+    office_parser.add_argument(
+        "--require-token", action="store_true",
+        help="启用可选的 Bearer token；默认仅信任本机或 Tailscale 监听地址",
+    )
+    office_parser.add_argument("--token-file", help="token file for --require-token; unused in the default token-free mode")
     office_parser.add_argument("--output-root", help="office evidence root; defaults to D:\\pipe_twin_runs on Windows")
     office_parser.add_argument("--manifest")
     office_parser.add_argument("--report")
@@ -266,7 +270,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="submit a bounded capture job to a remote capture agent",
     )
     remote_parser.add_argument("--agent-url", required=True, help="capture-agent base URL, for example http://100.103.31.118:8770")
-    remote_parser.add_argument("--token-file", required=True)
+    remote_parser.add_argument("--token-file", help="optional Bearer token file; omit for the default Tailscale-only client")
     remote_parser.add_argument("--count", type=int)
     remote_parser.add_argument("--interval-s", type=float)
     remote_parser.add_argument("--duration-s", type=float)
@@ -423,6 +427,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
             bind=args.bind or "",
             capture_port=args.capture_port,
             file_port=args.file_port,
+            require_token=args.require_token,
             token_file=Path(args.token_file).expanduser() if args.token_file else None,
             output_root=Path(args.output_root).expanduser() if args.output_root else None,
         )
@@ -448,7 +453,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
                 board_columns=args.board_columns,
                 board_rows=args.board_rows,
             )
-        token = read_token(args.token_file)
+        token = read_token(args.token_file) if args.token_file else None
         result = submit_remote_capture(args.agent_url, token, request, timeout_s=args.timeout_s)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         if not args.wait:

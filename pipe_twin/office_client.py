@@ -95,6 +95,7 @@ class OfficeClientConfig:
     bind: str = ""
     capture_port: int = 8770
     file_port: int = 8765
+    require_token: bool = False
     token_file: Path | None = None
     output_root: Path | None = None
     left_index: int = 0
@@ -117,11 +118,15 @@ class OfficeClientConfig:
                 raise OfficeClientError("端口必须为 0 到 65535 的整数")
         if self.capture_port and self.capture_port == self.file_port:
             raise OfficeClientError("拍照与文件服务必须使用不同端口")
-        token = self.token_file or Path(os.environ.get("PIPE_TWIN_TOKEN_FILE", str(Path.home() / ".pipe-twin/capture-agent.token")))
+        if type(self.require_token) is not bool:
+            raise OfficeClientError("require_token 必须为布尔值")
         root = _private_path(Path(self.output_root or default_output_root()))
-        token = _private_path(Path(token))
-        if token.resolve().is_relative_to(root.resolve()):
-            raise OfficeClientError("连接密钥必须放在照片下载目录之外")
+        token = None
+        if self.require_token:
+            token = self.token_file or Path(os.environ.get("PIPE_TWIN_TOKEN_FILE", str(Path.home() / ".pipe-twin/capture-agent.token")))
+            token = _private_path(Path(token))
+            if token.resolve().is_relative_to(root.resolve()):
+                raise OfficeClientError("连接密钥必须放在照片下载目录之外")
         return replace(self, bind=str(address), output_root=root, token_file=token)
 
 
@@ -279,8 +284,11 @@ class OfficeClient:
                 layout=cfg.layout, eye_width=cfg.eye_width, eye_height=cfg.eye_height,
                 backend=cfg.backend,
             )
-            created = _ensure_token(cfg.token_file)
-            token = read_token(cfg.token_file)
+            created = False
+            token = None
+            if cfg.require_token:
+                created = _ensure_token(cfg.token_file)
+                token = read_token(cfg.token_file)
             file_url = f"http://{cfg.bind}:{cfg.file_port}"
             try:
                 self.file_server = _EvidenceServer(
@@ -312,7 +320,9 @@ class OfficeClient:
                 "file_base_url": file_url,
                 "file_service": "STARTED" if self.file_server else "REUSED_VERIFIED_ROOT",
                 "output_root": str(capture_config.output_root),
-                "token_file": str(cfg.token_file),
+                "auth_required": cfg.require_token,
+                "auth_mode": "BEARER_TOKEN" if cfg.require_token else "TAILSCALE_ONLY",
+                "token_file": str(cfg.token_file) if cfg.require_token else None,
                 "token_created": created,
                 "firewall": firewall,
             }

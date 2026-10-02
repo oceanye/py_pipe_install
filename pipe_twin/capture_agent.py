@@ -1,4 +1,4 @@
-"""Authenticated, bounded remote control for the local stereo camera.
+"""Bounded remote control for the local stereo camera.
 
 The file server on port 8765 deliberately remains read-only.  This module
 provides the separate control plane used by a home workstation to request a
@@ -6,16 +6,18 @@ finite capture on the office computer.  It never accepts a remote output
 path or an arbitrary command; every job is written below the configured
 output root and uses the existing :func:`capture_stereo_pairs` safeguards.
 
-The transport is expected to run on a Tailscale-only address.  Tailscale
-provides the encrypted transport while the bearer token prevents another
-Tailnet device from submitting jobs accidentally.  HTTPS can still be put in
-front of this service later if the deployment needs a non-Tailscale route.
+The integrated office client binds only to loopback or a Tailscale address.
+That mode can use Tailscale as the trust boundary without a second token
+exchange.  The lower-level ``serve-capture`` entry point still requires a
+bearer token, and the integrated client can opt back into bearer auth with
+``--require-token``.
 """
 
 from __future__ import annotations
 
 import copy
 import hashlib
+import ipaddress
 import json
 import math
 import re
@@ -51,6 +53,7 @@ LAYOUTS = (LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL, LAYOUT_SEPARATE)
 TERMINAL_STATES = frozenset(("COMPLETED", "FAILED"))
 _JOB_FILE = "job.json"
 _EVIDENCE_MANIFEST = "evidence_manifest.json"
+_TAILNET = ipaddress.ip_network("100.64.0.0/10")
 
 
 class CaptureAgentError(ValueError):
@@ -59,6 +62,14 @@ class CaptureAgentError(ValueError):
 
 class CaptureAgentBusy(CaptureAgentError):
     """The camera is already reserved by another capture job."""
+
+
+def _trusted_control_address(value: str) -> bool:
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        return False
+    return address.version == 4 and (address.is_loopback or address in _TAILNET)
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -560,6 +571,11 @@ class CaptureAgentRequestHandler(BaseHTTPRequestHandler):
         self._json(code, {"error": error, "message": message})
 
     def _authorized(self) -> bool:
+        if self.agent_server.token is None:
+            if not _trusted_control_address(self.client_address[0]):
+                self._error(403, "FORBIDDEN", "token-free control requires a loopback or Tailscale peer")
+                return False
+            return True
         supplied = self.headers.get("Authorization", "")
         expected = f"Bearer {self.agent_server.token}"
         if not secrets.compare_digest(supplied.encode("utf-8"), expected.encode("ascii")):
@@ -579,7 +595,9 @@ class CaptureAgentRequestHandler(BaseHTTPRequestHandler):
                 return
             path = self._path()
             if path == f"{API_PREFIX}/health":
-                self._json(200, self.agent_server.manager.health())
+                result = self.agent_server.manager.health()
+                result["auth_required"] = self.agent_server.token is not None
+                self._json(200, result)
                 return
             prefix = f"{API_PREFIX}/captures/"
             if path.startswith(prefix):
@@ -653,8 +671,11 @@ class CaptureAgentHTTPServer(ThreadingHTTPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, server_address: tuple[str, int], manager: CaptureJobManager, token: str):
-        _validate_token(token)
+    def __init__(self, server_address: tuple[str, int], manager: CaptureJobManager, token: str | None):
+        if token is not None:
+            _validate_token(token)
+        elif not _trusted_control_address(server_address[0]):
+            raise CaptureAgentError("token-free control must bind to a loopback or Tailscale IPv4 address")
         self.manager = manager
         self.token = token
         super().__init__(server_address, CaptureAgentRequestHandler)
@@ -707,24 +728,26 @@ def _agent_url(value: str) -> str:
 def _request_json(
     method: str,
     url: str,
-    token: str,
+    token: str | None,
     payload: Mapping[str, Any] | None = None,
     *,
     timeout_s: float = 15.0,
 ) -> dict[str, Any]:
-    _validate_token(token)
+    if token is not None:
+        _validate_token(token)
     if isinstance(timeout_s, bool) or not math.isfinite(float(timeout_s)) or timeout_s <= 0:
         raise CaptureAgentError("timeout_s must be positive and finite")
     data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    headers = {
+        "Accept": "application/json",
+        **({"Authorization": f"Bearer {token}"} if token is not None else {}),
+        **({"Content-Type": "application/json"} if data is not None else {}),
+    }
     request = Request(
         url,
         data=data,
         method=method,
-        headers={
-            "Accept": "application/json",
-            "Authorization": f"Bearer {token}",
-            **({"Content-Type": "application/json"} if data is not None else {}),
-        },
+        headers=headers,
     )
     opener = build_opener(ProxyHandler({}), _NoRedirect())
     try:
@@ -751,7 +774,7 @@ def _request_json(
 
 def submit_remote_capture(
     agent_url: str,
-    token: str,
+    token: str | None,
     request: Mapping[str, Any],
     *,
     timeout_s: float = 15.0,
@@ -769,7 +792,7 @@ def submit_remote_capture(
 
 def get_remote_capture(
     agent_url: str,
-    token: str,
+    token: str | None,
     job_id: str,
     *,
     timeout_s: float = 15.0,

@@ -11,9 +11,9 @@
 - `pipe_twin/remote_capture.py` 为每个保存的双目对记录左右目灰度分位数、暗像素比例、饱和比例和原因码；`capture.json` 增加 `usable_pair_count`、`unusable_pair_count`、`quality_status`。原图仍全部保存，`status=COMPLETED` 只表示抓拍流程完成，不能替代可用曝光判断；`capture_agent` 会把质量状态带到 job 状态。
 - `pipe_twin/local_surface.py` 在颜色来源额度未用完时回流深度候选，已尝试的连通域不会重复尝试；每只眼总候选仍不超过 96，预算耗尽仍标为 `TRUNCATED`。审计增加按 `role/source/color` 的拒绝原因计数，以及“缺失深度或遮挡信号”（明确不是物理遮挡证明）。
 - `pipe_twin/remote_fetch.py` 在并行下载前顺序建立目录树，并按已存在路径逐段做链接/越界校验，避免 Windows 并发 `mkdir`/`resolve` 造成的偶发 `evidence path leaves output directory`。新增嵌套目录 `workers=4` 回归。
-- `pipe_twin/office_client.py` 和 `run_gui.bat` 现在把 GUI、8770 控制服务、8765 只读证据服务合并为一个办公室客户端；自动检测 Tailscale 地址、生成/复用 token、验证已运行的 8765 是否指向同一目录，并尝试建立仅限 Tailnet 的 Windows 防火墙规则。首次仍需安全复制 token；防火墙若返回 `NEEDS_ADMINISTRATOR`，需要管理员运行一次。
+- `pipe_twin/office_client.py` 和 `run_gui.bat` 现在把 GUI、8770 控制服务、8765 只读证据服务合并为一个办公室客户端；自动检测 Tailscale 地址、验证已运行的 8765 是否指向同一目录，并尝试建立仅限 Tailnet 的 Windows 防火墙规则。默认采用 Tailscale 内网免令牌；可用 `--require-token` 显式恢复 Bearer token。防火墙若返回 `NEEDS_ADMINISTRATOR`，需要管理员运行一次。
 
-验证：针对性测试 61 项通过；仓库全量为 **469 passed、1 skipped、247 subtests passed**（`python -m pytest tests -q`）。这些代码变更尚未在办公室相机上重新执行，现场报告仍是 `a7dc224` 基线；下一次现场回传必须注明新的代码 SHA 和新的 `quality_status` / 审计字段。
+验证：免令牌/令牌兼容针对性测试 38 项、3 个子测试通过；仓库全量为 **481 passed、1 skipped、247 subtests passed**（`python -m pytest tests -q`）。这些代码变更尚未在办公室相机上重新执行，现场报告仍是 `a7dc224` 基线；下一次现场回传必须注明新的代码 SHA 和新的 `quality_status` / 审计字段。
 
 ### 下一次现场执行要求
 

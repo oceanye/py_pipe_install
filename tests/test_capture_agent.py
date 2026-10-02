@@ -6,7 +6,7 @@ import threading
 import time
 from pathlib import Path
 from urllib.error import HTTPError
-from urllib.request import Request, build_opener
+from urllib.request import ProxyHandler, Request, build_opener
 
 import pytest
 
@@ -39,7 +39,7 @@ def _fake_capture(output_dir: str | Path, **_kwargs) -> Path:
     return path
 
 
-def _server(tmp_path: Path, token: str = "test-token", capture_fn=_fake_capture):
+def _server(tmp_path: Path, token: str | None = "test-token", capture_fn=_fake_capture):
     config = CaptureAgentConfig(
         output_root=tmp_path / "runs",
         eye_width=16,
@@ -62,7 +62,7 @@ def _stop(manager, server, thread):
     thread.join(timeout=2)
 
 
-def _wait(agent_url: str, token: str, job_id: str) -> dict:
+def _wait(agent_url: str, token: str | None, job_id: str) -> dict:
     deadline = time.monotonic() + 3
     while time.monotonic() < deadline:
         result = get_remote_capture(agent_url, token, job_id)
@@ -135,7 +135,8 @@ def test_wrong_token_and_unknown_fields_are_rejected(tmp_path: Path):
         _stop(manager, server, thread)
 
 
-def test_second_request_is_rejected_while_camera_is_busy(tmp_path: Path):
+@pytest.mark.parametrize("token", [None, "test-token"])
+def test_second_request_is_rejected_while_camera_is_busy(tmp_path: Path, token):
     started = threading.Event()
     release = threading.Event()
 
@@ -144,7 +145,7 @@ def test_second_request_is_rejected_while_camera_is_busy(tmp_path: Path):
         release.wait(timeout=3)
         return _fake_capture(output_dir, **kwargs)
 
-    _config, manager, server, thread, agent_url, token = _server(tmp_path, capture_fn=blocking_capture)
+    _config, manager, server, thread, agent_url, token = _server(tmp_path, token=token, capture_fn=blocking_capture)
     try:
         first = submit_remote_capture(agent_url, token, {"count": 1})
         assert started.wait(timeout=2)
@@ -166,6 +167,36 @@ def test_bearer_auth_is_required_for_health(tmp_path: Path):
         assert error.value.code == 401
     finally:
         _stop(manager, server, thread)
+
+
+def test_tailnet_mode_accepts_bounded_job_without_bearer_token(tmp_path: Path):
+    _config, manager, server, thread, agent_url, token = _server(tmp_path, token=None)
+    try:
+        with build_opener(ProxyHandler({})).open(agent_url + "/v1/health", timeout=3) as response:
+            health = json.load(response)
+        assert health["status"] == "READY"
+        assert health["auth_required"] is False
+        with pytest.raises(CaptureAgentError, match="400"):
+            submit_remote_capture(agent_url, None, {"count": 6})
+        with pytest.raises(CaptureAgentError, match="400"):
+            submit_remote_capture(agent_url, None, {"shell": "whoami"})
+        queued = submit_remote_capture(agent_url, token, {"count": 1})
+        result = _wait(agent_url, token, queued["job_id"])
+        assert result["state"] == "COMPLETED"
+        assert result["pair_count"] == 1
+        assert result["run_url"].endswith(f"/{queued['job_id']}/")
+    finally:
+        _stop(manager, server, thread)
+
+
+@pytest.mark.parametrize("bind", ["0.0.0.0", "", "192.168.1.10", "203.0.113.1", "localhost"])
+def test_token_free_server_rejects_unrestricted_or_non_tailnet_bind(tmp_path: Path, bind):
+    manager = CaptureJobManager(CaptureAgentConfig(output_root=tmp_path / "runs"))
+    try:
+        with pytest.raises(CaptureAgentError, match="loopback or Tailscale"):
+            CaptureAgentHTTPServer((bind, 0), manager, None)
+    finally:
+        manager.shutdown()
 
 
 def test_capture_endpoint_requires_json_content_type(tmp_path: Path):

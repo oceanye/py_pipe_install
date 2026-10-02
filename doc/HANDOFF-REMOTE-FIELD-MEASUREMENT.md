@@ -45,7 +45,7 @@ python -m pipe_twin capture-stereo --help
 
 应记录完整代码 SHA、Python/OpenCV 版本、相机索引、实际并排流尺寸、左右顺序、快门请求值和驱动回读值。不能把 `AUTO` 的回读写成已经满足 1/200 秒；Windows 驱动可能以约 1/256 秒表示短快门。
 
-推荐直接双击仓库根目录 `run_gui.bat`，它会启动 GUI、8770 控制服务和 8765 只读文件服务；命令行等价入口是 `python -m pipe_twin office-client`。客户端自动检测 Tailscale 地址、生成/复用 token，并尝试创建仅限 `100.64.0.0/10` 的防火墙规则。若启动状态为 `LOCAL_ONLY` 或 `NEEDS_ADMINISTRATOR`，远程端不能开始正式采集，先按 [远程抓拍控制通道](REMOTE-CAPTURE-AGENT.md) 修正网络/权限。不要把 token 放入仓库或证据包。
+推荐直接双击仓库根目录 `run_gui.bat`，它会启动 GUI、8770 控制服务和 8765 只读文件服务；命令行等价入口是 `python -m pipe_twin office-client`。客户端自动检测 Tailscale 地址，默认使用 Tailscale 内网免令牌，并尝试创建仅限 `100.64.0.0/10` 的防火墙规则；需要额外认证时再加 `--require-token`。若启动状态为 `LOCAL_ONLY` 或 `NEEDS_ADMINISTRATOR`，远程端不能开始正式采集，先按 [远程抓拍控制通道](REMOTE-CAPTURE-AGENT.md) 修正网络/权限。不要把 token 放入仓库或证据包。
 
 首次启动服务后，先从办公室本机做一对小抓拍，再从家中验证状态查询和下载。不要先提交 30 对任务来排查端口或设备问题。
 
@@ -56,7 +56,6 @@ python -m pipe_twin capture-stereo --help
 ```powershell
 python -m pipe_twin remote-capture `
   --agent-url http://<办公室-Tailscale-IP>:8770 `
-  --token-file C:\Users\<user>\.pipe-twin\capture-agent.token `
   --count 3 `
   --interval-s 1 `
   --detect-chessboard `
@@ -70,7 +69,6 @@ python -m pipe_twin remote-capture `
 ```powershell
 python -m pipe_twin remote-capture `
   --agent-url http://<办公室-Tailscale-IP>:8770 `
-  --token-file C:\Users\<user>\.pipe-twin\capture-agent.token `
   --count 30 `
   --interval-s 2 `
   --duration-s 120 `
