@@ -100,7 +100,7 @@ def test_request_defaults_and_duration_only_requests_remain_bounded(tmp_path: Pa
     assert duration_request["duration_s"] == 1.0
     with pytest.raises(CaptureAgentError, match="count"):
         _validate_request({"count": 6}, config)
-    for exposure in (True, 0, 250.1, float("nan")):
+    for exposure in (True, 0, 2000.1, float("nan")):
         with pytest.raises(CaptureAgentError, match="exposure_ms"):
             _validate_request({"exposure_ms": exposure}, config)
     for warmup in (-1, 120.1, float("nan")):

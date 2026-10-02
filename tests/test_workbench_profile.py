@@ -97,6 +97,21 @@ def _profile() -> dict:
 
 
 class WorkbenchProfileTests(unittest.TestCase):
+    def test_profile_accepts_two_second_manual_exposure(self):
+        profile = _profile()
+        profile["camera"]["exposure_ms"] = 2000.0
+
+        validated = validate_profile(profile)
+
+        self.assertEqual(validated["camera"]["exposure_ms"], 2000.0)
+
+    def test_profile_rejects_manual_exposure_above_capture_contract(self):
+        profile = _profile()
+        profile["camera"]["exposure_ms"] = 2000.1
+
+        with self.assertRaisesRegex(ValueError, "camera.exposure_ms"):
+            validate_profile(profile)
+
     def test_wizard_hardware_specs_are_persistent(self):
         profile = default_profile()
         profile["wizard"]["expected_baseline_mm"] = 60.0

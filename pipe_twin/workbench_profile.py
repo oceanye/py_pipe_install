@@ -388,8 +388,16 @@ def _validate_camera(payload: Any) -> dict:
         exposure_ms = payload["exposure_ms"]
         if exposure_ms is not None:
             exposure_ms = _number(exposure_ms, "camera.exposure_ms", positive=True)
-            if not 0.1 <= exposure_ms <= 250:
-                raise ValueError("camera.exposure_ms 必须在 0.1 到 250 ms 之间")
+            # Keep the profile validator aligned with the capture/agent
+            # contract.  Import lazily so loading this data-only module does
+            # not pull OpenCV into the process just to parse a profile.
+            from .camera_exposure import MAX_EXPOSURE_MS, MIN_EXPOSURE_MS
+
+            if not MIN_EXPOSURE_MS <= exposure_ms <= MAX_EXPOSURE_MS:
+                raise ValueError(
+                    f"camera.exposure_ms 必须在 {MIN_EXPOSURE_MS:g} 到 "
+                    f"{MAX_EXPOSURE_MS:g} ms 之间"
+                )
         result["exposure_ms"] = exposure_ms
     return result
 

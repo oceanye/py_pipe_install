@@ -49,7 +49,7 @@ def test_auto_does_not_report_previous_manual_shutter(backend, auto_value):
     assert call(cv2.CAP_PROP_EXPOSURE) not in capture.get.call_args_list
 
 
-@pytest.mark.parametrize("value", [True, 0, -1, float("nan"), float("inf"), 251, "auto"])
+@pytest.mark.parametrize("value", [True, 0, -1, float("nan"), float("inf"), 2000.1, "auto"])
 def test_invalid_shutter_does_not_touch_device(value):
     capture = Mock()
     with pytest.raises(ValueError):
@@ -194,7 +194,7 @@ def test_both_dialogs_apply_selected_shutter_without_reopening(dialog_type):
     dialog.exposure_status.set.assert_called_once_with("自动曝光")
 
 
-@pytest.mark.parametrize("duration", [None, 5.0, 31.25])
+@pytest.mark.parametrize("duration", [None, 5.0, 31.25, 2000.0])
 def test_profile_retains_shutter_selection(duration):
     profile = default_profile()
     profile["camera"]["exposure_ms"] = duration

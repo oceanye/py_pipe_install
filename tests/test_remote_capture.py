@@ -105,7 +105,7 @@ def test_capture_records_and_forwards_requested_one_thirtieth_exposure(tmp_path:
 
 
 def test_capture_rejects_exposure_outside_safe_driver_range(tmp_path: Path):
-    for value in (True, 0, 250.1, float("nan")):
+    for value in (True, 0, 2000.1, float("nan")):
         with pytest.raises(ValueError, match="exposure_ms"):
             capture_stereo_pairs(
                 tmp_path / f"run-{str(value).replace('.', '_')}",

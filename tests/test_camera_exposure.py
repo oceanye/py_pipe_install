@@ -42,6 +42,16 @@ class ExposureTests(unittest.TestCase):
         self.assertEqual(result["requested_native"], -5)
         self.assertEqual(result["reported_ms"], 31.25)
 
+    def test_directshow_accepts_one_and_two_second_native_steps(self):
+        for requested_ms, native, reported_ms in ((1000.0, 0, 1000.0), (2000.0, 1, 2000.0)):
+            with self.subTest(requested_ms=requested_ms):
+                result = configure_exposure(
+                    self.camera(cv2.CAP_DSHOW, native), cv2.CAP_DSHOW, requested_ms
+                )
+                self.assertEqual(result["status"], "DRIVER_REPORTED")
+                self.assertEqual(result["requested_native"], native)
+                self.assertEqual(result["reported_ms"], reported_ms)
+
     def test_v4l2_detects_backend_and_uses_100_microsecond_units(self):
         capture = self.camera(cv2.CAP_V4L2, 50)
         result = configure_exposure(capture, cv2.CAP_ANY)

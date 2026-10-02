@@ -10,9 +10,11 @@ import cv2
 
 TARGET_EXPOSURE_MS = 5.0  # 1/200 s maximum, to limit motion blur.
 MIN_EXPOSURE_MS = 0.1
-MAX_EXPOSURE_MS = 250.0
+MAX_EXPOSURE_MS = 2000.0
 EXPOSURE_PRESETS = {
     "自动曝光": None,
+    "1 秒": 1000.0,
+    "2 秒": 2000.0,
     "1/30 秒（Windows 1/32）": 1000 / 30,
     "1/32 秒": 1000 / 32,
     "1/64 秒": 1000 / 64,
@@ -35,7 +37,8 @@ def configure_exposure(capture: Any, backend: int,
     """Report driver acceptance/readback; this is not a sensor timing measurement.
 
     DirectShow exposure is integer log2(seconds), so -8 = 1/256 s is
-    the closest supported step no slower than 1/200 s. V4L2 uses 100 us.
+    the closest supported step no slower than 1/200 s; native 0 and 1
+    correspond to 1 s and 2 s. V4L2 uses 100 us.
     Never send either unit convention to an unknown backend.
     """
     if exposure_ms is not None and (
@@ -85,7 +88,7 @@ def configure_exposure(capture: Any, backend: int,
         value = float(capture.get(cv2.CAP_PROP_EXPOSURE))
         if math.isfinite(value):
             result["readback_native"] = value
-            if backend == cv2.CAP_DSHOW and -30 <= value <= -2:
+            if backend == cv2.CAP_DSHOW and -30 <= value <= 1:
                 result["reported_ms"] = 1000 * 2 ** value
             elif backend == cv2.CAP_V4L2 and value > 0:
                 result["reported_ms"] = value / 10

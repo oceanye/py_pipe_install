@@ -8,7 +8,7 @@
 - 远程任务默认先连续预热 20 秒，再要求末尾连续 3 对可用双目帧；可用 `--warmup-s` 覆盖，传 0 仅适合诊断。
 - GUI 快门下拉框增加“1/30 秒（Windows 1/32）”。
 - 每次 `capture.json` 保存 `requested_exposure_ms`、`exposure_policy` 和每只眼的驱动回读；默认行为仍为 5 ms，显式 `null` 表示 AUTO。
-- 参数限制为 0.1–250 ms，拒绝布尔值、非有限值和越界值。
+- 参数限制为 0.1–2000 ms（支持 1 s、2 s），拒绝布尔值、非有限值和越界值。
 - DirectShow 的 1/30 请求值为 33.333333 ms，驱动整数 log2 档位通常回报 31.25 ms（1/32 秒）；报告必须使用回读值，不得写成精确 1/30。
 
 验证结果：`494 passed, 1 skipped, 254 subtests passed`；`pip check` 通过。针对曝光、请求校验、CLI、采集记录和 GUI 解析的新增测试已覆盖。
@@ -32,6 +32,11 @@ python -m pipe_twin remote-capture `
 
 1. `capture.json.requested_exposure_ms` 约为 33.333333；
 2. 每一对左右 `provenance.capture_exposure_ms` 的实际回读，Windows 通常为 31.25；
+
+长曝光诊断：`--exposure-ms 1000` 或 `--exposure-ms 2000` 分别请求 Windows
+DirectShow 的原生 0/1 档。`capture.json.camera_exposure` 的驱动回读才是是否接受的
+依据；驱动可能拒绝或限制设备支持的最长快门。长曝光只适合相机和目标均静止的补光
+诊断，会增加运动模糊，不能用它替代清晰度和双目几何质量门禁。
 3. 8 对的 `image_health`、`quality_status` 和完整原图哈希；
 4. 如果仍有近黑帧，保留原图并标记 `PARTIAL/UNUSABLE`，不要进入管径、距离或 3/12 身份识别。
 
