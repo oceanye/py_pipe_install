@@ -76,6 +76,73 @@ def _encode_png(image: np.ndarray) -> bytes:
     return bytes(encoded)
 
 
+IMAGE_HEALTH_POLICY: dict[str, Any] = {
+    "name": "LUMINANCE_EXPOSURE_DIAGNOSTIC_V1",
+    "usable_rule": "p50>=3 AND p95>=12 AND max>=16 AND dark_fraction<0.995",
+    "purpose": "flag exposure transitions without discarding raw evidence",
+}
+
+
+def _image_health(image: np.ndarray) -> dict[str, Any]:
+    """Return a deterministic, non-destructive exposure health record.
+
+    This is deliberately a quality signal rather than a capture gate.  A
+    camera may recover from an exposure transition after a frame is read, and
+    the raw frame is still useful when diagnosing that transition.
+    """
+    array = np.asarray(image)
+    if array.ndim == 3 and array.shape[2] == 3:
+        gray = cv2.cvtColor(array, cv2.COLOR_BGR2GRAY)
+    elif array.ndim == 2:
+        gray = array
+    else:
+        raise ValueError("camera frame must be a grayscale or three-channel image")
+    gray = np.asarray(gray, dtype=np.uint8)
+    p05, p50, p95 = np.percentile(gray, [5, 50, 95])
+    dark_fraction = float(np.mean(gray <= 2))
+    saturated_fraction = float(np.mean(gray >= 253))
+    maximum = int(np.max(gray))
+    usable = bool(p50 >= 3.0 and p95 >= 12.0 and maximum >= 16 and dark_fraction < 0.995)
+    reasons: list[str] = []
+    if p50 < 3.0:
+        reasons.append("LOW_LUMINANCE_P50")
+    if p95 < 12.0:
+        reasons.append("LOW_LUMINANCE_P95")
+    if maximum < 16:
+        reasons.append("LOW_LUMINANCE_MAX")
+    if dark_fraction >= 0.995:
+        reasons.append("NEAR_BLACK_FRACTION")
+    return {
+        "width": int(gray.shape[1]),
+        "height": int(gray.shape[0]),
+        "mean": round(float(np.mean(gray)), 3),
+        "p05": round(float(p05), 3),
+        "p50": round(float(p50), 3),
+        "p95": round(float(p95), 3),
+        "max": maximum,
+        "dark_fraction": round(dark_fraction, 6),
+        "saturated_fraction": round(saturated_fraction, 6),
+        "usable": usable,
+        "reason_codes": reasons,
+    }
+
+
+def _pair_image_health(pair: Any) -> dict[str, Any]:
+    left = _image_health(pair.left)
+    right = _image_health(pair.right)
+    identical = bool(np.array_equal(np.asarray(pair.left), np.asarray(pair.right)))
+    reasons = sorted(set(left["reason_codes"] + right["reason_codes"]))
+    if identical:
+        reasons.append("LEFT_RIGHT_IDENTICAL")
+    return {
+        "left": left,
+        "right": right,
+        "left_right_identical": identical,
+        "pair_usable": bool(left["usable"] and right["usable"] and not identical),
+        "reason_codes": sorted(set(reasons)),
+    }
+
+
 def _startup_pair_health(pair: Any) -> tuple[str | None, dict[str, Any]]:
     """Reject deterministic UVC startup frames before they enter evidence."""
 
@@ -169,6 +236,11 @@ def capture_stereo_pairs(
         if layout in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}
         else [int(eye_width), int(eye_height)],
         "pair_count": 0,
+        "usable_pair_count": 0,
+        "unusable_pair_count": 0,
+        "quality_status": "PENDING",
+        "quality_scope": "PER_FRAME_EXPOSURE_DIAGNOSTIC_RAW_FRAMES_RETAINED",
+        "image_health_policy": IMAGE_HEALTH_POLICY,
         "requested_pair_count": count,
         "discarded_pair_count": 0,
         "startup_warmup": {
@@ -190,6 +262,18 @@ def capture_stereo_pairs(
 
     def persist() -> None:
         payload["pair_count"] = len(records)
+        payload["usable_pair_count"] = sum(
+            1 for item in records if item.get("image_health", {}).get("pair_usable") is True
+        )
+        payload["unusable_pair_count"] = len(records) - payload["usable_pair_count"]
+        if not records:
+            payload["quality_status"] = "PENDING"
+        elif payload["usable_pair_count"] == len(records):
+            payload["quality_status"] = "USABLE"
+        elif payload["usable_pair_count"]:
+            payload["quality_status"] = "PARTIAL"
+        else:
+            payload["quality_status"] = "UNUSABLE"
         atomic_write_text(manifest, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
 
     # This record exists even if constructing/opening a camera session fails.
@@ -247,6 +331,8 @@ def capture_stereo_pairs(
                 stage = "write_png"
                 (root / left_name).write_bytes(left_data)
                 (root / right_name).write_bytes(right_data)
+                stage = "image_health"
+                image_health = _pair_image_health(pair)
                 record: dict[str, Any] = {
                     "capture_id": f"{run_id}-{sequence:04d}",
                     "left": {
@@ -266,6 +352,7 @@ def capture_stereo_pairs(
                     "sync_delta_ms": float(pair.sync_delta_ms),
                     "timestamp_source": pair.timestamp_source,
                     "provenance": pair.provenance,
+                    "image_health": image_health,
                 }
                 records.append(record)
                 if len(records) == 1:

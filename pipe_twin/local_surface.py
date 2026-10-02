@@ -242,14 +242,16 @@ def _depth_surface_mask(depth: np.ndarray, valid: np.ndarray, jump_mm: float) ->
 
 def _fit_components(image: np.ndarray, depth: np.ndarray, valid: np.ndarray, mask: np.ndarray,
                     calibration: Any, role: str, source: str, cfg: Mapping[str, Any],
-                    target_color: str | None = None, *, budget: dict[str, int] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+                    target_color: str | None = None, *, budget: dict[str, Any] | None = None,
+                    skip_labels: set[int] | None = None,
+                    attempted_labels: set[int] | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     camera = getattr(calibration, role)
     if budget is not None and budget["remaining"] <= 0:
         return [], [{"role": role, "segmentation_source": source, "target_color_srgb": target_color,
                      "reason": "CANDIDATE_BUDGET_EXCEEDED", "source_skipped": True}]
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), 8)
     accepted, rejected = [], []
-    eligible = np.flatnonzero(stats[1:, cv2.CC_STAT_AREA] >= cfg["minimum_component_pixels"]) + 1
+    eligible_all = np.flatnonzero(stats[1:, cv2.CC_STAT_AREA] >= cfg["minimum_component_pixels"]) + 1
 
     # A large connected component is often a wall/floor fragment in a sparse
     # stereo map.  Pipe surfaces are usually long and thin in the image.  Rank
@@ -264,12 +266,16 @@ def _fit_components(image: np.ndarray, depth: np.ndarray, valid: np.ndarray, mas
         score = math.log1p(area) * (1.0 + 2.0 * math.log1p(aspect))
         return (-score, -area, int(label))
 
-    eligible = np.asarray(sorted((int(label) for label in eligible), key=priority), dtype=np.int32)
+    ordered = sorted((int(label) for label in eligible_all), key=priority)
+    excluded = set(skip_labels or ())
+    eligible = np.asarray([label for label in ordered if label not in excluded], dtype=np.int32)
     limit = budget["remaining"] if budget is not None else cfg["maximum_component_candidates"]
     if len(eligible) > limit:
         rejected.append({"role": role, "segmentation_source": source, "target_color_srgb": target_color,
                          "reason": "CANDIDATE_BUDGET_EXCEEDED", "skipped_components": int(len(eligible) - limit)})
     for label in eligible[:limit]:
+        if attempted_labels is not None:
+            attempted_labels.add(int(label))
         if budget is not None:
             budget["remaining"] -= 1
             budget["attempted"] += 1
@@ -303,10 +309,16 @@ def _fit_components(image: np.ndarray, depth: np.ndarray, valid: np.ndarray, mas
         support = core & local_valid
         n_points = int(np.count_nonzero(support))
         fraction = valid_count / denominator
+        missing_depth_fraction = max(0.0, 1.0 - fraction)
         audit = {"role": role, "segmentation_source": source, "target_color_srgb": target_color,
                  "region_px": box, "point_count": n_points, "valid_fraction": fraction,
                  "support_region_pixels": denominator, "valid_region_pixels": valid_count,
                  "fit_support_fraction": n_points / denominator,
+                 "missing_depth_fraction": missing_depth_fraction,
+                 "occlusion_diagnostic": (
+                     "MISSING_DEPTH_OR_OCCLUSION_SIGNAL" if missing_depth_fraction >= 0.05
+                     else "NO_MISSING_DEPTH_SIGNAL"
+                 ),
                  "valid_fraction_basis": "ENCLOSED_COMPONENT_INCLUDING_HOLES" if source == "depth_connected_surface" else "RGB_COMPONENT",
                  "candidate_priority": float(-priority(int(label))[0])}
         if fraction < cfg["minimum_valid_fraction"] or n_points < 80:
@@ -429,7 +441,33 @@ def _component_audit(fit: Mapping[str, Any]) -> dict[str, Any]:
     return {key: fit[key] for key in ("role", "region_px", "point_count", "valid_fraction", "fit_rms_mm",
                                      "visible_arc_degrees", "measured_color_srgb", "segmentation_sources", "depth_median_mm", "depth_mad_mm",
                                      "support_region_pixels", "valid_region_pixels", "fit_support_fraction", "valid_fraction_basis",
-                                     "candidate_priority", "diameter_source", "diameter_includes_near_surface") if key in fit}
+                                     "candidate_priority", "diameter_source", "diameter_includes_near_surface",
+                                     "missing_depth_fraction", "occlusion_diagnostic") if key in fit}
+
+
+def _rejection_diagnostics(rows: list[Mapping[str, Any]]) -> tuple[dict[str, Any], dict[str, Any]]:
+    by_source: dict[str, dict[str, Any]] = {}
+    fractions: list[float] = []
+    for row in rows:
+        role = str(row.get("role", "unknown"))
+        source = str(row.get("segmentation_source", "unknown"))
+        color = row.get("target_color_srgb")
+        key = f"{role}:{source}" if color is None else f"{role}:{source}:{color}"
+        summary = by_source.setdefault(key, {"total": 0, "reasons": {}})
+        summary["total"] += 1
+        reason = str(row.get("reason", "UNKNOWN"))
+        summary["reasons"][reason] = summary["reasons"].get(reason, 0) + 1
+        value = row.get("missing_depth_fraction")
+        if isinstance(value, (int, float)) and math.isfinite(float(value)):
+            fractions.append(float(value))
+    occlusion = {
+        "scope": "MISSING_DEPTH_OR_OCCLUSION_SIGNAL_NOT_PROOF_OF_PHYSICAL_OCCLUSION",
+        "rows_with_valid_fraction": len(fractions),
+        "rows_with_missing_depth_signal": sum(value >= 0.05 for value in fractions),
+        "missing_depth_fraction_max": max(fractions, default=0.0),
+        "missing_depth_fraction_mean": (sum(fractions) / len(fractions)) if fractions else 0.0,
+    }
+    return by_source, occlusion
 
 
 def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibration: Any,
@@ -463,8 +501,14 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
                   "allocated": cfg["maximum_component_candidates"], "sources": {}}
         # Geometry proposals work even when display colours differ from paint.
         mask = _depth_surface_mask(z, valid, cfg["depth_discontinuity_mm"])
-        depth_budget = {"remaining": depth_quota, "attempted": 0, "allocated": depth_quota}
-        accepted, errors = _fit_components(image, z, valid, mask, calibration, role, "depth_connected_surface", cfg, budget=depth_budget)
+        depth_budget = {"remaining": depth_quota, "attempted": 0, "allocated": depth_quota,
+                        "initial_allocated_candidates": depth_quota,
+                        "refill_allocated_candidates": 0, "refill_attempted_candidates": 0}
+        depth_attempted_labels: set[int] = set()
+        accepted, errors = _fit_components(
+            image, z, valid, mask, calibration, role, "depth_connected_surface", cfg,
+            budget=depth_budget, attempted_labels=depth_attempted_labels,
+        )
         rejected.extend(errors)
         budget["attempted"] += depth_budget["attempted"]
         budget["remaining"] -= depth_budget["attempted"]
@@ -472,7 +516,10 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
         depth_audit[role] = {"accepted_components": len(accepted), "rejected_components": len(errors),
                              "valid_fraction": float(np.mean(valid & np.isfinite(z) & (z > 0))),
                              "allocated_candidates": depth_quota,
-                             "attempted_candidates": depth_budget["attempted"]}
+                             "initial_allocated_candidates": depth_quota,
+                             "attempted_candidates": depth_budget["attempted"],
+                             "refill_allocated_candidates": 0,
+                             "refill_attempted_candidates": 0}
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
         for color in considered_colors:
             target = cv2.cvtColor(_hex_bgr(color), cv2.COLOR_BGR2LAB).astype(np.float32)[0, 0]
@@ -488,6 +535,33 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
                                              "source_skipped": any(row.get("source_skipped") for row in errors)}
             accepted.extend(fits)
             rejected.extend(errors)
+        # Return unused colour slots to the geometry-first depth pass.  The
+        # hard per-eye cap remains in force, and already-tried connected
+        # components are excluded so the refill performs useful new work.
+        refill_capacity = int(budget["remaining"])
+        if refill_capacity > 0:
+            refill_budget = {"remaining": refill_capacity, "attempted": 0,
+                             "allocated": refill_capacity}
+            refill_fits, refill_errors = _fit_components(
+                image, z, valid, mask, calibration, role, "depth_connected_surface", cfg,
+                budget=refill_budget, skip_labels=depth_attempted_labels,
+                attempted_labels=depth_attempted_labels,
+            )
+            accepted.extend(refill_fits)
+            rejected.extend(refill_errors)
+            depth_budget["refill_allocated_candidates"] = refill_capacity
+            depth_budget["refill_attempted_candidates"] = refill_budget["attempted"]
+            depth_budget["allocated"] += refill_capacity
+            depth_budget["attempted"] += refill_budget["attempted"]
+            depth_budget["remaining"] = refill_budget["remaining"]
+            budget["attempted"] += refill_budget["attempted"]
+            budget["remaining"] -= refill_budget["attempted"]
+            depth_audit[role]["accepted_components"] += len(refill_fits)
+            depth_audit[role]["rejected_components"] += len(refill_errors)
+            depth_audit[role]["allocated_candidates"] += refill_capacity
+            depth_audit[role]["refill_allocated_candidates"] = refill_capacity
+            depth_audit[role]["refill_attempted_candidates"] = refill_budget["attempted"]
+            depth_audit[role]["attempted_candidates"] = depth_budget["attempted"]
         view_candidates[role] = _deduplicate(accepted)
         # A source quota is an internal scheduling decision; expose the total
         # separately so callers can still enforce the original per-eye cap.
@@ -542,12 +616,27 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
             cloud.add(fit["_cloud_points"], fit["measured_color_srgb"], fit["point_count"])
             component_audit.append(_component_audit(fit))
     point_cloud = cloud.public()
+    source_rejection_counts, rejection_occlusion = _rejection_diagnostics(rejected)
+    component_fractions = [
+        float(row["missing_depth_fraction"])
+        for row in component_audit
+        if isinstance(row.get("missing_depth_fraction"), (int, float))
+        and math.isfinite(float(row["missing_depth_fraction"]))
+    ]
+    occlusion_diagnostics = dict(rejection_occlusion)
+    occlusion_diagnostics.update({
+        "accepted_components": len(component_audit),
+        "accepted_components_with_missing_depth_signal": sum(value >= 0.05 for value in component_fractions),
+        "accepted_missing_depth_fraction_max": max(component_fractions, default=0.0),
+    })
     truncated = any(row.get("reason") in {"CANDIDATE_BUDGET_EXCEEDED", "COLOR_CANDIDATE_BUDGET_EXCEEDED"}
                     for row in rejected)
     return {"observations": observations, "rejected": rejected, "point_cloud": point_cloud,
             "audit": {"coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM", "candidate_colors": candidate_colors,
                       "truncated": truncated, "status": "TRUNCATED" if truncated else "COMPLETE",
                       "depth_surfaces": depth_audit, "components": component_audit,
+                      "source_rejection_counts": source_rejection_counts,
+                      "occlusion_diagnostics": occlusion_diagnostics,
                       "candidate_budgets": fit_budgets,
                       "observation_count": len(observations), "rejected_count": len(rejected),
                       "point_count": len(point_cloud["points_camera_mm"]), "source_point_count": cloud.source_count,

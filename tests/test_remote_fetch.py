@@ -77,6 +77,20 @@ def test_download_verifies_files_and_reuses_matching_content(tmp_path, monkeypat
         assert all(x["status"] == "REUSED" for x in json.loads(report_path.read_text())["files"])
 
 
+def test_parallel_nested_download_precreates_directory_tree(tmp_path):
+    files = {
+        f"camera-{index:03d}/frames/pair-{index:03d}.bin": f"frame-{index}".encode()
+        for index in range(64)
+    }
+    with server(files) as (url, _):
+        report_path = fetch_stereo_run(url, tmp_path / "run", workers=4, retries=0)
+    report = json.loads(report_path.read_text())
+    assert report["status"] == "PASS"
+    assert len(report["files"]) == len(files)
+    assert not report["errors"]
+    assert all((tmp_path / "run" / name).read_bytes() == data for name, data in files.items())
+
+
 def test_hash_mismatch_fails_without_installing_bad_file(tmp_path):
     declared = manifest({"left.png": b"good"})
     with server({"left.png": b"evil"}, declared) as (url, _):

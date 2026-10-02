@@ -49,6 +49,10 @@ def test_capture_writes_pair_pngs_and_hashed_metadata(tmp_path: Path):
     payload = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert payload["pair_count"] == 2
     assert payload["status"] == "COMPLETED"
+    assert payload["quality_status"] == "UNUSABLE"
+    assert payload["usable_pair_count"] == 0
+    assert payload["unusable_pair_count"] == 2
+    assert payload["captures"][0]["image_health"]["pair_usable"] is False
     assert payload["stop_reason"] == "COUNT_LIMIT"
     assert payload["requested_pair_count"] == 2
     assert payload["rectified"] is False
@@ -67,6 +71,38 @@ def test_capture_writes_pair_pngs_and_hashed_metadata(tmp_path: Path):
         assert first[role]["height"] == 4
         assert hashlib.sha256(data).hexdigest() == first[role]["sha256"]
     assert first["chessboard"]["left"]["found"] is False
+
+
+def test_capture_distinguishes_completed_run_from_exposure_quality(tmp_path: Path):
+    class ExposureTransitionSession(_FakeSession):
+        def read_pair(self):
+            pair = super().read_pair()
+            if self.index == 1:
+                left = np.full_like(pair.left, 80)
+                right = np.full_like(pair.right, 100)
+            else:
+                left = np.full_like(pair.left, 1)
+                right = np.full_like(pair.right, 2)
+            return CapturedStereoPair(
+                left=left,
+                right=right,
+                left_captured_at=pair.left_captured_at,
+                right_captured_at=pair.right_captured_at,
+                sync_delta_ms=pair.sync_delta_ms,
+                timestamp_source=pair.timestamp_source,
+                provenance=pair.provenance,
+            )
+
+    manifest = capture_stereo_pairs(
+        tmp_path / "run", count=2, session_factory=ExposureTransitionSession,
+    )
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    assert payload["status"] == "COMPLETED"
+    assert payload["quality_status"] == "PARTIAL"
+    assert payload["usable_pair_count"] == 1
+    assert payload["unusable_pair_count"] == 1
+    assert payload["captures"][0]["image_health"]["pair_usable"] is True
+    assert "LOW_LUMINANCE_P50" in payload["captures"][1]["image_health"]["reason_codes"]
 
 
 def test_capture_can_run_for_duration_with_injected_clock(tmp_path: Path):

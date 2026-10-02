@@ -70,7 +70,7 @@
     "all_185_files_verified_after_resume": true,
     "path_containment_error_root_cause": "UNRESOLVED",
     "raw_photos_in_git": false,
-    "record_url": "https://github.com/oceanye/py_pipe_install/blob/test/field-handoff-20261002/field_reports/field-20261002-113318-fef83aa4/upload.json"
+    "record_url": "https://github.com/oceanye/py_pipe_install/blob/main/field_reports/field-20261002-113318-fef83aa4/upload.json"
   },
   "next_remote_development": [
     "Exposure transition and per-frame image health; capture completion must remain distinct from usable exposure",

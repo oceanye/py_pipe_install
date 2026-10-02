@@ -339,9 +339,14 @@ class LocalSurfaceTests(unittest.TestCase):
             budget = result["audit"]["candidate_budgets"][role]
             self.assertLessEqual(budget["attempted"], 96)
             self.assertGreater(budget["sources"]["rgb_component:#FF0000"]["attempted"], 0)
-            self.assertEqual(budget["sources"]["depth_connected_surface"]["attempted"], 72)
+            depth_budget = budget["sources"]["depth_connected_surface"]
+            self.assertEqual(depth_budget["initial_allocated_candidates"], 72)
+            self.assertGreater(depth_budget["refill_attempted_candidates"], 0)
+            self.assertEqual(depth_budget["attempted"], 95)
         self.assertTrue(result["audit"]["truncated"])
         self.assertGreater(result["audit"]["depth_surfaces"]["left"]["attempted_candidates"], 0)
+        self.assertIn("source_rejection_counts", result["audit"])
+        self.assertIn("occlusion_diagnostics", result["audit"])
 
 
 if __name__ == "__main__":

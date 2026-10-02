@@ -358,6 +358,9 @@ class CaptureJobManager:
                     else None
                 ),
                 "pair_count": 0,
+                "usable_pair_count": 0,
+                "unusable_pair_count": 0,
+                "quality_status": "PENDING",
                 "error": None,
                 "_run_dir": run_dir,
             }
@@ -428,6 +431,9 @@ class CaptureJobManager:
             self._update(
                 job_id,
                 pair_count=pair_count,
+                usable_pair_count=capture_payload.get("usable_pair_count", 0),
+                unusable_pair_count=capture_payload.get("unusable_pair_count", 0),
+                quality_status=capture_payload.get("quality_status", "UNKNOWN"),
                 capture_json="capture.json",
             )
             final_fields = {"state": "COMPLETED", "finished_at": _now()}
@@ -446,7 +452,13 @@ class CaptureJobManager:
                 partial = json.loads((run_dir / "capture.json").read_text(encoding="utf-8"))
                 pair_count = partial.get("pair_count")
                 if type(pair_count) is int and 0 <= pair_count <= request["count"]:
-                    final_fields.update(pair_count=pair_count, capture_json="capture.json")
+                    final_fields.update(
+                        pair_count=pair_count,
+                        usable_pair_count=partial.get("usable_pair_count", 0),
+                        unusable_pair_count=partial.get("unusable_pair_count", 0),
+                        quality_status=partial.get("quality_status", "UNKNOWN"),
+                        capture_json="capture.json",
+                    )
             except (OSError, ValueError, AttributeError):
                 pass
             log_event(

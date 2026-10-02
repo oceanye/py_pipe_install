@@ -62,13 +62,23 @@ def _target(root: Path, name: str) -> Path:
         raise RemoteFetchError(f"invalid evidence path: {name}")
     if PurePosixPath(name).is_absolute():
         raise RemoteFetchError("absolute evidence paths are not supported")
+    root = root.resolve()
     target = root
     for part in parts:
         target = target / part
         if target.is_symlink() or (hasattr(target, "is_junction") and target.is_junction()):
             raise RemoteFetchError(f"evidence path crosses a link: {name}")
-    if not target.resolve().is_relative_to(root):
-        raise RemoteFetchError(f"evidence path leaves output directory: {name}")
+        # Resolve only components that already exist.  Resolving a path while
+        # another worker is creating its parent can transiently produce a
+        # false containment failure on Windows; lexical validation above and
+        # this component-by-component check retain the link protection.
+        if target.exists():
+            try:
+                resolved = target.resolve(strict=True)
+            except OSError as error:
+                raise RemoteFetchError(f"could not validate evidence path: {name}") from error
+            if not resolved.is_relative_to(root):
+                raise RemoteFetchError(f"evidence path leaves output directory: {name}")
     return target
 
 
@@ -198,6 +208,11 @@ def fetch_stereo_run(
         local_manifest.write_bytes(original)
         report.update(manifest_sha256=hashlib.sha256(original).hexdigest(), expected_file_count=len(files),
                       manifest_self_hash_note="Source manifest is saved and compared before/after transfer; it does not hash itself.")
+        # Make the directory tree before workers start.  Concurrent mkdir and
+        # resolve calls are otherwise racy on Windows, where a field run can
+        # report spurious "evidence path leaves output directory" failures.
+        for item in files:
+            _target(root, item["path"]).parent.mkdir(parents=True, exist_ok=True)
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {pool.submit(transfer, item): item for item in files}
             for future in as_completed(futures):
