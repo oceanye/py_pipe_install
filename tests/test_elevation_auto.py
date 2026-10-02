@@ -119,6 +119,59 @@ def test_oblique_local_surfaces_register_and_locate_the_unseen_fourth_pipe():
     assert fourth["free_space_candidate"]
     assert fourth["left"]["expected_depth_range_mm"][1]-fourth["left"]["expected_depth_range_mm"][0]>30
     assert not result["longitudinal_installation_segments_assessed"]
+    measured = result["pipes"][0]["measurement"]
+    assert measured["status"] == "MEASURED"
+    assert measured["nominal_diameter_source"] == "MODEL_CATALOG"
+    assert measured["measured_section"]["minimum_surface_depth_z_mm"] < measured["measured_section"]["centerline"]["depth_z_mm"]
+    assert measured["model_predicted_section"] is not None
+    assert result["pipes"][3]["measurement"]["status"] == "MODEL_PREDICTION_ONLY"
+    assert result["pipes"][3]["measurement"]["measured_diameter_mm"] is None
+
+
+def test_known_three_pipes_do_not_turn_full_catalog_into_observations():
+    calibration, specs, groups = _groups()
+    result = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=specs,
+                                           registration_settings={"present_pipe_count": 3})
+    assert result["scene_inventory"]["present_pipe_count"] == 3
+    assert result["scene_inventory"]["model_candidate_count"] == 4
+    assert result["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": 0, "UNKNOWN": 1}
+    # Even good geometry conflicts with an explicit count of two; reject the
+    # alignment instead of silently discarding a convenient observation.
+    conflict = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=specs,
+                                             registration_settings={"present_pipe_count": 2})
+    assert conflict["registration"]["status"] == "SCENE_INVENTORY_CONFLICT"
+    assert conflict["counts"]["UNKNOWN"] == 4
+    assert all(p["measurement"]["measured_section"] is None for p in conflict["pipes"])
+
+
+def test_center_distance_does_not_depend_on_unobservable_model_axis_translation():
+    from pipe_twin.elevation_auto import evaluate_registered_capture
+    calibration, specs, groups = _groups()
+    result = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=specs)
+    shifted = copy.deepcopy(result["registration"])
+    shifted["translation_model_to_camera_mm"] = (np.array(shifted["translation_model_to_camera_mm"]) +
+        10000 * np.array(shifted["camera_axis"])).tolist()
+    evidence = evaluate_registered_capture(specs, result["local_surface"], shifted, groups[0],
+                                           groups[0]["depth"], calibration, healthy=True)
+    for row in result["pipes"]:
+        original = row["measurement"]["model_predicted_section"]
+        updated = evidence[row["pipe_id"]]["measurement"]["model_predicted_section"]
+        assert updated["centerline"]["depth_z_mm"] == pytest.approx(original["centerline"]["depth_z_mm"], abs=1e-8)
+        assert updated["centerline"]["range_mm"] == pytest.approx(original["centerline"]["range_mm"], abs=1e-8)
+        if "center_distance_error_mm" in row["current_evidence"]:
+            assert evidence[row["pipe_id"]]["center_distance_error_mm"] == pytest.approx(row["current_evidence"]["center_distance_error_mm"], abs=1e-8)
+
+
+@pytest.mark.parametrize("count", [0, -1, True, 3.5, "3", 129])
+def test_invalid_scene_count_rejected(count):
+    from pipe_twin.elevation_dataset import normalize_registration_settings
+    with pytest.raises(ValueError, match="现场实际管数"):
+        normalize_registration_settings({"present_pipe_count": count})
+
+
+def test_scene_count_survives_package_roundtrip(tmp_path):
+    path, _ = _package(tmp_path, registration_settings={"present_pipe_count": 3})
+    assert load_elevation_dataset(path)["registration_settings"]["present_pipe_count"] == 3
 
 
 def test_two_independent_registered_free_space_captures_establish_absence():
@@ -148,6 +201,8 @@ def test_no_reconstruction_or_unhealthy_capture_fails_to_unknown():
     groups[0]["pair_healthy"]=False
     result=analyze_elevation_auto_groups(groups,calibration=calibration,pipe_specs=specs)
     assert result["counts"]["UNKNOWN"]==4
+    assert all(p["measurement"]["measured_section"] is None for p in result["pipes"])
+    assert all(p["measurement"]["model_predicted_section"] is None for p in result["pipes"])
 
 
 def test_camera_move_does_not_reuse_old_free_space():

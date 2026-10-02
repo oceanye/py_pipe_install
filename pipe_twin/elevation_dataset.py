@@ -139,8 +139,8 @@ def _specs(value: Any, width: int, height: int, *, mode: str = "elevation_depth"
 
 def normalize_registration_settings(payload: Mapping | None = None) -> dict:
     """Small, portable UI contract; direction is expressed in model coordinates."""
-    if payload is not None and (not isinstance(payload, Mapping) or set(payload) - {"axis_world", "anchors"}):
-        raise ValueError("立面匹配配置只能包含axis_world和anchors")
+    if payload is not None and (not isinstance(payload, Mapping) or set(payload) - {"axis_world", "anchors", "present_pipe_count"}):
+        raise ValueError("立面匹配配置只能包含axis_world、anchors和present_pipe_count")
     payload = dict(payload or {})
     axis = payload.get("axis_world")
     if axis is not None:
@@ -156,7 +156,13 @@ def normalize_registration_settings(payload: Mapping | None = None) -> dict:
         raise ValueError("基准对应必须为观测编号到管道编号的映射")
     if len(set(anchors.values())) != len(anchors):
         raise ValueError("不同观测不能指定同一根模型管道")
-    return {"axis_world": axis, "anchors": dict(anchors)}
+    result = {"axis_world": axis, "anchors": dict(anchors)}
+    if "present_pipe_count" in payload:
+        count = payload["present_pipe_count"]
+        if type(count) is not int or not 1 <= count <= 128:
+            raise ValueError("现场实际管数必须是 1 到 128 的整数")
+        result["present_pipe_count"] = count
+    return result
 
 
 def _model_source_unit(model_path: Path, supplied_unit: str | None) -> str | None:

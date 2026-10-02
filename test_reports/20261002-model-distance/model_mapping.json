@@ -1,0 +1,130 @@
+{
+  "basis": "XY_CROSS_SECTION_WITHIN_0.01_MM_AND_DIAMETER_WITHIN_0.01_MM",
+  "mapping": [
+    {
+      "dxf_pipe_id": "P001",
+      "stl_pipe_id": "P004",
+      "diameter_mm": 51,
+      "dxf_color": "#0000FF",
+      "center_xy_mm": [
+        2172.110830493628,
+        1937.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P002",
+      "stl_pipe_id": "P012",
+      "diameter_mm": 26,
+      "dxf_color": "#FFFFFF",
+      "center_xy_mm": [
+        2352.110830493628,
+        1937.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P003",
+      "stl_pipe_id": "P011",
+      "diameter_mm": 41,
+      "dxf_color": "#FF0000",
+      "center_xy_mm": [
+        2352.110830493628,
+        1797.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P004",
+      "stl_pipe_id": "P007",
+      "diameter_mm": 51,
+      "dxf_color": "#0000FF",
+      "center_xy_mm": [
+        2262.110830493628,
+        1797.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P005",
+      "stl_pipe_id": "P003",
+      "diameter_mm": 26,
+      "dxf_color": "#FFFFFF",
+      "center_xy_mm": [
+        2082.110830493628,
+        1937.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P006",
+      "stl_pipe_id": "P002",
+      "diameter_mm": 41,
+      "dxf_color": "#FF0000",
+      "center_xy_mm": [
+        2082.110830493628,
+        1657.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P007",
+      "stl_pipe_id": "P001",
+      "diameter_mm": 51,
+      "dxf_color": "#0000FF",
+      "center_xy_mm": [
+        2082.110830493628,
+        1797.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P008",
+      "stl_pipe_id": "P008",
+      "diameter_mm": 41,
+      "dxf_color": "#FF0000",
+      "center_xy_mm": [
+        2262.110830493628,
+        1937.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P009",
+      "stl_pipe_id": "P009",
+      "diameter_mm": 26,
+      "dxf_color": "#FFFFFF",
+      "center_xy_mm": [
+        2262.110830493628,
+        1657.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P010",
+      "stl_pipe_id": "P010",
+      "diameter_mm": 51,
+      "dxf_color": "#0000FF",
+      "center_xy_mm": [
+        2352.110830493628,
+        1657.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P011",
+      "stl_pipe_id": "P005",
+      "diameter_mm": 41,
+      "dxf_color": "#FF0000",
+      "center_xy_mm": [
+        2172.110830493628,
+        1657.456497306592
+      ]
+    },
+    {
+      "dxf_pipe_id": "P012",
+      "stl_pipe_id": "P006",
+      "diameter_mm": 26,
+      "dxf_color": "#FFFFFF",
+      "center_xy_mm": [
+        2172.110830493628,
+        1797.456497306592
+      ]
+    }
+  ],
+  "field_present_pipe_count": 3,
+  "field_parallel_axes": true,
+  "camera_perpendicular_to_axes": "NOT_ASSUMED",
+  "physical_model_ids": "UNRESOLVED",
+  "one_pipe_per_color": "WORKING_HYPOTHESIS_NOT_AN_ENFORCED_CLASS_INVENTORY"
+}

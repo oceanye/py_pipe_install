@@ -222,6 +222,7 @@ def _region_evidence(image: np.ndarray, depth_values: np.ndarray, valid: np.ndar
                                 component["elongation"] >= _HARD_MIN_ELONGATION),
              "width": bool(width_error is not None and width_error <= config["maximum_width_relative_error"])}
     return {"region_xywh": list(spec[role]), "image_signal": signal, "color_support_fraction": color_fraction,
+            "depth_definition": "MEDIAN_Z_OF_LARGEST_COLOR_DEPTH_COMPONENT_NOT_AXIS_OR_APEX",
             "valid_depth_fraction": valid_fraction, "joint_support_fraction": joint_fraction,
             "median_depth_mm": median_depth, "median_valid_depth_mm": median_valid_depth,
             "target_depth_median_mm": median_depth,
@@ -348,7 +349,14 @@ def analyze_elevation_groups(groups: list[Mapping[str, Any]], *, calibration: An
             state, basis = "NOT_INSTALLED", "ELEVATION_REPEATED_FREE_SPACE"
         else:
             state, basis = "UNKNOWN", "ELEVATION_INSUFFICIENT_OR_OCCLUDED_EVIDENCE"
-        results.append({"pipe_id": spec["pipe_id"], "installation_state": state,
+        from .pipe_geometry import pipe_measurement_record
+        measurement = pipe_measurement_record(
+            {"nominal_diameter_mm": spec["diameter_mm"]},
+            surface_samples={role: {"depth_z_median_mm": current[role]["median_depth_mm"],
+                                   "valid_depth_fraction": current[role]["valid_depth_fraction"],
+                                   "definition": current[role]["depth_definition"]} for role in ("left", "right")},
+            reason_codes=["CYLINDER_AXIS_AND_RADIUS_NOT_RECONSTRUCTED"])
+        results.append({"pipe_id": spec["pipe_id"], "installation_state": state, "measurement": measurement,
             "installation_state_zh": {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "遮蔽不确定"}[state],
             "state_basis": basis, "identity_ambiguous": spec["pipe_id"] in ambiguous_ids,
             "reason_codes": (["ELEVATION_IDENTITY_AMBIGUOUS"] if spec["pipe_id"] in ambiguous_ids else current["reason_codes"]), "current_evidence": current,

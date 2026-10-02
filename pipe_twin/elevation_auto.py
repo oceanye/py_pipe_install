@@ -18,6 +18,7 @@ import cv2
 import numpy as np
 
 from .logging_config import get_logger, log_event
+from .pipe_geometry import cylinder_section_geometry, pipe_measurement_record
 
 LOGGER = get_logger("elevation_auto")
 STATE_ZH = {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "遮蔽不确定"}
@@ -137,7 +138,9 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
         evidence: dict[str, Any] = {}
         association = associations.get(spec["pipe_id"])
         observation = observations.get(str(association.get("observation_id"))) if association else None
-        if observation is not None:
+        measured_section = None
+        model_section = None
+        if observation is not None and healthy:
             measured_diameter = float(observation["diameter_mm"])
             center_camera = np.asarray(observation["center_camera_mm"], dtype=float)
             evidence.update(
@@ -150,12 +153,31 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
                 color_used_as="AUXILIARY_HINT_ONLY",
                 diameter_match_basis="STEREO_LOCAL_CYLINDER_OUTER_SURFACE",
             )
+            measured_section = cylinder_section_geometry(
+                center_camera, observation["axis_camera"], measured_diameter,
+                section_definition="MIDPOINT_OF_COMMON_STEREO_OBSERVED_AXIS_SEGMENT",
+                intrinsic=calibration.left.rectified_intrinsic)
         if matched:
             center, axis = _line_geometry(spec, registration)
-            if observation is not None:
-                evidence["model_center_camera_mm"] = center.tolist()
-                evidence["model_distance_to_left_camera_mm"] = float(np.linalg.norm(center))
-                evidence["center_distance_error_mm"] = float(np.linalg.norm(center_camera) - np.linalg.norm(center))
+            if healthy and interval is not None:
+                # Compare the model and observation at one transverse plane;
+                # CAD midpoint/length is not observable from a local view.
+                station = float(np.dot(np.asarray(observation["center_camera_mm"]), common_axis)) if observation is not None else sum(interval) / 2
+                section_center = center + axis * ((station - float(center @ common_axis)) / float(axis @ common_axis))
+                try:
+                    model_section = cylinder_section_geometry(
+                        section_center, axis, float(spec["nominal_diameter_mm"]),
+                        section_definition="MODEL_AT_SAME_OBSERVED_TRANSVERSE_PLANE",
+                        intrinsic=calibration.left.rectified_intrinsic)
+                except ValueError:
+                    # An unseen model member can lie behind the camera after
+                    # registration; it must not abort visible-pipe analysis.
+                    evidence["model_section_reason"] = "MODEL_SECTION_NOT_IN_FRONT_OF_CAMERA"
+            if model_section is not None and measured_section is not None:
+                evidence["model_center_camera_mm"] = section_center.tolist()
+                evidence["model_distance_to_left_camera_mm"] = float(np.linalg.norm(section_center))
+                evidence["center_distance_error_mm"] = float(np.linalg.norm(center_camera) - np.linalg.norm(section_center))
+                evidence["distance_reference"] = "CENTERLINE_AT_SAME_OBSERVED_SECTION"
             for role in ("left", "right"):
                 evidence[role] = _view_evidence(spec, center, axis, getattr(calibration, role), images[role],
                     getattr(depth, f"{role}_depth_mm"), getattr(depth, f"{role}_valid"),
@@ -177,6 +199,11 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
         else:
             reasons = ["OUT_OF_VIEW_OR_INSUFFICIENT_SURFACE_EVIDENCE"]
         evidence["reason_codes"] = reasons
+        evidence["measurement"] = pipe_measurement_record(
+            spec, status="MEASURED" if measured_section else "MODEL_PREDICTION_ONLY" if model_section else "UNKNOWN",
+            measured=measured_section, model_prediction=model_section,
+            surface_samples=observation.get("surface_samples", {}) if observation is not None else {},
+            reason_codes=[] if measured_section else reasons)
         result[spec["pipe_id"]] = evidence
     return result
 
@@ -210,6 +237,10 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         surface = extract_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
         anchors = settings["anchors"] if group.get("anchors_apply", group is groups[-1]) else {}
         registration = register_elevation(pipe_specs, surface["observations"], settings["axis_world"], anchors=anchors)
+        present_count = settings.get("present_pipe_count")
+        if present_count is not None and len(surface["observations"]) > present_count:
+            registration = {"status": "SCENE_INVENTORY_CONFLICT", "matches": [],
+                            "reason_codes": ["OBSERVATIONS_EXCEED_PRESENT_PIPE_COUNT"]}
         sensor_healthy = bool(group.get("pair_healthy", False))
         surface_truncated = bool(surface.get("audit", {}).get("truncated", False))
         healthy = sensor_healthy and not surface_truncated
@@ -250,6 +281,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         state = "INSTALLED" if evidence["installed_candidate"] else "NOT_INSTALLED" if len(independent) >= 2 else "UNKNOWN"
         reasons = ["REPEATED_REGISTERED_FREE_SPACE"] if state == "NOT_INSTALLED" else evidence["reason_codes"]
         rows.append({"pipe_id": pipe_id, "installation_state": state, "installation_state_zh": STATE_ZH[state],
+                     "measurement": evidence["measurement"],
                      "reason_codes": reasons, "state_basis": reasons[0], "current_evidence": evidence,
                      "independent_free_space_captures": list(reversed(independent)),
                      "assessment_scope": "LOCAL_COMMON_AXIAL_SECTION"})
@@ -257,7 +289,12 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             "pipes": rows, "registration": current["registration"], "local_surface": current_surface,
             "capture_audit": {"count": len(captures), "groups": captures},
             "registration_required": True, "qr_registration_required": False,
-            "production_authority": False, "longitudinal_installation_segments_assessed": False}
+            "production_authority": False, "longitudinal_installation_segments_assessed": False,
+            "counts_scope": "MODEL_CANDIDATE_POSITIONS_NOT_PHYSICAL_INVENTORY",
+            "scene_inventory": {"present_pipe_count": settings.get("present_pipe_count"),
+                                "model_candidate_count": len(pipe_specs),
+                                "observed_cylinder_count": len(current_surface["observations"]),
+                                "identity_or_absence_proof": False}}
 
 
 def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_path: str | Path | None = None,

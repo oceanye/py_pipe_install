@@ -1,0 +1,92 @@
+{
+  "tested_code_sha": "43c0b156f4039fe79d254582e4a4f1356e98fe63",
+  "local_suite": {
+    "command": ".venv\\Scripts\\python.exe -m pytest tests -q",
+    "status": "PASS",
+    "passed": 474,
+    "skipped": 1,
+    "subtests_passed": 250,
+    "duration_seconds": 162.83,
+    "evidence_source": "Recorded command output in local execution transcript; full local pytest log was not persisted.",
+    "includes_local_untracked_tests": true
+  },
+  "checks": [
+    {
+      "id": "geometry_analytic_and_sampled",
+      "status": "PASS",
+      "tests": "tests/test_pipe_geometry.py"
+    },
+    {
+      "id": "axial_gauge_and_inventory_contract",
+      "status": "PASS",
+      "tests": "tests/test_elevation_auto.py"
+    },
+    {
+      "id": "gui_detail_and_portable_scene",
+      "status": "PASS",
+      "tests": "tests/test_elevation_gui.py",
+      "actual_dxf_package": "PASS_DXF_RESTORE_COUNT_3_CATALOG_12_MEASUREMENT_DIALOG"
+    },
+    {
+      "id": "stl_dxf_catalog_mapping",
+      "status": "PASS",
+      "matched_cross_sections": 12,
+      "evidence": "model_mapping.json"
+    },
+    {
+      "id": "low_light_safe_unknown_replay",
+      "status": "PASS",
+      "interpretation": "Correct rejection, not field measurement success",
+      "evidence": "field_replay.json"
+    },
+    {
+      "id": "field_measurement_availability",
+      "status": "FAIL",
+      "reason": "No accepted cylinders; candidate search truncated and analysis_healthy=false. No reliable pipe diameter or distance."
+    },
+    {
+      "id": "new_multiview_calibration",
+      "status": "NOT_RUN",
+      "reason": "Reused existing 15-pose calibration; current six pairs show one stationary pose only."
+    },
+    {
+      "id": "daylight_camera_and_shutter",
+      "status": "NOT_RUN",
+      "reason": "No new hardware capture during this iteration. Existing evidence uses AUTO exposure."
+    },
+    {
+      "id": "independent_metric_ground_truth",
+      "status": "NOT_RUN",
+      "reason": "No independent pipe centreline/surface distance measurement."
+    }
+  ],
+  "ci": {
+    "run_id": 36936986092,
+    "url": "https://github.com/oceanye/py_pipe_install/actions/runs/36936986092",
+    "status": "PASS",
+    "verified_code_sha": "43c0b156f4039fe79d254582e4a4f1356e98fe63",
+    "python": "3.12.14",
+    "dependencies": "Fresh installation from requirements.txt plus pytest==9.1.1",
+    "windows": {
+      "passed": 466,
+      "skipped": 1,
+      "subtests_passed": 247,
+      "duration_seconds": 157.08,
+      "job_url": "https://github.com/oceanye/py_pipe_install/actions/runs/36936986092/job/110619436459"
+    },
+    "ubuntu": {
+      "passed": 450,
+      "skipped": 17,
+      "subtests_passed": 247,
+      "duration_seconds": 52.29,
+      "job_url": "https://github.com/oceanye/py_pipe_install/actions/runs/36936986092/job/110619436648"
+    },
+    "skip_explanation": "Both skip the import-isolation test when tkinter is already imported; Ubuntu additionally skips 16 Tk GUI tests without a display. Windows executes those GUI tests.",
+    "additional_workflow_checks": {
+      "replay_current_m0_fixture": "PASS_BOTH_PLATFORMS",
+      "generate_pipe_group2_synthetic_stereo_fixture": "PASS_BOTH_PLATFORMS",
+      "analyze_field_stereo_software_demo": "PASS_BOTH_PLATFORMS"
+    },
+    "counts_vs_local": "Local includes 8 untracked remote_files tests and 3 additional subtests; CI tests only the committed branch."
+  }
+}

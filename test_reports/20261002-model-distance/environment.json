@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-10-01T22:50:04.341963+00:00",
+  "tested_code_sha": "43c0b156f4039fe79d254582e4a4f1356e98fe63",
+  "python": "3.12.10",
+  "platform": "Windows-10-10.0.17763-SP0",
+  "packages": {
+    "numpy": "2.2.6",
+    "opencv-python-headless": "4.13.0.92",
+    "rhino3dm": "8.32.1",
+    "ezdxf": "1.4.4",
+    "pytest": "9.1.1"
+  },
+  "working_tree": "LOCAL_TRACKED_MODIFICATIONS_AND_UNTRACKED_REMOTE_FILE_TESTS_PRESENT",
+  "preserved_unrelated_changes": [
+    "doc/局部测量工作台使用说明.md",
+    "pipe_twin/gui.py",
+    "scripts/smoke_measurement_gui.py",
+    "pipe_twin/remote_files.py",
+    "tests/test_remote_files.py"
+  ],
+  "local_suite_includes_untracked_remote_file_tests": true,
+  "dependency_lock_match": false,
+  "dependency_note": "Local NumPy 2.2.6 differs from requirements.txt 2.5.2; see package metadata for all exact installed versions. GitHub CI installs repository requirements in a clean checkout."
+}

@@ -15,6 +15,7 @@ import cv2
 import numpy as np
 
 from .metrology import fit_local_cylinder
+from .pipe_geometry import cylinder_section_geometry
 
 
 class LocalSurfaceError(ValueError):
@@ -249,7 +250,21 @@ def _fit_components(image: np.ndarray, depth: np.ndarray, valid: np.ndarray, mas
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8), 8)
     accepted, rejected = [], []
     eligible = np.flatnonzero(stats[1:, cv2.CC_STAT_AREA] >= cfg["minimum_component_pixels"]) + 1
-    eligible = eligible[np.argsort(-stats[eligible, cv2.CC_STAT_AREA], kind="stable")]
+
+    # A large connected component is often a wall/floor fragment in a sparse
+    # stereo map.  Pipe surfaces are usually long and thin in the image.  Rank
+    # by an explainable tube-likeness score before applying the hard budget so
+    # a small real pipe can be tried before broad background blobs.  Area is
+    # still part of the score and the original label order breaks ties.
+    def priority(label: int) -> tuple[float, int, int]:
+        area = max(1, int(stats[label, cv2.CC_STAT_AREA]))
+        width = max(1, int(stats[label, cv2.CC_STAT_WIDTH]))
+        height = max(1, int(stats[label, cv2.CC_STAT_HEIGHT]))
+        aspect = max(width, height) / max(1.0, min(width, height))
+        score = math.log1p(area) * (1.0 + 2.0 * math.log1p(aspect))
+        return (-score, -area, int(label))
+
+    eligible = np.asarray(sorted((int(label) for label in eligible), key=priority), dtype=np.int32)
     limit = budget["remaining"] if budget is not None else cfg["maximum_component_candidates"]
     if len(eligible) > limit:
         rejected.append({"role": role, "segmentation_source": source, "target_color_srgb": target_color,
@@ -292,7 +307,8 @@ def _fit_components(image: np.ndarray, depth: np.ndarray, valid: np.ndarray, mas
                  "region_px": box, "point_count": n_points, "valid_fraction": fraction,
                  "support_region_pixels": denominator, "valid_region_pixels": valid_count,
                  "fit_support_fraction": n_points / denominator,
-                 "valid_fraction_basis": "ENCLOSED_COMPONENT_INCLUDING_HOLES" if source == "depth_connected_surface" else "RGB_COMPONENT"}
+                 "valid_fraction_basis": "ENCLOSED_COMPONENT_INCLUDING_HOLES" if source == "depth_connected_surface" else "RGB_COMPONENT",
+                 "candidate_priority": float(-priority(int(label))[0])}
         if fraction < cfg["minimum_valid_fraction"] or n_points < 80:
             rejected.append(audit | {"reason": "INSUFFICIENT_VALID_DEPTH"})
             continue
@@ -413,7 +429,7 @@ def _component_audit(fit: Mapping[str, Any]) -> dict[str, Any]:
     return {key: fit[key] for key in ("role", "region_px", "point_count", "valid_fraction", "fit_rms_mm",
                                      "visible_arc_degrees", "measured_color_srgb", "segmentation_sources", "depth_median_mm", "depth_mad_mm",
                                      "support_region_pixels", "valid_region_pixels", "fit_support_fraction", "valid_fraction_basis",
-                                     "diameter_source", "diameter_includes_near_surface") if key in fit}
+                                     "candidate_priority", "diameter_source", "diameter_includes_near_surface") if key in fit}
 
 
 def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibration: Any,
@@ -426,23 +442,55 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
     rejected, view_candidates = [], {}
     depth_audit = {}
     fit_budgets = {}
+    considered_colors = colors[:32]
+    # Keep a fixed total per eye, but reserve a small independent quota for
+    # every configured display colour.  This prevents the depth-fragment pass
+    # from starving colour proposals while retaining the larger geometry-first
+    # budget when no useful colour component exists.  For tiny test budgets,
+    # each colour gets one slot and depth uses whatever remains.
+    if considered_colors:
+        color_reserve = min(cfg["maximum_component_candidates"],
+                            max(len(considered_colors), cfg["maximum_component_candidates"] // 4))
+        depth_quota = cfg["maximum_component_candidates"] - color_reserve
+        color_quotas = {color: color_reserve // len(considered_colors) for color in considered_colors}
+        for color in considered_colors[:color_reserve % len(considered_colors)]:
+            color_quotas[color] += 1
+    else:
+        depth_quota = cfg["maximum_component_candidates"]
+        color_quotas = {}
     for role, image, z, valid in (("left", left, arrays[0], arrays[2]), ("right", right, arrays[1], arrays[3])):
-        budget = {"remaining": cfg["maximum_component_candidates"], "attempted": 0}
+        budget = {"remaining": cfg["maximum_component_candidates"], "attempted": 0,
+                  "allocated": cfg["maximum_component_candidates"], "sources": {}}
         # Geometry proposals work even when display colours differ from paint.
         mask = _depth_surface_mask(z, valid, cfg["depth_discontinuity_mm"])
-        accepted, errors = _fit_components(image, z, valid, mask, calibration, role, "depth_connected_surface", cfg, budget=budget)
+        depth_budget = {"remaining": depth_quota, "attempted": 0, "allocated": depth_quota}
+        accepted, errors = _fit_components(image, z, valid, mask, calibration, role, "depth_connected_surface", cfg, budget=depth_budget)
         rejected.extend(errors)
+        budget["attempted"] += depth_budget["attempted"]
+        budget["remaining"] -= depth_budget["attempted"]
+        budget["sources"]["depth_connected_surface"] = depth_budget
         depth_audit[role] = {"accepted_components": len(accepted), "rejected_components": len(errors),
-                             "valid_fraction": float(np.mean(valid & np.isfinite(z) & (z > 0)))}
+                             "valid_fraction": float(np.mean(valid & np.isfinite(z) & (z > 0))),
+                             "allocated_candidates": depth_quota,
+                             "attempted_candidates": depth_budget["attempted"]}
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
-        for color in colors[:32]:
+        for color in considered_colors:
             target = cv2.cvtColor(_hex_bgr(color), cv2.COLOR_BGR2LAB).astype(np.float32)[0, 0]
             color_mask = np.linalg.norm(lab - target, axis=2) <= cfg["color_delta_lab"]
-            fits, errors = _fit_components(image, z, valid, color_mask, calibration, role, "rgb_component", cfg, color, budget=budget)
-            candidate_colors[color][role] = {"accepted_components": len(fits), "rejected_components": len(errors)}
+            color_budget = {"remaining": color_quotas[color], "attempted": 0, "allocated": color_quotas[color]}
+            fits, errors = _fit_components(image, z, valid, color_mask, calibration, role, "rgb_component", cfg, color, budget=color_budget)
+            budget["attempted"] += color_budget["attempted"]
+            budget["remaining"] -= color_budget["attempted"]
+            budget["sources"][f"rgb_component:{color}"] = color_budget
+            candidate_colors[color][role] = {"accepted_components": len(fits), "rejected_components": len(errors),
+                                             "allocated_candidates": color_quotas[color],
+                                             "attempted_candidates": color_budget["attempted"],
+                                             "source_skipped": any(row.get("source_skipped") for row in errors)}
             accepted.extend(fits)
             rejected.extend(errors)
         view_candidates[role] = _deduplicate(accepted)
+        # A source quota is an internal scheduling decision; expose the total
+        # separately so callers can still enforce the original per-eye cap.
         fit_budgets[role] = budget
     if len(colors) > 32:
         rejected.append({"reason": "COLOR_CANDIDATE_BUDGET_EXCEEDED", "skipped_colors": len(colors) - 32})
@@ -475,6 +523,16 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
             "point_count": int(lf["point_count"] + rf["point_count"]),
             "left_right_diameter_difference_mm": abs(lf["diameter_mm"] - rf["diameter_mm"]),
             "visible_arc_degrees": float(min(lf["visible_arc_degrees"], rf["visible_arc_degrees"])),
+            "distance_geometry": cylinder_section_geometry(
+                geometry["center_camera_mm"], geometry["axis_camera"], measured,
+                section_definition="MIDPOINT_OF_COMMON_STEREO_OBSERVED_AXIS_SEGMENT",
+                intrinsic=_intrinsic(calibration.left)),
+            "surface_samples": {role: {
+                "depth_z_median_mm": fit["depth_median_mm"],
+                "depth_z_mad_mm": fit["depth_mad_mm"],
+                "point_count": fit["point_count"],
+                "definition": "OBSERVED_COMPONENT_DEPTH_PIXELS_NOT_AXIS_OR_APEX",
+            } for role, fit in (("left", lf), ("right", rf))},
             "pair_score": score, **geometry,
         })
     cloud = _CloudBudget(cfg["maximum_cloud_points"])
