@@ -1,0 +1,27 @@
+{
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "win32",
+  "versions": {
+    "numpy": "2.2.6",
+    "opencv-python-headless": "4.13.0.92",
+    "pytest": "9.1.1",
+    "ezdxf": "1.4.4",
+    "rhino3dm": "8.32.1"
+  },
+  "actual_frame_size_px": [
+    3840,
+    1080
+  ],
+  "eye_size_px": [
+    1920,
+    1080
+  ],
+  "layout": "side_by_side_left_right",
+  "camera_index": 0,
+  "backend": 700,
+  "opencv_gain_readback": -1,
+  "auto_exposure_readback": -1,
+  "unsupported_readback_is_not_a_physical_value": true,
+  "test_mode": "LOCAL_SOFTWARE_TESTS_AND_REAL_CAMERA_DIAGNOSTICS",
+  "physical_labels_and_independent_reference": "NOT_RUN"
+}

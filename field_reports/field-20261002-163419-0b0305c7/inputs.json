@@ -1,0 +1,43 @@
+{
+  "capture_code_sha": "982311935206bcf4479e4ed4ef2b74aa406c857b",
+  "integration_code_sha": "9318e3f7ce618dccf90e1db4540fd652b0c0b686",
+  "source_file_hashes": [
+    {
+      "path": "pipe_twin/camera_exposure.py",
+      "sha256": "4b76e73148442c28d6f2345d143bcebe7711571c29861e0577ac6449b5606231"
+    },
+    {
+      "path": "pipe_twin/stereo_camera.py",
+      "sha256": "408b12f719fe7d46761b6a2736fef876e4a4cf17272ce74d9b46fa29fbb358e4"
+    },
+    {
+      "path": "pipe_twin/remote_capture.py",
+      "sha256": "29df4f9147bda89c705887c1dc1e6a142b4ea6978a563f61982ff50b1fa71e2e"
+    },
+    {
+      "path": "pipe_twin/capture_agent.py",
+      "sha256": "6b049833fdcfa9490be7882136929d45eb740437c62e7ada1cfcdaa478b8909c"
+    },
+    {
+      "path": "pipe_twin/remote_fetch.py",
+      "sha256": "236208641a32117431b055cda41bf012505b655cda5eb0b723bd3420d217b2cd"
+    },
+    {
+      "path": "pipe_twin/remote_files.py",
+      "sha256": "93f14a54b9aeb9c0ecd19eed7b46f19e94f0ff8523260b05f546cb98d640ef85"
+    },
+    {
+      "path": "pipe_twin/office_client.py",
+      "sha256": "9328b253436bf8fe7e02fdb03dd122cbc6c3ee5a2980429d76fd3493d59d7c53"
+    },
+    {
+      "path": "tests/test_remote_files.py",
+      "sha256": "7d8333453e45e9d8d28a185b2802beacdcd019be1a20bc4c719a6ee711f0ca06"
+    }
+  ],
+  "prior_remote_run_id": "remote-20261002-152358-4cda1f0b",
+  "prior_remote_manifest_sha256": "53721bf39c5d4a1d014da2159fbb7f246b02b495c205f25ffcb891175db1a1c2",
+  "raw_images_location": "CONTROLLED_FILE_SERVICE_ONLY",
+  "calibration_sha256": "84e4285ff8d9ef8cb279e0a38b42fbd5c2f91eb5e0b50527fdd3651e0294d378",
+  "application_changes": "LOCAL_FILE_SERVICE_COMPATIBILITY_ONLY_NO_EXPOSURE_OR_FITTING_CHANGES"
+}

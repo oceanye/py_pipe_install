@@ -1,0 +1,95 @@
+{
+  "run_id": "field-20261002-163419-0b0305c7",
+  "capture_code_sha": "982311935206bcf4479e4ed4ef2b74aa406c857b",
+  "integration_code_sha": "9318e3f7ce618dccf90e1db4540fd652b0c0b686",
+  "capture": "PARTIAL",
+  "manual_handoff": {
+    "status": "COMPLETED",
+    "quality_status": "PARTIAL",
+    "pair_count": 8,
+    "usable_pair_count": 1,
+    "unusable_pair_count": 7,
+    "started_at": "2026-10-02T16:37:54.888+08:00",
+    "finished_at": "2026-10-02T16:38:22.401+08:00",
+    "capture_json_sha256": "0b7789f55603e13b07e856eb163ca3b91119a990e9e6c48c0912512ae28edb05"
+  },
+  "auto_diagnostic": {
+    "status": "COMPLETED",
+    "quality_status": "USABLE",
+    "pair_count": 8,
+    "usable_pair_count": 8,
+    "unusable_pair_count": 0,
+    "started_at": "2026-10-02T16:39:44.017+08:00",
+    "finished_at": "2026-10-02T16:40:16.618+08:00",
+    "capture_json_sha256": "266670beee520d8e8a697b648627a71676d883abc61808771863c2388ff3ca80"
+  },
+  "short_shutter_requirement": "NOT_MET_BY_AUTO",
+  "analysis": "NOT_RUN",
+  "surface_audit_status": "NOT_RUN",
+  "observation_count": null,
+  "pipe_to_model_mapping": "UNKNOWN",
+  "independent_metric_ground_truth": "NOT_RUN",
+  "new_calibration_solved": false,
+  "calibration_id": "field-chess-fb5dc0f71ee5",
+  "calibration_file_sha256": "84e4285ff8d9ef8cb279e0a38b42fbd5c2f91eb5e0b50527fdd3651e0294d378",
+  "board_inner_corners": [
+    8,
+    6
+  ],
+  "board_square_mm": 17.0,
+  "board_local_checks": [
+    {
+      "pair_index": 1,
+      "both_detected": true,
+      "vertical_p95_px": 2.0317079735959767,
+      "square_median_mm": 17.005933864056157,
+      "depth_median_mm": 1290.5641340646894
+    },
+    {
+      "pair_index": 4,
+      "both_detected": true,
+      "vertical_p95_px": 1.9340157494835892,
+      "square_median_mm": 17.063090425446543,
+      "depth_median_mm": 1290.6038792449715
+    },
+    {
+      "pair_index": 8,
+      "both_detected": true,
+      "vertical_p95_px": 1.9814904649475975,
+      "square_median_mm": 17.0362127163319,
+      "depth_median_mm": 1290.9614591457334
+    }
+  ],
+  "camera_released": true,
+  "final_exposure": "AUTO",
+  "prior_remote_download": {
+    "status": "PASS",
+    "workers": 4,
+    "file_count": 18,
+    "manifest_sha256": "53721bf39c5d4a1d014da2159fbb7f246b02b495c205f25ffcb891175db1a1c2",
+    "pixel_statistics_verified_against_png": true
+  },
+  "control_service": {
+    "observed_at": "2026-10-02T16:34+08:00",
+    "port_8770": "NO_LISTENER",
+    "port_8765": "AVAILABLE",
+    "capture_method": "LOCAL_EQUIVALENT_CLI_AND_TEST_ONLY_AUTO_SESSION"
+  },
+  "analysis_gate": "manual exposure fails; independent diameter/distance references unavailable; no DXF measurement issued",
+  "tests": {
+    "status": "PASS",
+    "code_sha": "9318e3f7ce618dccf90e1db4540fd652b0c0b686",
+    "passed": 489,
+    "skipped": 1,
+    "subtests_passed": 254,
+    "duration_seconds": 162.15700000000652,
+    "junit_sha256": "e0a9f72eb1115250768dd8d7c8f24b9ab746686229b860c69bc1d2a5d85c12e4",
+    "earlier_targeted_failures_retained": true,
+    "full_run_after_compatibility_fixes": true
+  },
+  "transfer": {
+    "status": "SEE_UPLOAD_JSON",
+    "workers": 4,
+    "home_to_office_end_to_end": "NOT_RUN"
+  }
+}

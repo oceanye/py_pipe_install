@@ -1,0 +1,3324 @@
+{
+  "captures": {
+    "original_remote": {
+      "status": "COMPLETED",
+      "quality_status": "PARTIAL",
+      "pair_count": 8,
+      "usable_pair_count": 1,
+      "unusable_pair_count": 7,
+      "started_at": "2026-10-02T15:23:58.595+08:00",
+      "finished_at": "2026-10-02T15:24:19.456+08:00",
+      "capture_json_sha256": "9d37742a76794b613c0f1ed0aa4717463a85a0c16acfd3b9b0656528b55d0196",
+      "frames": [
+        {
+          "capture_id": "remote-20261002-152358-fd58b72b-0001",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 60.812,
+              "p05": 2.0,
+              "p50": 27.0,
+              "p95": 182.0,
+              "max": 254,
+              "dark_fraction": 0.108511,
+              "saturated_fraction": 0.000106,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 67.146,
+              "p05": 4.0,
+              "p50": 37.0,
+              "p95": 174.0,
+              "max": 254,
+              "dark_fraction": 0.024406,
+              "saturated_fraction": 5.2e-05,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": null,
+          "files": {
+            "left": {
+              "path": "pair_0001_left.png",
+              "sha256": "66c74d81d118bade9f801470a60abc70e9342128daccf9c5c985f3993915458b",
+              "size_bytes": 2649743
+            },
+            "right": {
+              "path": "pair_0001_right.png",
+              "sha256": "b1e89d510b91117e99f27bc2a5925428863c4cadd9f113f80407835d09c99932",
+              "size_bytes": 2560086
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-152358-fd58b72b-0002",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.236,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 2,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.403,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 2,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": null,
+          "files": {
+            "left": {
+              "path": "pair_0002_left.png",
+              "sha256": "d9da5ecfc7949223330ab1be72af4f7867e3413c6bfee836cf303c4d552dd1ec",
+              "size_bytes": 25283
+            },
+            "right": {
+              "path": "pair_0002_right.png",
+              "sha256": "56142fd86bb15e2a31d4112f1b44671e025965a967f8a286f26d18c89dda28ac",
+              "size_bytes": 55672
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-152358-fd58b72b-0003",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.256,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 2,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.409,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 8,
+              "dark_fraction": 0.999995,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": null,
+          "files": {
+            "left": {
+              "path": "pair_0003_left.png",
+              "sha256": "710369d7a2f5692aef3c3cab79c6e14e3d93fe61efea9f178b1c30df4463472b",
+              "size_bytes": 25656
+            },
+            "right": {
+              "path": "pair_0003_right.png",
+              "sha256": "b236a75cf3b80ca342c56aee46961257db64acbdd7534449b15f6f3dc9492557",
+              "size_bytes": 55078
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-152358-fd58b72b-0004",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.297,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 2,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.403,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 4,
+              "dark_fraction": 0.999998,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": null,
+          "files": {
+            "left": {
+              "path": "pair_0004_left.png",
+              "sha256": "dd6f192bd6ef155e0b5a959510e5445c24fa63c7982ab7bcd740ce05771455d2",
+              "size_bytes": 27953
+            },
+            "right": {
+              "path": "pair_0004_right.png",
+              "sha256": "e97a33945fe32f7cc4dc1375210c1700fb19c2d80bd01550e36cda0957794536",
+              "size_bytes": 54484
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-152358-fd58b72b-0005",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.257,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 2,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.402,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 8,
+              "dark_fraction": 0.999993,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": null,
+          "files": {
+            "left": {
+              "path": "pair_0005_left.png",
+              "sha256": "ce54ff1a166f50b1b3a06f8fbb526c6a71feca659b786b8cfb0ac501ea853fbb",
+              "size_bytes": 25901
+            },
+            "right": {
+              "path": "pair_0005_right.png",
+              "sha256": "0274dc7f306ee46076c1b63ea508601837bdecbc18f394258d2a707595224628",
+              "size_bytes": 57032
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-152358-fd58b72b-0006",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.245,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 2,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.41,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 8,
+              "dark_fraction": 0.999996,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": null,
+          "files": {
+            "left": {
+              "path": "pair_0006_left.png",
+              "sha256": "87336dab69bd1943d6182791ff9716eaa0715ebe4a74cbb7980a029d6d0b6b28",
+              "size_bytes": 25698
+            },
+            "right": {
+              "path": "pair_0006_right.png",
+              "sha256": "c6cb2141e40dfb8e6ee6686906098f4fecf141a4cd698796abfb82105d0a29d1",
+              "size_bytes": 55132
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-152358-fd58b72b-0007",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.24,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 2,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.402,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 7,
+              "dark_fraction": 0.999993,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": null,
+          "files": {
+            "left": {
+              "path": "pair_0007_left.png",
+              "sha256": "e6600ac9e3dc0967f1761082f3dabe6a372ede669e7832dbbffb1eb83e1d6cdd",
+              "size_bytes": 27414
+            },
+            "right": {
+              "path": "pair_0007_right.png",
+              "sha256": "beea4e0cf7800df450fc891ecf46f7a797cd6b968c73c758d90efe921f03f5f3",
+              "size_bytes": 54240
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-152358-fd58b72b-0008",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.256,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 2,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.398,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 1.0,
+              "max": 3,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": null,
+          "files": {
+            "left": {
+              "path": "pair_0008_left.png",
+              "sha256": "9554f9dcdbd1b40bad4eeeda700eaa4241b866302302937ed650c451a21c7974",
+              "size_bytes": 26807
+            },
+            "right": {
+              "path": "pair_0008_right.png",
+              "sha256": "ae1fe68b55ce1c01b5476b685cdea7b6248f71d85093bde193f0b80bdbd27cc5",
+              "size_bytes": 57215
+            }
+          }
+        }
+      ]
+    },
+    "manual_handoff": {
+      "status": "COMPLETED",
+      "quality_status": "PARTIAL",
+      "pair_count": 8,
+      "usable_pair_count": 1,
+      "unusable_pair_count": 7,
+      "started_at": "2026-10-02T16:37:54.888+08:00",
+      "finished_at": "2026-10-02T16:38:22.401+08:00",
+      "capture_json_sha256": "0b7789f55603e13b07e856eb163ca3b91119a990e9e6c48c0912512ae28edb05",
+      "frames": [
+        {
+          "capture_id": "remote-20261002-163754-ca1b53fd-0001",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 23.958,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 102.0,
+              "max": 221,
+              "dark_fraction": 0.392995,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 26.405,
+              "p05": 1.0,
+              "p50": 8.0,
+              "p95": 96.0,
+              "max": 228,
+              "dark_fraction": 0.327129,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.624
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 258.999
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0001_left.png",
+              "sha256": "53cd7bcce4c4b3c705f19d70b60ae7083f3fb0dca6d6b268878ca43c66f39198",
+              "size_bytes": 2046353
+            },
+            "right": {
+              "path": "pair_0001_right.png",
+              "sha256": "83cba132706ea4ef51e11c3db91c574d384e53a968fe5ab5ed34b5bedf5638a5",
+              "size_bytes": 2084116
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163754-ca1b53fd-0002",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.001,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 1,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            },
+            "right": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0002_left.png",
+              "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b",
+              "size_bytes": 7923
+            },
+            "right": {
+              "path": "pair_0002_right.png",
+              "sha256": "a08b95d27092d96c42bd666e403d23bf134252404de64c2e69ecad1bc75314e6",
+              "size_bytes": 9013
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163754-ca1b53fd-0003",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.001,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 1,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            },
+            "right": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0003_left.png",
+              "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b",
+              "size_bytes": 7923
+            },
+            "right": {
+              "path": "pair_0003_right.png",
+              "sha256": "2fe8ea3abc0d3725aada581a57d99faadd21af38a2cd501c85d5085218b0ed80",
+              "size_bytes": 9396
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163754-ca1b53fd-0004",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": true,
+            "pair_usable": false,
+            "reason_codes": [
+              "LEFT_RIGHT_IDENTICAL",
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            },
+            "right": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0004_left.png",
+              "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b",
+              "size_bytes": 7923
+            },
+            "right": {
+              "path": "pair_0004_right.png",
+              "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b",
+              "size_bytes": 7923
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163754-ca1b53fd-0005",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.001,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 1,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            },
+            "right": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0005_left.png",
+              "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b",
+              "size_bytes": 7923
+            },
+            "right": {
+              "path": "pair_0005_right.png",
+              "sha256": "d16502b89c8eccf158c886d97571e91f2a08ecfd25b5d9245655d7cd56285243",
+              "size_bytes": 9516
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163754-ca1b53fd-0006",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.001,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 1,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            },
+            "right": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0006_left.png",
+              "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b",
+              "size_bytes": 7923
+            },
+            "right": {
+              "path": "pair_0006_right.png",
+              "sha256": "d5b70f9ec556ce5e13f4a7faa7a42bdd0ce1cf727584a0c1afff49309970cd95",
+              "size_bytes": 9037
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163754-ca1b53fd-0007",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.001,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 1,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            },
+            "right": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0007_left.png",
+              "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b",
+              "size_bytes": 7923
+            },
+            "right": {
+              "path": "pair_0007_right.png",
+              "sha256": "3f133b988dc63b644409249975435b86410e7a4907fd409412d61c384c9767e7",
+              "size_bytes": 9265
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163754-ca1b53fd-0008",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 1,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.001,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 1,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": false,
+            "pair_usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "DRIVER_REPORTED",
+              "capture_exposure_target_ms": 5.0,
+              "capture_exposure_ms": 3.90625
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            },
+            "right": {
+              "found": false,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": null,
+              "errors": []
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0008_left.png",
+              "sha256": "b12c4ce9200d554e10f54df03b829d197eadbb9402341825978a8aaa3e9c7431",
+              "size_bytes": 7943
+            },
+            "right": {
+              "path": "pair_0008_right.png",
+              "sha256": "473cc52580606d818727bfc4a70316429c60388627bbaec715fe614724307aa4",
+              "size_bytes": 8770
+            }
+          }
+        }
+      ]
+    },
+    "auto_diagnostic": {
+      "status": "COMPLETED",
+      "quality_status": "USABLE",
+      "pair_count": 8,
+      "usable_pair_count": 8,
+      "unusable_pair_count": 0,
+      "started_at": "2026-10-02T16:39:44.017+08:00",
+      "finished_at": "2026-10-02T16:40:16.618+08:00",
+      "capture_json_sha256": "266670beee520d8e8a697b648627a71676d883abc61808771863c2388ff3ca80",
+      "frames": [
+        {
+          "capture_id": "remote-20261002-163944-eb4aea28-0001",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 25.159,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 105.0,
+              "max": 224,
+              "dark_fraction": 0.405054,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 36.694,
+              "p05": 1.0,
+              "p50": 13.0,
+              "p95": 118.0,
+              "max": 252,
+              "dark_fraction": 0.264686,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.645
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 259.052
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0001_left.png",
+              "sha256": "7d6877d81d27ba179c1405d2f101ba8e86f9a26654d8977c099d6a58f617e609",
+              "size_bytes": 2164108
+            },
+            "right": {
+              "path": "pair_0001_right.png",
+              "sha256": "55258385de74072a64a2c23e4435b69fd674b6072215c7aa4f0c6709d6c5e6a3",
+              "size_bytes": 2472789
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163944-eb4aea28-0002",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 25.338,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 105.0,
+              "max": 218,
+              "dark_fraction": 0.388143,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 36.223,
+              "p05": 1.0,
+              "p50": 12.0,
+              "p95": 118.0,
+              "max": 252,
+              "dark_fraction": 0.253424,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.61
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 259.058
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0002_left.png",
+              "sha256": "6d8747324f3767b9b914d79c2621eec790aebcc71c1fabddec156313d79f6a78",
+              "size_bytes": 2165676
+            },
+            "right": {
+              "path": "pair_0002_right.png",
+              "sha256": "548d46370c2641058471717b6d716a0cbad0c336063a8e894eee90a775f20880",
+              "size_bytes": 2439810
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163944-eb4aea28-0003",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 24.939,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 105.0,
+              "max": 221,
+              "dark_fraction": 0.380913,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 36.374,
+              "p05": 1.0,
+              "p50": 12.0,
+              "p95": 118.0,
+              "max": 252,
+              "dark_fraction": 0.22802,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.638
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 259.036
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0003_left.png",
+              "sha256": "e266fec5dea6aee2ccfb01ad49b68fb69d67a1b43507a2054156164b656b9d32",
+              "size_bytes": 2107425
+            },
+            "right": {
+              "path": "pair_0003_right.png",
+              "sha256": "0c5c54e87c65ea610d8044d80cf7fa93fa78f355436c02068df8813cf75e9ee4",
+              "size_bytes": 2441047
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163944-eb4aea28-0004",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 25.434,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 105.0,
+              "max": 239,
+              "dark_fraction": 0.374408,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 36.769,
+              "p05": 1.0,
+              "p50": 13.0,
+              "p95": 118.0,
+              "max": 253,
+              "dark_fraction": 0.249323,
+              "saturated_fraction": 1e-06,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.647
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 259.045
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0004_left.png",
+              "sha256": "87e150b6e46dd521934efd18b1f39a82ffc58ad3d31a632ebb0d01668cdd7a82",
+              "size_bytes": 2189663
+            },
+            "right": {
+              "path": "pair_0004_right.png",
+              "sha256": "d7e1dbf286767de62b10247f8b2b3abb6ca3f7dcfe804bab58796fdc74975c63",
+              "size_bytes": 2492180
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163944-eb4aea28-0005",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 25.191,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 105.0,
+              "max": 233,
+              "dark_fraction": 0.39069,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 36.479,
+              "p05": 1.0,
+              "p50": 13.0,
+              "p95": 118.0,
+              "max": 253,
+              "dark_fraction": 0.268707,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.62
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 259.052
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0005_left.png",
+              "sha256": "c6b9b009a69a03758590d80b5cf6c1c8fb6eb6a6c25ae9b1317bbc634510529b",
+              "size_bytes": 2169125
+            },
+            "right": {
+              "path": "pair_0005_right.png",
+              "sha256": "2b79ecbfb413501340d0fb2604a74147dcfbe838c2cafbe7838fdc4d5e8b4ec2",
+              "size_bytes": 2471152
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163944-eb4aea28-0006",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 25.134,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 105.0,
+              "max": 225,
+              "dark_fraction": 0.392737,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 36.419,
+              "p05": 1.0,
+              "p50": 13.0,
+              "p95": 118.0,
+              "max": 253,
+              "dark_fraction": 0.269284,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.638
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 259.038
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0006_left.png",
+              "sha256": "7a818e92a9333cb5e6f91a04b38ffa58c215fddfa5be217dbeb97e98f64d75af",
+              "size_bytes": 2164764
+            },
+            "right": {
+              "path": "pair_0006_right.png",
+              "sha256": "553c09e515f23cbecbb5cf05d173a90b68339e4911603de50d4f91118e3e0664",
+              "size_bytes": 2469842
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163944-eb4aea28-0007",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 25.303,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 105.0,
+              "max": 238,
+              "dark_fraction": 0.37445,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 35.958,
+              "p05": 1.0,
+              "p50": 12.0,
+              "p95": 117.0,
+              "max": 253,
+              "dark_fraction": 0.259202,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.677
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 259.031
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0007_left.png",
+              "sha256": "f986bc1d66ca37bb9b9c3e8ac7cc9b8ab2ab024f27e787edd080fdd613333b17",
+              "size_bytes": 2184532
+            },
+            "right": {
+              "path": "pair_0007_right.png",
+              "sha256": "cb5a9e169ae507c247015bde0acd7d0940b2b4610fdd903d1cbd26ee42aeee6c",
+              "size_bytes": 2437619
+            }
+          }
+        },
+        {
+          "capture_id": "remote-20261002-163944-eb4aea28-0008",
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 24.707,
+              "p05": 1.0,
+              "p50": 5.0,
+              "p95": 105.0,
+              "max": 239,
+              "dark_fraction": 0.386475,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 35.66,
+              "p05": 1.0,
+              "p50": 12.0,
+              "p95": 117.0,
+              "max": 253,
+              "dark_fraction": 0.279529,
+              "saturated_fraction": 0.0,
+              "usable": true,
+              "reason_codes": []
+            },
+            "left_right_identical": false,
+            "pair_usable": true,
+            "reason_codes": []
+          },
+          "provenance": {
+            "left": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            },
+            "right": {
+              "capture_backend": "OpenCV",
+              "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+              "capture_device_index": 0,
+              "side_by_side_order": "LEFT_THEN_RIGHT",
+              "capture_sync_method": "SAME_UVC_FRAME",
+              "capture_exposure_status": "AUTO"
+            }
+          },
+          "chessboard": {
+            "left": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 137.6
+            },
+            "right": {
+              "found": true,
+              "inner_corners": [
+                8,
+                6
+              ],
+              "detector": "sb",
+              "errors": [],
+              "corner_count": 48,
+              "image_center_distance_px": 259.045
+            }
+          },
+          "files": {
+            "left": {
+              "path": "pair_0008_left.png",
+              "sha256": "f95d6f71d7b85bade9e208960f59a86cada8cb1fe136f1dc5e30151e50523299",
+              "size_bytes": 2110503
+            },
+            "right": {
+              "path": "pair_0008_right.png",
+              "sha256": "d20c30fe3dbddeecb6abe5dcf0b0c707ffe5926af79310b4a5cd7ff791570514",
+              "size_bytes": 2418415
+            }
+          }
+        }
+      ]
+    }
+  },
+  "exposure_steps": [
+    {
+      "label": "auto_start",
+      "exposure": {
+        "0": {
+          "target_ms": null,
+          "status": "AUTO",
+          "reported_ms": null,
+          "backend": 700,
+          "auto_accepted": true
+        }
+      },
+      "frame_count": 8,
+      "first": {
+        "elapsed_seconds": 1.0160000000032596,
+        "captured_at": "2026-10-02T16:39:00.316+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "left_right_identical": true,
+          "pair_usable": false,
+          "reason_codes": [
+            "LEFT_RIGHT_IDENTICAL",
+            "LOW_LUMINANCE_MAX",
+            "LOW_LUMINANCE_P50",
+            "LOW_LUMINANCE_P95",
+            "NEAR_BLACK_FRACTION"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -8.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      },
+      "last": {
+        "elapsed_seconds": 6.672000000020489,
+        "captured_at": "2026-10-02T16:39:06.101+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 26.12,
+            "p05": 1.0,
+            "p50": 5.0,
+            "p95": 108.0,
+            "max": 226,
+            "dark_fraction": 0.381653,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 37.357,
+            "p05": 1.0,
+            "p50": 13.0,
+            "p95": 119.0,
+            "max": 250,
+            "dark_fraction": 0.247421,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "left_right_identical": false,
+          "pair_usable": true,
+          "reason_codes": []
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -8.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      }
+    },
+    {
+      "label": "manual_1_256",
+      "exposure": {
+        "0": {
+          "target_ms": 5.0,
+          "status": "DRIVER_REPORTED",
+          "reported_ms": 3.90625,
+          "backend": 700,
+          "requested_native": -8,
+          "manual_accepted": true,
+          "shutter_accepted": true,
+          "readback_native": -8.0
+        }
+      },
+      "frame_count": 9,
+      "first": {
+        "elapsed_seconds": 0.014999999955762178,
+        "captured_at": "2026-10-02T16:39:07.545+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 26.298,
+            "p05": 1.0,
+            "p50": 6.0,
+            "p95": 109.0,
+            "max": 246,
+            "dark_fraction": 0.364478,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 36.939,
+            "p05": 1.0,
+            "p50": 12.0,
+            "p95": 119.0,
+            "max": 250,
+            "dark_fraction": 0.23846,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "left_right_identical": false,
+          "pair_usable": true,
+          "reason_codes": []
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 5.0,
+            "capture_exposure_ms": 3.90625
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 5.0,
+            "capture_exposure_ms": 3.90625
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -8.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      },
+      "last": {
+        "elapsed_seconds": 6.702999999979511,
+        "captured_at": "2026-10-02T16:39:13.843+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 1,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "left_right_identical": false,
+          "pair_usable": false,
+          "reason_codes": [
+            "LOW_LUMINANCE_MAX",
+            "LOW_LUMINANCE_P50",
+            "LOW_LUMINANCE_P95",
+            "NEAR_BLACK_FRACTION"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 5.0,
+            "capture_exposure_ms": 3.90625
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 5.0,
+            "capture_exposure_ms": 3.90625
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -8.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      }
+    },
+    {
+      "label": "manual_1_32",
+      "exposure": {
+        "0": {
+          "target_ms": 31.25,
+          "status": "DRIVER_REPORTED",
+          "reported_ms": 31.25,
+          "backend": 700,
+          "requested_native": -5,
+          "manual_accepted": true,
+          "shutter_accepted": true,
+          "readback_native": -5.0
+        }
+      },
+      "frame_count": 8,
+      "first": {
+        "elapsed_seconds": 0.6410000000032596,
+        "captured_at": "2026-10-02T16:39:14.769+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.001,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 1,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "left_right_identical": false,
+          "pair_usable": false,
+          "reason_codes": [
+            "LOW_LUMINANCE_MAX",
+            "LOW_LUMINANCE_P50",
+            "LOW_LUMINANCE_P95",
+            "NEAR_BLACK_FRACTION"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 31.25,
+            "capture_exposure_ms": 31.25
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 31.25,
+            "capture_exposure_ms": 31.25
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -5.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      },
+      "last": {
+        "elapsed_seconds": 6.672000000020489,
+        "captured_at": "2026-10-02T16:39:20.724+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.558,
+            "p05": 0.0,
+            "p50": 1.0,
+            "p95": 1.0,
+            "max": 24,
+            "dark_fraction": 0.999769,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.622,
+            "p05": 0.0,
+            "p50": 1.0,
+            "p95": 2.0,
+            "max": 37,
+            "dark_fraction": 0.993672,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95"
+            ]
+          },
+          "left_right_identical": false,
+          "pair_usable": false,
+          "reason_codes": [
+            "LOW_LUMINANCE_P50",
+            "LOW_LUMINANCE_P95",
+            "NEAR_BLACK_FRACTION"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 31.25,
+            "capture_exposure_ms": 31.25
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 31.25,
+            "capture_exposure_ms": 31.25
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -5.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      }
+    },
+    {
+      "label": "manual_1_8",
+      "exposure": {
+        "0": {
+          "target_ms": 125.0,
+          "status": "DRIVER_REPORTED",
+          "reported_ms": 125.0,
+          "backend": 700,
+          "requested_native": -3,
+          "manual_accepted": true,
+          "shutter_accepted": true,
+          "readback_native": -3.0
+        }
+      },
+      "frame_count": 9,
+      "first": {
+        "elapsed_seconds": 0.014999999955762178,
+        "captured_at": "2026-10-02T16:39:22.179+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.436,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 1.0,
+            "max": 24,
+            "dark_fraction": 0.999884,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.772,
+            "p05": 0.0,
+            "p50": 1.0,
+            "p95": 2.0,
+            "max": 34,
+            "dark_fraction": 0.993793,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95"
+            ]
+          },
+          "left_right_identical": false,
+          "pair_usable": false,
+          "reason_codes": [
+            "LOW_LUMINANCE_P50",
+            "LOW_LUMINANCE_P95",
+            "NEAR_BLACK_FRACTION"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 125.0,
+            "capture_exposure_ms": 125.0
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 125.0,
+            "capture_exposure_ms": 125.0
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -3.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      },
+      "last": {
+        "elapsed_seconds": 6.702999999979511,
+        "captured_at": "2026-10-02T16:39:28.476+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 2.963,
+            "p05": 0.0,
+            "p50": 1.0,
+            "p95": 13.0,
+            "max": 127,
+            "dark_fraction": 0.707023,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 4.941,
+            "p05": 1.0,
+            "p50": 1.0,
+            "p95": 19.0,
+            "max": 143,
+            "dark_fraction": 0.603586,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50"
+            ]
+          },
+          "left_right_identical": false,
+          "pair_usable": false,
+          "reason_codes": [
+            "LOW_LUMINANCE_P50"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 125.0,
+            "capture_exposure_ms": 125.0
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 125.0,
+            "capture_exposure_ms": 125.0
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -3.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      }
+    },
+    {
+      "label": "manual_1_4",
+      "exposure": {
+        "0": {
+          "target_ms": 250.0,
+          "status": "DRIVER_REPORTED",
+          "reported_ms": 250.0,
+          "backend": 700,
+          "requested_native": -2,
+          "manual_accepted": true,
+          "shutter_accepted": true,
+          "readback_native": -2.0
+        }
+      },
+      "frame_count": 9,
+      "first": {
+        "elapsed_seconds": 0.014999999955762178,
+        "captured_at": "2026-10-02T16:39:29.929+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 2.968,
+            "p05": 0.0,
+            "p50": 1.0,
+            "p95": 13.0,
+            "max": 125,
+            "dark_fraction": 0.707997,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 4.928,
+            "p05": 1.0,
+            "p50": 1.0,
+            "p95": 19.0,
+            "max": 138,
+            "dark_fraction": 0.609735,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50"
+            ]
+          },
+          "left_right_identical": false,
+          "pair_usable": false,
+          "reason_codes": [
+            "LOW_LUMINANCE_P50"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 250.0,
+            "capture_exposure_ms": 250.0
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 250.0,
+            "capture_exposure_ms": 250.0
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -2.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      },
+      "last": {
+        "elapsed_seconds": 6.702999999979511,
+        "captured_at": "2026-10-02T16:39:36.232+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 7.106,
+            "p05": 1.0,
+            "p50": 1.0,
+            "p95": 32.0,
+            "max": 162,
+            "dark_fraction": 0.609524,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 10.332,
+            "p05": 1.0,
+            "p50": 3.0,
+            "p95": 40.0,
+            "max": 175,
+            "dark_fraction": 0.497064,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "left_right_identical": false,
+          "pair_usable": false,
+          "reason_codes": [
+            "LOW_LUMINANCE_P50"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 250.0,
+            "capture_exposure_ms": 250.0
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "DRIVER_REPORTED",
+            "capture_exposure_target_ms": 250.0,
+            "capture_exposure_ms": 250.0
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -2.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      }
+    },
+    {
+      "label": "auto_restored",
+      "exposure": {
+        "0": {
+          "target_ms": null,
+          "status": "AUTO",
+          "reported_ms": null,
+          "backend": 700,
+          "auto_accepted": true
+        }
+      },
+      "frame_count": 8,
+      "first": {
+        "elapsed_seconds": 0.6560000000172295,
+        "captured_at": "2026-10-02T16:39:37.150+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 7.102,
+            "p05": 1.0,
+            "p50": 1.0,
+            "p95": 32.0,
+            "max": 161,
+            "dark_fraction": 0.609358,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 10.33,
+            "p05": 1.0,
+            "p50": 3.0,
+            "p95": 40.0,
+            "max": 176,
+            "dark_fraction": 0.496953,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "left_right_identical": false,
+          "pair_usable": false,
+          "reason_codes": [
+            "LOW_LUMINANCE_P50"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -2.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      },
+      "last": {
+        "elapsed_seconds": 6.688000000023749,
+        "captured_at": "2026-10-02T16:39:43.113+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 25.691,
+            "p05": 1.0,
+            "p50": 5.0,
+            "p95": 107.0,
+            "max": 235,
+            "dark_fraction": 0.370625,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 10.268,
+            "p05": 1.0,
+            "p50": 3.0,
+            "p95": 39.0,
+            "max": 176,
+            "dark_fraction": 0.498429,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "left_right_identical": false,
+          "pair_usable": true,
+          "reason_codes": []
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -2.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      }
+    },
+    {
+      "label": "auto_reopen_warmup",
+      "exposure": {
+        "0": {
+          "target_ms": null,
+          "status": "AUTO",
+          "reported_ms": null,
+          "backend": 700,
+          "auto_accepted": true
+        }
+      },
+      "frame_count": 8,
+      "first": {
+        "elapsed_seconds": 1.0160000000032596,
+        "captured_at": "2026-10-02T16:39:50.606+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "left_right_identical": true,
+          "pair_usable": false,
+          "reason_codes": [
+            "LEFT_RIGHT_IDENTICAL",
+            "LOW_LUMINANCE_MAX",
+            "LOW_LUMINANCE_P50",
+            "LOW_LUMINANCE_P95",
+            "NEAR_BLACK_FRACTION"
+          ]
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -2.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      },
+      "last": {
+        "elapsed_seconds": 6.672000000020489,
+        "captured_at": "2026-10-02T16:39:56.388+08:00",
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 25.362,
+            "p05": 1.0,
+            "p50": 5.0,
+            "p95": 105.0,
+            "max": 236,
+            "dark_fraction": 0.388067,
+            "saturated_fraction": 0.0,
+            "usable": true,
+            "reason_codes": []
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 36.057,
+            "p05": 1.0,
+            "p50": 12.0,
+            "p95": 118.0,
+            "max": 253,
+            "dark_fraction": 0.277099,
+            "saturated_fraction": 1e-06,
+            "usable": true,
+            "reason_codes": []
+          },
+          "left_right_identical": false,
+          "pair_usable": true,
+          "reason_codes": []
+        },
+        "provenance": {
+          "left": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          },
+          "right": {
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          }
+        },
+        "driver_properties": {
+          "EXPOSURE": -2.0,
+          "AUTO_EXPOSURE": -1.0,
+          "GAIN": -1.0,
+          "BRIGHTNESS": 0.0,
+          "GAMMA": 100.0,
+          "FPS": 0.0,
+          "BACKEND": 700.0
+        }
+      }
+    }
+  ]
+}

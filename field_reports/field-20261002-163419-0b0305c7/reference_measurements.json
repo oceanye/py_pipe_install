@@ -1,0 +1,47 @@
+{
+  "run_id": "field-20261002-163419-0b0305c7",
+  "physical_pipe_count": 3,
+  "board": {
+    "inner_corners": [
+      8,
+      6
+    ],
+    "square_mm": 17.0
+  },
+  "physical_labels": "NOT_APPLIED",
+  "diameter_reference_status": "NOT_RUN",
+  "distance_reference_status": "NOT_RUN",
+  "pipe_to_model_mapping": "UNKNOWN",
+  "pipes": [
+    {
+      "physical_id": "R1",
+      "diameter_readings_mm": [],
+      "measured_diameter_mm": null,
+      "distance_reference": {
+        "definition": null,
+        "centerline_mm": null,
+        "nearest_surface_mm": null
+      }
+    },
+    {
+      "physical_id": "R2",
+      "diameter_readings_mm": [],
+      "measured_diameter_mm": null,
+      "distance_reference": {
+        "definition": null,
+        "centerline_mm": null,
+        "nearest_surface_mm": null
+      }
+    },
+    {
+      "physical_id": "R3",
+      "diameter_readings_mm": [],
+      "measured_diameter_mm": null,
+      "distance_reference": {
+        "definition": null,
+        "centerline_mm": null,
+        "nearest_surface_mm": null
+      }
+    }
+  ]
+}

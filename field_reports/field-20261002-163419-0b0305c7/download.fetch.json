@@ -1,0 +1,605 @@
+{
+  "status": "PASS",
+  "source_url": "http://100.103.31.118:8765/field-20261002-163419-0b0305c7/",
+  "output_directory": "outputs/inspection-20261002/verified-download/field-20261002-163419-0b0305c7",
+  "started_at": "2026-10-02T08:50:06.590906+00:00",
+  "transfer_kind": "HTTP_EXISTING_FILES_ONLY",
+  "system_proxy_used": false,
+  "files": [
+    {
+      "path": "attempt-01-manual/capture/capture.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 26125,
+      "sha256": "0b7789f55603e13b07e856eb163ca3b91119a990e9e6c48c0912512ae28edb05"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0002_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0002_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 9013,
+      "sha256": "a08b95d27092d96c42bd666e403d23bf134252404de64c2e69ecad1bc75314e6"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0001_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2046353,
+      "sha256": "53cd7bcce4c4b3c705f19d70b60ae7083f3fb0dca6d6b268878ca43c66f39198"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0001_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2084116,
+      "sha256": "83cba132706ea4ef51e11c3db91c574d384e53a968fe5ab5ed34b5bedf5638a5"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0003_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0004_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0003_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 9396,
+      "sha256": "2fe8ea3abc0d3725aada581a57d99faadd21af38a2cd501c85d5085218b0ed80"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0005_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0004_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0006_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0007_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0005_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 9516,
+      "sha256": "d16502b89c8eccf158c886d97571e91f2a08ecfd25b5d9245655d7cd56285243"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0006_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 9037,
+      "sha256": "d5b70f9ec556ce5e13f4a7faa7a42bdd0ce1cf727584a0c1afff49309970cd95"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0008_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7943,
+      "sha256": "b12c4ce9200d554e10f54df03b829d197eadbb9402341825978a8aaa3e9c7431"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0007_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 9265,
+      "sha256": "3f133b988dc63b644409249975435b86410e7a4907fd409412d61c384c9767e7"
+    },
+    {
+      "path": "attempt-01-manual/capture/pair_0008_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 8770,
+      "sha256": "473cc52580606d818727bfc4a70316429c60388627bbaec715fe614724307aa4"
+    },
+    {
+      "path": "attempt-02-exposure/job.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 578,
+      "sha256": "a118cf7daab682ad6532502f3dba7fd67283324cc57a7a090e82eeeeea161377"
+    },
+    {
+      "path": "attempt-01-manual/job.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 892,
+      "sha256": "c1c7e23198fde2703dffe23c4beb884873fff7508008d3aa526f4365ee29a2ad"
+    },
+    {
+      "path": "attempt-01-manual/stdout.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 122,
+      "sha256": "332f7bc63ec0ad826006daf46428f98258e6130f6cbf2c2ee50e335fc6730a77"
+    },
+    {
+      "path": "attempt-01-manual/stderr.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/capture.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 22771,
+      "sha256": "266670beee520d8e8a697b648627a71676d883abc61808771863c2388ff3ca80"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0001_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2164108,
+      "sha256": "7d6877d81d27ba179c1405d2f101ba8e86f9a26654d8977c099d6a58f617e609"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0001_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2472789,
+      "sha256": "55258385de74072a64a2c23e4435b69fd674b6072215c7aa4f0c6709d6c5e6a3"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0002_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2439810,
+      "sha256": "548d46370c2641058471717b6d716a0cbad0c336063a8e894eee90a775f20880"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0002_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2165676,
+      "sha256": "6d8747324f3767b9b914d79c2621eec790aebcc71c1fabddec156313d79f6a78"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0003_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2107425,
+      "sha256": "e266fec5dea6aee2ccfb01ad49b68fb69d67a1b43507a2054156164b656b9d32"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0003_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2441047,
+      "sha256": "0c5c54e87c65ea610d8044d80cf7fa93fa78f355436c02068df8813cf75e9ee4"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0004_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2189663,
+      "sha256": "87e150b6e46dd521934efd18b1f39a82ffc58ad3d31a632ebb0d01668cdd7a82"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0004_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2492180,
+      "sha256": "d7e1dbf286767de62b10247f8b2b3abb6ca3f7dcfe804bab58796fdc74975c63"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0005_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2169125,
+      "sha256": "c6b9b009a69a03758590d80b5cf6c1c8fb6eb6a6c25ae9b1317bbc634510529b"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0005_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2471152,
+      "sha256": "2b79ecbfb413501340d0fb2604a74147dcfbe838c2cafbe7838fdc4d5e8b4ec2"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0006_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2164764,
+      "sha256": "7a818e92a9333cb5e6f91a04b38ffa58c215fddfa5be217dbeb97e98f64d75af"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0006_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2469842,
+      "sha256": "553c09e515f23cbecbb5cf05d173a90b68339e4911603de50d4f91118e3e0664"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0007_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2184532,
+      "sha256": "f986bc1d66ca37bb9b9c3e8ac7cc9b8ab2ab024f27e787edd080fdd613333b17"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0007_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2437619,
+      "sha256": "cb5a9e169ae507c247015bde0acd7d0940b2b4610fdd903d1cbd26ee42aeee6c"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_reopen_warmup_first_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0008_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2110503,
+      "sha256": "f95d6f71d7b85bade9e208960f59a86cada8cb1fe136f1dc5e30151e50523299"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_reopen_warmup_first_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_capture/pair_0008_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2418415,
+      "sha256": "d20c30fe3dbddeecb6abe5dcf0b0c707ffe5926af79310b4a5cd7ff791570514"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_restored_first_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 751794,
+      "sha256": "ba313580498a970292cb95de276023298bece91f3f856dbbbeafd76447d2de41"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_restored_first_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 924663,
+      "sha256": "f9f36acbd9e2771d2c6b730de84d4f60e7ab89f1ab7e600007953ee70144159f"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_reopen_warmup_last_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2170604,
+      "sha256": "21675de08f17a9c31c314bbf9eab9423055aef06ad2aa1b7ab21dbf3220bc9b0"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_reopen_warmup_last_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2417646,
+      "sha256": "9b8a841034a639eb714cfd30d468ec1fa9f28dabd93f5fa1239226c79fadbc21"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_start_first_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_restored_last_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 922185,
+      "sha256": "3340138835626d2ea7e6ae58e39dbd19ec21b9b4c3e768eeea3d2211eef307f9"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_start_first_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_restored_last_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2177715,
+      "sha256": "fd85c1489f5788dd94adccde9f3e26c13df40dbb90274c953fbd885f016ac075"
+    },
+    {
+      "path": "attempt-02-exposure/results/exposure_checks.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 144557,
+      "sha256": "fbd99bb05c07434553cd50848eafcd6778fc6df4ba90619bc5e3b2d8d7f878f6"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_start_last_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2170855,
+      "sha256": "ad9359e981cbd73d33fd36dd235618bcd77c2d0bebf25cc74f5dfc6caf551c66"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_256_first_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2189473,
+      "sha256": "bee32efc02c92b70e385e0f202a9a28e39e6802813307b9ab1ebf138d0c20ff2"
+    },
+    {
+      "path": "attempt-02-exposure/results/auto_start_last_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2454545,
+      "sha256": "b3701043ef829328e61c003ae97e81fb796e6959fe4352dba480b37c686104bc"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_256_first_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 2431208,
+      "sha256": "b3c4648e9efc18ac27989ab9670e1c5548b69b3e29a907b0ef487eae00fa9b7f"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_256_last_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_256_last_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 8440,
+      "sha256": "17433e68f24d72ee472b8c1a14f7932bb4a64151d23622dd48800c639669f5fa"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_32_first_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 7923,
+      "sha256": "99ec10f69b29466a57c0788737442f69c74ac8e66425aa99279efa7e525ccc7b"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_32_last_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 147057,
+      "sha256": "1b41a8c907238adb1292831747f8b3b9df74ff2dcefbfe07fb6e86aa911a765d"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_32_first_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 8853,
+      "sha256": "a2fcf4ab5610673f2493fbc3b26ba506e032fe9b4a50da7ac462b67ff0de0214"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_32_last_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 174405,
+      "sha256": "b8642a110a63c410bfef6b4a0c5cfe4c1dc737d6d92eca978fb83ba2aee2f906"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_4_first_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 461615,
+      "sha256": "33f530b0b088773877d9507ca6e71b7ac050dd8da590018f27e4c8166ad22c51"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_4_last_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 752454,
+      "sha256": "68737d5a95f8957511de1a5c7df773e5f856f9db974935c9ca891bf7a79983aa"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_4_first_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 665594,
+      "sha256": "8b7a6b664f6b671484d3b39df09772f7173529be7b8e0eadea1cefe89289e11e"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_8_first_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 117119,
+      "sha256": "223e49daa1cdc9520cc0189e984cd83eb22d822156eb4ae070a8404fb508d8e2"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_4_last_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 925292,
+      "sha256": "b4cc2a096fbded19be400c0802ee958606a81bb5b71309f023ca67799673a430"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_8_first_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 208355,
+      "sha256": "3c75f0db9d4f1d427bb06f14630695317cf50a36335c5c262848e2063f5ec3ce"
+    },
+    {
+      "path": "attempt-02-exposure/stderr.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_8_last_left.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 464405,
+      "sha256": "bd078ba13363ca6069ee07a318f16f05737a20ac064311068c46d8e037aec768"
+    },
+    {
+      "path": "attempt-02-exposure/results/manual_1_8_last_right.png",
+      "status": "DOWNLOADED",
+      "size_bytes": 665914,
+      "sha256": "b2a0f1ebe9a95731b0dc0721c0399ae973bc61a7efb8492d0429c1f4a04c5a9c"
+    },
+    {
+      "path": "attempt-02-exposure/stdout.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 9798,
+      "sha256": "750487c362d02c9d1a46c5caaf3a674ae999c3779ec92066000ffbbd695e8080"
+    },
+    {
+      "path": "checks.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 3173,
+      "sha256": "ec98d34abdba3c0068df95ec126d43f001e35ec12b16cc1f5fe89c655b55d56d"
+    },
+    {
+      "path": "calibration/calibration.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 3760,
+      "sha256": "84e4285ff8d9ef8cb279e0a38b42fbd5c2f91eb5e0b50527fdd3651e0294d378"
+    },
+    {
+      "path": "diagnostics.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 105369,
+      "sha256": "0138d29f3ad04b9aecfffd0347574f2d4c18d86a81f34f67c3c076f5b9d13128"
+    },
+    {
+      "path": "inputs.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 1698,
+      "sha256": "26381d2f67fbaf11f16bad84be2c9b2635e017b735ca0f82535cfa49b57cb7fc"
+    },
+    {
+      "path": "environment.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 696,
+      "sha256": "b60fe305537a3bd705adf53509a09b5fd1f4885f98f47a79e06d6d23d8f3a6da"
+    },
+    {
+      "path": "legacy-service-tests-final/job.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 529,
+      "sha256": "34e97134da840d02b15e4c1f0c7d86ed42bf614bb72a3c236dc7f1e36d9ccbd7"
+    },
+    {
+      "path": "legacy-service-tests-final/stderr.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "legacy-service-tests-verified/job.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 541,
+      "sha256": "f2aa7d2ef97ebb3c27b900e14c1bd76d834264ca30bfa4c5058487c1d4250a9f"
+    },
+    {
+      "path": "legacy-service-tests-final/stdout.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 7543,
+      "sha256": "1016e8f746a87201df65038b1bdc321fe32700e916225b92338d5f43aa81a129"
+    },
+    {
+      "path": "legacy-service-tests-verified/stderr.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "legacy-service-tests-verified/stdout.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 113,
+      "sha256": "8ea975772f989d327eef28075570d2034955293aa7178e4fa812711aa89574bc"
+    },
+    {
+      "path": "legacy-service-tests/job.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 541,
+      "sha256": "070a8aa8230f72396344d2906b5b1dbf2e5d71e5f31c3dc22e077d95dce56506"
+    },
+    {
+      "path": "legacy-service-tests/stderr.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "legacy-service-tests/stdout.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 6081,
+      "sha256": "8bfebfa1989c65995dd9e89fe370c0315da9834ed33d5de5b52d69b9ac427e05"
+    },
+    {
+      "path": "prior-remote-download.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 4137,
+      "sha256": "e1bde841ea64c12c8b9f0eba87b2c15542cf89f3cccb5298c09854abf821ce7d"
+    },
+    {
+      "path": "logs/pipe_twin.log.jsonl",
+      "status": "DOWNLOADED",
+      "size_bytes": 270195,
+      "sha256": "ba67c3e0a54790a62718e63d1671025d214f39c39b3de9e72f9e1eeddec32937"
+    },
+    {
+      "path": "pytest-final/job.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 551,
+      "sha256": "b96b455d332627dde71a1a9a98331720ea3ffd2c60386a387d7ba7aec8b95e5e"
+    },
+    {
+      "path": "pytest-final/pytest.xml",
+      "status": "DOWNLOADED",
+      "size_bytes": 70075,
+      "sha256": "e0a9f72eb1115250768dd8d7c8f24b9ab746686229b860c69bc1d2a5d85c12e4"
+    },
+    {
+      "path": "pytest-final/stderr.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "pytest-final/stdout.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 684,
+      "sha256": "2aa5b73385831996d4160c8083cf4ad4f818609627942c97f4be381fa117c94e"
+    },
+    {
+      "path": "pytest/job.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 534,
+      "sha256": "37c63b02a3f9622761956c47cc40796d314185012ff85d888ad406c89b0fafdc"
+    },
+    {
+      "path": "pytest/stderr.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "reference_measurements.json",
+      "status": "DOWNLOADED",
+      "size_bytes": 1065,
+      "sha256": "521814bc8dd79321ddbf359ef8907c762ec5c8a840771100af17e65598498f50"
+    },
+    {
+      "path": "pytest/stdout.txt",
+      "status": "DOWNLOADED",
+      "size_bytes": 679,
+      "sha256": "8ae9ac5d2c13972eccf3977dca454ae7589551d660c54760b734a1518d28a8ac"
+    },
+    {
+      "path": "report.md",
+      "status": "DOWNLOADED",
+      "size_bytes": 7852,
+      "sha256": "4f6e4f086cc8ebaebd057da541218236c4760ad01a7c837d60715192530584e4"
+    },
+    {
+      "path": "test_harness/inspect_exposure.py",
+      "status": "DOWNLOADED",
+      "size_bytes": 3592,
+      "sha256": "de3e39c39edc64fbc6948e9f79f1e6f2cf71bab9d35376e54be9d0438705f8a9"
+    },
+    {
+      "path": "test_harness/prepare_report.py",
+      "status": "DOWNLOADED",
+      "size_bytes": 8244,
+      "sha256": "eac09b3feb168e31e836417896c652b95581e70492169121fbb04ef318c465ce"
+    },
+    {
+      "path": "test_harness/publish_report.py",
+      "status": "DOWNLOADED",
+      "size_bytes": 5735,
+      "sha256": "d963d24b10cdfe4160a956860e745bc5ac890137ab2698ffe915326535f65e3d"
+    },
+    {
+      "path": "test_harness/run_check.py",
+      "status": "DOWNLOADED",
+      "size_bytes": 2587,
+      "sha256": "80fbe851c4c6b0b975b4f3570f67903078a529dd275bb3a989af8eb2c2097231"
+    }
+  ],
+  "errors": [],
+  "verified_bytes": 65116066,
+  "manifest_sha256": "852d0ff3b4070dc459cc51daca9866d59a04b459a13ee42e4f0f6cc193b53043",
+  "expected_file_count": 98,
+  "manifest_self_hash_note": "Source manifest is saved and compared before/after transfer; it does not hash itself.",
+  "manifest_unchanged": true,
+  "finished_at": "2026-10-02T08:50:08.981675+00:00"
+}

@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "run_id": "field-20261002-163419-0b0305c7",
+  "workers": 4,
+  "file_count": 98,
+  "total_bytes": 65116066,
+  "manifest_sha256": "852d0ff3b4070dc459cc51daca9866d59a04b459a13ee42e4f0f6cc193b53043",
+  "run_url": "http://100.103.31.118:8765/field-20261002-163419-0b0305c7/",
+  "all_files_readback_verified": true,
+  "verified_from": "CAMERA_HOST_VIA_TAILSCALE_HTTP",
+  "home_to_office_end_to_end": "NOT_RUN",
+  "fetch_report_sha256": "3785b71c3bb7a82085894b02e14dd0733ccbf486ae15baf2fc586afa51c0a456",
+  "fetch_report_local_path": "outputs/inspection-20261002/verified-download/field-20261002-163419-0b0305c7.fetch.json",
+  "download_command": "python -m pipe_twin fetch-stereo --url http://100.103.31.118:8765/field-20261002-163419-0b0305c7/ --output-dir outputs/remote_fetch/field-20261002-163419-0b0305c7 --workers 4",
+  "raw_photos_in_git": false,
+  "calibration_source_in_git": false
+}
