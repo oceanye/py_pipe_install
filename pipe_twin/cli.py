@@ -216,7 +216,7 @@ def build_parser() -> argparse.ArgumentParser:
     capture_exposure = capture_parser.add_mutually_exclusive_group()
     capture_exposure.add_argument(
         "--exposure-ms", type=float,
-        help="manual exposure in milliseconds; 33.333 requests 1/30 s (Windows DirectShow may report 1/32)",
+        help="manual exposure in milliseconds (0.1–2000; 1000/2000 request 1/2 s on Windows)",
     )
     capture_exposure.add_argument(
         "--auto-exposure", action="store_true",
@@ -290,7 +290,7 @@ def build_parser() -> argparse.ArgumentParser:
     remote_exposure = remote_parser.add_mutually_exclusive_group()
     remote_exposure.add_argument(
         "--exposure-ms", type=float,
-        help="manual exposure in milliseconds; 33.333 requests 1/30 s (Windows DirectShow may report 1/32)",
+        help="manual exposure in milliseconds (0.1–2000; 1000/2000 request 1/2 s on Windows)",
     )
     remote_exposure.add_argument(
         "--auto-exposure", action="store_true",

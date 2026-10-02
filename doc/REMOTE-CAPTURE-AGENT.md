@@ -106,7 +106,7 @@ python -m pipe_twin remote-capture `
   --wait
 ~~~
 
-`--exposure-ms 33.333333` 是 1/30 秒请求；办公室 Windows DirectShow 可能在 `capture.json` 中回报 31.25 ms（1/32 秒）。远程任务默认会在相机打开后预热 20 秒，并在末尾要求连续 3 对可用帧；`--warmup-s` 可显式调整。需要由驱动自行控制时可改用 `--auto-exposure`。远程请求会把曝光目标、预热统计和驱动回读保存在证据中，不能只看 job 的 `COMPLETED` 判断亮度合格。
+`--exposure-ms 33.333333` 是 1/30 秒请求；办公室 Windows DirectShow 可能在 `capture.json` 中回报 31.25 ms（1/32 秒）。手动范围为 0.1–2000 ms，`1000`/`2000` 可用于 1 秒/2 秒静止场景诊断；是否真的接受要看 `capture.json.camera_exposure` 的状态和回读。远程任务默认会在相机打开后预热 20 秒，并在末尾要求连续 3 对可用帧；`--warmup-s` 可显式调整。需要由驱动自行控制时可改用 `--auto-exposure`。远程请求会把曝光目标、预热统计和驱动回读保存在证据中，不能只看 job 的 `COMPLETED` 判断亮度合格。
 
 只有办公室显式启用 `--require-token` 或使用独立 `serve-capture` 时，才给远程命令加 `--token-file <本机令牌文件>`。
 
