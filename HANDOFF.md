@@ -2,6 +2,25 @@
 
 更新时间：2026-10-02（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
 
+## 2026-10-02 现场回传后的主线调整
+
+本轮现场证据已并入 `main`：[`field-20261002-113318-fef83aa4/report.md`](field_reports/field-20261002-113318-fef83aa4/report.md)。该报告绑定现场执行时的 `CODE_SHA=a7dc2244ecd202b883d8c0ee2c761636f38895f0`，记录的是调整前基线；它确认 28 对 AUTO 图像可稳定读到棋盘，但短快门变暗，六次模型回放均为 `TRUNCATED`、0 根有效圆柱、12 个候选 `UNKNOWN`，独立量测未执行。现场报告中的失败结论没有被改写成量测成功。
+
+随后提交 `943096b` 将 handoff 的三个开发项落地，并保留资源上限和证据不足拒判：
+
+- `pipe_twin/remote_capture.py` 为每个保存的双目对记录左右目灰度分位数、暗像素比例、饱和比例和原因码；`capture.json` 增加 `usable_pair_count`、`unusable_pair_count`、`quality_status`。原图仍全部保存，`status=COMPLETED` 只表示抓拍流程完成，不能替代可用曝光判断；`capture_agent` 会把质量状态带到 job 状态。
+- `pipe_twin/local_surface.py` 在颜色来源额度未用完时回流深度候选，已尝试的连通域不会重复尝试；每只眼总候选仍不超过 96，预算耗尽仍标为 `TRUNCATED`。审计增加按 `role/source/color` 的拒绝原因计数，以及“缺失深度或遮挡信号”（明确不是物理遮挡证明）。
+- `pipe_twin/remote_fetch.py` 在并行下载前顺序建立目录树，并按已存在路径逐段做链接/越界校验，避免 Windows 并发 `mkdir`/`resolve` 造成的偶发 `evidence path leaves output directory`。新增嵌套目录 `workers=4` 回归。
+
+验证：针对性测试 61 项通过；仓库全量为 **469 passed、1 skipped、247 subtests passed**（`python -m pytest tests -q`）。这些代码变更尚未在办公室相机上重新执行，现场报告仍是 `a7dc224` 基线；下一次现场回传必须注明新的代码 SHA 和新的 `quality_status` / 审计字段。
+
+### 下一次现场执行要求
+
+1. 现场电脑切到 `main` 并拉取包含 `943096b` 的最新提交；先运行 `python -m pytest tests -q`，再关闭预览窗口，只保留主 GUI 和文件服务。
+2. 采集后同时检查 `capture.json.status`、`capture.json.quality_status`、`usable_pair_count` 和每一对的 `image_health.reason_codes`。短曝光即使流程返回 `COMPLETED`，只要质量为 `PARTIAL/UNUSABLE` 就不能送入管径结论；保留 AUTO 恢复前后的过渡帧。
+3. 用 `workers=4` 从现场文件服务下载完整证据并保存 `*.fetch.json`；若失败，保留失败报告和原始错误，不用串行续传覆盖问题。回传新清单 SHA、下载报告和本次代码 SHA。
+4. 对三根实物补 S1–S3 物理标签、D1–D3 卡尺直径、Q1–Q3 相机基准距离和分辨率；让红/蓝/白管在左右目都有未被棋盘截断的连续侧面。未具备这些条件时，结果继续保持 `UNKNOWN`，不能用模型的 51/41/26 mm 代替实测。
+
 ## 接手入口
 
 - **本机已执行主线复测（2026-10-02）**：[运行 `field-20261002-113318-fef83aa4` 的测试与实拍报告](field_reports/field-20261002-113318-fef83aa4/report.md)。基于 `a7dc224`，475 项本地测试通过；完成多档快门/重开检查和 28 对 AUTO 新采集。手动短快门变暗已复现，六次新照片回放均仍截断、0 根有效圆柱，独立参照未执行。后续开发请先读此报告，旧弱光汇总保留作对照。
@@ -9,8 +28,8 @@
 - 仓库：`oceanye/py_pipe_install`
 - 开发交接分支：`feature/model-aware-pipe-distances-20261001`（历史分支，代码已合并）
 - [PR #10](https://github.com/oceanye/py_pipe_install/pull/10)：已合并，合并提交 `ffee4e5b902a3bd6b7ad21bc1e08be4dfa2385f3`。
-- 已测试的实现提交：`94532b6ab419592bb333fe3214f7265ca6bebd7a`
-- 当前主线：`main` / `ffee4e5b902a3bd6b7ad21bc1e08be4dfa2385f3`，已含 DXF 支持、距离定义、现场数量约束和候选来源调度。
+- 已测试的历史实现提交：`94532b6ab419592bb333fe3214f7265ca6bebd7a`（候选来源调度基线）。
+- 当前主线：`main`，已含现场证据提交 `4ffd2ac` 和本轮实现提交 `943096b`；另含 DXF 支持、距离定义、现场数量约束、候选来源回流、抓拍质量审计和并行取证修复。
 - [本轮测试报告](test_reports/20261002-model-distance/report.md)、[检查清单](test_reports/20261002-model-distance/checks.json)、[模型与距离定义](doc/管道模型尺寸与距离定义.md)。后续 handoff 提交只增加文档和数值证据，不增加应用功能。
 - [下一轮现场点位、独立参照和远程控制交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md)。
 
@@ -118,7 +137,7 @@ python -m pipe_twin analyze-stereo --manifest <现场包>/manifest.json --output
 python scripts/compare_stereo_processing.py <现场包>/manifest.json --output <另一个新目录> --num-disparities 256 --board 8 6
 ```
 
-`field_reports/latest.json` 仍指 2026-09 的旧采集包，**不是本轮弱光三管数据**。旧 [远程采集 handoff](doc/HANDOFF-REMOTE-CAPTURE.md) 只作采集流程参考，当前实物数量与 17 mm 格长以本文件为准。
+`field_reports/latest.json` 现在指向 2026-10-02 的 `field-20261002-113318-fef83aa4` 采集包；该包仍是 `a7dc224` 基线，不代表 `943096b` 已完成现场复测。旧 [远程采集 handoff](doc/HANDOFF-REMOTE-CAPTURE.md) 只作采集流程参考，当前实物数量与 17 mm 格长以本文件为准。
 
 ## 工作区与交付约定
 
