@@ -1,15 +1,16 @@
 # 测试与远程开发交接
 
-更新时间：2026-10-02（Asia/Shanghai）。用户最新分工：**本机侧重点完成测试、数据复核和汇报；后续开发交给远程。** 这份交接覆盖当前三管场景，现场参数优先于旧采集文档中的历史示例。
+更新时间：2026-10-02（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
 
 ## 接手入口
 
 - 仓库：`oceanye/py_pipe_install`
-- 开发交接分支：`feature/model-aware-pipe-distances-20261001`
-- [PR #10](https://github.com/oceanye/py_pipe_install/pull/10)：保持开放，由远程接续审查与开发；本轮交接不合并。
-- 已测试的实现提交：`43c0b156f4039fe79d254582e4a4f1356e98fe63`
-- 基础主线：`0e6e821e12ac5c41dac17074169cbe355b81b203`，已含最新 DXF 支持。
+- 开发交接分支：`feature/model-aware-pipe-distances-20261001`（历史分支，代码已合并）
+- [PR #10](https://github.com/oceanye/py_pipe_install/pull/10)：已合并，合并提交 `ffee4e5b902a3bd6b7ad21bc1e08be4dfa2385f3`。
+- 已测试的实现提交：`94532b6ab419592bb333fe3214f7265ca6bebd7a`
+- 当前主线：`main` / `ffee4e5b902a3bd6b7ad21bc1e08be4dfa2385f3`，已含 DXF 支持、距离定义、现场数量约束和候选来源调度。
 - [本轮测试报告](test_reports/20261002-model-distance/report.md)、[检查清单](test_reports/20261002-model-distance/checks.json)、[模型与距离定义](doc/管道模型尺寸与距离定义.md)。后续 handoff 提交只增加文档和数值证据，不增加应用功能。
+- [下一轮现场点位、独立参照和远程控制交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md)。
 
 远程在干净 checkout 中接续：
 
@@ -21,7 +22,7 @@ python -m pip install pytest==9.1.1
 python -m pytest tests -q
 ```
 
-已有同名本地分支时切换后使用 `git pull --ff-only`。不要覆盖未提交修改。通过 PR 交付；回传完整提交 SHA、测试结果、变更说明和剩余问题，本机再做设备及实拍回放验收。
+已有同名本地分支时切换后使用 `git pull --ff-only`。不要覆盖未提交修改。后续代码通过 PR 交付；回传完整提交 SHA、测试结果、变更说明和剩余问题。本轮代码已进入 `main`，现场实测仍须按新 handoff 回传证据后再验收。
 
 ## 已确认的现场事实
 
