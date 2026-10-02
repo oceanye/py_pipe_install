@@ -78,9 +78,15 @@ class CaptureInputTests(unittest.TestCase):
         self.assertEqual(office.file_port, 8765)
         self.assertFalse(office.require_token)
         remote = build_parser().parse_args(
-            ["remote-capture", "--agent-url", "http://127.0.0.1:8770"]
+            ["remote-capture", "--agent-url", "http://127.0.0.1:8770", "--exposure-ms", "33.333333"]
         )
         self.assertIsNone(remote.token_file)
+        self.assertAlmostEqual(remote.exposure_ms, 1000 / 30, places=5)
+        self.assertFalse(remote.auto_exposure)
+        auto = build_parser().parse_args(
+            ["remote-capture", "--agent-url", "http://127.0.0.1:8770", "--auto-exposure"]
+        )
+        self.assertTrue(auto.auto_exposure)
         parsed = build_parser().parse_args(
             ["inspect-model", str(STL_MODEL), "--stl-unit", "millimeter"]
         )

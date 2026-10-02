@@ -73,6 +73,38 @@ def test_capture_writes_pair_pngs_and_hashed_metadata(tmp_path: Path):
     assert first["chessboard"]["left"]["found"] is False
 
 
+def test_capture_records_and_forwards_requested_one_thirtieth_exposure(tmp_path: Path):
+    sessions = []
+
+    def factory(**kwargs):
+        sessions.append(kwargs)
+        return _FakeSession(**kwargs)
+
+    requested_ms = 1000 / 30
+    manifest_path = capture_stereo_pairs(
+        tmp_path / "run",
+        eye_width=6,
+        eye_height=4,
+        count=1,
+        exposure_ms=requested_ms,
+        session_factory=factory,
+    )
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert sessions[0]["exposure_ms"] == requested_ms
+    assert payload["requested_exposure_ms"] == requested_ms
+    assert payload["exposure_policy"] == "MANUAL_REQUEST"
+
+
+def test_capture_rejects_exposure_outside_safe_driver_range(tmp_path: Path):
+    for value in (True, 0, 250.1, float("nan")):
+        with pytest.raises(ValueError, match="exposure_ms"):
+            capture_stereo_pairs(
+                tmp_path / f"run-{str(value).replace('.', '_')}",
+                exposure_ms=value,
+                session_factory=_FakeSession,
+            )
+
+
 def test_capture_distinguishes_completed_run_from_exposure_quality(tmp_path: Path):
     class ExposureTransitionSession(_FakeSession):
         def read_pair(self):

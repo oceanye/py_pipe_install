@@ -212,6 +212,15 @@ def build_parser() -> argparse.ArgumentParser:
     capture_parser.add_argument("--count", type=int, help="number of pairs; defaults to one unless --duration-s is set")
     capture_parser.add_argument("--interval-s", type=float, default=0.0, help="delay between captures")
     capture_parser.add_argument("--duration-s", type=float, help="capture until this duration elapses")
+    capture_exposure = capture_parser.add_mutually_exclusive_group()
+    capture_exposure.add_argument(
+        "--exposure-ms", type=float,
+        help="manual exposure in milliseconds; 33.333 requests 1/30 s (Windows DirectShow may report 1/32)",
+    )
+    capture_exposure.add_argument(
+        "--auto-exposure", action="store_true",
+        help="ask the camera driver for automatic exposure",
+    )
     capture_parser.add_argument("--detect-chessboard", action="store_true", help="record optional 11x7 chessboard detection status")
     capture_parser.add_argument("--board-columns", type=int, default=11)
     capture_parser.add_argument("--board-rows", type=int, default=7)
@@ -274,6 +283,15 @@ def build_parser() -> argparse.ArgumentParser:
     remote_parser.add_argument("--count", type=int)
     remote_parser.add_argument("--interval-s", type=float)
     remote_parser.add_argument("--duration-s", type=float)
+    remote_exposure = remote_parser.add_mutually_exclusive_group()
+    remote_exposure.add_argument(
+        "--exposure-ms", type=float,
+        help="manual exposure in milliseconds; 33.333 requests 1/30 s (Windows DirectShow may report 1/32)",
+    )
+    remote_exposure.add_argument(
+        "--auto-exposure", action="store_true",
+        help="ask the office camera driver for automatic exposure",
+    )
     remote_parser.add_argument("--detect-chessboard", action="store_true")
     remote_parser.add_argument("--board-columns", type=int, default=8)
     remote_parser.add_argument("--board-rows", type=int, default=6)
@@ -380,6 +398,11 @@ def _main(argv: Sequence[str] | None = None) -> int:
             detect_chessboard=args.detect_chessboard,
             board_columns=args.board_columns,
             board_rows=args.board_rows,
+            **(
+                {"exposure_ms": None} if args.auto_exposure
+                else {"exposure_ms": args.exposure_ms} if args.exposure_ms is not None
+                else {}
+            ),
         )
         print(f"已采集并保存 {json.loads(manifest.read_text(encoding='utf-8'))['pair_count']} 对照片：{manifest}")
         return 0
@@ -447,6 +470,10 @@ def _main(argv: Sequence[str] | None = None) -> int:
         ):
             if value is not None:
                 request[key] = value
+        if args.auto_exposure:
+            request["exposure_ms"] = None
+        elif args.exposure_ms is not None:
+            request["exposure_ms"] = args.exposure_ms
         if args.detect_chessboard:
             request.update(
                 detect_chessboard=True,

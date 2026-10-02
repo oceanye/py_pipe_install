@@ -35,6 +35,7 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 from uuid import uuid4
 
 from .camera_lock import CameraBusyError
+from .camera_exposure import MAX_EXPOSURE_MS, MIN_EXPOSURE_MS, TARGET_EXPOSURE_MS
 from .logging_config import get_logger, log_event
 from .pipeline import atomic_write_text
 from .remote_capture import capture_stereo_pairs
@@ -257,7 +258,10 @@ def write_evidence_manifest(root: str | Path) -> Path:
 def _validate_request(payload: Any, config: CaptureAgentConfig) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise CaptureAgentError("request body must be a JSON object")
-    allowed = {"count", "interval_s", "duration_s", "detect_chessboard", "board_columns", "board_rows"}
+    allowed = {
+        "count", "interval_s", "duration_s", "detect_chessboard",
+        "board_columns", "board_rows", "exposure_ms",
+    }
     unknown = sorted(set(payload) - allowed)
     if unknown:
         raise CaptureAgentError(f"unsupported capture fields: {', '.join(map(str, unknown))}")
@@ -291,6 +295,14 @@ def _validate_request(payload: Any, config: CaptureAgentConfig) -> dict[str, Any
         raise CaptureAgentError("board_columns must be an integer between 3 and 50")
     if type(rows) is not int or not 3 <= rows <= 50:
         raise CaptureAgentError("board_rows must be an integer between 3 and 50")
+    exposure_ms = payload.get("exposure_ms", TARGET_EXPOSURE_MS)
+    if exposure_ms is not None:
+        exposure_ms = _finite_number(
+            exposure_ms,
+            "exposure_ms",
+            minimum=MIN_EXPOSURE_MS,
+            maximum=MAX_EXPOSURE_MS,
+        )
     return {
         "count": count,
         "interval_s": interval_s,
@@ -298,6 +310,7 @@ def _validate_request(payload: Any, config: CaptureAgentConfig) -> dict[str, Any
         "detect_chessboard": detect,
         "board_columns": columns,
         "board_rows": rows,
+        "exposure_ms": exposure_ms,
     }
 
 
@@ -426,6 +439,7 @@ class CaptureJobManager:
                 detect_chessboard=request["detect_chessboard"],
                 board_columns=request["board_columns"],
                 board_rows=request["board_rows"],
+                exposure_ms=request["exposure_ms"],
             )
             manifest_path = Path(manifest).absolute()
             expected_manifest = run_dir / "capture.json"

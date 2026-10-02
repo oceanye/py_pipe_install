@@ -91,11 +91,16 @@ def test_request_defaults_and_duration_only_requests_remain_bounded(tmp_path: Pa
     config = CaptureAgentConfig(output_root=tmp_path / "runs", max_count=5)
     assert _validate_request({}, config)["count"] == 1
     assert _validate_request({}, config)["duration_s"] is None
+    assert _validate_request({"exposure_ms": 1000 / 30}, config)["exposure_ms"] == 1000 / 30
+    assert _validate_request({"exposure_ms": None}, config)["exposure_ms"] is None
     duration_request = _validate_request({"duration_s": 1.0}, config)
     assert duration_request["count"] == 5
     assert duration_request["duration_s"] == 1.0
     with pytest.raises(CaptureAgentError, match="count"):
         _validate_request({"count": 6}, config)
+    for exposure in (True, 0, 250.1, float("nan")):
+        with pytest.raises(CaptureAgentError, match="exposure_ms"):
+            _validate_request({"exposure_ms": exposure}, config)
 
 
 def test_authenticated_remote_job_creates_fetchable_run(tmp_path: Path):
@@ -120,6 +125,29 @@ def test_authenticated_remote_job_creates_fetchable_run(tmp_path: Path):
             "pair_0001_right.png",
         }
         assert (root / "job.json").is_file()
+    finally:
+        _stop(manager, server, thread)
+
+
+def test_remote_job_forwards_requested_exposure_to_capture_function(tmp_path: Path):
+    forwarded: dict[str, object] = {}
+
+    def capture(output_dir: str | Path, **kwargs):
+        forwarded.update(kwargs)
+        return _fake_capture(output_dir, **kwargs)
+
+    _config, manager, server, thread, agent_url, token = _server(tmp_path, capture_fn=capture)
+    try:
+        requested_ms = 1000 / 30
+        queued = submit_remote_capture(
+            agent_url,
+            token,
+            {"count": 1, "exposure_ms": requested_ms},
+        )
+        result = _wait(agent_url, token, queued["job_id"])
+        assert result["state"] == "COMPLETED"
+        assert forwarded["exposure_ms"] == requested_ms
+        assert result["request"]["exposure_ms"] == requested_ms
     finally:
         _stop(manager, server, thread)
 

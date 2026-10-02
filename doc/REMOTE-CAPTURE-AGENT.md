@@ -101,8 +101,11 @@ python -m pipe_twin remote-capture `
   --agent-url http://100.103.31.118:8770 `
   --count 3 `
   --interval-s 1 `
+  --exposure-ms 33.333333 `
   --wait
 ~~~
+
+`--exposure-ms 33.333333` 是 1/30 秒请求；办公室 Windows DirectShow 可能在 `capture.json` 中回报 31.25 ms（1/32 秒）。需要由驱动自行控制时可改用 `--auto-exposure`。远程请求会把曝光目标和驱动回读保存在证据中，不能只看 job 的 `COMPLETED` 判断亮度合格。
 
 只有办公室显式启用 `--require-token` 或使用独立 `serve-capture` 时，才给远程命令加 `--token-file <本机令牌文件>`。
 

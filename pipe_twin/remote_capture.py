@@ -18,6 +18,7 @@ from uuid import uuid4
 import cv2
 import numpy as np
 
+from .camera_exposure import MAX_EXPOSURE_MS, MIN_EXPOSURE_MS, TARGET_EXPOSURE_MS
 from .pipeline import atomic_write_text
 from .calibration_wizard import detect_board_corners
 from .stereo_camera import (
@@ -177,6 +178,7 @@ def capture_stereo_pairs(
     board_columns: int = 11,
     board_rows: int = 7,
     backend: int | None = None,
+    exposure_ms: float | None = TARGET_EXPOSURE_MS,
     session_factory: Callable[..., Any] = StereoCameraSession,
     sleep: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.monotonic,
@@ -200,6 +202,15 @@ def capture_stereo_pairs(
         raise ValueError("duration_s must be a positive finite number")
     if not np.isfinite(float(interval_s)) or interval_s < 0:
         raise ValueError("interval_s must be a non-negative finite number")
+    if exposure_ms is not None and (
+        type(exposure_ms) not in (int, float)
+        or not np.isfinite(float(exposure_ms))
+        or not MIN_EXPOSURE_MS <= float(exposure_ms) <= MAX_EXPOSURE_MS
+    ):
+        raise ValueError(
+            f"exposure_ms must be between {MIN_EXPOSURE_MS:g} and "
+            f"{MAX_EXPOSURE_MS:g}, or None for automatic exposure"
+        )
     if type(board_columns) is not int or board_columns < 3 or type(board_rows) is not int or board_rows < 3:
         raise ValueError("board_columns and board_rows must be integers >= 3")
     if type(startup_max_reads) is not int or startup_max_reads <= 0:
@@ -241,6 +252,8 @@ def capture_stereo_pairs(
         "quality_status": "PENDING",
         "quality_scope": "PER_FRAME_EXPOSURE_DIAGNOSTIC_RAW_FRAMES_RETAINED",
         "image_health_policy": IMAGE_HEALTH_POLICY,
+        "requested_exposure_ms": None if exposure_ms is None else float(exposure_ms),
+        "exposure_policy": "AUTO" if exposure_ms is None else "MANUAL_REQUEST",
         "requested_pair_count": count,
         "discarded_pair_count": 0,
         "startup_warmup": {
@@ -285,6 +298,7 @@ def capture_stereo_pairs(
         "eye_width": eye_width,
         "eye_height": eye_height,
         "backend": backend,
+        "exposure_ms": exposure_ms,
     }
     stage = "open_camera"
     try:

@@ -9,8 +9,11 @@ import cv2
 
 
 TARGET_EXPOSURE_MS = 5.0  # 1/200 s maximum, to limit motion blur.
+MIN_EXPOSURE_MS = 0.1
+MAX_EXPOSURE_MS = 250.0
 EXPOSURE_PRESETS = {
     "自动曝光": None,
+    "1/30 秒（Windows 1/32）": 1000 / 30,
     "1/32 秒": 1000 / 32,
     "1/64 秒": 1000 / 64,
     "1/128 秒": 1000 / 128,
@@ -37,9 +40,11 @@ def configure_exposure(capture: Any, backend: int,
     """
     if exposure_ms is not None and (
         type(exposure_ms) not in (int, float) or not math.isfinite(exposure_ms)
-        or not 0.1 <= exposure_ms <= 250
+        or not MIN_EXPOSURE_MS <= exposure_ms <= MAX_EXPOSURE_MS
     ):
-        raise ValueError("手动快门必须在 0.1 到 250 ms 之间；None 表示自动曝光")
+        raise ValueError(
+            f"手动快门必须在 {MIN_EXPOSURE_MS:g} 到 {MAX_EXPOSURE_MS:g} ms 之间；None 表示自动曝光"
+        )
     result: dict[str, Any] = {
         "target_ms": exposure_ms,
         "status": "UNCONFIRMED",

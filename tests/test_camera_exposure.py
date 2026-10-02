@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import cv2
 
-from pipe_twin.camera_exposure import configure_exposure, exposure_summary
+from pipe_twin.camera_exposure import configure_exposure, exposure_preset_label, exposure_summary
 from pipe_twin.capture_gui import _capture_provenance
 
 
@@ -32,6 +32,15 @@ class ExposureTests(unittest.TestCase):
         ])
         capture.get.assert_called_once_with(cv2.CAP_PROP_EXPOSURE)
         self.assertIn("1/256", exposure_summary({0: result}))
+
+    def test_one_thirtieth_preset_maps_to_requested_milliseconds(self):
+        self.assertEqual(exposure_preset_label(1000 / 30), "1/30 秒（Windows 1/32）")
+
+    def test_directshow_maps_one_thirtieth_request_to_one_thirty_second_step(self):
+        result = configure_exposure(self.camera(cv2.CAP_DSHOW, -5), cv2.CAP_DSHOW, 1000 / 30)
+        self.assertEqual(result["status"], "DRIVER_REPORTED")
+        self.assertEqual(result["requested_native"], -5)
+        self.assertEqual(result["reported_ms"], 31.25)
 
     def test_v4l2_detects_backend_and_uses_100_microsecond_units(self):
         capture = self.camera(cv2.CAP_V4L2, 50)
