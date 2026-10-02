@@ -197,6 +197,21 @@ def _configure_windows_firewall(port: int) -> str:
 class _EvidenceHandler(SimpleHTTPRequestHandler):
     """Read-only files confined to the evidence root, including on Windows."""
 
+    def _read_only(self) -> None:
+        self.send_error(405, "evidence server is read-only")
+
+    def do_POST(self) -> None:  # noqa: N802 - stdlib handler hook
+        self._read_only()
+
+    def do_PUT(self) -> None:  # noqa: N802 - stdlib handler hook
+        self._read_only()
+
+    def do_PATCH(self) -> None:  # noqa: N802 - stdlib handler hook
+        self._read_only()
+
+    def do_DELETE(self) -> None:  # noqa: N802 - stdlib handler hook
+        self._read_only()
+
     def send_head(self):
         try:
             name = unquote(urlsplit(self.path).path)
