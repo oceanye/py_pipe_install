@@ -105,6 +105,74 @@ def test_capture_rejects_exposure_outside_safe_driver_range(tmp_path: Path):
             )
 
 
+def test_capture_warms_camera_then_requires_consecutive_usable_pairs(tmp_path: Path):
+    now = [0.0]
+    sessions = []
+
+    class StableSession(_FakeSession):
+        def read_pair(self):
+            now[0] += 1.0
+            self.index += 1
+            left = np.full((4, 6, 3), 80, dtype=np.uint8)
+            right = np.full((4, 6, 3), 100, dtype=np.uint8)
+            return CapturedStereoPair(
+                left=left,
+                right=right,
+                left_captured_at=f"2026-09-13T10:00:{self.index % 60:02d}.000+08:00",
+                right_captured_at=f"2026-09-13T10:00:{self.index % 60:02d}.001+08:00",
+                sync_delta_ms=1.0,
+                timestamp_source="HOST_SYSTEM_CLOCK",
+                provenance={"left": {}, "right": {}},
+            )
+
+    def factory(**kwargs):
+        sessions.append(kwargs)
+        return StableSession(**kwargs)
+
+    manifest_path = capture_stereo_pairs(
+        tmp_path / "run",
+        eye_width=6,
+        eye_height=4,
+        count=1,
+        warmup_s=20.0,
+        session_factory=factory,
+        clock=lambda: now[0],
+        sleep=lambda _seconds: None,
+    )
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    warmup = payload["startup_warmup"]
+    assert warmup["elapsed_s"] == 20.0
+    assert warmup["reads"] == 20
+    assert warmup["stable_observed"] == 20
+    assert warmup["accepted_read"] == 20
+    assert payload["pair_count"] == 1
+    assert payload["quality_status"] == "USABLE"
+
+
+def test_capture_fails_when_warmup_never_reaches_stability(tmp_path: Path):
+    now = [0.0]
+
+    class DarkSession(_FakeSession):
+        def read_pair(self):
+            now[0] += 1.0
+            return super().read_pair()
+
+    output = tmp_path / "run"
+    with pytest.raises(RuntimeError, match="did not stabilize"):
+        capture_stereo_pairs(
+            output,
+            count=1,
+            warmup_s=3.0,
+            session_factory=DarkSession,
+            clock=lambda: now[0],
+            sleep=lambda _seconds: None,
+        )
+    payload = json.loads((output / "capture.json").read_text(encoding="utf-8"))
+    assert payload["status"] == "FAILED"
+    assert payload["pair_count"] == 0
+    assert payload["startup_warmup"]["reads"] == 3
+
+
 def test_capture_distinguishes_completed_run_from_exposure_quality(tmp_path: Path):
     class ExposureTransitionSession(_FakeSession):
         def read_pair(self):

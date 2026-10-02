@@ -179,6 +179,8 @@ def capture_stereo_pairs(
     board_rows: int = 7,
     backend: int | None = None,
     exposure_ms: float | None = TARGET_EXPOSURE_MS,
+    warmup_s: float = 0.0,
+    warmup_stable_pairs: int = 3,
     session_factory: Callable[..., Any] = StereoCameraSession,
     sleep: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.monotonic,
@@ -211,6 +213,10 @@ def capture_stereo_pairs(
             f"exposure_ms must be between {MIN_EXPOSURE_MS:g} and "
             f"{MAX_EXPOSURE_MS:g}, or None for automatic exposure"
         )
+    if not np.isfinite(float(warmup_s)) or warmup_s < 0:
+        raise ValueError("warmup_s must be a non-negative finite number")
+    if type(warmup_stable_pairs) is not int or warmup_stable_pairs < 1:
+        raise ValueError("warmup_stable_pairs must be a positive integer")
     if type(board_columns) is not int or board_columns < 3 or type(board_rows) is not int or board_rows < 3:
         raise ValueError("board_columns and board_rows must be integers >= 3")
     if type(startup_max_reads) is not int or startup_max_reads <= 0:
@@ -254,10 +260,15 @@ def capture_stereo_pairs(
         "image_health_policy": IMAGE_HEALTH_POLICY,
         "requested_exposure_ms": None if exposure_ms is None else float(exposure_ms),
         "exposure_policy": "AUTO" if exposure_ms is None else "MANUAL_REQUEST",
+        "warmup_s": float(warmup_s),
         "requested_pair_count": count,
         "discarded_pair_count": 0,
         "startup_warmup": {
             "max_reads": startup_max_reads,
+            "stable_required": int(warmup_stable_pairs),
+            "stable_observed": 0,
+            "reads": 0,
+            "elapsed_s": 0.0,
             "discarded": [],
             "accepted_read": None,
         },
@@ -307,21 +318,72 @@ def capture_stereo_pairs(
             payload["camera_opened_at"] = _timestamp()
             persist()
             pending_pair = None
-            for startup_read in range(1, startup_max_reads + 1):
-                stage = "startup_warmup"
-                candidate = session.read_pair()
-                issue, stats = _startup_pair_health(candidate)
-                if issue is None:
-                    payload["startup_warmup"]["accepted_read"] = startup_read
-                    payload["startup_warmup"]["accepted_stats"] = stats
-                    pending_pair = candidate
-                    persist()
-                    break
-                payload["startup_warmup"]["discarded"].append(
-                    {"read": startup_read, "reason": issue, **stats}
+            if warmup_s > 0:
+                # A single bright frame is not evidence that a UVC driver has
+                # settled. Keep reading for the requested warm-up interval,
+                # then require a consecutive stable run at its end.
+                warmup_started = clock()
+                warmup_deadline = warmup_started + float(warmup_s)
+                stable_pairs = 0
+                warmup_read = 0
+                payload["startup_warmup"]["started_at"] = _timestamp()
+                while clock() < warmup_deadline:
+                    stage = "startup_warmup"
+                    candidate = session.read_pair()
+                    warmup_read += 1
+                    issue, stats = _startup_pair_health(candidate)
+                    health = _pair_image_health(candidate)
+                    if issue is None and health["pair_usable"]:
+                        stable_pairs += 1
+                        pending_pair = candidate
+                    else:
+                        stable_pairs = 0
+                        pending_pair = None
+                        reason = issue or ",".join(health["reason_codes"]) or "PAIR_NOT_USABLE"
+                        if len(payload["startup_warmup"]["discarded"]) < 25:
+                            payload["startup_warmup"]["discarded"].append(
+                                {"read": warmup_read, "reason": reason, **stats}
+                            )
+                        payload["discarded_pair_count"] += 1
+                    payload["startup_warmup"]["reads"] = warmup_read
+                    payload["startup_warmup"]["stable_observed"] = stable_pairs
+                    payload["startup_warmup"]["elapsed_s"] = round(
+                        max(0.0, clock() - warmup_started), 3
+                    )
+                    if warmup_read == 1 or warmup_read % 25 == 0:
+                        persist()
+                    if clock() < warmup_deadline:
+                        sleep(min(0.005, max(0.0, warmup_deadline - clock())))
+                payload["startup_warmup"]["finished_at"] = _timestamp()
+                payload["startup_warmup"]["elapsed_s"] = round(
+                    max(0.0, clock() - warmup_started), 3
                 )
-                payload["discarded_pair_count"] += 1
+                if stable_pairs < warmup_stable_pairs or pending_pair is None:
+                    raise RuntimeError(
+                        f"camera did not stabilize after {warmup_s:g}s; "
+                        f"only {stable_pairs}/{warmup_stable_pairs} consecutive usable pairs"
+                    )
+                payload["startup_warmup"]["accepted_read"] = warmup_read
+                payload["startup_warmup"]["accepted_stats"] = _startup_pair_health(pending_pair)[1]
                 persist()
+            else:
+                for startup_read in range(1, startup_max_reads + 1):
+                    stage = "startup_warmup"
+                    candidate = session.read_pair()
+                    issue, stats = _startup_pair_health(candidate)
+                    if issue is None:
+                        payload["startup_warmup"]["accepted_read"] = startup_read
+                        payload["startup_warmup"]["accepted_stats"] = stats
+                        payload["startup_warmup"]["reads"] = startup_read
+                        pending_pair = candidate
+                        persist()
+                        break
+                    payload["startup_warmup"]["discarded"].append(
+                        {"read": startup_read, "reason": issue, **stats}
+                    )
+                    payload["startup_warmup"]["reads"] = startup_read
+                    payload["discarded_pair_count"] += 1
+                    persist()
             if pending_pair is None:
                 raise RuntimeError(
                     f"camera did not produce a non-black distinct stereo pair "

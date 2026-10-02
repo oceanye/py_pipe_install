@@ -212,6 +212,7 @@ def build_parser() -> argparse.ArgumentParser:
     capture_parser.add_argument("--count", type=int, help="number of pairs; defaults to one unless --duration-s is set")
     capture_parser.add_argument("--interval-s", type=float, default=0.0, help="delay between captures")
     capture_parser.add_argument("--duration-s", type=float, help="capture until this duration elapses")
+    capture_parser.add_argument("--warmup-s", type=float, default=0.0, help="camera warm-up before capture; remote default is 20 s")
     capture_exposure = capture_parser.add_mutually_exclusive_group()
     capture_exposure.add_argument(
         "--exposure-ms", type=float,
@@ -255,6 +256,8 @@ def build_parser() -> argparse.ArgumentParser:
     agent_parser.add_argument("--max-count", type=int, default=30)
     agent_parser.add_argument("--default-interval-s", type=float, default=0.0)
     agent_parser.add_argument("--max-interval-s", type=float, default=60.0)
+    agent_parser.add_argument("--default-warmup-s", type=float, default=20.0)
+    agent_parser.add_argument("--max-warmup-s", type=float, default=120.0)
     agent_parser.add_argument("--max-duration-s", type=float, default=300.0)
 
     office_parser = subparsers.add_parser(
@@ -283,6 +286,7 @@ def build_parser() -> argparse.ArgumentParser:
     remote_parser.add_argument("--count", type=int)
     remote_parser.add_argument("--interval-s", type=float)
     remote_parser.add_argument("--duration-s", type=float)
+    remote_parser.add_argument("--warmup-s", type=float, help="override the office warm-up; omitted uses the office default of 20 s")
     remote_exposure = remote_parser.add_mutually_exclusive_group()
     remote_exposure.add_argument(
         "--exposure-ms", type=float,
@@ -395,6 +399,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
             count=args.count,
             interval_s=args.interval_s,
             duration_s=args.duration_s,
+            warmup_s=args.warmup_s,
             detect_chessboard=args.detect_chessboard,
             board_columns=args.board_columns,
             board_rows=args.board_rows,
@@ -433,6 +438,8 @@ def _main(argv: Sequence[str] | None = None) -> int:
             max_count=args.max_count,
             default_interval_s=args.default_interval_s,
             max_interval_s=args.max_interval_s,
+            default_warmup_s=args.default_warmup_s,
+            max_warmup_s=args.max_warmup_s,
             max_duration_s=args.max_duration_s,
             file_base_url=args.file_base_url,
         )
@@ -467,6 +474,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
             ("count", args.count),
             ("interval_s", args.interval_s),
             ("duration_s", args.duration_s),
+            ("warmup_s", args.warmup_s),
         ):
             if value is not None:
                 request[key] = value

@@ -4,7 +4,7 @@
 `1886f736fc49a32d4eaaa93f17cd0cff3b5467ad`。本交接用于下一次办公室端检查，
 重点确认连续读帧变黑、稳定曝光和可量测管面；不得把本次失败回放改写成识别成功。
 
-**执行回传**：办公室已基于 `9823119` 完成 [16:34 黑图复核](../field_reports/field-20261002-163419-0b0305c7/report.md)。手动批次仍 1/8 可用，显式 AUTO 对照 8/8 可用；远程接口缺少曝光参数，下载哈希正常。请优先按该报告的后续任务开发；下文保留本次检查的原要求和原基线。
+**执行回传**：办公室已基于 `9823119` 完成 [16:34 黑图复核](../field_reports/field-20261002-163419-0b0305c7/report.md)。手动批次仍 1/8 可用，显式 AUTO 对照 8/8 可用；旧远程接口下载哈希正常。`0bf1cec` 已补齐受校验的 `exposure_ms` 传递，详见 [1/30 秒曝光交接](HANDOFF-REMOTE-EXPOSURE-1-30.md)；办公室重启后再验证，未验证前不得宣称远程曝光已生效。
 
 ## 当前证据结论
 
@@ -66,7 +66,9 @@ Invoke-WebRequest http://127.0.0.1:8765/ -UseBasicParsing
 ```powershell
 python -m pipe_twin remote-capture `
   --agent-url http://<办公室-Tailscale-IPv4>:8770 `
-  --count 8 --interval-s 0.5 `
+  --count 8 --interval-s 0.5 --warmup-s 20 `
+  --exposure-ms 33.333333 `
+  --exposure-ms 33.333333 `
   --detect-chessboard --board-columns 8 --board-rows 6 `
   --wait --poll-s 1 --timeout-s 90
 ```

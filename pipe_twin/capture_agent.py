@@ -121,6 +121,8 @@ class CaptureAgentConfig:
     max_count: int = 30
     default_interval_s: float = 0.0
     max_interval_s: float = 60.0
+    default_warmup_s: float = 20.0
+    max_warmup_s: float = 120.0
     max_duration_s: float = 300.0
     max_history: int = 100
     file_base_url: str | None = None
@@ -160,6 +162,18 @@ class CaptureAgentConfig:
             "default_interval_s",
             minimum=0.0,
             maximum=max_interval_s,
+        )
+        max_warmup_s = _finite_number(
+            self.max_warmup_s,
+            "max_warmup_s",
+            minimum=0.0,
+            maximum=3600.0,
+        )
+        _finite_number(
+            self.default_warmup_s,
+            "default_warmup_s",
+            minimum=0.0,
+            maximum=max_warmup_s,
         )
         _finite_number(self.max_duration_s, "max_duration_s", minimum=0.1, maximum=3600.0)
         if type(self.max_history) is not int or not 1 <= self.max_history <= 1000:
@@ -260,7 +274,7 @@ def _validate_request(payload: Any, config: CaptureAgentConfig) -> dict[str, Any
         raise CaptureAgentError("request body must be a JSON object")
     allowed = {
         "count", "interval_s", "duration_s", "detect_chessboard",
-        "board_columns", "board_rows", "exposure_ms",
+        "board_columns", "board_rows", "exposure_ms", "warmup_s",
     }
     unknown = sorted(set(payload) - allowed)
     if unknown:
@@ -303,6 +317,12 @@ def _validate_request(payload: Any, config: CaptureAgentConfig) -> dict[str, Any
             minimum=MIN_EXPOSURE_MS,
             maximum=MAX_EXPOSURE_MS,
         )
+    warmup_s = _finite_number(
+        payload.get("warmup_s", config.default_warmup_s),
+        "warmup_s",
+        minimum=0.0,
+        maximum=config.max_warmup_s,
+    )
     return {
         "count": count,
         "interval_s": interval_s,
@@ -311,6 +331,7 @@ def _validate_request(payload: Any, config: CaptureAgentConfig) -> dict[str, Any
         "board_columns": columns,
         "board_rows": rows,
         "exposure_ms": exposure_ms,
+        "warmup_s": warmup_s,
     }
 
 
@@ -440,6 +461,7 @@ class CaptureJobManager:
                 board_columns=request["board_columns"],
                 board_rows=request["board_rows"],
                 exposure_ms=request["exposure_ms"],
+                warmup_s=request["warmup_s"],
             )
             manifest_path = Path(manifest).absolute()
             expected_manifest = run_dir / "capture.json"

@@ -83,6 +83,11 @@ class CaptureInputTests(unittest.TestCase):
         self.assertIsNone(remote.token_file)
         self.assertAlmostEqual(remote.exposure_ms, 1000 / 30, places=5)
         self.assertFalse(remote.auto_exposure)
+        self.assertIsNone(remote.warmup_s)
+        remote_warmup = build_parser().parse_args(
+            ["remote-capture", "--agent-url", "http://127.0.0.1:8770", "--warmup-s", "20"]
+        )
+        self.assertEqual(remote_warmup.warmup_s, 20.0)
         auto = build_parser().parse_args(
             ["remote-capture", "--agent-url", "http://127.0.0.1:8770", "--auto-exposure"]
         )
