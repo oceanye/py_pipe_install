@@ -1,0 +1,563 @@
+{
+  "availability": "CONTROLLED_FILE_SERVICE_ONLY",
+  "files": [
+    {
+      "path": "attempt-00-health/capture/pair_0001_left.png",
+      "sha256": "a13f96116a720ebe2ee9d01ad58469ded6da90e98d883d676db29a4309f11c5c",
+      "bytes": 2918062,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:33:27.177+08:00",
+      "exposure_status": "DRIVER_REPORTED"
+    },
+    {
+      "path": "attempt-00-health/capture/pair_0001_right.png",
+      "sha256": "ee740b3a36563a2cb3e7ce263b4e756777da19344e9686d0ab157307d7f01406",
+      "bytes": 2910307,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:33:27.177+08:00",
+      "exposure_status": "DRIVER_REPORTED"
+    },
+    {
+      "path": "attempt-00-health/capture/pair_0002_left.png",
+      "sha256": "91e4a11f010d82881fd6d6af302d26ad61e4da03a938be7158f46bdb46937e58",
+      "bytes": 82864,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:33:30.496+08:00",
+      "exposure_status": "DRIVER_REPORTED"
+    },
+    {
+      "path": "attempt-00-health/capture/pair_0002_right.png",
+      "sha256": "884143e4503f3ff5247ba1a864bfd837067f6f06289065261db179e77c307165",
+      "bytes": 165052,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:33:30.496+08:00",
+      "exposure_status": "DRIVER_REPORTED"
+    },
+    {
+      "path": "attempt-00-health/capture/pair_0003_left.png",
+      "sha256": "e18122c7297b41357bfae11ec28b84b158e40faf95a482de5c6cd2c3a64c9ae7",
+      "bytes": 107423,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:33:33.934+08:00",
+      "exposure_status": "DRIVER_REPORTED"
+    },
+    {
+      "path": "attempt-00-health/capture/pair_0003_right.png",
+      "sha256": "8a0de63877b64aca5f3e2f058e893be0b3938da575bdcb4373a1693a36ee80cc",
+      "bytes": 164580,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:33:33.934+08:00",
+      "exposure_status": "DRIVER_REPORTED"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0001_left.png",
+      "sha256": "8f39522d1a127197bab896e3d25469f0c84d886c1e538e1313df00836f6e34c4",
+      "bytes": 2880544,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:07.333+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0001_right.png",
+      "sha256": "94e0c5958a41499647a26bea1dc2496f6a68b4c51e42b12f8c05313da3475de6",
+      "bytes": 2920520,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:07.333+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0002_left.png",
+      "sha256": "7ccd4f03edd8e3b60ee79edff0260138a1b5ef2512e3ac31a6602487f875e249",
+      "bytes": 2886655,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:11.613+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0002_right.png",
+      "sha256": "a9624ad6d7e0a2da76cbd39ad015394282d5d098d781632aada43532c32d0e1f",
+      "bytes": 2909351,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:11.613+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0003_left.png",
+      "sha256": "a1f167513c1cc257264a600fd573252a113939366f9c51f81627848f38f1ff15",
+      "bytes": 2877362,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:15.919+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0003_right.png",
+      "sha256": "0eba67139a1f688c2de816cbf7741429de5474268e5a136ae4dd174e42dc817f",
+      "bytes": 2889419,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:15.919+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0004_left.png",
+      "sha256": "1cf8f7322b89258e8be071f1246b31984400813457873a445c71a43a1b4cfadb",
+      "bytes": 2879328,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:20.221+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0004_right.png",
+      "sha256": "8f92cb61c366a8545daf6d1a32ad57f36c45b25b8245d59f850682444da0c988",
+      "bytes": 2891406,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:20.221+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0005_left.png",
+      "sha256": "7be8a16bb2b50fe089a4d1f0d08e7eec1abb16f15affcd79b1dd123451eb5c38",
+      "bytes": 2877590,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:24.530+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0005_right.png",
+      "sha256": "85ca7f81371453f3a3baa3363633ae72c1ca5f19fe48b865cb961e72275c7d8e",
+      "bytes": 2889421,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:24.530+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0006_left.png",
+      "sha256": "0ea71fbbf078a3083d7162f508924277f289f2dd8278540e9acbac80e62fdc7f",
+      "bytes": 2877689,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:28.829+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0006_right.png",
+      "sha256": "8907c337ba598c281aaebcc340ff10651fc0174c4c65574b71435e168bd7df6a",
+      "bytes": 2892009,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:28.829+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0007_left.png",
+      "sha256": "70e7324b42bf6cb673a217bb02a0673792f910ba533e388b785a847282bf0872",
+      "bytes": 2875258,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:33.135+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0007_right.png",
+      "sha256": "3b03a9a3443318e790a05008dd7e3d1f1972c5ad965923e98bb31ae34c68dabf",
+      "bytes": 2889912,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:33.135+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0008_left.png",
+      "sha256": "3ec57939b8cef35ddb9287110c9783f41dfc809cb679dd8ed7d6a296817b4f96",
+      "bytes": 2875472,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:37.437+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0008_right.png",
+      "sha256": "8bbc344f2e0309153d843e83e25238a0c34af6de18d15906e626e8a6fb5e25b3",
+      "bytes": 2890092,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:37.437+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0009_left.png",
+      "sha256": "0acd281456783153f6936efd0676c6bb2e13eebcdb426e9885099f44485703e4",
+      "bytes": 2877601,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:41.742+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0009_right.png",
+      "sha256": "df09da2715561777cc6e1dd5d81920cd0b697593de0317c4a511d2660dfa6b7d",
+      "bytes": 2879080,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:41.742+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0010_left.png",
+      "sha256": "cb003da649c9832d4a6c9ace49f5bd93f298c8ef579917f328ea345abe21e3e3",
+      "bytes": 2876262,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:46.045+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0010_right.png",
+      "sha256": "f09c4a614b03b9007ad588c6a01c7a71646ebc517dff71842b6326e8215d9d08",
+      "bytes": 2879225,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:46.045+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0011_left.png",
+      "sha256": "9df86cffe9edb9733f25dabd1ff76d3b5e7648662ea2ff646a444f38e7b3a393",
+      "bytes": 2876287,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:50.357+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0011_right.png",
+      "sha256": "02dd61ff0c14a1771b92152f4c7807c8be366f707d246690fc9ed15de6f8261c",
+      "bytes": 2882040,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:50.357+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0012_left.png",
+      "sha256": "078993ba17ab985cc2a7039eddbc19f26d8a4cf5f0820499f57313a551708665",
+      "bytes": 2871388,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:54.661+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0012_right.png",
+      "sha256": "c3a00b258e6a7bf916dfd599288798d9ee88de374522a984ee4d0fe326e2b746",
+      "bytes": 2878178,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:54.661+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0013_left.png",
+      "sha256": "6ef95abc764b6cd294a3f85505532b42b48db53e3ecdca025edfe9f78190f1b7",
+      "bytes": 2872061,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:58.966+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0013_right.png",
+      "sha256": "c41d3de5ff19b8eebdfc9157bf522a5e15b57f028d72a68c739d6be65255535a",
+      "bytes": 2880036,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:37:58.966+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0014_left.png",
+      "sha256": "08303273eea317f166d0abdbf44bda0062208d8d24ad0a3d168a77d00a66a707",
+      "bytes": 2871318,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:03.269+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0014_right.png",
+      "sha256": "f65195438c7f09ed8268efb10d37c09740159631279713dc11bd476168fd23c1",
+      "bytes": 2878362,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:03.269+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0015_left.png",
+      "sha256": "a5d6ea52eaf74d0ae9aaf3ffb57e02bfe5b5ea93b11fa5db2a0c4ba9b4b256ea",
+      "bytes": 2869797,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:07.582+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0015_right.png",
+      "sha256": "162b7b72d0c0fa8cee848b146d616b1cae7075716484a07d5153be848e69687e",
+      "bytes": 2876869,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:07.582+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0016_left.png",
+      "sha256": "09cbb599fb4fbab71f2ecd20e2fd6a48db53c60abd0fa3347891222c26c90548",
+      "bytes": 2868287,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:11.886+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0016_right.png",
+      "sha256": "d2d4b34c54072e76402ed04cce1944bd7bd3b37495be14b5973f8cdbebd31455",
+      "bytes": 2877207,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:11.886+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0017_left.png",
+      "sha256": "dc052ed79678ecccc7785ba39914ad662a43cd716523dcb553f4812dc861eaab",
+      "bytes": 2869745,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:16.189+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0017_right.png",
+      "sha256": "8f644be101cdd0439c500484b7101dd6965b6914dafd60a08b5f3eeef96e0a18",
+      "bytes": 2879637,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:16.189+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0018_left.png",
+      "sha256": "27d8216fcc593a3681da2695e423a855279683871cf60b2519cd423bd1050e93",
+      "bytes": 2870414,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:20.493+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0018_right.png",
+      "sha256": "5b9b9a3f864ced7c88c8286c8504fc7545e4fc12d44b422836be651f316d93bb",
+      "bytes": 2862545,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:20.493+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0019_left.png",
+      "sha256": "614dd3cc61e723698efe0d7dc86956b03c7b30a6105c28756e4c9ef8c79b7dcb",
+      "bytes": 2867125,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:24.799+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0019_right.png",
+      "sha256": "0f7fa064eaf31b0d86dd824c4114f2352d6a059004a505a81083b2ac23a6d7b7",
+      "bytes": 2863425,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:24.799+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0020_left.png",
+      "sha256": "2564ce8ce95a82542b13f1e88551cd1fa2869f78b498d3c3e6aadbc70d3b58cf",
+      "bytes": 2866982,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:29.105+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0020_right.png",
+      "sha256": "9f25a0994a531d0e9fe71f14e71cb676452f3b11b620ad96f7728b20dd768958",
+      "bytes": 2858796,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:29.105+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0021_left.png",
+      "sha256": "a210373a15a26dfbae78f827fb3b3bafb2fc0845b854dc913e15dbabd7a21d30",
+      "bytes": 2867319,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:33.411+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0021_right.png",
+      "sha256": "f28aafb4b0675ac3390961e807516e695abd6f98a9170518a41829440cac2f94",
+      "bytes": 2860838,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:33.411+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0022_left.png",
+      "sha256": "d34530604305f26bd7e51cc9f483b927b12f1266edc8d56ac422476b3c451549",
+      "bytes": 2871956,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:37.709+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0022_right.png",
+      "sha256": "8701e4e9a503a5604e1ff53870aa5c58957dbbeb8c402b11fee36e315477028d",
+      "bytes": 2863050,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:37.709+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0023_left.png",
+      "sha256": "d0bd42c33d8ef6eb84d6c1ff08bd5a5846413d412fac515daa1cd66b7f02edc2",
+      "bytes": 2869667,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:42.013+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0023_right.png",
+      "sha256": "2df48fc61655ec01acbb4a218df41929032b26f9f18b9998686819b78b65f044",
+      "bytes": 2863146,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:42.013+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0024_left.png",
+      "sha256": "663ca810cbd8fb44cf4177bf32a6c4a88c938345b09ad6fd4ea6fc740b01fec1",
+      "bytes": 2863584,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:46.316+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0024_right.png",
+      "sha256": "d6b71dd48760dfd9c9543983fc3ff0a73ea62c569d48cc71e56648ce7c828d4e",
+      "bytes": 2863570,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:46.316+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0025_left.png",
+      "sha256": "958ffc7ac6b618b19647fd4627fa5113b2a3da213ae7802a1d38f741d873e75a",
+      "bytes": 2862874,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:50.622+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0025_right.png",
+      "sha256": "f5c434a3046627d601d491139c889ede8fadba9b059a6532f77024ec23e708d1",
+      "bytes": 2862090,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:50.622+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0026_left.png",
+      "sha256": "ade61b1b2ed5ec47724dbdb99af4b3aa90d987bd5a79b89aec08d55677464cfb",
+      "bytes": 2863575,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:54.926+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0026_right.png",
+      "sha256": "78a0542b1319572d852ea73bdd296121831d8ad03a91d889f4c4cfde394a6bae",
+      "bytes": 2857368,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:54.926+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0027_left.png",
+      "sha256": "c63e37344f3976da00e5eef16da4a02f309722171d086226ce5d8569c53fbbb2",
+      "bytes": 2865573,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:59.229+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0027_right.png",
+      "sha256": "9cd585ea2079b7bf5b2e7cd3a63bdc2078a20c42b61921f7f5480cafea0305c8",
+      "bytes": 2862571,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:38:59.229+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0028_left.png",
+      "sha256": "a77dc02b78e896f043510fadd2d1c28768cfb7b2c6889c0fa60d2df916c06db3",
+      "bytes": 2859371,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:39:03.533+08:00",
+      "exposure_status": "AUTO"
+    },
+    {
+      "path": "attempt-02-daylight-auto/capture/pair_0028_right.png",
+      "sha256": "17dc009b3c7f4a5a6ed1da4881413a8be6878b1a5b7c21e85804cbe3032a4702",
+      "bytes": 2862439,
+      "width": 1920,
+      "height": 1080,
+      "captured_at": "2026-10-02T11:39:03.533+08:00",
+      "exposure_status": "AUTO"
+    }
+  ]
+}
