@@ -77,6 +77,8 @@ class CaptureInputTests(unittest.TestCase):
         self.assertEqual(office.capture_port, 8770)
         self.assertEqual(office.file_port, 8765)
         self.assertFalse(office.require_token)
+        office_msmf = build_parser().parse_args(["office-client", "--no-gui", "--backend", "1400"])
+        self.assertEqual(office_msmf.backend, 1400)
         remote = build_parser().parse_args(
             ["remote-capture", "--agent-url", "http://127.0.0.1:8770", "--exposure-ms", "33.333333"]
         )

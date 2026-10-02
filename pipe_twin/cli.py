@@ -273,6 +273,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     office_parser.add_argument("--token-file", help="token file for --require-token; unused in the default token-free mode")
     office_parser.add_argument("--output-root", help="office evidence root; defaults to D:\\pipe_twin_runs on Windows")
+    office_parser.add_argument(
+        "--backend", type=int,
+        help="OpenCV backend ID for the office camera (700=DirectShow, 1400=Media Foundation); omit for the platform default",
+    )
     office_parser.add_argument("--manifest")
     office_parser.add_argument("--report")
     office_parser.add_argument("--no-gui", action="store_true", help="keep services alive without opening Tk")
@@ -460,6 +464,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
             require_token=args.require_token,
             token_file=Path(args.token_file).expanduser() if args.token_file else None,
             output_root=Path(args.output_root).expanduser() if args.output_root else None,
+            backend=args.backend,
         )
         return OfficeClient(config).run(
             manifest=args.manifest,

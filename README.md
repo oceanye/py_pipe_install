@@ -142,6 +142,8 @@ CLI 和桌面 GUI 启动时会自动写入结构化 JSONL 日志，默认位置�
 
 现场相机默认请求不慢于 **1/200 秒（5 ms）** 的手动快门；Windows DirectShow 使用 **1/256 秒** 档位。标定向导和采集预览可直接切换自动曝光或多档手动快门，显示驱动回读结果；慢快门提示运动模糊风险，不支持时明确提示未确认。详见[相机快门设置](doc/CAMERA-EXPOSURE.md)。
 
+驱动兼容性排查时，办公室客户端可固定 OpenCV 后端后重启：`--backend 700` 使用 DirectShow，`--backend 1400` 使用 Media Foundation。后端切换只用于对照连续图像和控制回读，不能把 `set()` 成功或曝光回读值当作传感器实际时序；现场证据须同时记录后端、连续帧健康和驱动回读。
+
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
