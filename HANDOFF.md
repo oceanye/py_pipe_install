@@ -16,7 +16,8 @@
 
 ```text
 git fetch origin
-git switch --track origin/feature/model-aware-pipe-distances-20261001
+git switch main
+git pull --ff-only origin main
 python -m pip install -r requirements.txt
 python -m pip install pytest==9.1.1
 python -m pytest tests -q
