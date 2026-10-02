@@ -1,0 +1,74 @@
+{
+  "report_type": "office_deployment_ai_check",
+  "executed_at": "2026-10-03T00:18:54+08:00",
+  "code_sha_local": "d65858d",
+  "control_url": "http://100.103.31.118:8770",
+  "file_url": "http://100.103.31.118:8765",
+  "health": {
+    "status": "READY",
+    "auth_required": false,
+    "camera_profile": {
+      "left_index": 0,
+      "right_index": null,
+      "layout": "side_by_side_left_right",
+      "eye_width": 1920,
+      "eye_height": 1080
+    }
+  },
+  "capture_checks": [
+    {
+      "job_id": "remote-20261003-000647-6dcf46e6",
+      "request": {"count": 3, "warmup_s": 20.0, "exposure": "AUTO"},
+      "state": "FAILED",
+      "quality_status": "PENDING",
+      "usable_pair_count": 0,
+      "startup_reads": 24,
+      "stable_pairs": 0,
+      "evidence_fetch": "PASS"
+    },
+    {
+      "job_id": "remote-20261003-001206-03c06350",
+      "request": {"count": 1, "warmup_s": 0.0, "exposure_ms": 5.0},
+      "state": "COMPLETED",
+      "quality_status": "UNUSABLE",
+      "usable_pair_count": 0,
+      "reported_exposure_ms": 3.90625,
+      "backend": 700,
+      "evidence_fetch": "PASS"
+    },
+    {
+      "job_id": "remote-20261003-001610-33d86aa8",
+      "request": {"count": 1, "warmup_s": 0.0, "exposure": "AUTO"},
+      "state": "COMPLETED",
+      "quality_status": "UNUSABLE",
+      "usable_pair_count": 0,
+      "evidence_fetch": "PASS"
+    },
+    {
+      "job_id": "remote-20261003-001845-4e93dd36",
+      "request": {"count": 1, "warmup_s": 0.0, "exposure_ms": 1000.0},
+      "state": "COMPLETED",
+      "quality_status": "UNUSABLE",
+      "usable_pair_count": 0,
+      "reported_exposure_ms": 250.0,
+      "readback_native": -2.0,
+      "exposure_status": "UNCONFIRMED",
+      "backend": 700,
+      "evidence_fetch": "PASS"
+    }
+  ],
+  "historical_ai_replay": {
+    "source_jobs": [
+      "remote-20261002-145837-4b644e75",
+      "remote-20261002-152710-8cc8d28d"
+    ],
+    "analysis_manifest": "outputs/remote_checks/check-20261002-145749/auto_analysis_current/elevation-20261002-152023-b241bf68/manifest.json",
+    "analysis_output": "outputs/remote_checks/ai_replay_20261003_0007.json",
+    "counts": {"INSTALLED": 0, "NOT_INSTALLED": 0, "UNKNOWN": 12},
+    "surface_audit_status": "TRUNCATED",
+    "observation_count": 0,
+    "registration_status": "INSUFFICIENT_OBSERVATIONS",
+    "decision": "SAFE_REFUSAL_NO_PIPE_MEASUREMENT"
+  },
+  "tests": "500 passed, 1 skipped, 256 subtests passed"
+}
