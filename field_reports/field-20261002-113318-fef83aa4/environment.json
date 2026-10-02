@@ -1,0 +1,24 @@
+{
+  "code_sha": "a7dc2244ecd202b883d8c0ee2c761636f38895f0",
+  "python": "3.12.10",
+  "platform": "Windows-10-10.0.17763-SP0",
+  "packages": {
+    "numpy": "2.2.6",
+    "opencv-python-headless": "4.13.0.92",
+    "rhino3dm": "8.32.1",
+    "ezdxf": "1.4.4",
+    "pytest": "9.1.1"
+  },
+  "local_numpy_differs_from_repository_pin": true,
+  "original_user_modifications_preserved": true,
+  "camera": {
+    "index": 0,
+    "layout": "side_by_side_left_right",
+    "eye_pixels": [
+      1920,
+      1080
+    ],
+    "backend": "DirectShow",
+    "backend_id": 700
+  }
+}

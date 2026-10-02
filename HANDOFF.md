@@ -4,6 +4,8 @@
 
 ## 接手入口
 
+- **本机已执行主线复测（2026-10-02）**：[运行 `field-20261002-113318-fef83aa4` 的测试与实拍报告](field_reports/field-20261002-113318-fef83aa4/report.md)。基于 `a7dc224`，475 项本地测试通过；完成多档快门/重开检查和 28 对 AUTO 新采集。手动短快门变暗已复现，六次新照片回放均仍截断、0 根有效圆柱，独立参照未执行。后续开发请先读此报告，旧弱光汇总保留作对照。
+
 - 仓库：`oceanye/py_pipe_install`
 - 开发交接分支：`feature/model-aware-pipe-distances-20261001`（历史分支，代码已合并）
 - [PR #10](https://github.com/oceanye/py_pipe_install/pull/10)：已合并，合并提交 `ffee4e5b902a3bd6b7ad21bc1e08be4dfa2385f3`。

@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "run_id": "field-20261002-113318-fef83aa4",
+  "code_sha": "a7dc2244ecd202b883d8c0ee2c761636f38895f0",
+  "status": "PASS",
+  "channel": "EXISTING_TAILSCALE_READ_ONLY_FILE_SERVICE",
+  "run_url": "http://100.103.31.118:8765/field-20261002-113318-fef83aa4/",
+  "evidence_manifest_url": "http://100.103.31.118:8765/field-20261002-113318-fef83aa4/evidence_manifest.json",
+  "evidence_manifest_sha256": "af8c6ef3fa07638d37e0981cf6fefe2be7c63f700f02f64d60b7564007295f7b",
+  "file_count": 185,
+  "total_bytes": 293002712,
+  "readback_verified": true,
+  "verified_from": "CAMERA_HOST_USING_ITS_TAILSCALE_HTTP_ADDRESS",
+  "home_network_end_to_end": "NOT_RUN",
+  "github_raw_image_upload": false,
+  "private_service_access_required": true,
+  "download_command": "python -m pipe_twin fetch-stereo --url http://100.103.31.118:8765/field-20261002-113318-fef83aa4/ --output-dir outputs/remote_fetch/field-20261002-113318-fef83aa4 --workers 1",
+  "report_url": "https://github.com/oceanye/py_pipe_install/blob/test/field-handoff-20261002/field_reports/field-20261002-113318-fef83aa4/report.md",
+  "checks_url": "https://github.com/oceanye/py_pipe_install/blob/test/field-handoff-20261002/field_reports/field-20261002-113318-fef83aa4/checks.json",
+  "initial_parallel_fetch": {
+    "status": "FAILED",
+    "workers": 4,
+    "errors": [
+      {
+        "path": "attempt-00-health/capture/pair_0001_right.png",
+        "status": "FAILED",
+        "error": "evidence path leaves output directory: attempt-00-health/capture/pair_0001_right.png"
+      },
+      {
+        "path": "attempt-01-controls/results/auto_reopen_right.png",
+        "status": "FAILED",
+        "error": "evidence path leaves output directory: attempt-01-controls/results/auto_reopen_right.png"
+      },
+      {
+        "path": "daylight-analysis/packages/elevation-20261002-114009-8f2b026c/photos/right.png",
+        "status": "FAILED",
+        "error": "evidence path leaves output directory: daylight-analysis/packages/elevation-20261002-114009-8f2b026c/photos/right.png"
+      },
+      {
+        "path": "daylight-analysis/packages/elevation-20261002-114033-bc204da5/photos/right.png",
+        "status": "FAILED",
+        "error": "evidence path leaves output directory: daylight-analysis/packages/elevation-20261002-114033-bc204da5/photos/right.png"
+      },
+      {
+        "path": "daylight-replay/stderr.txt",
+        "status": "FAILED",
+        "error": "evidence path leaves output directory: daylight-replay/stderr.txt"
+      },
+      {
+        "path": "test_scripts/check_camera_controls.py",
+        "status": "FAILED",
+        "error": "evidence path leaves output directory: test_scripts/check_camera_controls.py"
+      }
+    ]
+  },
+  "successful_readback_workers": 1,
+  "note": "Serial resume preserves path validation and hashes; initial parallel path-containment errors are retained for remote investigation."
+}

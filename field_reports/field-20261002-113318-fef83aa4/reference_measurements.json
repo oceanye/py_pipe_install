@@ -1,0 +1,60 @@
+{
+  "run_id": "field-20261002-113318-fef83aa4",
+  "physical_pipe_count": 3,
+  "board": {
+    "inner_corners": [
+      8,
+      6
+    ],
+    "square_mm": 17.0,
+    "source": "USER_MEASURED"
+  },
+  "status": "NOT_RUN_NO_INDEPENDENT_READINGS_OR_PHYSICAL_MARKERS",
+  "pipes": [
+    {
+      "physical_id": "R1",
+      "label_scope": "REPORT_IMAGE_POSITION_ONLY_NOT_PHYSICAL_MARKER_OR_CAD_ID",
+      "image_position_note": "UPPER_PIPE_CLIPPED_BY_IMAGE_BORDER",
+      "color_observed": "red",
+      "diameter_readings_mm": [],
+      "distance_reference": {
+        "definition": "",
+        "centerline_mm": null,
+        "nearest_surface_mm": null
+      },
+      "model_pipe_id": null,
+      "measured_diameter_mm": null,
+      "measurement_status": "UNKNOWN"
+    },
+    {
+      "physical_id": "R2",
+      "label_scope": "REPORT_IMAGE_POSITION_ONLY_NOT_PHYSICAL_MARKER_OR_CAD_ID",
+      "image_position_note": "MID_PIPE_PARTLY_OCCLUDED_BY_BOARD",
+      "color_observed": "blue",
+      "diameter_readings_mm": [],
+      "distance_reference": {
+        "definition": "",
+        "centerline_mm": null,
+        "nearest_surface_mm": null
+      },
+      "model_pipe_id": null,
+      "measured_diameter_mm": null,
+      "measurement_status": "UNKNOWN"
+    },
+    {
+      "physical_id": "R3",
+      "label_scope": "REPORT_IMAGE_POSITION_ONLY_NOT_PHYSICAL_MARKER_OR_CAD_ID",
+      "image_position_note": "THIN_VISIBLE_STRIP_BEHIND_BOARD_AND_BLUE_PIPE",
+      "color_observed": "white",
+      "diameter_readings_mm": [],
+      "distance_reference": {
+        "definition": "",
+        "centerline_mm": null,
+        "nearest_surface_mm": null
+      },
+      "model_pipe_id": null,
+      "measured_diameter_mm": null,
+      "measurement_status": "UNKNOWN"
+    }
+  ]
+}
