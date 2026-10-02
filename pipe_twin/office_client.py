@@ -10,6 +10,7 @@ import socket
 import subprocess
 import tempfile
 import threading
+import time
 from dataclasses import asdict, dataclass, replace
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -258,7 +259,16 @@ def _existing_server_matches(root: Path, base_url: str) -> bool:
     except (OSError, ValueError):
         return False
     finally:
-        probe.unlink(missing_ok=True)
+        # HTTP completion can reach the client before the server closes its
+        # file handle. Windows forbids unlink during that short interval.
+        for attempt in range(10):
+            try:
+                probe.unlink(missing_ok=True)
+                break
+            except PermissionError:
+                if attempt == 9:
+                    raise
+                time.sleep(0.05)
 
 
 class OfficeClient:

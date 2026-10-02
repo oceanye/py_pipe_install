@@ -39,6 +39,14 @@ agent 不接受远程输出路径、PowerShell、任意 shell 或任意 Python �
 python -m pipe_twin office-client --no-gui
 ```
 
+### 兼容独立文件服务
+
+已有的 `python -m pipe_twin.remote_files serve` 入口现已纳入版本管理，适合需要在关闭 GUI 后继续下载证据的办公室配置。它只提供文件下载，不打开相机；新版 GUI 不会自动再启动它。`office-client` 会校验文件根目录后复用现有服务，并且停止客户端时不关闭该独立服务。
+
+该入口仍要求明确的 `--bind`、`--port`、`--directory` 和 `--control-ip`；只接受 Tailscale 或回环监听地址，GET/HEAD 仅允许配置的控制端与本机监听地址。它复用主线的只读、路径越界和链接检查。Windows 监听使用独占端口，防止另一个服务再次绑定同一端口；客户端校验目录后的探测文件清理，会短暂等待 HTTP 文件句柄释放。
+
+这些兼容改动需要在下次重启相应服务后生效；拉取代码不会替换内存中的旧进程。配置保留在本机 `outputs/measurement_workbench/remote_files.json`，不随代码提交。
+
 如需恢复额外认证：
 
 ```powershell
