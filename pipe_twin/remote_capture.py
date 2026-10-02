@@ -248,6 +248,7 @@ def capture_stereo_pairs(
             "right_index": None if right_index is None else int(right_index),
             "backend": None if backend is None else int(backend),
         },
+        "camera_exposure": {},
         "requested_eye_size_px": [int(eye_width), int(eye_height)],
         "requested_frame_size_px": [int(eye_width * 2), int(eye_height)]
         if layout in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}
@@ -316,6 +317,10 @@ def capture_stereo_pairs(
         with session_factory(**session_kwargs) as session:
             started = clock()
             payload["camera_opened_at"] = _timestamp()
+            payload["camera_exposure"] = {
+                str(index): dict(record)
+                for index, record in getattr(session, "exposure_settings", {}).items()
+            }
             persist()
             pending_pair = None
             if warmup_s > 0:

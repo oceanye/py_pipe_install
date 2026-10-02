@@ -78,7 +78,15 @@ def test_capture_records_and_forwards_requested_one_thirtieth_exposure(tmp_path:
 
     def factory(**kwargs):
         sessions.append(kwargs)
-        return _FakeSession(**kwargs)
+        session = _FakeSession(**kwargs)
+        session.exposure_settings = {
+            0: {
+                "target_ms": 1000 / 30,
+                "status": "DRIVER_REPORTED",
+                "reported_ms": 31.25,
+            }
+        }
+        return session
 
     requested_ms = 1000 / 30
     manifest_path = capture_stereo_pairs(
@@ -93,6 +101,7 @@ def test_capture_records_and_forwards_requested_one_thirtieth_exposure(tmp_path:
     assert sessions[0]["exposure_ms"] == requested_ms
     assert payload["requested_exposure_ms"] == requested_ms
     assert payload["exposure_policy"] == "MANUAL_REQUEST"
+    assert payload["camera_exposure"]["0"]["reported_ms"] == 31.25
 
 
 def test_capture_rejects_exposure_outside_safe_driver_range(tmp_path: Path):
