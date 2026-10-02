@@ -1,0 +1,80 @@
+{
+  "run_id": "field-20261002-113318-fef83aa4",
+  "code_sha": "a7dc2244ecd202b883d8c0ee2c761636f38895f0",
+  "local_tests": {
+    "status": "PASS",
+    "passed": 475,
+    "skipped": 1,
+    "subtests_passed": 250,
+    "seconds": 156.53,
+    "junit_sha256": "d0d41f3bbd254b70daf195c0356f71846ceac99900d411cadb67d3e75da421b0",
+    "includes_local_remote_file_service_tests": true,
+    "command": ".venv\\Scripts\\python.exe -m pytest tests -q --junitxml=outputs/handoff-execution-20261002/pytest.xml"
+  },
+  "ci": {
+    "status": "PASS",
+    "code_sha": "a7dc2244ecd202b883d8c0ee2c761636f38895f0",
+    "url": "https://github.com/oceanye/py_pipe_install/actions/runs/36944158316",
+    "windows": {
+      "passed": 467,
+      "skipped": 1,
+      "subtests_passed": 247
+    },
+    "ubuntu": {
+      "passed": 451,
+      "skipped": 17,
+      "subtests_passed": 247
+    }
+  },
+  "capture": {
+    "status": "PARTIAL",
+    "health_pair_count": 3,
+    "auto_pair_count": 28,
+    "formal_pair_limit": 30,
+    "formal_duration_limit_s": 120,
+    "formal_stop": "NORMAL_DURATION_LIMIT",
+    "board_both_in_auto_pairs": 28,
+    "short_shutter_usable_image": "FAIL",
+    "multi_shutter_driver_control": "PASS",
+    "auto_restore_and_reopen": "PASS",
+    "controlled_read_frames": 47,
+    "controls_duration_seconds": 37.43699999997625,
+    "driver_report_is_sensor_timing_proof": false,
+    "final_exposure": "AUTO",
+    "camera_released": true
+  },
+  "analysis": {
+    "status": "UNKNOWN",
+    "selected_pairs": [
+      1,
+      15,
+      28
+    ],
+    "runs": 6,
+    "all_surface_searches": "TRUNCATED",
+    "accepted_cylinders": 0,
+    "all_model_candidates_unknown": 12,
+    "measured_pipe_diameters_and_distances": "UNAVAILABLE",
+    "new_calibration_solve": "NOT_RUN",
+    "independent_metric_ground_truth": "NOT_RUN",
+    "physical_reference_markers": "NOT_PLACED"
+  },
+  "transfer": {
+    "status": "SEE_UPLOAD_JSON",
+    "channel": "EXISTING_CONTROLLED_FILE_SERVICE",
+    "remote_control_8770": "NOT_RUNNING_NOT_TESTED",
+    "home_to_office_end_to_end": "NOT_RUN",
+    "initial_parallel_fetch_workers": 4,
+    "initial_parallel_fetch_failed_files": 6,
+    "serial_resume_workers": 1,
+    "all_185_files_verified_after_resume": true,
+    "path_containment_error_root_cause": "UNRESOLVED",
+    "raw_photos_in_git": false,
+    "record_url": "https://github.com/oceanye/py_pipe_install/blob/test/field-handoff-20261002/field_reports/field-20261002-113318-fef83aa4/upload.json"
+  },
+  "next_remote_development": [
+    "Exposure transition and per-frame image health; capture completion must remain distinct from usable exposure",
+    "Reallocate unused colour quota without removing hard cap or truncation safety",
+    "Per-source fit rejection and image occlusion diagnostics"
+  ]
+}
