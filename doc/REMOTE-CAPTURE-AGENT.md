@@ -14,6 +14,24 @@
 
 agent 不接受远程输出路径、PowerShell、任意 shell 或任意 Python 代码。客户端只能指定拍摄数量、间隔、时长和可选棋盘格检测；相机索引、布局、分辨率和输出根目录由办公室端固定配置。
 
+## 黑帧修复后的拍摄设置（2026-10-03）
+
+普通 `remote-capture` / `capture-stereo` 拍照默认使用 AUTO，避免每次远程请求都强制切回 1/256 秒。保留 `--exposure-ms 5`、`--exposure-ms 33.333333` 等显式手动请求；`--auto-exposure` 可明确选回 AUTO。自动曝光不表示满足 1/200 秒防运动模糊要求，手动请求失败时也不会暗中切换 AUTO。
+
+Windows DirectShow 通过原生 `IAMCameraControl.GetRange/Set/Get` 同时设置曝光值和模式标志，再核验模式读回。设备不支持的值不会写入，`UNCONFIRMED` 与驱动范围一起返回；例如本机驱动范围 -11～-2，1 秒/2 秒请求不会再被误认为已执行。API 依据：[Microsoft Set](https://learn.microsoft.com/en-us/windows/win32/api/strmif/nf-strmif-iamcameracontrol-set)、[GetRange](https://learn.microsoft.com/en-us/windows/win32/api/strmif/nf-strmif-iamcameracontrol-getrange)。驱动读回不是传感器时序的独立测量。
+
+远程仍默认预热 20 秒、要求末尾连续 3 对通过原有亮度检查；AUTO 首次失败时最多重开同一设备一次，再完整预热，手动模式不自动重开。每次失败都保存末对原始诊断 PNG 和健康记录，放在 `startup_warmup_attempts` 中，不算进合格照片数；预热最终失败返回 `FAILED + UNUSABLE`。请给含重试的调用预留至少 120 秒超时。
+
+`GET /v1/health` 及 `job.json.runtime` 会给出服务启动时的代码 SHA、工作树状态、OpenCV 后端能力和 `capture_contract=remote-auto-native-dshow-v1`。只有重启客户端才加载新代码；本机 headless OpenCV 未编入 MSMF 时，会明确提示后端不可用，不再误报设备占用。
+
+无需曝光参数的验证命令：
+
+```powershell
+python -m pipe_twin remote-capture --agent-url http://<办公室-Tailscale-IP>:8770 --count 8 --interval-s 0.5 --detect-chessboard --board-columns 8 --board-rows 6 --wait --timeout-s 150
+```
+
+检查 `quality_status=USABLE`、8 对全部可用、连续照片有实际内容，再通过 `fetch-stereo --workers 4` 核验原图。这只验收远程拍照，不等于重新完成标定或量测精度验收。
+
 ## 办公室端首次试运行
 
 ### 一键启动

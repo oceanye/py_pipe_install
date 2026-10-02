@@ -62,6 +62,22 @@ def _stop(manager, server, thread):
     thread.join(timeout=2)
 
 
+def test_health_and_jobs_expose_frozen_capture_contract(tmp_path):
+    config = CaptureAgentConfig(output_root=tmp_path/"runs")
+    manager = CaptureJobManager(config, capture_fn=_fake_capture)
+    try:
+        snapshot = manager.health()
+        assert snapshot["runtime"]["capture_contract"] == "remote-auto-native-dshow-v1"
+        assert snapshot["runtime"]["default_exposure_ms"] is None
+        snapshot["runtime"]["code_sha"] = "modified-by-client"
+        assert manager.health()["runtime"]["code_sha"] != "modified-by-client"
+        job = manager.submit({"count":1})
+        assert job["request"]["exposure_ms"] is None
+        assert job["runtime"] == manager.health()["runtime"]
+    finally:
+        manager.shutdown(wait=True)
+
+
 def _wait(agent_url: str, token: str | None, job_id: str) -> dict:
     deadline = time.monotonic() + 3
     while time.monotonic() < deadline:
@@ -94,6 +110,7 @@ def test_request_defaults_and_duration_only_requests_remain_bounded(tmp_path: Pa
     assert _validate_request({"exposure_ms": 1000 / 30}, config)["exposure_ms"] == 1000 / 30
     assert _validate_request({"exposure_ms": None}, config)["exposure_ms"] is None
     assert _validate_request({}, config)["warmup_s"] == 20.0
+    assert _validate_request({}, config)["exposure_ms"] is None
     assert _validate_request({"warmup_s": 0}, config)["warmup_s"] == 0.0
     duration_request = _validate_request({"duration_s": 1.0}, config)
     assert duration_request["count"] == 5

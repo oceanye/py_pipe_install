@@ -220,7 +220,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     capture_exposure.add_argument(
         "--auto-exposure", action="store_true",
-        help="ask the camera driver for automatic exposure",
+        help="use automatic exposure (default for still capture; does not certify 1/200 s)",
     )
     capture_parser.add_argument("--detect-chessboard", action="store_true", help="record optional 11x7 chessboard detection status")
     capture_parser.add_argument("--board-columns", type=int, default=11)
@@ -298,7 +298,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     remote_exposure.add_argument(
         "--auto-exposure", action="store_true",
-        help="ask the office camera driver for automatic exposure",
+        help="use automatic exposure (remote default; does not certify 1/200 s)",
     )
     remote_parser.add_argument("--detect-chessboard", action="store_true")
     remote_parser.add_argument("--board-columns", type=int, default=8)

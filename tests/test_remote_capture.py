@@ -180,6 +180,52 @@ def test_capture_fails_when_warmup_never_reaches_stability(tmp_path: Path):
     assert payload["status"] == "FAILED"
     assert payload["pair_count"] == 0
     assert payload["startup_warmup"]["reads"] == 3
+    assert payload["quality_status"] == "UNUSABLE"
+    diagnostic = payload["startup_warmup"]["diagnostic_pair"]
+    assert (output / diagnostic["left"]["path"]).is_file()
+
+
+@pytest.mark.parametrize("exposure,recovers,expected_opens", [(None, True, 1), (None, False, 1), (5., True, 0)])
+def test_auto_reopens_once_with_same_settings_and_keeps_failed_pair(tmp_path, exposure, recovers, expected_opens):
+    now = [0.]
+    sessions = []
+    class RestartSession(_FakeSession):
+        opens = 0
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            sessions.append(self)
+        def open(self):
+            self.opens += 1
+        def read_pair(self):
+            now[0] += 1.
+            pair = super().read_pair()
+            bright = self.opens > 0 and recovers
+            return CapturedStereoPair(
+                left=np.full_like(pair.left, 80 if bright else 0),
+                right=np.full_like(pair.right, 100 if bright else 0),
+                left_captured_at=pair.left_captured_at, right_captured_at=pair.right_captured_at,
+                sync_delta_ms=pair.sync_delta_ms, timestamp_source=pair.timestamp_source, provenance=pair.provenance,
+            )
+    output = tmp_path / "recovery"
+    options = dict(count=2, warmup_s=4., exposure_ms=exposure, session_factory=RestartSession,
+                   clock=lambda:now[0], sleep=lambda _:None)
+    if exposure is None and recovers:
+        capture_stereo_pairs(output, **options)
+    else:
+        with pytest.raises(RuntimeError, match="did not stabilize"):
+            capture_stereo_pairs(output, **options)
+    payload = json.loads((output/"capture.json").read_text())
+    assert sessions[0].opens == expected_opens
+    assert sessions[0].kwargs["exposure_ms"] == exposure
+    assert len(payload["startup_warmup_attempts"]) == expected_opens + 1
+    assert payload["startup_warmup_attempts"][0]["diagnostic_pair"]["image_health"]["pair_usable"] is False
+    if exposure is None and recovers:
+        assert payload["quality_status"] == "USABLE"
+        assert payload["pair_count"] == 2
+        assert payload["captures"][0]["left"]["path"].startswith("pair_")
+    else:
+        assert payload["quality_status"] == "UNUSABLE"
+        assert payload["pair_count"] == 0
 
 
 def test_capture_distinguishes_completed_run_from_exposure_quality(tmp_path: Path):

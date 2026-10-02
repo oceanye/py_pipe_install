@@ -163,6 +163,42 @@ def _startup_pair_health(pair: Any) -> tuple[str | None, dict[str, Any]]:
     return None, stats
 
 
+def _stable_warmup(session: Any, *, seconds: float, required: int, record: dict[str, Any],
+                   persist: Callable[[], None], clock: Callable[[], float],
+                   sleep: Callable[[float], None]) -> tuple[Any, Any]:
+    """Keep the full settle interval; a bright first frame cannot end it early."""
+    start = clock()
+    deadline = start + seconds
+    record.update(started_at=_timestamp(), reads=0, stable_observed=0, discarded=[])
+    pending, last = None, None
+    while clock() < deadline:
+        last = session.read_pair()
+        record["reads"] += 1
+        issue, stats = _startup_pair_health(last)
+        health = _pair_image_health(last)
+        if issue is None and health["pair_usable"]:
+            record["stable_observed"] += 1
+            pending = last
+        else:
+            record["stable_observed"] = 0
+            pending = None
+            record["discarded_count"] = record.get("discarded_count", 0) + 1
+            if len(record["discarded"]) < 25:
+                record["discarded"].append({"read": record["reads"],
+                    "reason": issue or ",".join(health["reason_codes"]), **stats, "image_health": health})
+        record["elapsed_s"] = round(max(0.0, clock() - start), 3)
+        if record["reads"] == 1 or record["reads"] % 25 == 0:
+            persist()
+        remaining = deadline - clock()
+        if remaining > 0:
+            sleep(min(0.005, remaining))
+    record.update(finished_at=_timestamp(), elapsed_s=round(max(0.0, clock()-start), 3))
+    if pending is not None and record["stable_observed"] >= required:
+        record.update(accepted_read=record["reads"], accepted_stats=_startup_pair_health(pending)[1])
+        return pending, last
+    return None, last
+
+
 def capture_stereo_pairs(
     output_dir: str | Path,
     *,
@@ -178,7 +214,7 @@ def capture_stereo_pairs(
     board_columns: int = 11,
     board_rows: int = 7,
     backend: int | None = None,
-    exposure_ms: float | None = TARGET_EXPOSURE_MS,
+    exposure_ms: float | None = None,
     warmup_s: float = 0.0,
     warmup_stable_pairs: int = 3,
     session_factory: Callable[..., Any] = StereoCameraSession,
@@ -292,7 +328,7 @@ def capture_stereo_pairs(
         )
         payload["unusable_pair_count"] = len(records) - payload["usable_pair_count"]
         if not records:
-            payload["quality_status"] = "PENDING"
+            payload["quality_status"] = "UNUSABLE" if payload.get("error", {}).get("stage") == "startup_warmup" else "PENDING"
         elif payload["usable_pair_count"] == len(records):
             payload["quality_status"] = "USABLE"
         elif payload["usable_pair_count"]:
@@ -327,49 +363,45 @@ def capture_stereo_pairs(
                 # A single bright frame is not evidence that a UVC driver has
                 # settled. Keep reading for the requested warm-up interval,
                 # then require a consecutive stable run at its end.
-                warmup_started = clock()
-                warmup_deadline = warmup_started + float(warmup_s)
-                stable_pairs = 0
-                warmup_read = 0
-                payload["startup_warmup"]["started_at"] = _timestamp()
-                while clock() < warmup_deadline:
+                attempts: list[dict[str, Any]] = []
+                payload["startup_warmup_attempts"] = attempts
+                can_reopen = exposure_ms is None and callable(getattr(session, "open", None))
+                for attempt_index in range(2 if can_reopen else 1):
                     stage = "startup_warmup"
-                    candidate = session.read_pair()
-                    warmup_read += 1
-                    issue, stats = _startup_pair_health(candidate)
-                    health = _pair_image_health(candidate)
-                    if issue is None and health["pair_usable"]:
-                        stable_pairs += 1
-                        pending_pair = candidate
-                    else:
-                        stable_pairs = 0
-                        pending_pair = None
-                        reason = issue or ",".join(health["reason_codes"]) or "PAIR_NOT_USABLE"
-                        if len(payload["startup_warmup"]["discarded"]) < 25:
-                            payload["startup_warmup"]["discarded"].append(
-                                {"read": warmup_read, "reason": reason, **stats}
-                            )
-                        payload["discarded_pair_count"] += 1
-                    payload["startup_warmup"]["reads"] = warmup_read
-                    payload["startup_warmup"]["stable_observed"] = stable_pairs
-                    payload["startup_warmup"]["elapsed_s"] = round(
-                        max(0.0, clock() - warmup_started), 3
-                    )
-                    if warmup_read == 1 or warmup_read % 25 == 0:
-                        persist()
-                    if clock() < warmup_deadline:
-                        sleep(min(0.005, max(0.0, warmup_deadline - clock())))
-                payload["startup_warmup"]["finished_at"] = _timestamp()
-                payload["startup_warmup"]["elapsed_s"] = round(
-                    max(0.0, clock() - warmup_started), 3
-                )
-                if stable_pairs < warmup_stable_pairs or pending_pair is None:
+                    warmup = {"max_reads": startup_max_reads, "stable_required": warmup_stable_pairs,
+                              "accepted_read": None, "attempt": attempt_index + 1}
+                    payload["startup_warmup"] = warmup
+                    attempts.append(warmup)
+                    pending_pair, last = _stable_warmup(session, seconds=float(warmup_s), required=warmup_stable_pairs,
+                        record=warmup, persist=persist, clock=clock, sleep=sleep)
+                    payload["discarded_pair_count"] += warmup.get("discarded_count", 0)
+                    if pending_pair is not None:
+                        break
+                    # Keep a real rejected pair for diagnosis, outside the
+                    # accepted capture list. Never manufacture a successful pair.
+                    if last is not None:
+                        diagnostic: dict[str, Any] = {"image_health": _pair_image_health(last), "provenance": last.provenance}
+                        for role in ("left", "right"):
+                            name = f"warmup_{attempt_index + 1:02d}_{role}.png"
+                            data = _encode_png(getattr(last, role))
+                            (root / name).write_bytes(data)
+                            diagnostic[role] = {"path": name, "sha256": hashlib.sha256(data).hexdigest()}
+                        warmup["diagnostic_pair"] = diagnostic
+                    persist()
+                    if can_reopen and attempt_index == 0:
+                        warmup["recovery"] = "REOPEN_SAME_DEVICE_SAME_LAYOUT_AUTO"
+                        # Reopening resets the graph and reapplies AUTO to the
+                        # stereo stream; explicit manual requests never change.
+                        stage = "reopen_camera"
+                        session.open()
+                        payload["camera_exposure"] = {str(i): dict(r) for i, r in getattr(session, "exposure_settings", {}).items()}
+                stage = "startup_warmup"
+                if pending_pair is None:
                     raise RuntimeError(
                         f"camera did not stabilize after {warmup_s:g}s; "
-                        f"only {stable_pairs}/{warmup_stable_pairs} consecutive usable pairs"
+                        f"only {warmup['stable_observed']}/{warmup_stable_pairs} consecutive usable pairs "
+                        f"in {len(attempts)} attempt(s)"
                     )
-                payload["startup_warmup"]["accepted_read"] = warmup_read
-                payload["startup_warmup"]["accepted_stats"] = _startup_pair_health(pending_pair)[1]
                 persist()
             else:
                 for startup_read in range(1, startup_max_reads + 1):

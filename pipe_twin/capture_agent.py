@@ -22,7 +22,9 @@ import json
 import math
 import re
 import secrets
+import subprocess
 import threading
+from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -35,7 +37,7 @@ from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_ope
 from uuid import uuid4
 
 from .camera_lock import CameraBusyError
-from .camera_exposure import MAX_EXPOSURE_MS, MIN_EXPOSURE_MS, TARGET_EXPOSURE_MS
+from .camera_exposure import MAX_EXPOSURE_MS, MIN_EXPOSURE_MS
 from .logging_config import get_logger, log_event
 from .pipeline import atomic_write_text
 from .remote_capture import capture_stereo_pairs
@@ -54,6 +56,27 @@ LAYOUTS = (LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL, LAYOUT_SEPARATE)
 TERMINAL_STATES = frozenset(("COMPLETED", "FAILED"))
 _JOB_FILE = "job.json"
 _EVIDENCE_MANIFEST = "evidence_manifest.json"
+
+
+@lru_cache(maxsize=1)
+def _runtime_info() -> dict[str, Any]:
+    """Snapshot deployment identity at service startup, not at each request."""
+    import cv2
+    root = Path(__file__).resolve().parents[1]
+    identity: dict[str, Any] = {"capture_contract": "remote-auto-native-dshow-v1",
+        "default_exposure_ms": None, "opencv_version": cv2.__version__,
+        "camera_backends": {str(b): bool(cv2.videoio_registry.hasBackend(b)) for b in (cv2.CAP_DSHOW, cv2.CAP_MSMF)},
+        "code_sha": None, "working_tree_dirty": None}
+    try:
+        options = dict(cwd=root, capture_output=True, text=True, encoding="utf-8", timeout=3,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        head = subprocess.run(["git", "rev-parse", "HEAD"], **options)
+        changes = subprocess.run(["git", "status", "--porcelain", "--untracked-files=normal", "--", "pipe_twin"], **options)
+        if head.returncode == 0 and changes.returncode == 0:
+            identity.update(code_sha=head.stdout.strip(), working_tree_dirty=bool(changes.stdout.strip()))
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return identity
 _TAILNET = ipaddress.ip_network("100.64.0.0/10")
 
 
@@ -309,7 +332,7 @@ def _validate_request(payload: Any, config: CaptureAgentConfig) -> dict[str, Any
         raise CaptureAgentError("board_columns must be an integer between 3 and 50")
     if type(rows) is not int or not 3 <= rows <= 50:
         raise CaptureAgentError("board_rows must be an integer between 3 and 50")
-    exposure_ms = payload.get("exposure_ms", TARGET_EXPOSURE_MS)
+    exposure_ms = payload.get("exposure_ms", None)
     if exposure_ms is not None:
         exposure_ms = _finite_number(
             exposure_ms,
@@ -355,6 +378,7 @@ class CaptureJobManager:
         self._jobs: dict[str, dict[str, Any]] = {}
         self._active_job: str | None = None
         self._accepting = True
+        self._runtime = copy.deepcopy(_runtime_info())
 
     def _public(self, job: Mapping[str, Any]) -> dict[str, Any]:
         result = copy.deepcopy(dict(job))
@@ -388,6 +412,7 @@ class CaptureJobManager:
                 raise CaptureAgentError("generated job directory already exists; retry the request")
             created_at = _now()
             job = {
+                "runtime": copy.deepcopy(self._runtime),
                 "schema_version": "1.0",
                 "kind": "pipe_twin_remote_capture_job",
                 "job_id": job_id,
@@ -559,6 +584,7 @@ class CaptureJobManager:
             active = self._jobs.get(self._active_job) if self._active_job else None
             return {
                 "status": "READY" if self._accepting else "STOPPING",
+                "runtime": copy.deepcopy(self._runtime),
                 "active_job": None if active is None else self._public(active),
                 "camera_profile": {
                     "left_index": self.config.left_index,

@@ -29,6 +29,7 @@ class ExposureTests(unittest.TestCase):
         self.assertEqual(capture.set.call_args_list, [
             unittest.mock.call(cv2.CAP_PROP_AUTO_EXPOSURE, 0),
             unittest.mock.call(cv2.CAP_PROP_EXPOSURE, -8),
+            unittest.mock.call(cv2.CAP_PROP_AUTO_EXPOSURE, 0),
         ])
         capture.get.assert_called_once_with(cv2.CAP_PROP_EXPOSURE)
         self.assertIn("1/256", exposure_summary({0: result}))

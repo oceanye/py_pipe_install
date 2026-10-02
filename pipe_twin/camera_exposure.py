@@ -7,6 +7,8 @@ from typing import Any
 
 import cv2
 
+from .directshow_controls import DirectShowCameraControl
+
 
 TARGET_EXPOSURE_MS = 5.0  # 1/200 s maximum, to limit motion blur.
 MIN_EXPOSURE_MS = 0.1
@@ -33,7 +35,9 @@ def exposure_preset_label(duration: float | None) -> str:
 
 
 def configure_exposure(capture: Any, backend: int,
-                       exposure_ms: float | None = TARGET_EXPOSURE_MS) -> dict[str, Any]:
+                       exposure_ms: float | None = TARGET_EXPOSURE_MS, *,
+                       device_index: int | None = None,
+                       native_factory: Any = DirectShowCameraControl) -> dict[str, Any]:
     """Report driver acceptance/readback; this is not a sensor timing measurement.
 
     DirectShow exposure is integer log2(seconds), so -8 = 1/256 s is
@@ -57,6 +61,48 @@ def configure_exposure(capture: Any, backend: int,
         if backend == cv2.CAP_ANY:
             backend = int(capture.get(cv2.CAP_PROP_BACKEND))
         result["backend"] = backend
+        if backend == cv2.CAP_DSHOW and device_index is not None:
+            result["control_api"] = "IAMCameraControl"
+            with native_factory(device_index) as control:
+                limits = control.exposure_range()
+                result["native_range"] = limits
+                result["device_path"] = control.device_path
+                mode = 1 if exposure_ms is None else 2
+                if not limits["capabilities"] & mode:
+                    result["reason"] = "驱动不支持所选曝光模式"
+                    return result
+                if exposure_ms is None:
+                    value = limits["default"]
+                else:
+                    value = math.floor(math.log2(exposure_ms / 1000))
+                    result["requested_native"] = value
+                    if not limits["minimum"] <= value <= limits["maximum"]:
+                        result["reason"] = "所选快门超出驱动声明范围；未写入不支持的值"
+                        result["observed_state"] = control.exposure()
+                        return result
+                    step = limits["step"]
+                    if step <= 0:
+                        result["reason"] = "驱动曝光步长无效"
+                        return result
+                    value = limits["minimum"] + ((value - limits["minimum"]) // step) * step
+                    result["requested_native"] = value
+                control.set_exposure(value, mode)
+                state = control.exposure()
+                result.update(readback_native=state["value"], readback_flags=state["flags"])
+                if exposure_ms is None:
+                    result["auto_accepted"] = state["flags"] == 1
+                    if result["auto_accepted"]:
+                        result["status"] = "AUTO"
+                else:
+                    result["manual_accepted"] = state["flags"] == 2
+                    result["shutter_accepted"] = state["value"] == value
+                    if -30 <= state["value"] <= 1 and result["manual_accepted"]:
+                        result["reported_ms"] = 1000 * 2 ** state["value"]
+                    if result["manual_accepted"] and result["shutter_accepted"] and result["reported_ms"] is not None:
+                        result["status"] = "DRIVER_REPORTED"
+                if result["status"] == "UNCONFIRMED":
+                    result["reason"] = "驱动曝光值或自动/手动模式读回不一致"
+                return result
         if backend not in {cv2.CAP_DSHOW, cv2.CAP_V4L2}:
             result["reason"] = "当前相机接口暂不支持程序设置快门"
             return result
@@ -85,6 +131,10 @@ def configure_exposure(capture: Any, backend: int,
         result["requested_native"] = native_value
         result["manual_accepted"] = bool(capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, manual_value))
         result["shutter_accepted"] = bool(capture.set(cv2.CAP_PROP_EXPOSURE, native_value))
+        if backend == cv2.CAP_DSHOW:
+            # OpenCV's exposure-value setter sends flags=0. Reassert MANUAL
+            # after the value for callers without a native device binding.
+            result["manual_accepted"] = bool(capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, manual_value)) and result["manual_accepted"]
         value = float(capture.get(cv2.CAP_PROP_EXPOSURE))
         if math.isfinite(value):
             result["readback_native"] = value

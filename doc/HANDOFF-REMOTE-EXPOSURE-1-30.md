@@ -2,6 +2,8 @@
 
 更新时间：2026-10-02（Asia/Shanghai）。实现提交：`0bf1cec`，基于最新现场检查分支 `2caff4e`。
 
+2026-10-03 更新：普通拍照默认已改为 AUTO；多档手动仍通过 `--exposure-ms` 指定。Windows 原生曝光模式/范围核验、一次 AUTO 重开恢复及部署身份查询见 [当前远程拍照设置](REMOTE-CAPTURE-AGENT.md#黑帧修复后的拍摄设置2026-10-03)。下文 5 ms 默认与旧部署门槛保留作历史记录。
+
 ## 已完成
 
 - `remote-capture` 支持 `--exposure-ms`，办公室请求契约允许 `exposure_ms`，并把参数传到 `StereoCameraSession`。

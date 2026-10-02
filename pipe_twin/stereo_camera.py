@@ -339,6 +339,8 @@ class StereoCameraSession:
     def _open_one(self, index: int, width: int, height: int) -> Any:
         capture = None
         try:
+            if self.capture_factory is cv2.VideoCapture and self.backend != cv2.CAP_ANY and not cv2.videoio_registry.hasBackend(self.backend):
+                raise StereoCameraError(f"当前 OpenCV 未提供相机后端 {self.backend}；请选择已安装的后端")
             for attempt in range(3):
                 capture = self.capture_factory(index, self.backend)
                 if capture.isOpened():
@@ -354,7 +356,7 @@ class StereoCameraSession:
             capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             # Stream size/format changes can reset UVC controls; apply last.
-            exposure = configure_exposure(capture, self.backend, self.exposure_ms)
+            exposure = self._configure_exposure(capture, index, self.exposure_ms)
             self.exposure_settings[index] = exposure
             log_event(
                 get_logger("stereo_camera"), "camera_exposure_configured",
@@ -366,13 +368,17 @@ class StereoCameraSession:
             raise
         return capture
 
+    def _configure_exposure(self, capture: Any, index: int, exposure_ms: float | None) -> dict[str, Any]:
+        options = {"device_index": index} if isinstance(capture, cv2.VideoCapture) else {}
+        return configure_exposure(capture, self.backend, exposure_ms, **options)
+
     def set_exposure(self, exposure_ms: float | None) -> None:
         """Apply to live handles; changing shutter does not reopen the device."""
         self.exposure_ms = exposure_ms
         for index, capture in ((self.left_index, self.left_capture),
                                (self.right_index, self.right_capture)):
             if capture is not None and index is not None:
-                record = configure_exposure(capture, self.backend, exposure_ms)
+                record = self._configure_exposure(capture, index, exposure_ms)
                 self.exposure_settings[index] = record
                 log_event(get_logger("stereo_camera"), "camera_exposure_configured",
                           device_index=index, **record)

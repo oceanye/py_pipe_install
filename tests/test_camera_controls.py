@@ -28,7 +28,8 @@ def test_directshow_manual_presets_are_adjustable(duration, native):
     assert result["target_ms"] == duration
     assert result["reported_ms"] == 1000 * 2 ** native
     assert capture.set.call_args_list == [call(cv2.CAP_PROP_AUTO_EXPOSURE, 0),
-                                          call(cv2.CAP_PROP_EXPOSURE, native)]
+                                          call(cv2.CAP_PROP_EXPOSURE, native),
+                                          call(cv2.CAP_PROP_AUTO_EXPOSURE, 0)]
     if duration > 5:
         assert "慢于 1/200" in exposure_summary({0: result})
 
