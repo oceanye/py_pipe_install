@@ -1,12 +1,18 @@
 # 测试与远程开发交接
 
-更新时间：2026-10-02（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
+更新时间：2026-10-03（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
 
-## 当前硬件身份（现场补充，待确认）
+## 当前硬件身份（用户已确认）
 
 用户已确认设备为“汇博视捷、基线 60 mm、视场角 80°”，项目型号状态为 `CONFIRMED_BY_USER`，记录型号 `HBVCAM-4M2214HD-2 V11`（双 `OV4689`、USB 2.0、滚动快门）。办公室 PnP `HardwareIds` 仍只用于确认驱动实例，不再作为型号确认门槛；具体证据和原厂链接见 [相机资料审查与接入建议](doc/相机资料审查与接入建议.md)。原厂未公开该型号 DirectShow 的数值曝光范围，当前约 `250 ms` 仅是现场驱动回读上限。
 
-## 2026-10-03 办公室部署与 AI 完整检查
+## 2026-10-03 最新主线现场回归（`11322bb`）
+
+办公室服务已重启到 GitHub 最新提交 `11322bb8dcb4d9fddbbdf7ece9904b4cd7dc294b`，健康响应同时确认工作树干净、DirectShow `700` 可用、Media Foundation `1400` 不可用。AUTO 远程抓拍任务 `remote-20261003-092718-6ddaf287` 完成 `8/8 USABLE`，左右棋盘均检测到 48 点，8765 取回 18 个文件并通过哈希校验。原生 `IAMCameraControl` 回报曝光范围 `-11..-2`，AUTO 回读 `-2`。
+
+把这 8 对接入最新 DXF manifest 回放后，AI 仍输出 `0 INSTALLED / 0 NOT_INSTALLED / 12 UNKNOWN`、局部圆柱 `0`、`surface_audit=TRUNCATED`。照片是固定棋盘标定场景，不能作为三管识别验收；这次结果说明采集链已恢复，AI 仍正确拒判。完整记录见 [最新 AUTO/DirectShow 与 AI 回放报告](field_reports/field-20261003-092718-auto-native-dshow/report.md)。
+
+## 2026-10-03 办公室部署与 AI 完整检查（`541fc38` 历史基线）
 
 办公室 `8770` 返回 `READY`，`8765` 可下载；当前配置为索引 `0`、并排左右、每目 `1920×1080`、DirectShow `700`。本轮 20 秒 AUTO 预热为 `0/3` 连续可用；手动 5 ms、AUTO 单帧和 1 秒请求均得到近黑图。1 秒请求已到达当前客户端，但驱动回读仍为 `250 ms`（`UNCONFIRMED`），所以不能把 1 秒当作真实曝光。完整证据见 [办公室部署与 AI 完整检查报告](field_reports/field-20261003-001845-office-ai-check/report.md)。
 
