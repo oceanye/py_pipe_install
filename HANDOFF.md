@@ -2,6 +2,17 @@
 
 更新时间：2026-10-03（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
 
+## 2026-10-03 主流程收敛与识别后端模块化
+
+DXF 侧立面的日常路径已收敛为：**导入 DXF → 核对管径/颜色/共同管长方向 → 载入一次真实双目标定 → 双目抓拍并评估 → 新增实物后点击状态刷新**。不再要求先单独“载入现场清单”；首次保存基础现场时程序会创建 schema 2.0 manifest。3DM/3MF、二维码绝对配准和手工区域框选保留为旧包/完整三维兼容入口，不作为 DXF 侧立面的必需步骤。
+
+`pipe_twin/recognition/` 现在是局部管道识别的唯一调度入口。`auto`、`cylinder`、`parallel_strip`、`geometry_only` 四个内置后端保持原有行为；圆柱拟合、平行局部条带和固定机位深度局部截断都只通过统一的 `surface` 结果交给后续注册与状态机。后续算法可调用 `register_recognizer(name, backend)` 后在 `registration.local_observation_mode` 使用该名称；未注册名称在建档/载入时拒绝，避免现场包执行未知代码。每个报告的 `surface_audit` 会记录请求后端和实际使用后端。
+
+标定状态分为两层：`validated=true` + `rectified=true` 表示相机内参与双目矫正已完成，同一相机、镜头、分辨率、裁剪和左右布局不需要重复标定；`registration_validated` 表示 CAD 绝对坐标配准，基础立面相对布局模式可以在它为 `false` 时继续。现有现场候选 `field-chess-fb5dc0f71ee5` 是历史 15 姿态结果，本轮没有重新求解，`registration_validated=false`；只有更换硬件/图像几何或标定质量失效时才重新打开向导。GUI 状态栏现在会明确显示“相机标定已完成，无需重复”和 CAD 配准状态。
+
+详细操作、清理边界和替换算法示例见 [DXF / STL 双目立面识别主流程](doc/立面识别主流程.md)。
+本轮回归：`528 passed, 1 skipped, 256 subtests passed`；`python -m compileall -q pipe_twin` 和 `git diff --check` 通过。
+
 ## 2026-10-03 平行管局部条带识别开发
 
 用户确认所有现场管道彼此平行，棋盘只遮挡局部时应利用露出的侧面。新增 `pipe_twin/parallel_local.py`：在左右矫正图中提取有颜色提示的细长局部条带，检查有效双目点、共同轴向和轴向支撑，用局部投影宽度估计直径，再把观测交给既有的 `elevation_registration`。颜色仍是候选分割提示，身份仍由管径和立面截面位置决定；没有至少三条非退化观测（或已绑定基准）时继续返回 `INSUFFICIENT_OBSERVATIONS`，不把局部条带当成安装证明。

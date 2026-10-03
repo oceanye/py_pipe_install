@@ -85,9 +85,14 @@ imageSize = (640, 480)
             adapt_opencv_stereo_calibration(source, calibration_id="field-v1")
 
     def test_unvalidated_registration_is_reported_as_not_ready(self) -> None:
-        calibration = adapt_opencv_stereo_calibration(self.source(), calibration_id="field-v1")
+        calibration = adapt_opencv_stereo_calibration(
+            self.source(), calibration_id="field-v1", validated=True, registration_validated=False
+        )
         diagnostics = validate_calibration(calibration)
         self.assertTrue(diagnostics["valid"])
+        self.assertTrue(diagnostics["camera_calibration_complete"])
+        self.assertFalse(diagnostics["cad_registration_complete"])
+        self.assertFalse(diagnostics["recalibration_required"])
         self.assertFalse(diagnostics["ready_for_field_analysis"])
 
     def test_rectified_projection_uses_right_baseline_once(self) -> None:

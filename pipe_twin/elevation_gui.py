@@ -290,7 +290,7 @@ class ElevationCaptureDialog:
         self.mode_label = tk.StringVar(value="自动匹配立面")
         self.local_observation_label = tk.StringVar(value="自动（圆柱/平行局部）")
         self.message = tk.StringVar(value="首次：导入 STL 或 DXF → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
-        self.calibration_status = tk.StringVar(value="尚未选择真实双目标定")
+        self.calibration_status = tk.StringVar(value="未加载标定；同一相机、镜头和分辨率无需重复标定")
         self.summary = tk.StringVar(value="尚未建立管道目录")
         self.matching_preset = tk.StringVar(value="原始灰度")
         self.disparity_count = tk.StringVar(value="256")
@@ -305,7 +305,7 @@ class ElevationCaptureDialog:
         ttk.Button(bar, text="① 导入 STL/DXF", command=self.browse_model).pack(side="left", padx=3)
         ttk.Combobox(bar, textvariable=self.stl_unit, values=("millimeter", "centimeter", "meter", "inch"), state="readonly", width=11).pack(side="left")
         ttk.Button(bar, text="② 相机标定", command=self.browse_calibration).pack(side="left", padx=3)
-        ttk.Button(bar, text="自动标定向导", command=self.open_calibration).pack(side="left", padx=3)
+        ttk.Button(bar, text="重新标定（仅换设备/分辨率）", command=self.open_calibration).pack(side="left", padx=3)
         ttk.Button(bar, text="③ 双目抓拍", command=self.capture_camera).pack(side="left", padx=3)
         ttk.Button(bar, text="状态刷新", command=self.refresh_status).pack(side="left", padx=3)
         ttk.Label(bar, text="模式").pack(side="left", padx=(12, 3))
@@ -804,7 +804,18 @@ class ElevationCaptureDialog:
         try:
             from .stereo_analyzer import _calibration_from_manifest
             parsed = _calibration_from_manifest(self.current_calibration())
-            self.calibration_status.set(f"已通过相机标定 · {parsed.left.width}×{parsed.left.height} 每目 · 基线 {parsed.baseline_mm:g} mm · 基础模式无需二维码")
+            if parsed.validated and parsed.rectified:
+                registration = (
+                    "CAD配准已确认"
+                    if parsed.registration_validated
+                    else "CAD配准未确认（立面相对布局仍可继续；完整绝对坐标需另行配准）"
+                )
+                self.calibration_status.set(
+                    f"相机标定已完成，无需重复 · {parsed.calibration_id} · "
+                    f"{parsed.left.width}×{parsed.left.height} 每目 · 基线 {parsed.baseline_mm:g} mm · {registration}"
+                )
+            else:
+                self.calibration_status.set("标定文件已载入，但尚未满足现场双目门禁；请完成一次标定向导")
         except (OSError, ValueError) as error:
             self.calibration_status.set(str(error))
 

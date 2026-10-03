@@ -252,10 +252,9 @@ def _same_alignment(first: Mapping, second: Mapping, specs: list[dict]) -> bool:
 def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pipe_specs: list[dict],
                                    registration_settings: Mapping | None = None) -> dict:
     """Pure in-memory entry point; every capture estimates its own alignment."""
-    from .local_surface import extract_local_pipes
-    from .parallel_local import extract_parallel_local_pipes
     from .elevation_registration import register_elevation
     from .elevation_dataset import normalize_registration_settings
+    from .recognition import recognize_local_pipes
     settings = normalize_registration_settings(registration_settings)
     if not groups:
         raise ValueError("至少需要一组双目照片")
@@ -263,30 +262,13 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
     current_surface = None
     for group in groups:
         observation_mode = settings.get("local_observation_mode", "auto")
-        cylinder_surface = None
-        if observation_mode in {"auto", "cylinder"}:
-            cylinder_surface = extract_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
-        if observation_mode == "geometry_only":
-            # Fixed-camera geometry path.  Candidate generation is depth-only;
-            # each left/right pair is clipped to its common axial interval and
-            # matched to the model by diameter and transverse position.
-            surface = extract_local_pipes(
-                group["left"], group["right"], group["depth"], calibration, pipe_specs,
-                config={"geometry_only": True},
-            )
-        elif observation_mode == "parallel_strip":
-            surface = extract_parallel_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
-        elif observation_mode == "auto" and (not cylinder_surface["observations"] or cylinder_surface.get("audit", {}).get("truncated")):
-            # A board or foreground object can leave a long straight side strip
-            # while hiding the curvature required by the cylinder fitter.  In
-            # auto mode, retain the strict cylinder result when it is healthy;
-            # otherwise use the bounded parallel-strip fallback and keep the
-            # original audit for diagnosis.
-            surface = extract_parallel_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
-            surface.setdefault("audit", {})["fallback_from"] = "CYLINDER_SURFACE"
-            surface["audit"]["cylinder_surface_audit"] = cylinder_surface.get("audit", {})
-        else:
-            surface = cylinder_surface
+        # The recognition package owns the detector choice and fallback
+        # policy.  Registration, absence evidence, and historical refresh
+        # remain independent of the chosen observation backend.
+        surface = recognize_local_pipes(
+            observation_mode, group["left"], group["right"], group["depth"],
+            calibration, pipe_specs,
+        )
         surface.setdefault("audit", {}).update({
             "local_observation_mode": observation_mode,
             "fixed_camera_relative_layout": True,
