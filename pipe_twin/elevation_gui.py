@@ -9,6 +9,7 @@ import json
 import math
 import queue
 import threading
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -270,6 +271,7 @@ class ElevationCaptureDialog:
         self.camera_capture_provenance = {}
         self.image_paths: dict[str, str] = {}
         self.image_hashes: dict[str, str] = {}
+        self.status_refresh_metadata: dict[str, str] | None = None
         self.registration_settings: dict[str, Any] = {"axis_world": None, "anchors": {}, "local_observation_mode": "auto"}
         self.model_kind = ""
         self.model_half_length_mm = 1000.0
@@ -305,6 +307,7 @@ class ElevationCaptureDialog:
         ttk.Button(bar, text="② 相机标定", command=self.browse_calibration).pack(side="left", padx=3)
         ttk.Button(bar, text="自动标定向导", command=self.open_calibration).pack(side="left", padx=3)
         ttk.Button(bar, text="③ 双目抓拍", command=self.capture_camera).pack(side="left", padx=3)
+        ttk.Button(bar, text="状态刷新", command=self.refresh_status).pack(side="left", padx=3)
         ttk.Label(bar, text="模式").pack(side="left", padx=(12, 3))
         self.mode_box = ttk.Combobox(bar, textvariable=self.mode_label,
                                      values=("自动匹配立面", "手工区域兼容"),
@@ -607,6 +610,8 @@ class ElevationCaptureDialog:
                 row["color_srgb"] = PALETTE[diameters.index(round(row["nominal_diameter_mm"], 1)) % len(PALETTE)]
             row["axis"] = "auto"
         self.pipes = pipes
+        self.status_refresh_metadata = None
+        self._analyze_after_camera_capture = False
         self.registration_settings = {"axis_world": [0.0, 0.0, 1.0] if suffix == ".dxf" else None,
                                       "anchors": {}, "local_observation_mode": "auto"}
         self.local_observation_label.set("自动（圆柱/平行局部）")
@@ -819,7 +824,7 @@ class ElevationCaptureDialog:
             update_profile({"camera": camera})
             self.profile = dict(self.profile or {}, camera=copy.deepcopy(camera))
 
-    def capture_camera(self) -> None:
+    def capture_camera(self, *, analyze_after_capture: bool = False) -> None:
         if self.busy:
             return
         try:
@@ -827,12 +832,37 @@ class ElevationCaptureDialog:
             from .capture_gui import StereoCameraDialog
             calibration = self.current_calibration()
             rectifier = rectifier_for_calibration(calibration, self.profile)
+            self._analyze_after_camera_capture = bool(analyze_after_capture)
             if self.camera_dialog is not None and self.camera_dialog.window.winfo_exists():
+                self.camera_dialog.on_capture = self._camera_capture_finished
                 self.camera_dialog.window.lift()
             else:
-                self.camera_dialog = StereoCameraDialog(self, calibration, rectifier, on_capture=lambda _paths, _pair: self.load_images())
+                self.camera_dialog = StereoCameraDialog(self, calibration, rectifier, on_capture=self._camera_capture_finished)
         except (OSError, ValueError) as error:
             self.show_error(error)
+
+    def _camera_capture_finished(self, _paths: Any, _pair: Any) -> None:
+        """Adopt a fresh pair, optionally starting a status refresh analysis."""
+        self.load_images()
+        if getattr(self, "_analyze_after_camera_capture", False):
+            self._analyze_after_camera_capture = False
+            # StereoCameraDialog closes itself immediately after this callback;
+            # defer submit so the camera is released before depth computation.
+            self.window.after(50, lambda: self.submit(True))
+
+    def refresh_status(self) -> None:
+        """Capture a new physical scene and append a timestamped match run."""
+        if self.busy:
+            return
+        if self.mode.get() != "elevation_auto":
+            self.show_error(ValueError("状态刷新需要使用自动匹配立面模式"))
+            return
+        self.status_refresh_metadata = {
+            "action": "STATUS_REFRESH",
+            "requested_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self.message.set("状态刷新已请求：请等待相机预热并完成新的左右目抓拍，随后自动重新匹配。")
+        self.capture_camera(analyze_after_capture=True)
 
     def browse_photo(self, role: str) -> None:
         if self.busy:
@@ -842,6 +872,7 @@ class ElevationCaptureDialog:
             try:
                 from .capture_gui import photo_file_time
                 capture_time = photo_file_time(path)
+                self.status_refresh_metadata = None
                 self.fields[role].set(path)
                 self.fields[f"{role}_time"].set(capture_time)
                 self.timestamp_sources[role] = "MANIFEST_OPERATOR_CONFIRMED"
@@ -898,6 +929,8 @@ class ElevationCaptureDialog:
         if path.is_dir():
             path /= "manifest.json"
         self.invalidate()
+        self.status_refresh_metadata = None
+        self._analyze_after_camera_capture = False
         loaded = load_elevation_dataset(path)
         manifest = loaded["manifest"]
         from .stereo_analyzer import _analysis_config
@@ -1004,6 +1037,7 @@ class ElevationCaptureDialog:
                 stl_unit=self.stl_unit.get(), timestamp_sources=copy.deepcopy(self.timestamp_sources),
                 rectification_recipe=copy.deepcopy((self.profile or {}).get("rectification_recipe")),
                 camera_capture_provenance=copy.deepcopy(self.camera_capture_provenance),
+                status_refresh=copy.deepcopy(self.status_refresh_metadata),
                 _preview_hashes=copy.deepcopy(self.image_hashes))
             # New dataset writers accept the explicit mode/registration
             # contract.  Keep the call shape compatible with older manual
@@ -1082,6 +1116,8 @@ class ElevationCaptureDialog:
             self.show_error(payload)
         else:
             path, report, reset_history = payload
+            refresh_metadata = copy.deepcopy(self.status_refresh_metadata)
+            self.status_refresh_metadata = None
             self.last_manifest = path
             self.report = report
             self.results = {row["pipe_id"]: row for row in report["pipes"]} if report else {}
@@ -1092,6 +1128,14 @@ class ElevationCaptureDialog:
             if inventory.get("present_pipe_count") is not None:
                 self.summary.set(f"现场实物 {inventory['present_pipe_count']} 根；模型候选 {inventory['model_candidate_count']} 个管位 · 已对应 {counts.get('INSTALLED', 0)} · 待确认 {counts.get('UNKNOWN', 0)}")
             self.message.set(f"已保存：{path.parent}。JSON 报告和叠图在同一目录。" if report else f"已保存：{path}")
+            if report and (refresh_metadata or report.get("status_refresh")):
+                recorded = report.get("status_refresh") or refresh_metadata or {}
+                audits = report.get("capture_audit", {}).get("groups", [])
+                captured_at = audits[-1].get("captured_at") if audits else None
+                self.message.set(
+                    f"状态刷新完成：请求 {recorded.get('requested_at', '未记录')}；"
+                    f"拍摄 {captured_at or '未记录'}；分析 {report.get('generated_at', '未记录')}。"
+                )
             if report:
                 audits = report.get("capture_audit", {}).get("groups", [])
                 latest = audits[-1] if audits else {}

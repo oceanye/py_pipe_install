@@ -892,6 +892,12 @@ def _capture_groups_from_manifest(
         if previous_time is not None and pair_time <= previous_time:
             raise StereoAnalysisError("capture_groups must be strictly chronological")
         previous_time = pair_time
+        refresh = group.get("status_refresh")
+        if refresh is not None:
+            if (not isinstance(refresh, dict) or set(refresh) != {"action", "requested_at"}
+                    or refresh.get("action") != "STATUS_REFRESH"):
+                raise StereoAnalysisError(f"{field}.status_refresh is invalid")
+            _parse_timestamp(refresh.get("requested_at"), f"{field}.status_refresh.requested_at")
         normalized.append(
             {
                 "capture_id": capture_id,
@@ -899,6 +905,7 @@ def _capture_groups_from_manifest(
                 "sync_delta_ms": delta_ms,
                 "sync_valid": delta_ms <= calibration.max_sync_delta_ms,
                 "captured_at": pair_time.isoformat(),
+                **({"status_refresh": dict(refresh)} if refresh is not None else {}),
             }
         )
     return run_id, interval, normalized

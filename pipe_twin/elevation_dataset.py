@@ -349,7 +349,8 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
                              timestamp_sources: dict | None = None,
                              mode: str = "elevation_depth",
                              analysis_settings: Mapping | None = None,
-                             registration_settings: Mapping | None = None) -> Path:
+                             registration_settings: Mapping | None = None,
+                             status_refresh: Mapping | None = None) -> Path:
     """Validate and atomically create a portable basic elevation package."""
     if pair_confirmed is not True:
         raise ValueError("请确认左右照片来自同一次同步拍摄")
@@ -385,6 +386,16 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
         raise ValueError("左右照片内容相同")
     specs = _specs(pipe_specs, parsed.left.width, parsed.left.height, mode=mode)
     registration = normalize_registration_settings(registration_settings)
+    if status_refresh is not None:
+        if not isinstance(status_refresh, Mapping) or set(status_refresh) - {"action", "requested_at"}:
+            raise ValueError("status_refresh只能包含action和requested_at")
+        if status_refresh.get("action") != "STATUS_REFRESH":
+            raise ValueError("status_refresh.action必须是STATUS_REFRESH")
+        if not isinstance(status_refresh.get("requested_at"), str) or not status_refresh["requested_at"].strip():
+            raise ValueError("status_refresh.requested_at必须是非空时间文本")
+        from .stereo_analyzer import _parse_timestamp
+        _parse_timestamp(status_refresh["requested_at"], "status_refresh.requested_at")
+        status_refresh = {"action": "STATUS_REFRESH", "requested_at": status_refresh["requested_at"]}
     if set(registration["anchors"].values()) - {p["pipe_id"] for p in specs}:
         raise ValueError("基准指定的模型管道不存在")
     if mode == "elevation_auto" and model_path is None:
@@ -471,8 +482,11 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
     else:
         duplicate = False
     if not duplicate:
-        manifest["capture"]["capture_groups"].append({"capture_id": run_id, "sync_valid": True,
-            "sync_delta_ms": sync_delta, "views": {"left": view_left, "right": view_right}})
+        group = {"capture_id": run_id, "sync_valid": True,
+                 "sync_delta_ms": sync_delta, "views": {"left": view_left, "right": view_right}}
+        if status_refresh is not None:
+            group["status_refresh"] = copy.deepcopy(dict(status_refresh))
+        manifest["capture"]["capture_groups"].append(group)
     output_parent = Path(output_root).resolve()
     output_parent.mkdir(parents=True, exist_ok=True)
     target = output_parent / run_id

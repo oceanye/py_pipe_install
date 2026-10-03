@@ -52,8 +52,10 @@ class ElevationDatasetTests(unittest.TestCase):
     def _create(self, **kwargs) -> Path:
         calibration = kwargs.pop("calibration", _calibration())
         return create_elevation_dataset(output_root=Path(self.tmp.name) / "out", calibration=calibration,
-            left_path=self.left, right_path=self.right, left_time="2026-09-12T10:00:00+08:00",
-            right_time="2026-09-12T10:00:00.001+08:00", pipe_specs=self.specs, pair_confirmed=True, **kwargs)
+            left_path=self.left, right_path=self.right,
+            left_time=kwargs.pop("left_time", "2026-09-12T10:00:00+08:00"),
+            right_time=kwargs.pop("right_time", "2026-09-12T10:00:00.001+08:00"),
+            pipe_specs=self.specs, pair_confirmed=True, **kwargs)
 
     def test_create_and_restore_without_cad_or_registration(self):
         path = self._create()
@@ -84,6 +86,24 @@ class ElevationDatasetTests(unittest.TestCase):
         self.assertEqual(analysis["left_right_consistency_px"], 1.0)
         third = self._create(previous_manifest=second, analysis_settings={"stereo_matching": {"num_disparities": 64}})
         self.assertEqual(load_elevation_dataset(third)["manifest"]["analysis"]["stereo_matching"]["num_disparities"], 64)
+
+    def test_status_refresh_timestamp_is_preserved_across_history(self):
+        first = self._create(status_refresh={
+            "action": "STATUS_REFRESH", "requested_at": "2026-10-03T08:00:00+00:00"})
+        changed = cv2.imread(str(self.right), cv2.IMREAD_COLOR)
+        changed[0, 0, 0] = 33
+        cv2.imwrite(str(self.right), changed)
+        second = self._create(previous_manifest=first, status_refresh={
+            "action": "STATUS_REFRESH", "requested_at": "2026-10-03T09:00:00+00:00"},
+            left_time="2026-09-12T10:00:01+08:00", right_time="2026-09-12T10:00:01.001+08:00")
+        groups = load_elevation_dataset(second)["manifest"]["capture"]["capture_groups"]
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(groups[0]["status_refresh"]["requested_at"], "2026-10-03T08:00:00+00:00")
+        self.assertEqual(groups[1]["status_refresh"]["requested_at"], "2026-10-03T09:00:00+00:00")
+
+    def test_status_refresh_metadata_is_validated(self):
+        with self.assertRaisesRegex(ValueError, "status_refresh"):
+            self._create(status_refresh={"action": "OTHER", "requested_at": "now"})
 
     def test_invalid_matching_settings_rejected_on_save_and_load(self):
         with self.assertRaises(ValueError):

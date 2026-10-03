@@ -16,6 +16,10 @@
 
 实现已推送到 `main`：`f914769`。本次全量回归为 **521 passed、1 skipped、256 subtests passed**；现场端拉取该提交后，在 GUI 选择“仅双目深度几何”，保存的 manifest 会记录 `local_observation_mode=geometry_only`。
 
+## 2026-10-03 现场新增管状态刷新
+
+基础立面 GUI 新增 **状态刷新**。现场新增安装管道后点击该按钮，客户端会重新打开双目抓拍；一对新照片完成后自动创建新的 capture group、沿用旧历史并执行自动匹配。每次刷新不覆盖旧结果：`status_refresh.requested_at` 记录按钮请求时间，左右目 `views.left/right.captured_at` 记录实际拍摄时间，报告顶层 `generated_at` 记录本次分析完成时间；`capture_audit.groups` 同样保留这些组级记录。若当前不是自动匹配模式，按钮会提示先切换到自动匹配。
+
 自动立面 manifest 的 `registration` 现在支持：
 
 ```json

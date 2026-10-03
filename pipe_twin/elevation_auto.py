@@ -309,6 +309,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         for role in ("left", "right"):
             digest.update(np.ascontiguousarray(group[role]).tobytes())
         capture = {"capture_id": group["capture_id"], "captured_at": group["captured_at"],
+                   "status_refresh": group.get("status_refresh"),
                    "pair_healthy": sensor_healthy, "analysis_healthy": healthy, "pair_signature": digest.hexdigest(), "registration": registration,
                    "surface_audit": surface.get("audit", {}), "pipes": evidence,
                    "local_observations": surface["observations"],
@@ -344,6 +345,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                      "assessment_scope": "LOCAL_COMMON_AXIAL_SECTION"})
     return {"mode": "elevation_auto", "counts": {s: sum(r["installation_state"] == s for r in rows) for s in STATE_ZH},
             "pipes": rows, "registration": current["registration"], "local_surface": current_surface,
+            "status_refresh": current.get("status_refresh"),
             "capture_audit": {"count": len(captures), "groups": captures},
             "registration_required": True, "qr_registration_required": False,
             "production_authority": False, "longitudinal_installation_segments_assessed": False,
@@ -403,6 +405,7 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
         bound_anchors = settings.get("anchor_pair_sha256")
         anchors_apply = bool(bound_anchors and all(bound_anchors.get(r) == photos[r]["actual_sha256"] for r in ("left", "right")))
         groups.append(dict(images, depth=depth, capture_id=capture["capture_id"], captured_at=capture["captured_at"],
+                           status_refresh=capture.get("status_refresh"),
                            pair_healthy=bool(capture["sync_valid"] and depth.audit["status"] == "VALID" and all(q["passed"] for q in quality.values())),
                            quality=quality, photos=photos, anchors_apply=anchors_apply))
     if loaded["registration_settings"]["anchors"] and not any(g["anchors_apply"] for g in groups):

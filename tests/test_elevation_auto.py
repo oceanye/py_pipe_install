@@ -128,6 +128,17 @@ def test_oblique_local_surfaces_register_and_locate_the_unseen_fourth_pipe():
     assert result["pipes"][3]["measurement"]["measured_diameter_mm"] is None
 
 
+def test_status_refresh_is_reported_with_capture_and_analysis_times():
+    calibration, specs, groups = _groups()
+    groups[0]["status_refresh"] = {
+        "action": "STATUS_REFRESH", "requested_at": "2026-10-03T08:00:00+00:00"}
+    result = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=specs)
+    assert result["status_refresh"]["requested_at"] == "2026-10-03T08:00:00+00:00"
+    audit = result["capture_audit"]["groups"][0]
+    assert audit["status_refresh"]["action"] == "STATUS_REFRESH"
+    assert audit["captured_at"] == groups[0]["captured_at"]
+
+
 def test_known_three_pipes_do_not_turn_full_catalog_into_observations():
     calibration, specs, groups = _groups()
     result = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=specs,
