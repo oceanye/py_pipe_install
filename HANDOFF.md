@@ -14,6 +14,8 @@
 
 合成无颜色双目回放在 `geometry_only` 下仍恢复三根（约 24/36/50 mm），布局中心距最大误差小于 1 mm；这验证的是算法链和坐标约定，不是办公室相机精度验收。现场仍需在合格曝光、有效双目深度和共同可见侧面条件下复测。
 
+实现已推送到 `main`：`f914769`。本次全量回归为 **521 passed、1 skipped、256 subtests passed**；现场端拉取该提交后，在 GUI 选择“仅双目深度几何”，保存的 manifest 会记录 `local_observation_mode=geometry_only`。
+
 自动立面 manifest 的 `registration` 现在支持：
 
 ```json
