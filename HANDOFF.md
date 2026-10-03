@@ -20,6 +20,8 @@
 
 基础立面 GUI 新增 **状态刷新**。现场新增安装管道后点击该按钮，客户端会重新打开双目抓拍；一对新照片完成后自动创建新的 capture group、沿用旧历史并执行自动匹配。每次刷新不覆盖旧结果：`status_refresh.requested_at` 记录按钮请求时间，左右目 `views.left/right.captured_at` 记录实际拍摄时间，报告顶层 `generated_at` 记录本次分析完成时间；`capture_audit.groups` 同样保留这些组级记录。若当前不是自动匹配模式，按钮会提示先切换到自动匹配。
 
+状态刷新实现提交为 `fdb86b1`，全量回归为 **524 passed、1 skipped、256 subtests passed**；提交后需推送并由现场端拉取最新 `main`。
+
 自动立面 manifest 的 `registration` 现在支持：
 
 ```json
