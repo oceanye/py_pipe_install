@@ -2,6 +2,20 @@
 
 更新时间：2026-10-03（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
 
+## 2026-10-03 平行管局部条带识别开发
+
+用户确认所有现场管道彼此平行，棋盘只遮挡局部时应利用露出的侧面。新增 `pipe_twin/parallel_local.py`：在左右矫正图中提取有颜色提示的细长局部条带，检查有效双目点、共同轴向和轴向支撑，用局部投影宽度估计直径，再把观测交给既有的 `elevation_registration`。颜色仍是候选分割提示，身份仍由管径和立面截面位置决定；没有至少三条非退化观测（或已绑定基准）时继续返回 `INSUFFICIENT_OBSERVATIONS`，不把局部条带当成安装证明。
+
+自动立面 manifest 的 `registration` 现在支持：
+
+```json
+{"axis_world": [0, 0, 1], "anchors": {}, "local_observation_mode": "auto"}
+```
+
+`auto` 先走严格圆柱拟合；圆柱候选为空或搜索被遮挡截断时自动回退到平行局部条带。也可明确使用 `"parallel_strip"`，或保留旧的 `"cylinder"`。当前合成三管回放在 `parallel_strip` 下恢复 3 根并正确匹配；现有办公室棋盘照片只形成 1 条与 41/51 mm 均相容的蓝色局部观测，红色大块被直径范围筛除、白管没有足够立体点，因此结果仍是 `0 INSTALLED / 0 NOT_INSTALLED / 12 UNKNOWN`，这是证据不足而非成功量测。
+
+验证：`python -m pytest tests -q` → **520 passed, 1 skipped, 256 subtests passed**；新增局部条带回归覆盖部分遮挡、直径优先和 manifest 模式契约。办公室下一轮需在左右目同时露出蓝/红/白管的连续侧面，并回传新的代码 SHA、原图质量和 `surface_audit.observation_type`，再判断三根模型管位。
+
 ## 当前硬件身份（用户已确认）
 
 用户已确认设备为“汇博视捷、基线 60 mm、视场角 80°”，项目型号状态为 `CONFIRMED_BY_USER`，记录型号 `HBVCAM-4M2214HD-2 V11`（双 `OV4689`、USB 2.0、滚动快门）。办公室 PnP `HardwareIds` 仍只用于确认驱动实例，不再作为型号确认门槛；具体证据和原厂链接见 [相机资料审查与接入建议](doc/相机资料审查与接入建议.md)。原厂未公开该型号 DirectShow 的数值曝光范围，当前约 `250 ms` 仅是现场驱动回读上限。

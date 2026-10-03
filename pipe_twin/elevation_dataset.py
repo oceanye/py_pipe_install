@@ -139,8 +139,9 @@ def _specs(value: Any, width: int, height: int, *, mode: str = "elevation_depth"
 
 def normalize_registration_settings(payload: Mapping | None = None) -> dict:
     """Small, portable UI contract; direction is expressed in model coordinates."""
-    if payload is not None and (not isinstance(payload, Mapping) or set(payload) - {"axis_world", "anchors", "present_pipe_count"}):
-        raise ValueError("立面匹配配置只能包含axis_world、anchors和present_pipe_count")
+    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode"}
+    if payload is not None and (not isinstance(payload, Mapping) or set(payload) - allowed):
+        raise ValueError("立面匹配配置只能包含axis_world、anchors、present_pipe_count和local_observation_mode")
     payload = dict(payload or {})
     axis = payload.get("axis_world")
     if axis is not None:
@@ -156,7 +157,10 @@ def normalize_registration_settings(payload: Mapping | None = None) -> dict:
         raise ValueError("基准对应必须为观测编号到管道编号的映射")
     if len(set(anchors.values())) != len(anchors):
         raise ValueError("不同观测不能指定同一根模型管道")
-    result = {"axis_world": axis, "anchors": dict(anchors)}
+    mode = payload.get("local_observation_mode", "auto")
+    if mode not in {"auto", "cylinder", "parallel_strip"}:
+        raise ValueError("local_observation_mode必须是auto、cylinder或parallel_strip")
+    result = {"axis_world": axis, "anchors": dict(anchors), "local_observation_mode": mode}
     if "present_pipe_count" in payload:
         count = payload["present_pipe_count"]
         if type(count) is not int or not 1 <= count <= 128:

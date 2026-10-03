@@ -338,7 +338,7 @@ class ElevationCaptureDialog:
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role)
-        ttk.Label(frame, text="自动模式会从可见双目点云匹配 STL/DXF 并绘制检查区域；手工兼容模式才需要逐管框选。滚轮缩放，右键平移。", foreground="#355371").pack(anchor="w")
+        ttk.Label(frame, text="自动模式按管径和立面距离匹配 STL/DXF；圆柱中段被遮挡时改用可见的平行局部条带。手工兼容模式才需要逐管框选。滚轮缩放，右键平移。", foreground="#355371").pack(anchor="w")
 
         table_frame = ttk.Frame(frame)
         table_frame.pack(fill="x", pady=6)

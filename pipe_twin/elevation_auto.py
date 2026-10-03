@@ -151,7 +151,9 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
                 position_residual_mm=float(association.get("residual_mm")) if association.get("residual_mm") is not None else None,
                 measured_color_srgb=str(observation.get("measured_color_srgb", observation.get("color_srgb", ""))).upper(),
                 color_used_as="AUXILIARY_HINT_ONLY",
-                diameter_match_basis="STEREO_LOCAL_CYLINDER_OUTER_SURFACE",
+                diameter_match_basis=("STEREO_PARALLEL_LOCAL_STRIP_OUTER_SURFACE"
+                                      if observation.get("parallel_local")
+                                      else "STEREO_LOCAL_CYLINDER_OUTER_SURFACE"),
             )
             measured_section = cylinder_section_geometry(
                 center_camera, observation["axis_camera"], measured_diameter,
@@ -191,7 +193,8 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
         elif not matched:
             reasons = list(registration.get("reason_codes") or [registration.get("status", "REGISTRATION_REQUIRED")])
         elif positive:
-            reasons = ["LOCAL_CYLINDER_MATCHED_TO_STL"]
+            reasons = ["LOCAL_PARALLEL_STRIP_MATCHED_TO_MODEL" if observation is not None and observation.get("parallel_local")
+                       else "LOCAL_CYLINDER_MATCHED_TO_STL"]
         elif free:
             reasons = ["OBSERVED_FREE_SPACE_REQUIRES_REPETITION"]
         elif any(evidence[r]["visibility"] == "OCCLUDED" for r in ("left", "right")):
@@ -226,6 +229,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                                    registration_settings: Mapping | None = None) -> dict:
     """Pure in-memory entry point; every capture estimates its own alignment."""
     from .local_surface import extract_local_pipes
+    from .parallel_local import extract_parallel_local_pipes
     from .elevation_registration import register_elevation
     from .elevation_dataset import normalize_registration_settings
     settings = normalize_registration_settings(registration_settings)
@@ -234,7 +238,23 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
     captures = []
     current_surface = None
     for group in groups:
-        surface = extract_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
+        observation_mode = settings.get("local_observation_mode", "auto")
+        cylinder_surface = None
+        if observation_mode in {"auto", "cylinder"}:
+            cylinder_surface = extract_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
+        if observation_mode == "parallel_strip":
+            surface = extract_parallel_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
+        elif observation_mode == "auto" and (not cylinder_surface["observations"] or cylinder_surface.get("audit", {}).get("truncated")):
+            # A board or foreground object can leave a long straight side strip
+            # while hiding the curvature required by the cylinder fitter.  In
+            # auto mode, retain the strict cylinder result when it is healthy;
+            # otherwise use the bounded parallel-strip fallback and keep the
+            # original audit for diagnosis.
+            surface = extract_parallel_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
+            surface.setdefault("audit", {})["fallback_from"] = "CYLINDER_SURFACE"
+            surface["audit"]["cylinder_surface_audit"] = cylinder_surface.get("audit", {})
+        else:
+            surface = cylinder_surface
         anchors = settings["anchors"] if group.get("anchors_apply", group is groups[-1]) else {}
         registration = register_elevation(pipe_specs, surface["observations"], settings["axis_world"], anchors=anchors)
         present_count = settings.get("present_pipe_count")
@@ -294,6 +314,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             "scene_inventory": {"present_pipe_count": settings.get("present_pipe_count"),
                                 "model_candidate_count": len(pipe_specs),
                                 "observed_cylinder_count": len(current_surface["observations"]),
+                                "observed_local_strip_count": sum(bool(o.get("parallel_local")) for o in current_surface["observations"]),
                                 "identity_or_absence_proof": False}}
 
 
