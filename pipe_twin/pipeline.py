@@ -77,6 +77,28 @@ def atomic_write_text(path: str | Path, content: str) -> Path:
     return target.resolve()
 
 
+def atomic_write_bytes(path: str | Path, content: bytes) -> Path:
+    """Atomically replace a binary evidence file."""
+
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", prefix=f".{target.name}.", suffix=".tmp", dir=target.parent, delete=False
+        ) as stream:
+            temporary_path = Path(stream.name)
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, target)
+    except BaseException:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+        raise
+    return target.resolve()
+
+
 def atomic_write_text_bundle(outputs: dict[str | Path, str]) -> dict[Path, Path]:
     """Stage related text outputs and roll them back together on commit failure."""
 

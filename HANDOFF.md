@@ -1,10 +1,18 @@
 # 测试与远程开发交接
 
-更新时间：2026-10-03（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
+更新时间：2026-10-04（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
+
+## 2026-10-04 现场主线清理（本次不含分区）
+
+本次提交只做流程清理，不加入分区分析。基础立面现场统一为 `elevation_auto`：模型输入只接受 DXF/STL，管道区域、直径和立面证据由双目算法自动生成；旧 `elevation_depth.py` 逐管手工区域模块及其测试已删除。主 GUI 隐藏旧的清单/合成示例/二维码/DXF 草稿与逐管绑定入口，模型预览不再支持两点拾取和观察到模型的手工绑定；已有相机标定、双目抓拍、状态刷新、日志和识别后端注册接口保留。
+
+现场 manifest 不再接受 `elevation_depth`，没有模型的自动现场也会拒绝；旧 3DM/3MF、二维码和逐管手工框选只留在离线历史回归代码/资产中，不属于现场输入。操作说明已改写为 DXF/STL 自动流程，并明确“本版本不包含分区”。
+
+验证：`python -m pytest -q` → **510 passed, 1 skipped, 256 subtests passed**；`python -m compileall -q pipe_twin` 和 `git diff --check` 通过。提交后现场端只需拉取 `main`，重新打开主 GUI；不需要迁移旧手工现场包，需用 DXF/STL 重新建立基础现场。
 
 ## 2026-10-03 主流程收敛与识别后端模块化
 
-DXF 侧立面的日常路径已收敛为：**导入 DXF → 核对管径/颜色/共同管长方向 → 载入一次真实双目标定 → 双目抓拍并评估 → 新增实物后点击状态刷新**。不再要求先单独“载入现场清单”；首次保存基础现场时程序会创建 schema 2.0 manifest。3DM/3MF、二维码绝对配准和手工区域框选保留为旧包/完整三维兼容入口，不作为 DXF 侧立面的必需步骤。
+DXF 侧立面的日常路径已收敛为：**导入 DXF → 核对管径/颜色/共同管长方向 → 载入一次真实双目标定 → 双目抓拍并评估 → 新增实物后点击状态刷新**。不再要求先单独“载入现场清单”；首次保存基础现场时程序会创建 schema 2.0 manifest。当前现场工作台只接受 DXF/STL，管道身份由模型几何、双目直径和立面距离自动匹配；二维码绝对配准、逐管手工区域和历史 3DM/3MF 入口已从操作主线移除。
 
 `pipe_twin/recognition/` 现在是局部管道识别的唯一调度入口。`auto`、`cylinder`、`parallel_strip`、`geometry_only` 四个内置后端保持原有行为；圆柱拟合、平行局部条带和固定机位深度局部截断都只通过统一的 `surface` 结果交给后续注册与状态机。后续算法可调用 `register_recognizer(name, backend)` 后在 `registration.local_observation_mode` 使用该名称；未注册名称在建档/载入时拒绝，避免现场包执行未知代码。每个报告的 `surface_audit` 会记录请求后端和实际使用后端。
 
@@ -154,7 +162,7 @@ python -m pytest tests -q
 - `pipe_twin/pipe_geometry.py`：版本 `pipe-section-distances-v1`，在同一指定截面输出中心线、最小表面 Z、最近表面空间距离和轮廓切点。原点为左目矫正相机光心。
 - `elevation_auto.py`：模型与观测按同一观测轴向位置比较，避免 CAD 中点及 DXF 预览管长改变测距；实测/模型预测分列，健康失败保持未知。
 - `elevation_dataset.py`：新增可选 `present_pipe_count`；检出数量超过已知实物数量时拒绝本次配准，不强选 3 根，也不补造观测。
-- `elevation_depth.py`：手工区域的深度中位数明确标成诊断量，没有轴线/半径时不输出实测截面。
+- 旧的 `elevation_depth.py` 手工区域路径不再属于现场工作台主线；现场包统一使用 `elevation_auto`。
 - `elevation_gui.py`：增加实际管数和“尺寸与测距”，保存后可恢复。模型候选数与实物数分开显示。
 - `local_surface.py`、`metrology.py`：附带明确的距离定义；圆柱仍由双目表面拟合。
 

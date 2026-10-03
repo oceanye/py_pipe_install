@@ -2,8 +2,8 @@
 
 The profile stores everything an operator configures once — model binding,
 pipe catalog (identity/diameter/color), the current stereo calibration with
-its QR/pose adjustment chain, the rectification recipe for wizard-made
-calibrations, QR print geometry, camera device selection, and the last
+its camera pose adjustment chain, the rectification recipe for wizard-made
+calibrations, camera device selection, and the last
 manifest — so a new session starts from the previous state instead of
 re-entering it.  Layout follows the workbook pattern in ``measurement_book``:
 kind/schema constants, fail-closed validation, atomic writes.
@@ -39,7 +39,10 @@ _ROOT = Path(__file__).resolve().parents[1] / "outputs" / "measurement_workbench
 PROFILE_NAME = "workbench_profile.json"
 CALIBRATION_NAME = "calibration_current.json"
 STL_UNITS = ("millimeter", "centimeter", "meter", "inch")
-_MODEL_SUFFIXES = {".3dm", ".3mf", ".stl"}
+# The field workbench is built around the supported DXF side elevation and
+# STL mesh inputs.  Historical Rhino/3MF files are no longer accepted as
+# operator model sources.
+_MODEL_SUFFIXES = {".dxf", ".stl"}
 
 _QR_SETTINGS_KEYS = {
     "marker_id",
@@ -481,7 +484,7 @@ def validate_profile(payload: Any) -> dict:
     if not isinstance(model_path, str):
         raise ValueError("model_path 必须是文本")
     if model_path and Path(model_path).suffix.lower() not in _MODEL_SUFFIXES:
-        raise ValueError("model_path 需要 3DM、3MF 或 STL 文件")
+        raise ValueError("model_path 需要 DXF 或 STL 文件")
     if result.get("stl_unit") not in STL_UNITS:
         raise ValueError("stl_unit 无效")
     pipes = result.get("pipes")
@@ -634,7 +637,7 @@ def write_standalone_calibration(
     calibration: Mapping,
     *,
     path: str | Path | None = None,
-    note: str = "由棋盘格标定向导生成；CAD 配准（二维码/方向）请用工作台继续配置。",
+    note: str = "由棋盘格标定向导生成；基础立面现场使用模型共同管长方向。",
 ) -> Path:
     """Write a calibration JSON in the same shape as the dialog example file."""
     from .stereo_analyzer import _calibration_from_manifest
@@ -726,7 +729,7 @@ def save_camera_calibration_bundle(
     rectification_recipe: Mapping | None = None,
     qr_settings: Mapping | None = None,
 ) -> Path:
-    """Atomically save a portable intrinsic + QR registration result."""
+    """Atomically save a portable intrinsic calibration bundle."""
     target = Path(path)
     if target.suffix.lower() != ".json":
         target = target.with_suffix(".json")

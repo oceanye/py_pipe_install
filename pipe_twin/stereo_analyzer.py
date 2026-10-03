@@ -1924,12 +1924,6 @@ def analyze_stereo_capture(
     if isinstance(analysis_payload, dict) and analysis_payload.get("mode") == "elevation_auto":
         from .elevation_auto import analyze_elevation_auto_manifest
         return analyze_elevation_auto_manifest(manifest_file, report_output_path=report_output_path, evidence_dir=evidence_dir)
-    if isinstance(analysis_payload, dict) and analysis_payload.get("mode") == "elevation_depth":
-        from .elevation_depth import analyze_elevation_depth_manifest
-
-        return analyze_elevation_depth_manifest(
-            manifest_file, report_output_path=report_output_path, evidence_dir=evidence_dir
-        )
     dataset_id = _require_string(manifest.get("dataset_id"), "dataset_id")
     model_revision = _require_string(manifest.get("model_revision"), "model_revision")
     scene = _load_cad_scene(manifest_file, manifest.get("model"))

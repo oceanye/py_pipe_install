@@ -346,8 +346,7 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     from .elevation_dataset import load_elevation_dataset
     from .stereo_analyzer import _analysis_config, _calibration_from_manifest, _capture_groups_from_manifest, _compute_stereo_depth, _quality
     from .photo_capture import load_photo_snapshot, resolve_photo_path
-    from .pipeline import ensure_paths_distinct
-    from .elevation_depth import _atomic_write
+    from .pipeline import atomic_write_bytes, ensure_paths_distinct
 
     path = Path(manifest_path).resolve()
     original = path.read_bytes()
@@ -428,7 +427,7 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
             ok, encoded = cv2.imencode(".png", overlay)
             if not ok:
                 raise ValueError("无法保存匹配叠图")
-            _atomic_write(target, encoded.tobytes())
+            atomic_write_bytes(target, encoded.tobytes())
             evidence_files.append(str(target))
     if "point_cloud" in outputs:
         cloud = result["local_surface"].get("point_cloud", {})
@@ -441,11 +440,11 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
             if isinstance(color, str):
                 color = [int(color[i:i+2], 16) for i in (1, 3, 5)]
             lines.append(" ".join([*(f"{v:.5f}" for v in point), *(str(int(v)) for v in color)]))
-        _atomic_write(outputs["point_cloud"], ("\n".join(lines)+"\n").encode("utf-8"))
+        atomic_write_bytes(outputs["point_cloud"], ("\n".join(lines)+"\n").encode("utf-8"))
         evidence_files.append(str(outputs["point_cloud"]))
     result["evidence_files"] = evidence_files
     if "report" in outputs:
-        _atomic_write(outputs["report"], (json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)+"\n").encode("utf-8"))
+        atomic_write_bytes(outputs["report"], (json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)+"\n").encode("utf-8"))
     log_event(LOGGER, "automatic_elevation_finished", manifest=str(path), counts=result["counts"],
               registration_status=result["registration"]["status"], surface_audit=result["local_surface"].get("audit"))
     return result
