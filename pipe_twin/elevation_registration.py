@@ -129,12 +129,20 @@ def _observations(values: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
         validated_color = raw.get("color_identity_validated", False)
         if type(validated_color) is not bool:
             raise ElevationRegistrationError("color_identity_validated must be boolean")
+        color_hints = raw.get("color_candidate_pipe_ids", [])
+        if color_hints is None:
+            color_hints = []
+        if (not isinstance(color_hints, list)
+                or any(not isinstance(value, str) or not value for value in color_hints)
+                or len(set(color_hints)) != len(color_hints)):
+            raise ElevationRegistrationError("color_candidate_pipe_ids must be a unique list of pipe IDs")
         result.append({"observation_id": oid,
             "center": _finite_vector(raw.get("center_camera_mm"), "center_camera_mm"),
             "axis": _unit(raw.get("axis_camera"), "axis_camera"),
             "diameter_mm": _diameter(raw.get("diameter_mm"), "diameter_mm"),
             "color": _color(raw.get("color_srgb"), "color_srgb"),
-            "color_identity_validated": validated_color})
+            "color_identity_validated": validated_color,
+            "color_candidate_pipe_ids": color_hints})
         seen.add(oid)
     return result
 
@@ -173,9 +181,20 @@ def _config(payload: Mapping | None) -> dict:
 
 
 def _candidates(specs: list[dict], observation: dict, tolerance: float) -> list[int]:
-    return [i for i, spec in enumerate(specs)
+    candidates = [i for i, spec in enumerate(specs)
         if abs(spec["diameter_mm"] - observation["diameter_mm"]) <= max(tolerance, .10 * max(spec["diameter_mm"], observation["diameter_mm"]))
         and (not observation["color_identity_validated"] or spec["color"] is None or observation["color"] is None or spec["color"] == observation["color"])]
+    # Colour is a secondary hint after the metric diameter gate.  If the hint
+    # has no compatible member, preserve the diameter candidates and let the
+    # rigid cross-section layout decide instead of turning colour into an
+    # identity assertion.
+    hints = observation.get("color_candidate_pipe_ids")
+    if isinstance(hints, list) and hints:
+        hinted = {str(value) for value in hints}
+        narrowed = [index for index in candidates if specs[index]["pipe_id"] in hinted]
+        if narrowed:
+            candidates = narrowed
+    return candidates
 
 
 def _noncollinear(points: np.ndarray, tolerance: float) -> bool:

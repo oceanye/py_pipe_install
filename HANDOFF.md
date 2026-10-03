@@ -12,7 +12,15 @@
 {"axis_world": [0, 0, 1], "anchors": {}, "local_observation_mode": "auto"}
 ```
 
-`auto` 先走严格圆柱拟合；圆柱候选为空或搜索被遮挡截断时自动回退到平行局部条带。也可明确使用 `"parallel_strip"`，或保留旧的 `"cylinder"`。当前合成三管回放在 `parallel_strip` 下恢复 3 根并正确匹配；现有办公室棋盘照片只形成 1 条与 41/51 mm 均相容的蓝色局部观测，红色大块被直径范围筛除、白管没有足够立体点，因此结果仍是 `0 INSTALLED / 0 NOT_INSTALLED / 12 UNKNOWN`，这是证据不足而非成功量测。
+`auto` 先走严格圆柱拟合；圆柱候选为空或搜索被遮挡截断时自动回退到平行局部条带。也可明确使用 `"parallel_strip"`，或保留旧的 `"cylinder"`。当前合成三管回放在 `parallel_strip` 下恢复 3 根并正确匹配；此前较宽松的办公室棋盘回放只形成 1 条与 41/51 mm 均相容的蓝色局部观测，结果仍是 `0 INSTALLED / 0 NOT_INSTALLED / 12 UNKNOWN`，这是证据不足而非成功量测。
+
+## 2026-10-03 颜色与双目几何的保守复核
+
+随后收紧了 `parallel_local` 的证据链：左右目必须给出相同的红/蓝/白颜色类别；左右目局部三维中心、局部直径和中位深度必须在阈值内；直径以局部重建点到共同管轴的径向 95 分位为主，并用投影弦宽作独立下界，不再用固定倍数把短色带补成完整直径。通过直径门后，颜色只缩小候选管位，最终身份仍由截面刚体布局和立面距离决定。
+
+收紧后，办公室棋盘照片的局部观测数为 `0`：主要可见蓝色大块左右目中心相差约 `71 mm`，另一蓝色候选的几何直径约 `94 mm` 落在 DXF 管径目录之外；红色大块也没有通过局部几何门，白色没有形成可靠双目条带。报告会保留 `LOCAL_COLOR_CLASS_MISMATCH`、`STEREO_LOCAL_CENTER_DISAGREEMENT`、`LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE` 等拒绝计数，所以结果继续为 `12 UNKNOWN`。
+
+合成场景复核仍得到约 `24.1 / 37.5 / 52.0 mm`，颜色类别为 `RED / GREEN / BLUE`，三根均能在 `parallel_strip` 模式下完成布局匹配。当前仍需白天现场重新拍摄，让红、蓝、白三根管在左右目分别露出足够长的同一侧面；在形成三条几何一致的局部观测前，不输出现场三管身份。
 
 验证：`python -m pytest tests -q` → **520 passed, 1 skipped, 256 subtests passed**；新增局部条带回归覆盖部分遮挡、直径优先和 manifest 模式契约。办公室下一轮需在左右目同时露出蓝/红/白管的连续侧面，并回传新的代码 SHA、原图质量和 `surface_audit.observation_type`，再判断三根模型管位。
 

@@ -19,6 +19,7 @@ such a scene ``INSUFFICIENT_OBSERVATIONS``/``UNKNOWN``.
 from __future__ import annotations
 
 import math
+from collections import Counter
 from typing import Any, Mapping
 
 import cv2
@@ -41,11 +42,14 @@ _DEFAULTS: dict[str, Any] = {
     "axis_consensus_deg": 10.0,
     "pair_y_tolerance_px": 38.0,
     "pair_disparity_tolerance_px": 80.0,
+    "maximum_pair_center_error_mm": 35.0,
+    "maximum_pair_diameter_difference_fraction": 0.25,
+    "maximum_pair_depth_difference_fraction": 0.12,
     "maximum_components_per_color": 32,
     "maximum_total_components": 96,
     "maximum_cloud_points": 6000,
     "maximum_diameter_mm": 200.0,
-    "projected_width_scale": 1.25,
+    "radial_diameter_percentile": 95.0,
 }
 
 
@@ -77,6 +81,8 @@ def _settings(value: Mapping[str, Any] | None) -> dict[str, Any]:
         raise ParallelLocalError("config.color_delta_lab cannot exceed 150")
     if cfg["minimum_valid_fraction"] > 1:
         raise ParallelLocalError("config.minimum_valid_fraction cannot exceed 1")
+    if cfg["radial_diameter_percentile"] >= 100:
+        raise ParallelLocalError("config.radial_diameter_percentile must be below 100")
     if cfg["axis_consensus_deg"] > 30 or cfg["axis_consensus_deg"] <= 0:
         raise ParallelLocalError("config.axis_consensus_deg must be in (0, 30]")
     if cfg["maximum_cloud_points"] > 6000:
@@ -95,6 +101,25 @@ def _hex_rgb(value: Any) -> np.ndarray:
         return np.asarray([int(value[i:i + 2], 16) for i in (1, 3, 5)], dtype=np.uint8)
     except ValueError as exc:
         raise ParallelLocalError("pipe color must be #RRGGBB") from exc
+
+
+def _color_class(rgb: Any) -> str:
+    """Classify paint after exposure normalization; geometry remains primary."""
+    values = np.asarray(rgb, dtype=np.float64).reshape(3)
+    red, green, blue = values
+    maximum, minimum = float(values.max()), float(values.min())
+    chroma = maximum - minimum
+    if maximum < 1 or chroma <= max(6.0, maximum * 0.16):
+        return "WHITE"
+    if red >= green * 1.12 and red >= blue * 1.12:
+        return "RED"
+    if blue >= red * 1.12 and blue >= green * 1.05:
+        return "BLUE"
+    if green >= red * 1.10 and green >= blue * 1.10:
+        return "GREEN"
+    if red >= blue * 1.10 and green >= blue * 1.10:
+        return "YELLOW"
+    return "UNKNOWN"
 
 
 def _catalog(pipe_specs: Any) -> list[dict[str, Any]]:
@@ -245,29 +270,36 @@ def _component_candidates(image: np.ndarray, depth: np.ndarray, valid: np.ndarra
             continue
         median_rgb = np.rint(np.median(image[valid_points_mask], axis=0)[::-1]).astype(np.uint8)
         measured_color = "#%02X%02X%02X" % tuple(map(int, median_rgb))
+        measured_class = _color_class(median_rgb)
+        expected_class = _color_class(rgb)
+        audit.update({"measured_color_srgb": measured_color, "measured_color_class": measured_class,
+                      "expected_color_class": expected_class})
+        if expected_class != "UNKNOWN" and measured_class != expected_class:
+            rejected.append(audit | {"reason": "LOCAL_COLOR_CLASS_MISMATCH"})
+            continue
         projections = centred @ axis
         radial = np.linalg.norm(centred - np.outer(projections, axis), axis=1)
-        # A side strip often exposes a chord rather than a complete circle.
-        # Estimate that chord in the image normal direction, convert it with
-        # the local stereo depth, and apply a conservative 1.25 correction for
-        # the typical visible-arc loss.  The radial spread remains an
-        # independent uncertainty signal and is never silently treated as a
-        # full cylinder fit.
+        # Estimate a visible chord in the image normal direction and a robust
+        # outer radius in reconstructed 3-D.  The radial percentile is the
+        # primary diameter estimate; the image chord is retained as an
+        # independent lower-bound/uncertainty signal.  No fixed scale factor
+        # is allowed to manufacture a full diameter from a short strip.
         valid_pixels = np.column_stack((cols.astype(float), rows.astype(float)))
         pixel_centre = valid_pixels.mean(axis=0)
         pixel_normal = np.asarray([-pixel_axis[1], pixel_axis[0]], dtype=float)
         projected_width_px = float(np.ptp(np.percentile((valid_pixels - pixel_centre) @ pixel_normal, [5, 95])))
         projected_width_mm = projected_width_px * float(np.median(depth[valid_points_mask])) / float(camera.fy)
-        diameter = projected_width_mm * float(cfg["projected_width_scale"])
+        radial_diameter = 2.0 * float(np.percentile(radial, cfg["radial_diameter_percentile"]))
+        diameter = max(radial_diameter, projected_width_mm)
         if not math.isfinite(diameter) or diameter <= 0 or diameter > cfg["maximum_diameter_mm"]:
             rejected.append(audit | {"reason": "LOCAL_DIAMETER_INVALID"})
             continue
-        audit.update({"measured_color_srgb": measured_color, "diameter_mm": diameter,
-                      "diameter_source": "PROJECTED_LOCAL_WIDTH_WITH_VISIBLE_ARC_CORRECTION",
+        audit.update({"diameter_mm": diameter, "radial_diameter_mm": radial_diameter,
+                      "diameter_source": "STEREO_LOCAL_RADIAL_P95_AND_PROJECTED_CHORD",
                       "projected_width_px": projected_width_px,
                       "projected_width_mm": projected_width_mm,
-                      "diameter_radial_percentile": 75.0,
-                      "diameter_uncertainty_mm": max(2.0, abs(float(2.0 * np.percentile(radial, 75)) - diameter)),
+                      "diameter_radial_percentile": float(cfg["radial_diameter_percentile"]),
+                      "diameter_uncertainty_mm": max(2.0, abs(radial_diameter - projected_width_mm)),
                       "depth_median_mm": float(np.median(depth[valid_points_mask])),
                       "depth_mad_mm": float(np.median(np.abs(depth[valid_points_mask] - np.median(depth[valid_points_mask]))))})
         candidates.append({"role": role, "color_srgb": color, "target_index": target_index,
@@ -275,6 +307,7 @@ def _component_candidates(image: np.ndarray, depth: np.ndarray, valid: np.ndarra
                            "points": points, "center": points.mean(axis=0), "axis": axis,
                            "pixel_axis": pixel_axis, "pixel_center": pixels.mean(axis=0),
                            "diameter_mm": diameter, "measured_color_srgb": measured_color,
+                           "measured_color_class": measured_class,
                            "audit": audit})
     return candidates, rejected
 
@@ -352,22 +385,40 @@ def _fuse_pair(left: Mapping[str, Any], right: Mapping[str, Any], score: float,
     uncertainty = max(float(left["audit"]["diameter_uncertainty_mm"]),
                       float(right["audit"]["diameter_uncertainty_mm"]),
                       abs(float(left["diameter_mm"]) - float(right["diameter_mm"])))
+    left_rgb = _hex_rgb(left["measured_color_srgb"]).astype(np.float64)
+    right_rgb = _hex_rgb(right["measured_color_srgb"]).astype(np.float64)
+    fused_rgb = np.rint((left_rgb + right_rgb) / 2.0).astype(np.uint8)
+    measured_color = "#%02X%02X%02X" % tuple(map(int, fused_rgb))
+    left_class = str(left.get("measured_color_class", _color_class(left_rgb)))
+    right_class = str(right.get("measured_color_class", _color_class(right_rgb)))
+    color_consistent = left_class == right_class and left_class != "UNKNOWN"
+    depth_left = float(left["audit"]["depth_median_mm"])
+    depth_right = float(right["audit"]["depth_median_mm"])
+    center_distance = float(np.linalg.norm(center))
+    surface_ranges = np.linalg.norm(np.concatenate((left["points"], right["points"]), axis=0), axis=1)
     sources = ["PARALLEL_LOCAL_STRIP", "COLOR_COMPONENT", "STEREO_DEPTH"]
     return {
         "observation_id": f"OBS-{observation_index:04d}",
         "candidate_pipe_ids": [], "nominal_diameter_mm": None, "identity_assigned": False,
         "diameter_mm": diameter, "diameter_uncertainty_mm": uncertainty,
-        "diameter_source": "PROJECTED_LOCAL_WIDTH_WITH_VISIBLE_ARC_CORRECTION",
+        "diameter_source": "STEREO_LOCAL_RADIAL_P95_AND_PROJECTED_CHORD",
         "diameter_includes_near_surface": True,
-        "color_srgb": left["measured_color_srgb"], "measured_color_srgb": left["measured_color_srgb"],
-        "color_identity_validated": False, "segmentation_source": "parallel_local_strip",
+        "color_srgb": measured_color, "measured_color_srgb": measured_color,
+        "measured_color_class": left_class if color_consistent else "MIXED",
+        "left_color_class": left_class, "right_color_class": right_class,
+        "color_consistent": color_consistent, "color_identity_validated": False,
+        "segmentation_source": "parallel_local_strip",
         "segmentation_sources": sources, "fit_rms_mm": uncertainty,
         "left_region_px": left["region_px"], "right_region_px": right["region_px"],
         "point_count": int(len(left["points"]) + len(right["points"])),
         "left_right_diameter_difference_mm": abs(float(left["diameter_mm"]) - float(right["diameter_mm"])),
         "visible_arc_degrees": None, "parallel_local": True,
         "distance_geometry": {"center_camera_mm": center.tolist(), "axis_camera": axis.tolist(),
-                               "diameter_mm": diameter, "section_definition": "LOCAL_PARALLEL_STRIP"},
+                               "diameter_mm": diameter, "section_definition": "LOCAL_PARALLEL_STRIP",
+                               "center_range_mm": center_distance,
+                               "nearest_visible_surface_range_mm": float(np.percentile(surface_ranges, 5)),
+                               "left_depth_z_median_mm": depth_left,
+                               "right_depth_z_median_mm": depth_right},
         "surface_samples": {"left": {"depth_z_median_mm": left["audit"]["depth_median_mm"],
                                        "depth_z_mad_mm": left["audit"]["depth_mad_mm"],
                                        "point_count": len(left["points"]),
@@ -381,6 +432,7 @@ def _fuse_pair(left: Mapping[str, Any], right: Mapping[str, Any], score: float,
         "axial_support_mm": max(0.0, high - low),
         "left_right_center_difference_mm": float(np.linalg.norm(centres[0] - centres[1])),
         "left_right_axis_angle_deg": _angle_deg(left_axis, right_axis),
+        "left_right_depth_difference_mm": abs(depth_left - depth_right),
     }
 
 
@@ -411,13 +463,43 @@ def extract_parallel_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any
     observations: list[dict[str, Any]] = []
     for left_candidate, right_candidate, score in pairs:
         observation = _fuse_pair(left_candidate, right_candidate, score, calibration, len(observations) + 1)
+        pair_diameter_delta = float(observation["left_right_diameter_difference_mm"])
+        pair_diameter_limit = max(6.0, float(cfg["maximum_pair_diameter_difference_fraction"]) * float(observation["diameter_mm"]))
+        pair_depth_delta = float(observation["left_right_depth_difference_mm"])
+        pair_depth_scale = max(float(observation["distance_geometry"]["left_depth_z_median_mm"]),
+                               float(observation["distance_geometry"]["right_depth_z_median_mm"]), 1.0)
+        if float(observation["left_right_center_difference_mm"]) > float(cfg["maximum_pair_center_error_mm"]):
+            rejected.append({"role": "pair", "left_region_px": left_candidate["region_px"],
+                             "right_region_px": right_candidate["region_px"],
+                             "center_error_mm": float(observation["left_right_center_difference_mm"]),
+                             "reason": "STEREO_LOCAL_CENTER_DISAGREEMENT"})
+            continue
+        if pair_diameter_delta > pair_diameter_limit:
+            rejected.append({"role": "pair", "left_region_px": left_candidate["region_px"],
+                             "right_region_px": right_candidate["region_px"],
+                             "diameter_difference_mm": pair_diameter_delta,
+                             "reason": "STEREO_LOCAL_DIAMETER_DISAGREEMENT"})
+            continue
+        if pair_depth_delta / pair_depth_scale > float(cfg["maximum_pair_depth_difference_fraction"]):
+            rejected.append({"role": "pair", "left_region_px": left_candidate["region_px"],
+                             "right_region_px": right_candidate["region_px"],
+                             "depth_difference_mm": pair_depth_delta,
+                             "reason": "STEREO_LOCAL_DEPTH_DISAGREEMENT"})
+            continue
+        if not observation["color_consistent"]:
+            rejected.append({"role": "pair", "left_region_px": left_candidate["region_px"],
+                             "right_region_px": right_candidate["region_px"],
+                             "left_color_class": observation["left_color_class"],
+                             "right_color_class": observation["right_color_class"],
+                             "reason": "STEREO_LOCAL_COLOR_DISAGREEMENT"})
+            continue
         # Use the DXF/STL diameters as a screening gate, never as a measured
         # value.  A huge red/blue background slab can form a straight 3-D
         # direction, but its projected width is outside every model pipe and
         # must not be allowed to create a second common-axis group.
         compatible = [spec for spec in specs
                       if abs(float(spec["nominal_diameter_mm"]) - float(observation["diameter_mm"]))
-                      <= max(6.0, 0.35 * float(spec["nominal_diameter_mm"]))]
+                      <= max(6.0, 0.25 * float(spec["nominal_diameter_mm"]))]
         if not compatible:
             rejected.append({"role": "pair", "left_region_px": left_candidate["region_px"],
                              "right_region_px": right_candidate["region_px"],
@@ -425,6 +507,12 @@ def extract_parallel_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any
                              "reason": "LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE"})
             continue
         observation["candidate_pipe_ids"] = [spec["pipe_id"] for spec in compatible]
+        color_compatible = [spec for spec in compatible
+                            if _color_class(_hex_rgb(spec["color_srgb"])) == observation["measured_color_class"]]
+        if color_compatible:
+            observation["color_candidate_pipe_ids"] = [spec["pipe_id"] for spec in color_compatible]
+        else:
+            observation["color_candidate_pipe_ids"] = []
         diameters = sorted({float(spec["nominal_diameter_mm"]) for spec in compatible})
         observation["nominal_diameter_mm"] = diameters[0] if len(diameters) == 1 else None
         observations.append(observation)
@@ -456,6 +544,9 @@ def extract_parallel_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any
             cloud.add(candidate["points"], candidate["measured_color_srgb"], len(candidate["points"]))
             component_audit.append(candidate["audit"])
     point_cloud = cloud.public()
+    rejection_counts = dict(Counter(str(item.get("reason", "UNKNOWN")) for item in rejected))
+    color_class_counts = dict(Counter(str(item.get("measured_color_class", "UNKNOWN"))
+                                      for item in component_audit if item.get("measured_color_class")))
     return {
         "observations": observations, "rejected": rejected, "point_cloud": point_cloud,
         "audit": {
@@ -467,6 +558,7 @@ def extract_parallel_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any
             "candidate_colors": colours,
             "components": component_audit, "observation_count": len(observations),
             "rejected_count": len(rejected), "point_count": len(point_cloud["points_camera_mm"]),
+            "rejection_counts": rejection_counts, "measured_color_class_counts": color_class_counts,
             "identity_assigned": False, "registration_performed": False,
             "occlusion_diagnostics": {"middle_section_may_be_occluded": True,
                                        "local_visible_regions_only": True},

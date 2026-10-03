@@ -150,11 +150,18 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
                 observed_distance_to_left_camera_mm=float(np.linalg.norm(center_camera)),
                 position_residual_mm=float(association.get("residual_mm")) if association.get("residual_mm") is not None else None,
                 measured_color_srgb=str(observation.get("measured_color_srgb", observation.get("color_srgb", ""))).upper(),
+                measured_color_class=str(observation.get("measured_color_class", "UNKNOWN")),
+                color_consistent=bool(observation.get("color_consistent", False)),
                 color_used_as="AUXILIARY_HINT_ONLY",
-                diameter_match_basis=("STEREO_PARALLEL_LOCAL_STRIP_OUTER_SURFACE"
+                diameter_match_basis=("STEREO_LOCAL_RADIAL_P95_AND_PROJECTED_CHORD"
                                       if observation.get("parallel_local")
                                       else "STEREO_LOCAL_CYLINDER_OUTER_SURFACE"),
             )
+            if isinstance(observation.get("distance_geometry"), Mapping):
+                geometry = observation["distance_geometry"]
+                evidence["stereo_distance_geometry"] = dict(geometry)
+                if geometry.get("nearest_visible_surface_range_mm") is not None:
+                    evidence["nearest_visible_surface_range_mm"] = float(geometry["nearest_visible_surface_range_mm"])
             measured_section = cylinder_section_geometry(
                 center_camera, observation["axis_camera"], measured_diameter,
                 section_definition="MIDPOINT_OF_COMMON_STEREO_OBSERVED_AXIS_SEGMENT",

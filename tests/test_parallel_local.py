@@ -21,9 +21,11 @@ def test_parallel_local_strip_uses_partial_visible_width_and_keeps_diameter_prim
     assert surface["audit"]["observation_type"] == "PARALLEL_LOCAL_STRIP"
     assert len(surface["observations"]) == 3
     assert all(item["parallel_local"] for item in surface["observations"])
-    assert all(item["diameter_source"].startswith("PROJECTED_LOCAL_WIDTH") for item in surface["observations"])
+    assert all(item["diameter_source"] == "STEREO_LOCAL_RADIAL_P95_AND_PROJECTED_CHORD" for item in surface["observations"])
     measured = sorted(item["diameter_mm"] for item in surface["observations"])
     assert measured == pytest.approx([24, 36, 50], abs=5.0)
+    assert [item["measured_color_class"] for item in surface["observations"]] == ["RED", "GREEN", "BLUE"]
+    assert all(item["color_candidate_pipe_ids"] for item in surface["observations"])
     result = register_elevation(specs, surface["observations"])
     assert result["status"] == "MATCHED"
     assert {row["pipe_id"] for row in result["matches"]} == {"P1", "P2", "P3"}
@@ -38,6 +40,7 @@ def test_parallel_local_mode_reports_same_installed_subset_when_a_region_is_occl
     assert result["registration"]["status"] == "MATCHED"
     assert result["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": 0, "UNKNOWN": 1}
     assert result["scene_inventory"]["observed_local_strip_count"] == 3
+    assert all("stereo_distance_geometry" in row["current_evidence"] for row in result["pipes"][:3])
 
 
 def test_registration_settings_persist_parallel_local_mode_contract():
