@@ -158,8 +158,8 @@ def normalize_registration_settings(payload: Mapping | None = None) -> dict:
     if len(set(anchors.values())) != len(anchors):
         raise ValueError("不同观测不能指定同一根模型管道")
     mode = payload.get("local_observation_mode", "auto")
-    if mode not in {"auto", "cylinder", "parallel_strip"}:
-        raise ValueError("local_observation_mode必须是auto、cylinder或parallel_strip")
+    if mode not in {"auto", "cylinder", "parallel_strip", "geometry_only"}:
+        raise ValueError("local_observation_mode必须是auto、cylinder、parallel_strip或geometry_only")
     result = {"axis_world": axis, "anchors": dict(anchors), "local_observation_mode": mode}
     if "present_pipe_count" in payload:
         count = payload["present_pipe_count"]

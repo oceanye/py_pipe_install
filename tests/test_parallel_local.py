@@ -45,6 +45,32 @@ def test_parallel_local_mode_reports_same_installed_subset_when_a_region_is_occl
 
 def test_registration_settings_persist_parallel_local_mode_contract():
     assert normalize_registration_settings({"local_observation_mode": "parallel_strip"})["local_observation_mode"] == "parallel_strip"
+    assert normalize_registration_settings({"local_observation_mode": "geometry_only"})["local_observation_mode"] == "geometry_only"
     assert normalize_registration_settings({})["local_observation_mode"] == "auto"
     with pytest.raises(ValueError, match="local_observation_mode"):
         normalize_registration_settings({"local_observation_mode": "anything_else"})
+
+
+def test_fixed_camera_geometry_only_uses_common_axial_truncation_without_colour():
+    calibration, specs, groups = _groups()
+    # Remove the paint signal from both views.  The depth surfaces still carry
+    # the local cylinder and stereo geometry needed for the registration.
+    for role in ("left", "right"):
+        image = groups[0][role]
+        valid = getattr(groups[0]["depth"], f"{role}_valid")
+        image[valid] = (100, 110, 120)
+    result = analyze_elevation_auto_groups(
+        groups, calibration=calibration, pipe_specs=specs,
+        registration_settings={"local_observation_mode": "geometry_only"},
+    )
+    assert result["registration"]["status"] == "MATCHED"
+    assert result["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": 0, "UNKNOWN": 1}
+    surface = result["local_surface"]
+    assert surface["audit"]["observation_basis"] == "DEPTH_ONLY_LOCAL_CYLINDER"
+    assert surface["audit"]["local_truncation"]["definition"] == "COMMON_AXIAL_INTERVAL_VISIBLE_IN_BOTH_EYES"
+    assert result["scene_inventory"]["observed_geometry_only_count"] == 3
+    assert all(item["observation_basis"] == "DEPTH_ONLY_LOCAL_CYLINDER" for item in surface["observations"])
+    layout = result["registration"]["relative_layout"]
+    assert layout["axial_translation_excluded"] is True
+    assert len(layout["pairwise"]) == 3
+    assert layout["max_pairwise_error_mm"] < 1.0

@@ -128,6 +128,12 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
     """Compare current observed geometry to automatically placed model lines."""
     matched = registration.get("status") == "MATCHED"
     associations = {m["pipe_id"]: m for m in registration.get("matches", [])} if matched else {}
+    relative_matches = {
+        item["pipe_id"]: item
+        for item in (registration.get("relative_layout", {}).get("matches", [])
+                     if isinstance(registration.get("relative_layout"), Mapping) else [])
+        if isinstance(item, Mapping) and item.get("pipe_id")
+    }
     observations = {str(item.get("observation_id")): item for item in surface.get("observations", [])
                     if isinstance(item, Mapping) and item.get("observation_id")}
     interval = _common_observed_interval(surface, registration) if matched else None
@@ -149,10 +155,16 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
                 observed_center_camera_mm=center_camera.tolist(),
                 observed_distance_to_left_camera_mm=float(np.linalg.norm(center_camera)),
                 position_residual_mm=float(association.get("residual_mm")) if association.get("residual_mm") is not None else None,
+                relative_cross_section_offset_mm=(relative_matches.get(spec["pipe_id"], {}).get("observed_offset_transverse_mm")
+                                                  if relative_matches.get(spec["pipe_id"]) else None),
+                relative_cross_section_error_mm=(float(relative_matches[spec["pipe_id"]]["offset_error_mm"])
+                                                 if spec["pipe_id"] in relative_matches else None),
                 measured_color_srgb=str(observation.get("measured_color_srgb", observation.get("color_srgb", ""))).upper(),
                 measured_color_class=str(observation.get("measured_color_class", "UNKNOWN")),
                 color_consistent=bool(observation.get("color_consistent", False)),
-                color_used_as="AUXILIARY_HINT_ONLY",
+                color_used_as=("NONE_GEOMETRY_ONLY" if observation.get("observation_basis") == "DEPTH_ONLY_LOCAL_CYLINDER"
+                               else "AUXILIARY_HINT_ONLY"),
+                relative_layout_basis="TRANSVERSE_PLANE_NORMAL_TO_COMMON_PIPE_AXIS",
                 diameter_match_basis=("STEREO_LOCAL_RADIAL_P95_AND_PROJECTED_CHORD"
                                       if observation.get("parallel_local")
                                       else "STEREO_LOCAL_CYLINDER_OUTER_SURFACE"),
@@ -200,8 +212,13 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
         elif not matched:
             reasons = list(registration.get("reason_codes") or [registration.get("status", "REGISTRATION_REQUIRED")])
         elif positive:
-            reasons = ["LOCAL_PARALLEL_STRIP_MATCHED_TO_MODEL" if observation is not None and observation.get("parallel_local")
-                       else "LOCAL_CYLINDER_MATCHED_TO_STL"]
+            reasons = [
+                "LOCAL_PARALLEL_STRIP_MATCHED_TO_MODEL"
+                if observation is not None and observation.get("parallel_local")
+                else "LOCAL_DEPTH_GEOMETRY_MATCHED_TO_MODEL"
+                if observation is not None and observation.get("observation_basis") == "DEPTH_ONLY_LOCAL_CYLINDER"
+                else "LOCAL_CYLINDER_MATCHED_TO_STL"
+            ]
         elif free:
             reasons = ["OBSERVED_FREE_SPACE_REQUIRES_REPETITION"]
         elif any(evidence[r]["visibility"] == "OCCLUDED" for r in ("left", "right")):
@@ -249,7 +266,15 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         cylinder_surface = None
         if observation_mode in {"auto", "cylinder"}:
             cylinder_surface = extract_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
-        if observation_mode == "parallel_strip":
+        if observation_mode == "geometry_only":
+            # Fixed-camera geometry path.  Candidate generation is depth-only;
+            # each left/right pair is clipped to its common axial interval and
+            # matched to the model by diameter and transverse position.
+            surface = extract_local_pipes(
+                group["left"], group["right"], group["depth"], calibration, pipe_specs,
+                config={"geometry_only": True},
+            )
+        elif observation_mode == "parallel_strip":
             surface = extract_parallel_local_pipes(group["left"], group["right"], group["depth"], calibration, pipe_specs)
         elif observation_mode == "auto" and (not cylinder_surface["observations"] or cylinder_surface.get("audit", {}).get("truncated")):
             # A board or foreground object can leave a long straight side strip
@@ -262,6 +287,11 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             surface["audit"]["cylinder_surface_audit"] = cylinder_surface.get("audit", {})
         else:
             surface = cylinder_surface
+        surface.setdefault("audit", {}).update({
+            "local_observation_mode": observation_mode,
+            "fixed_camera_relative_layout": True,
+            "model_axis_world": settings.get("axis_world"),
+        })
         anchors = settings["anchors"] if group.get("anchors_apply", group is groups[-1]) else {}
         registration = register_elevation(pipe_specs, surface["observations"], settings["axis_world"], anchors=anchors)
         present_count = settings.get("present_pipe_count")
@@ -322,6 +352,8 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                                 "model_candidate_count": len(pipe_specs),
                                 "observed_cylinder_count": len(current_surface["observations"]),
                                 "observed_local_strip_count": sum(bool(o.get("parallel_local")) for o in current_surface["observations"]),
+                                "observed_geometry_only_count": sum(o.get("observation_basis") == "DEPTH_ONLY_LOCAL_CYLINDER"
+                                                                     for o in current_surface["observations"]),
                                 "identity_or_absence_proof": False}}
 
 

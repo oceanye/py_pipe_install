@@ -42,6 +42,7 @@ REASON_TEXT = {
     "ELEVATION_INSUFFICIENT_OR_OCCLUDED_EVIDENCE": "遮挡或有效证据不足",
     "ELEVATION_REPEATED_FREE_SPACE": "连续独立照片确认空位",
     "LOCAL_CYLINDER_MATCHED_TO_STL": "局部管道与模型几何匹配",
+    "LOCAL_DEPTH_GEOMETRY_MATCHED_TO_MODEL": "仅双目深度局部几何与模型匹配",
     "REPEATED_REGISTERED_FREE_SPACE": "连续独立照片确认预期位置为空",
     "NO_LOCAL_SURFACE_OBSERVATIONS": "当前视图没有足够局部表面",
     "COLLINEAR_WITHOUT_TWO_ANCHORS": "可见管道布局不足以唯一对应",
@@ -269,7 +270,7 @@ class ElevationCaptureDialog:
         self.camera_capture_provenance = {}
         self.image_paths: dict[str, str] = {}
         self.image_hashes: dict[str, str] = {}
-        self.registration_settings: dict[str, Any] = {"axis_world": None, "anchors": {}}
+        self.registration_settings: dict[str, Any] = {"axis_world": None, "anchors": {}, "local_observation_mode": "auto"}
         self.model_kind = ""
         self.model_half_length_mm = 1000.0
         self.analysis_settings: dict[str, Any] = {}
@@ -285,6 +286,7 @@ class ElevationCaptureDialog:
         self.history = tk.BooleanVar(value=True)
         self.mode = tk.StringVar(value=self.analysis_mode)
         self.mode_label = tk.StringVar(value="自动匹配立面")
+        self.local_observation_label = tk.StringVar(value="自动（圆柱/平行局部）")
         self.message = tk.StringVar(value="首次：导入 STL 或 DXF → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
         self.calibration_status = tk.StringVar(value="尚未选择真实双目标定")
         self.summary = tk.StringVar(value="尚未建立管道目录")
@@ -309,6 +311,13 @@ class ElevationCaptureDialog:
                                      state="readonly", width=18)
         self.mode_box.pack(side="left")
         self.mode_box.bind("<<ComboboxSelected>>", lambda _e: self._mode_selected())
+        ttk.Label(bar, text="局部建模").pack(side="left", padx=(10, 3))
+        self.local_observation_box = ttk.Combobox(
+            bar, textvariable=self.local_observation_label,
+            values=("自动（圆柱/平行局部）", "仅双目深度几何", "平行局部条带（颜色辅助）"),
+            state="readonly", width=22)
+        self.local_observation_box.pack(side="left")
+        self.local_observation_box.bind("<<ComboboxSelected>>", lambda _e: self._local_observation_selected())
         ttk.Button(bar, text="打开基础现场", command=self.browse_session).pack(side="right", padx=3)
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
         photos = ttk.Frame(self.controls)
@@ -483,6 +492,23 @@ class ElevationCaptureDialog:
         self.mode.set("elevation_auto" if self.mode_label.get() == "自动匹配立面" else "elevation_depth")
         self.mode_changed()
 
+    def _local_observation_selected(self) -> None:
+        """Persist the local 3-D observation basis in the scene manifest."""
+        labels = {
+            "自动（圆柱/平行局部）": "auto",
+            "仅双目深度几何": "geometry_only",
+            "平行局部条带（颜色辅助）": "parallel_strip",
+        }
+        self.registration_settings["local_observation_mode"] = labels.get(
+            self.local_observation_label.get(), "auto")
+        self.invalidate()
+        if self.registration_settings["local_observation_mode"] == "geometry_only":
+            self.message.set("仅双目深度几何：沿共同管轴建立左右目共同局部截断，颜色不参与候选生成。")
+        elif self.registration_settings["local_observation_mode"] == "parallel_strip":
+            self.message.set("平行局部条带：沿共同管轴测量可见条带，颜色仅作候选辅助。")
+        else:
+            self.message.set("自动局部建模：优先圆柱表面，必要时回退到平行局部条带。")
+
     def refresh_table(self) -> None:
         selected = self.selected_id()
         self.tree.delete(*self.tree.get_children())
@@ -581,7 +607,9 @@ class ElevationCaptureDialog:
                 row["color_srgb"] = PALETTE[diameters.index(round(row["nominal_diameter_mm"], 1)) % len(PALETTE)]
             row["axis"] = "auto"
         self.pipes = pipes
-        self.registration_settings = {"axis_world": [0.0, 0.0, 1.0] if suffix == ".dxf" else None, "anchors": {}}
+        self.registration_settings = {"axis_world": [0.0, 0.0, 1.0] if suffix == ".dxf" else None,
+                                      "anchors": {}, "local_observation_mode": "auto"}
+        self.local_observation_label.set("自动（圆柱/平行局部）")
         self.last_manifest = None
         self.confirmed.set(False)
         self.invalidate()
@@ -881,11 +909,12 @@ class ElevationCaptureDialog:
         loaded_mode = str(loaded.get("mode") or (manifest.get("analysis") or {}).get("mode") or "elevation_depth")
         self.mode.set(loaded_mode if loaded_mode in {"elevation_auto", "elevation_depth"} else "elevation_depth")
         self.mode_label.set("自动匹配立面" if self.mode.get() == "elevation_auto" else "手工区域兼容")
-        restored_registration = copy.deepcopy(loaded.get("registration_settings") or {"axis_world": None, "anchors": {}})
+        restored_registration = copy.deepcopy(loaded.get("registration_settings") or {
+            "axis_world": None, "anchors": {}, "local_observation_mode": "auto"})
         # Field traces and image loading can invalidate anchors.  Keep the
         # verified package settings aside and restore them only after all
         # snapshot checks have completed below.
-        self.registration_settings = {"axis_world": None, "anchors": {}}
+        self.registration_settings = {"axis_world": None, "anchors": {}, "local_observation_mode": "auto"}
         self.pipes = []
         self.fields["calibration"].set(str(path))
         self.calibration_override = loaded["calibration"]
@@ -910,6 +939,13 @@ class ElevationCaptureDialog:
         self.timestamp_sources = {role: views[role]["timestamp_source"] for role in ("left", "right")}
         self.load_images()
         self.registration_settings = restored_registration
+        local_labels = {
+            "auto": "自动（圆柱/平行局部）",
+            "geometry_only": "仅双目深度几何",
+            "parallel_strip": "平行局部条带（颜色辅助）",
+        }
+        self.local_observation_label.set(local_labels.get(
+            restored_registration.get("local_observation_mode", "auto"), "自动（圆柱/平行局部）"))
         self.present_pipe_count.set(str(restored_registration.get("present_pipe_count", "")))
         self.confirmed.set(False)
         self.refresh_table()

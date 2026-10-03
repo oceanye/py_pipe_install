@@ -215,10 +215,64 @@ def _rigid2(model: np.ndarray, observed: np.ndarray) -> tuple[np.ndarray, np.nda
     return rotation, translation, residuals
 
 
+def _relative_layout(specs: list[dict], observations: list[dict], model_xy: np.ndarray,
+                     camera_xy: np.ndarray, ids: list[int], targets: list[int],
+                     rotation2: np.ndarray) -> dict[str, Any]:
+    """Describe the observed/model transverse layout without axial gauge.
+
+    The fixed-camera measurement is the centre-to-centre geometry in the
+    plane normal to the common pipe direction.  Pairwise distances survive a
+    camera translation and the unobservable translation along the pipe axis,
+    so they are the stable quantities to compare with a DXF/STL catalogue.
+    """
+    model_points = np.asarray(model_xy[targets], dtype=float)
+    observed_points = np.asarray(camera_xy[ids], dtype=float)
+    model_centroid = model_points.mean(axis=0)
+    observed_centroid = observed_points.mean(axis=0)
+    model_offsets = model_points - model_centroid
+    observed_offsets = observed_points - observed_centroid
+    aligned_model_offsets = model_offsets @ rotation2.T
+    offset_errors = np.linalg.norm(aligned_model_offsets - observed_offsets, axis=1)
+    matches = []
+    for index, (observation_index, target_index) in enumerate(zip(ids, targets)):
+        matches.append({
+            "pipe_id": specs[target_index]["pipe_id"],
+            "observation_id": observations[observation_index]["observation_id"],
+            "model_offset_transverse_mm": model_offsets[index].tolist(),
+            "observed_offset_transverse_mm": observed_offsets[index].tolist(),
+            "offset_error_mm": float(offset_errors[index]),
+        })
+    pairwise = []
+    for first in range(len(matches)):
+        for second in range(first + 1, len(matches)):
+            model_distance = float(np.linalg.norm(model_points[first] - model_points[second]))
+            observed_distance = float(np.linalg.norm(observed_points[first] - observed_points[second]))
+            pairwise.append({
+                "pipe_id_a": matches[first]["pipe_id"],
+                "pipe_id_b": matches[second]["pipe_id"],
+                "observation_id_a": matches[first]["observation_id"],
+                "observation_id_b": matches[second]["observation_id"],
+                "model_distance_mm": model_distance,
+                "observed_distance_mm": observed_distance,
+                "error_mm": observed_distance - model_distance,
+            })
+    return {
+        "coordinate_frame": "TRANSVERSE_PLANE_NORMAL_TO_COMMON_PIPE_AXIS",
+        "measurement": "CENTRE_TO_CENTRE_RELATIVE_LAYOUT_MM",
+        "axial_translation_excluded": True,
+        "matches": matches,
+        "pairwise": pairwise,
+        "max_offset_error_mm": float(offset_errors.max()) if len(offset_errors) else 0.0,
+        "max_pairwise_error_mm": max((abs(item["error_mm"]) for item in pairwise), default=0.0),
+    }
+
+
 def _result(reason: str, model_axis: np.ndarray, camera_axis: np.ndarray | None, *, status: str = "AMBIGUOUS") -> dict[str, Any]:
     return {"status": status, "rotation_model_to_camera": None, "translation_model_to_camera_mm": None,
             "model_axis": model_axis.tolist(), "camera_axis": camera_axis.tolist() if camera_axis is not None else None,
+            "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
             "matches": [], "rms_mm": None, "reason_codes": [reason], "alternatives": [],
+            "relative_layout": None,
             "axial_translation_observable": False, "scale": 1., "hypotheses_explored": 0,
             "rejected_observation_ids": []}
 
@@ -391,9 +445,12 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
         targets = [solution["assignment"][i] for i in ids]
         axial = float(np.mean((observed_centers[ids]-model_centers[targets] @ rotation.T) @ b[:,2]))
         translation = b[:,:2] @ solution["translation2"] + axial*b[:,2]
+        camera_xy_solution = (observed_centers @ b)[:, :2]
+        relative_layout = _relative_layout(specs, obs, model_xy, camera_xy_solution, ids, targets, solution["rotation2"])
         return {"rotation_model_to_camera":rotation.tolist(), "translation_model_to_camera_mm":translation.tolist(),
             "camera_axis": b[:,2].tolist(), "rms_mm":solution["rms"],
-            "matches":[{"pipe_id":specs[j]["pipe_id"],"observation_id":obs[i]["observation_id"],"residual_mm":float(e)} for i,j,e in zip(ids,targets,solution["errors"])]}
+            "matches":[{"pipe_id":specs[j]["pipe_id"],"observation_id":obs[i]["observation_id"],"residual_mm":float(e)} for i,j,e in zip(ids,targets,solution["errors"])],
+            "relative_layout": relative_layout}
 
     status = "SEARCH_LIMIT" if limited else "AMBIGUOUS" if close else "MATCHED"
     reason = "SEARCH_SPACE_TRUNCATED" if limited else "ALTERNATIVE_POSES_WITHIN_AMBIGUITY_GATE" if close else "RIGID_CROSS_SECTION_MATCH"
