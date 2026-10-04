@@ -27,6 +27,7 @@ from .elevation_zones import (
     normalize_zone_settings,
     offset_observation_pixels,
 )
+from .model_zones import zone_model_specs
 
 LOGGER = get_logger("elevation_auto")
 STATE_ZH = {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "遮蔽不确定"}
@@ -452,6 +453,10 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
         for group in audit.get("groups", []) if isinstance(audit.get("groups"), list) else []:
             item = copy.deepcopy(group)
             item["zone_id"] = zone_id
+            item["zone_source"] = zone.get("source", "manual")
+            if zone.get("source") == "stl_parallel":
+                item["zone_model_pipe_ids"] = list(zone.get("model_pipe_ids", []))
+                item["zone_roi_source"] = zone.get("roi_source", "unmapped")
             item["registration"] = qualify_registration(item.get("registration"))
             item["local_observations"] = []
             for raw in group.get("local_observations", []) if isinstance(group, Mapping) else []:
@@ -473,6 +478,11 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
     result["zone_id"] = zone_id
     result["zone_label"] = zone.get("label", zone_id)
     result["zone_offsets"] = dict(offsets)
+    result["zone_source"] = zone.get("source", "manual")
+    if zone.get("source") == "stl_parallel":
+        result["zone_model_pipe_ids"] = list(zone.get("model_pipe_ids", []))
+        result["zone_model_catalog_sha256"] = zone.get("model_catalog_sha256")
+        result["zone_roi_source"] = zone.get("roi_source", "unmapped")
     return result
 
 
@@ -570,7 +580,11 @@ def _merge_zone_capture_groups(zone_reports: list[Mapping[str, Any]], group_coun
                    for report in zone_reports]
         base = copy.deepcopy(entries[0])
         base["zone_ids"] = [str(item.get("zone_id")) for item in entries]
-        base["zone_audits"] = [{"zone_id": item.get("zone_id"), "surface_audit": item.get("surface_audit"),
+        base["zone_audits"] = [{"zone_id": item.get("zone_id"),
+                                 "source": item.get("zone_source", "manual"),
+                                 "model_pipe_ids": list(item.get("zone_model_pipe_ids", [])),
+                                 "roi_source": item.get("zone_roi_source", "user"),
+                                 "surface_audit": item.get("surface_audit"),
                                  "registration": item.get("registration")} for item in entries]
         base["registration"] = _merge_zone_registrations([item.get("registration", {}) for item in entries])
         observations = []
@@ -626,6 +640,9 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
     current = zone_reports[0]
     audit = {"scope": "zones", "zone_count": len(zone_reports),
              "zones": [{"zone_id": report.get("zone_id"), "label": report.get("zone_label"),
+                        "source": report.get("zone_source", "manual"),
+                        "model_pipe_ids": list(report.get("zone_model_pipe_ids", [])),
+                        "roi_source": report.get("zone_roi_source", "user"),
                         "offsets": report.get("zone_offsets"), "audit": report.get("local_surface", {}).get("audit", {})}
                        for report in zone_reports],
              "observation_count": len(observations), "rejected_count": len(rejected),
@@ -674,6 +691,7 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
     matching = normalize_matching_settings(matching_payload)
     reports = []
     for zone in zones:
+        zone_specs = zone_model_specs(zone, pipe_specs)
         cropped_groups = []
         offsets = None
         for group in groups:
@@ -683,7 +701,7 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
         report = analyze_elevation_auto_groups(
             cropped_groups, calibration=crop_calibration_for_zone(
                 calibration, zone, right_padding_px=settings["right_roi_padding_px"]),
-            pipe_specs=pipe_specs, registration_settings=zone_registration,
+            pipe_specs=zone_specs, registration_settings=zone_registration,
             matching_settings=matching,
         )
         reports.append(_qualify_zone_report(report, zone, offsets or {}))

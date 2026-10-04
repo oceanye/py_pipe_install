@@ -13,7 +13,7 @@ import cv2
 import numpy as np
 
 from pipe_twin.dxf_elevation import catalog_from_dxf
-from pipe_twin.elevation_gui import ElevationCaptureDialog, image_region
+from pipe_twin.elevation_gui import ElevationCaptureDialog, ZoneEditorDialog, image_region
 from test_elevation_dataset import _calibration
 
 
@@ -156,6 +156,35 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertTrue(all("left_region_px" not in row for row in self.dialog.pipes))
         self.dialog.show_catalog()
         self.root.update_idletasks()
+
+    def test_stl_zone_candidates_can_be_bound_confirmed_and_saved(self):
+        model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"
+        self.dialog.load_model(model)
+        editor = ZoneEditorDialog(self.dialog)
+        editor.window.withdraw()
+        try:
+            editor._auto_propose()
+            self.assertEqual(len(editor.zones), 1)
+            self.assertFalse(editor.zones[0]["confirmed"])
+            self.assertFalse(editor.zones[0]["enabled"])
+            editor.listbox.selection_set(0)
+            editor._selected()
+            editor.pending_rect = [0, 0, 640, 480]
+            editor._bind_pending()
+            self.assertEqual(editor.zones[0]["roi_source"], "user")
+            editor._confirm()
+            self.assertTrue(editor.zones[0]["confirmed"])
+            self.assertTrue(editor.zones[0]["enabled"])
+            editor._auto_propose()
+            self.assertEqual(len(editor.zones), 1)
+            self.assertTrue(editor.zones[0]["enabled"])
+            editor._save()
+            self.assertEqual(self.dialog.zone_settings["scope"], "zones")
+            self.assertEqual(self.dialog.zone_settings["zones"][0]["model_pipe_ids"],
+                             sorted(spec["pipe_id"] for spec in self.dialog.pipes))
+        finally:
+            if editor.window.winfo_exists():
+                editor.window.destroy()
 
     def test_auto_mode_is_roi_free_and_direction_is_normalized(self):
         model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"

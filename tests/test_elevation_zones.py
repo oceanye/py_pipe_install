@@ -18,6 +18,7 @@ from pipe_twin.elevation_zones import (
     crop_stereo_group_for_zone,
     normalize_zone_settings,
 )
+from pipe_twin.model_zones import propose_model_zones
 from pipe_twin.stereo_analyzer import _calibration_from_manifest
 from test_elevation_auto import _groups, _package
 from test_elevation_dataset import _calibration
@@ -72,6 +73,30 @@ def test_full_width_zone_reuses_automatic_geometry_and_qualifies_observations():
     assert result["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": 0, "UNKNOWN": 1}
     assert all(item["observation_id"].startswith("Z01:") for item in result["local_surface"]["observations"])
     assert result["capture_audit"]["groups"][0]["zone_ids"] == ["Z01"]
+
+
+def test_confirmed_model_zone_limits_registration_catalog(monkeypatch):
+    import pipe_twin.elevation_auto as elevation_auto
+
+    calibration, specs, groups = _groups()
+    proposal = propose_model_zones(specs)[0]
+    proposal.update({"enabled": True, "confirmed": True,
+                     "roi_source": "user", "roi_rect_px": [0, 0, 640, 480]})
+    calls = []
+    original = elevation_auto.analyze_elevation_auto_groups
+
+    def wrapped(cropped_groups, **kwargs):
+        calls.append([item["pipe_id"] for item in kwargs["pipe_specs"]])
+        return original(cropped_groups, **kwargs)
+
+    monkeypatch.setattr(elevation_auto, "analyze_elevation_auto_groups", wrapped)
+    result = analyze_elevation_auto_zones(
+        groups, calibration=calibration, pipe_specs=specs,
+        scope_settings={"scope": "zones", "zones": [proposal]},
+    )
+    assert calls == [[spec["pipe_id"] for spec in specs]]
+    assert result["local_surface"]["audit"]["zones"][0]["source"] == "stl_parallel"
+    assert result["capture_audit"]["groups"][0]["zone_audits"][0]["source"] == "stl_parallel"
 
 
 def test_zone_scope_manifest_roundtrip(tmp_path):

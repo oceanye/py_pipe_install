@@ -12,6 +12,16 @@
 
 验证命令：`python -m pytest -q tests/test_elevation_zones.py tests/test_elevation_dataset.py tests/test_elevation_auto.py tests/test_elevation_gui.py`；本次完整回归为 **523 passed、1 skipped、256 subtests passed**，`python -m compileall -q pipe_twin` 和 `git diff --check` 通过。
 
+## 2026-10-04 第三阶段：STL 平行管组自动候选与人工确认
+
+分区管理现在可以点击“根据 STL 自动生成候选”。`pipe_twin/model_zones.py` 从当前模型管道目录读取中心线、外径和方向，按方向容差、共同管长区间和横向净间距形成确定性的平行管组；每个候选保存 `model_pipe_ids`、模型目录 SHA-256、算法参数和共同管长区间。候选默认是 `confirmed=false/enabled=false`，因此不会未经人工确认进入分析。STL 已足够完成该步骤；同一规范化管道目录来自 DXF 时也可复用。`test_model/管道布置.stl` 当前会得到一个包含 12 根平行管的候选组；间距或方向不连续的模型会拆成多个候选，单根也保留供人工删除或确认。
+
+GUI 的确认流程是：先生成候选；若已有健康的全幅 `MATCHED` 配准，程序只把当前双目共同观测的轴向截面投影成候选照片范围，不使用 STL 端点猜测；否则候选显示为“未映射”。操作员在左目图拖出范围后，选择候选并点击“绑定框选到所选候选”，再点击“确认/启用所选候选”。不需要的候选可在列表中选择后删除；未绑定或未确认的草稿可保留，不能运行分区分析。保存后的模型候选带 `roi_source=matched_section/user`，报告会记录分区来源和绑定的模型管道编号。
+
+启用的 STL 分区只把绑定的模型管道子集交给该分区的注册与识别，再把各区证据合并到完整模型目录；跨区冲突仍保持 `UNKNOWN`。模型目录或管道几何改变后，目录哈希校验会拒绝旧候选，需重新生成。颜色筛选仍是可选辅助策略，直径和双目几何仍是主判据。
+
+新增回归覆盖候选确定性、方向/间距拆分、真实 12 管 STL、候选草稿/确认门禁、模型哈希变化、分区子目录和 GUI 绑定确认。当前验证：`python -m pytest tests -q` → **530 passed、1 skipped、256 subtests passed**；`python -m compileall -q pipe_twin` 与 `git diff --check` 通过。现场端拉取后需重新打开 GUI；旧分区 manifest 可以继续使用，STL 自动候选是新增可选流程，不会自动改变默认全幅模式。
+
 ## 2026-10-04 现场主线清理
 
 本次提交只做流程清理。基础立面现场统一为 `elevation_auto`：模型输入只接受 DXF/STL，管道区域、直径和立面证据由双目算法自动生成；旧 `elevation_depth.py` 逐管手工区域模块及其测试已删除。主 GUI 隐藏旧的清单/合成示例/二维码/DXF 草稿与逐管绑定入口，模型预览不再支持两点拾取和观察到模型的手工绑定；已有相机标定、双目抓拍、状态刷新、日志和识别后端注册接口保留。分区功能在后续第二阶段独立提交。

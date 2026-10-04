@@ -19,6 +19,7 @@ import numpy as np
 from .pipeline import atomic_write_text
 from .logging_config import get_logger, log_event
 from .elevation_zones import MAX_ZONES, normalize_zone_settings
+from .model_zones import project_model_zone, propose_model_zones
 
 
 ROOT = Path(__file__).resolve().parents[1] / "outputs" / "elevation_workbench"
@@ -261,8 +262,11 @@ class ZoneEditorDialog:
         buttons = self.ttk.Frame(side)
         buttons.pack(fill="x", pady=8)
         self.ttk.Button(buttons, text="新增当前框选", command=self._add).pack(fill="x", pady=2)
+        self.ttk.Button(buttons, text="绑定框选到所选候选", command=self._bind_pending).pack(fill="x", pady=2)
+        self.ttk.Button(buttons, text="根据 STL 自动生成候选", command=self._auto_propose).pack(fill="x", pady=2)
+        self.ttk.Button(buttons, text="确认/启用所选候选", command=self._confirm).pack(fill="x", pady=2)
         self.ttk.Button(buttons, text="删除所选分区", command=self._delete).pack(fill="x", pady=2)
-        self.ttk.Button(buttons, text="保存分区并启用", command=self._save).pack(fill="x", pady=(10, 2))
+        self.ttk.Button(buttons, text="保存已确认分区", command=self._save).pack(fill="x", pady=(10, 2))
         self.ttk.Button(buttons, text="取消", command=self.window.destroy).pack(fill="x", pady=2)
         self.status = self.tk.StringVar(value="请拖出一个矩形")
         self.ttk.Label(side, textvariable=self.status, wraplength=250, foreground="#355371").pack(anchor="w", pady=6)
@@ -317,7 +321,10 @@ class ZoneEditorDialog:
         self.canvas.delete("all")
         self.canvas.create_image(0, 0, image=self.photo, anchor="nw")
         for index, zone in enumerate(self.zones):
-            x, y, width, height = zone["roi_rect_px"]
+            rect = zone.get("roi_rect_px")
+            if not rect:
+                continue
+            x, y, width, height = rect
             selected = index == self.selected_index
             self.canvas.create_rectangle(x * self.scale, y * self.scale,
                                          (x + width) * self.scale, (y + height) * self.scale,
@@ -334,7 +341,15 @@ class ZoneEditorDialog:
     def _refresh_list(self) -> None:
         self.listbox.delete(0, "end")
         for zone in self.zones:
-            self.listbox.insert("end", f"{zone['zone_id']} · {zone['label']} · {zone['roi_rect_px']}")
+            if zone.get("source") == "stl_parallel":
+                state = "已启用" if zone.get("enabled") else "待确认"
+                mapping_source = {"unmapped": "未映射", "matched_section": "模型投影", "user": "人工框选"}.get(
+                    zone.get("roi_source", "unmapped"), zone.get("roi_source", "unmapped"))
+                ids = ",".join(zone.get("model_pipe_ids", []))
+                text = f"{zone['zone_id']} · {zone['label']} · STL {state}/{mapping_source} · {ids}"
+            else:
+                text = f"{zone['zone_id']} · {zone['label']} · {zone.get('roi_rect_px')}"
+            self.listbox.insert("end", text)
         self._draw()
 
     def _selected(self, _event: Any = None) -> None:
@@ -365,6 +380,107 @@ class ZoneEditorDialog:
         self._refresh_list()
         self.listbox.selection_set(self.selected_index)
         self.status.set(f"已加入{zone_id}；可继续框选或保存")
+
+    def _bind_pending(self) -> None:
+        """Attach the current image rectangle to the selected STL proposal."""
+        if self.pending_rect is None:
+            self.status.set("请先在左图拖出矩形")
+            return
+        if self.selected_index is None or self.selected_index >= len(self.zones):
+            self.status.set("请先在列表中选择一个 STL 候选")
+            return
+        zone = self.zones[self.selected_index]
+        if zone.get("source") != "stl_parallel":
+            self.status.set("只有 STL 自动候选可以绑定模型分区")
+            return
+        zone["roi_rect_px"] = list(self.pending_rect)
+        zone["roi_source"] = "user"
+        zone["confirmed"] = False
+        zone["enabled"] = False
+        self.pending_rect = None
+        self._refresh_list()
+        self.listbox.selection_set(self.selected_index)
+        self.status.set(f"已将框选范围绑定到{zone['zone_id']}；请点击“确认/启用所选候选”")
+
+    def _auto_propose(self) -> None:
+        if not self.owner.pipes:
+            self.status.set("请先导入 STL 或 DXF，建立管道目录")
+            return
+        try:
+            proposals = propose_model_zones(self.owner.pipes)
+            calibration = None
+            report = self.owner.report if isinstance(self.owner.report, Mapping) else None
+            if report is not None:
+                try:
+                    from .stereo_analyzer import _calibration_from_manifest
+                    calibration = _calibration_from_manifest(self.owner.current_calibration())
+                except (OSError, ValueError, KeyError):
+                    calibration = None
+            if calibration is not None:
+                for proposal in proposals:
+                    rect = project_model_zone(proposal, self.owner.pipes, calibration, report)
+                    if rect is not None:
+                        proposal["roi_rect_px"] = rect
+                        proposal["roi_source"] = "matched_section"
+            # Regenerating proposals replaces drafts and stale model hashes;
+            # confirmed candidates for the same catalogue and manual ROIs stay.
+            catalog_hash = proposals[0].get("model_catalog_sha256") if proposals else None
+            kept = [zone for zone in self.zones
+                    if zone.get("source") != "stl_parallel"
+                    or (zone.get("confirmed") and zone.get("model_catalog_sha256") == catalog_hash)]
+            used = {str(zone.get("zone_id")) for zone in kept}
+            existing_groups = {tuple(zone.get("model_pipe_ids", [])) for zone in kept
+                               if zone.get("source") == "stl_parallel"}
+            fresh = []
+            for proposal in proposals:
+                group = tuple(proposal.get("model_pipe_ids", []))
+                if group in existing_groups:
+                    continue
+                zone_id = str(proposal["zone_id"])
+                suffix = 1
+                while zone_id in used:
+                    suffix += 1
+                    zone_id = f"{proposal['zone_id']}-{suffix}"
+                proposal["zone_id"] = zone_id
+                used.add(zone_id)
+                existing_groups.add(group)
+                fresh.append(proposal)
+            if len(kept) + len(fresh) > MAX_ZONES:
+                raise ValueError(f"模型候选与现有分区合计超过{MAX_ZONES}个，请先删除无用分区")
+            self.zones = kept + fresh
+            self.selected_index = None
+            self._refresh_list()
+            projected_fresh = sum(zone.get("roi_source") == "matched_section" for zone in fresh)
+            self.status.set(f"已生成{len(fresh)}个 STL 平行管组候选，其中{projected_fresh}个已投影到当前照片；请逐项确认或删除")
+        except (OSError, ValueError) as error:
+            self.status.set(str(error))
+
+    def _confirm(self) -> None:
+        if self.selected_index is None or self.selected_index >= len(self.zones):
+            self.status.set("请先选择一个候选")
+            return
+        zone = self.zones[self.selected_index]
+        if zone.get("source") != "stl_parallel":
+            zone["enabled"] = True
+            self._refresh_list()
+            self.status.set(f"已确认{zone['zone_id']}")
+            return
+        if not zone.get("roi_rect_px"):
+            self.status.set("该候选尚未绑定照片范围，请先框选并点击“绑定框选到所选候选”")
+            return
+        zone["confirmed"] = True
+        zone["enabled"] = True
+        try:
+            normalize_zone_settings({"scope": "zones", "zones": self.zones},
+                                    image_size=(self.width, self.height))
+        except ValueError as error:
+            zone["confirmed"] = False
+            zone["enabled"] = False
+            self.status.set(str(error))
+            return
+        self._refresh_list()
+        self.listbox.selection_set(self.selected_index)
+        self.status.set(f"已确认并启用{zone['zone_id']}；保存后用于分区分析")
 
     def _delete(self) -> None:
         if self.selected_index is None:

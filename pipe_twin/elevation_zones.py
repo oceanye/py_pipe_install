@@ -10,6 +10,7 @@ shifted with the pixels.
 from __future__ import annotations
 
 import copy
+import math
 import re
 from dataclasses import replace
 from types import SimpleNamespace
@@ -62,7 +63,8 @@ def _rect(value: Any, field: str, image_size: tuple[int, int] | None) -> list[in
 def _zone(raw: Any, index: int, image_size: tuple[int, int] | None) -> dict[str, Any]:
     if not isinstance(raw, Mapping):
         raise ElevationZoneError(f"zones[{index}]必须是对象")
-    allowed = {"zone_id", "label", "enabled", "coordinate_space", "roi_rect_px"}
+    model_fields = {"source", "confirmed", "model_pipe_ids", "axis_world", "model_catalog_sha256", "proposal", "roi_source"}
+    allowed = {"zone_id", "label", "enabled", "coordinate_space", "roi_rect_px"} | model_fields
     unknown = set(raw) - allowed
     if unknown:
         raise ElevationZoneError(f"zones[{index}]包含未知字段：{sorted(unknown)}")
@@ -78,12 +80,54 @@ def _zone(raw: Any, index: int, image_size: tuple[int, int] | None) -> dict[str,
     coordinate_space = raw.get("coordinate_space", "rectified_left")
     if coordinate_space != "rectified_left":
         raise ElevationZoneError("分区坐标系只支持rectified_left")
+    model = {}
+    if raw.get("source") == "stl_parallel":
+        from .model_zones import ALGORITHM
+        ids, axis = raw.get("model_pipe_ids"), raw.get("axis_world")
+        if (not isinstance(ids, list) or not ids or len(ids) > 512
+                or any(not isinstance(pid, str) or not pid for pid in ids) or len(set(ids)) != len(ids)):
+            raise ElevationZoneError("模型分区需要唯一的model_pipe_ids列表")
+        axis = np.asarray(axis, float)
+        if axis.shape != (3,) or not np.isfinite(axis).all() or not np.isclose(np.linalg.norm(axis), 1):
+            raise ElevationZoneError("模型分区axis_world必须是单位方向")
+        digest = raw.get("model_catalog_sha256")
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise ElevationZoneError("模型分区缺少目录哈希")
+        confirmed = raw.get("confirmed", False)
+        if type(confirmed) is not bool or (enabled and not confirmed):
+            raise ElevationZoneError("自动生成的分区必须经人工确认后才能启用")
+        roi_source = raw.get("roi_source", "unmapped")
+        if roi_source not in {"unmapped", "matched_section", "user"}:
+            raise ElevationZoneError("无效的分区照片范围来源")
+        if raw.get("roi_rect_px") is None and (enabled or roi_source != "unmapped"):
+            raise ElevationZoneError("启用分区前需要确认左目照片范围")
+        proposal = raw.get("proposal")
+        expected = {"algorithm", "angle_tolerance_deg", "maximum_gap_mm", "minimum_common_length_mm", "common_interval_model_mm", "note"}
+        if not isinstance(proposal, Mapping) or set(proposal) != expected or proposal["algorithm"] != ALGORITHM:
+            raise ElevationZoneError("模型分区生成参数无效")
+        for key, limit in (("angle_tolerance_deg", 2), ("maximum_gap_mm", 100000), ("minimum_common_length_mm", 100000)):
+            value = proposal[key]
+            if type(value) not in (int, float) or not math.isfinite(value) or not 0 < value <= limit:
+                raise ElevationZoneError("模型分区生成参数超出范围")
+        interval = proposal["common_interval_model_mm"]
+        if (not isinstance(interval, list) or len(interval) != 2 or
+                any(type(v) not in (int, float) or not math.isfinite(v) for v in interval) or interval[1] <= interval[0]):
+            raise ElevationZoneError("模型分区共同管长区间无效")
+        if proposal["note"] not in {"MODEL_GROUP_ONLY", "INSUFFICIENT_LAYOUT_FOR_REGISTRATION"}:
+            raise ElevationZoneError("模型分区说明无效")
+        model = {"source": "stl_parallel", "confirmed": confirmed, "model_pipe_ids": list(ids),
+                 "axis_world": axis.tolist(), "model_catalog_sha256": digest,
+                 "proposal": copy.deepcopy(dict(proposal)), "roi_source": roi_source}
+    elif set(raw) & model_fields:
+        raise ElevationZoneError("模型分区元数据必须使用stl_parallel来源")
     return {
         "zone_id": zone_id,
         "label": label.strip(),
         "enabled": enabled,
         "coordinate_space": "rectified_left",
-        "roi_rect_px": _rect(raw.get("roi_rect_px"), f"zones[{index}].roi_rect_px", image_size),
+        "roi_rect_px": (None if model and raw.get("roi_rect_px") is None else
+                        _rect(raw.get("roi_rect_px"), f"zones[{index}].roi_rect_px", image_size)),
+        **model,
     }
 
 
@@ -117,8 +161,10 @@ def normalize_zone_settings(payload: Mapping[str, Any] | None = None,
         raise ElevationZoneError("zone_id必须唯一")
     if scope == "zones" and not any(item["enabled"] for item in zones):
         raise ElevationZoneError("分区模式至少需要一个启用分区")
-    if scope == "full_frame" and zones:
-        raise ElevationZoneError("full_frame模式不能携带分区")
+    # Full-frame mode may retain disabled drafts so operators can review
+    # model proposals before a photo/pose is available.
+    if scope == "full_frame" and any(zone["enabled"] for zone in zones):
+        raise ElevationZoneError("全幅模式只可保留停用的分区草稿")
     return {
         "scope": scope,
         "zone_schema_version": ZONE_SCHEMA_VERSION,
