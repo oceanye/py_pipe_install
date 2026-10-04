@@ -18,6 +18,7 @@ import numpy as np
 
 from .pipeline import atomic_write_text
 from .logging_config import get_logger, log_event
+from .elevation_zones import MAX_ZONES, normalize_zone_settings
 
 
 ROOT = Path(__file__).resolve().parents[1] / "outputs" / "elevation_workbench"
@@ -218,6 +219,174 @@ class RegionCanvas:
             self.draw()
 
 
+class ZoneEditorDialog:
+    """Small group-ROI editor; it never assigns an ROI to an individual pipe."""
+
+    def __init__(self, owner: Any) -> None:
+        self.owner = owner
+        self.app = owner.app
+        self.tk, self.ttk = self.app.tk, self.app.ttk
+        image = owner.views["left"].image
+        if image is None:
+            raise ValueError("请先载入左目矫正图，再配置分区")
+        self.image = image
+        self.height, self.width = image.shape[:2]
+        self.scale = min(1.0, 760.0 / self.width, 520.0 / self.height)
+        self.display_width = max(1, int(round(self.width * self.scale)))
+        self.display_height = max(1, int(round(self.height * self.scale)))
+        self.zones = copy.deepcopy(owner.zone_settings.get("zones", []))
+        self.drag_start: tuple[float, float] | None = None
+        self.pending_rect: list[int] | None = None
+        self.selected_index: int | None = None
+        self.window = self.tk.Toplevel(owner.window)
+        self.window.title("分区分析 · 左目矫正图")
+        self.window.geometry("1040x700")
+        self.window.transient(owner.window)
+        self.window.protocol("WM_DELETE_WINDOW", self.window.destroy)
+        layout = self.ttk.Frame(self.window, padding=10)
+        layout.pack(fill="both", expand=True)
+        self.canvas = self.tk.Canvas(layout, width=self.display_width, height=self.display_height,
+                                     bg="#152235", highlightthickness=0)
+        self.canvas.pack(side="left", fill="both", expand=True)
+        side = self.ttk.Frame(layout, padding=(10, 0, 0, 0))
+        side.pack(side="right", fill="y")
+        self.label = self.tk.StringVar(value="")
+        self.ttk.Label(side, text="在左图拖出管道组的矩形区域；分区可以重叠。", wraplength=250).pack(anchor="w", pady=(0, 8))
+        self.ttk.Label(side, text="分区名称（可选）").pack(anchor="w")
+        self.label_entry = self.ttk.Entry(side, textvariable=self.label, width=28)
+        self.label_entry.pack(anchor="w", pady=(2, 8))
+        self.listbox = self.tk.Listbox(side, height=15, width=30, exportselection=False)
+        self.listbox.pack(fill="y", expand=True)
+        self.listbox.bind("<<ListboxSelect>>", self._selected)
+        buttons = self.ttk.Frame(side)
+        buttons.pack(fill="x", pady=8)
+        self.ttk.Button(buttons, text="新增当前框选", command=self._add).pack(fill="x", pady=2)
+        self.ttk.Button(buttons, text="删除所选分区", command=self._delete).pack(fill="x", pady=2)
+        self.ttk.Button(buttons, text="保存分区并启用", command=self._save).pack(fill="x", pady=(10, 2))
+        self.ttk.Button(buttons, text="取消", command=self.window.destroy).pack(fill="x", pady=2)
+        self.status = self.tk.StringVar(value="请拖出一个矩形")
+        self.ttk.Label(side, textvariable=self.status, wraplength=250, foreground="#355371").pack(anchor="w", pady=6)
+        self._render_image()
+        self._refresh_list()
+        self.canvas.bind("<ButtonPress-1>", self._start)
+        self.canvas.bind("<B1-Motion>", self._drag)
+        self.canvas.bind("<ButtonRelease-1>", self._finish)
+
+    def _render_image(self) -> None:
+        rendered = cv2.resize(self.image, (self.display_width, self.display_height), interpolation=cv2.INTER_AREA)
+        ok, payload = cv2.imencode(".png", rendered)
+        if not ok:
+            raise ValueError("无法渲染分区预览")
+        self.photo = self.app.tk.PhotoImage(data=base64.b64encode(payload).decode("ascii"), format="png")
+
+    def _pixel(self, x: float, y: float) -> tuple[int, int]:
+        return (max(0, min(self.width, int(round(x / self.scale)))),
+                max(0, min(self.height, int(round(y / self.scale)))))
+
+    def _start(self, event: Any) -> None:
+        self.drag_start = (event.x, event.y)
+        self.pending_rect = None
+
+    def _drag(self, event: Any) -> None:
+        if self.drag_start is None:
+            return
+        x0, y0 = self.drag_start
+        x1, y1 = event.x, event.y
+        self.pending_rect = [*self._pixel(min(x0, x1), min(y0, y1)),
+                             self._pixel(max(x0, x1), max(y0, y1))[0] - self._pixel(min(x0, x1), min(y0, y1))[0],
+                             self._pixel(max(x0, x1), max(y0, y1))[1] - self._pixel(min(x0, x1), min(y0, y1))[1]]
+        self._draw()
+
+    def _finish(self, event: Any) -> None:
+        self._drag(event)
+        self.drag_start = None
+        if self.pending_rect:
+            try:
+                normalized = normalize_zone_settings({"scope": "zones", "zones": [{
+                    "zone_id": "Z01", "label": "Z01", "enabled": True,
+                    "coordinate_space": "rectified_left", "roi_rect_px": self.pending_rect,
+                }]}, image_size=(self.width, self.height))
+                self.pending_rect = normalized["zones"][0]["roi_rect_px"]
+                self.status.set(f"已框选 {self.pending_rect}，点击“新增当前框选”")
+            except ValueError as error:
+                self.pending_rect = None
+                self.status.set(str(error))
+        self._draw()
+
+    def _draw(self) -> None:
+        self.canvas.delete("all")
+        self.canvas.create_image(0, 0, image=self.photo, anchor="nw")
+        for index, zone in enumerate(self.zones):
+            x, y, width, height = zone["roi_rect_px"]
+            selected = index == self.selected_index
+            self.canvas.create_rectangle(x * self.scale, y * self.scale,
+                                         (x + width) * self.scale, (y + height) * self.scale,
+                                         outline="#FFD166" if selected else "#58B6F2",
+                                         width=3 if selected else 2)
+            self.canvas.create_text(x * self.scale + 4, max(12, y * self.scale + 14),
+                                    text=zone["zone_id"], anchor="w", fill="#FFFFFF")
+        if self.pending_rect:
+            x, y, width, height = self.pending_rect
+            self.canvas.create_rectangle(x * self.scale, y * self.scale,
+                                         (x + width) * self.scale, (y + height) * self.scale,
+                                         outline="#FF9F1C", width=2, dash=(5, 3))
+
+    def _refresh_list(self) -> None:
+        self.listbox.delete(0, "end")
+        for zone in self.zones:
+            self.listbox.insert("end", f"{zone['zone_id']} · {zone['label']} · {zone['roi_rect_px']}")
+        self._draw()
+
+    def _selected(self, _event: Any = None) -> None:
+        selection = self.listbox.curselection()
+        self.selected_index = int(selection[0]) if selection else None
+        if self.selected_index is not None:
+            self.label.set(self.zones[self.selected_index]["label"])
+        self._draw()
+
+    def _add(self) -> None:
+        if self.pending_rect is None:
+            self.status.set("请先在左图拖出矩形")
+            return
+        if len(self.zones) >= MAX_ZONES:
+            self.status.set(f"分区最多支持{MAX_ZONES}个")
+            return
+        used = {zone["zone_id"] for zone in self.zones}
+        index = 1
+        while f"Z{index:02d}" in used:
+            index += 1
+        zone_id = f"Z{index:02d}"
+        label = self.label.get().strip() or zone_id
+        self.zones.append({"zone_id": zone_id, "label": label, "enabled": True,
+                           "coordinate_space": "rectified_left", "roi_rect_px": list(self.pending_rect)})
+        self.pending_rect = None
+        self.label.set("")
+        self.selected_index = len(self.zones) - 1
+        self._refresh_list()
+        self.listbox.selection_set(self.selected_index)
+        self.status.set(f"已加入{zone_id}；可继续框选或保存")
+
+    def _delete(self) -> None:
+        if self.selected_index is None:
+            return
+        self.zones.pop(self.selected_index)
+        self.selected_index = None
+        self._refresh_list()
+
+    def _save(self) -> None:
+        try:
+            settings = normalize_zone_settings({"scope": "zones", "zones": self.zones},
+                                               image_size=(self.width, self.height))
+        except ValueError as error:
+            self.status.set(str(error))
+            return
+        self.owner.zone_settings = settings
+        self.owner.scope_label.set("分区分析")
+        self.owner.invalidate()
+        self.owner.message.set("分区已保存；各分区继承全局直径/颜色匹配策略，保存并评估后执行。")
+        self.window.destroy()
+
+
 class ElevationCaptureDialog:
     """STL/DXF pipe layout → stereo capture → save/analyze/reopen."""
 
@@ -255,6 +424,7 @@ class ElevationCaptureDialog:
         self.model_kind = ""
         self.model_half_length_mm = 1000.0
         self.analysis_settings: dict[str, Any] = {}
+        self.zone_settings: dict[str, Any] = normalize_zone_settings()
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
         self.window.title("基础立面评估 · 双目管道状态")
@@ -276,6 +446,7 @@ class ElevationCaptureDialog:
         self.color_delta_lab = tk.StringVar(value="45.0")
         self.color_filter_enabled = tk.BooleanVar(value=False)
         self.present_pipe_count = tk.StringVar(value="")
+        self.scope_label = tk.StringVar(value="全幅自动")
 
         frame = ttk.Frame(self.window, padding=12)
         frame.pack(fill="both", expand=True)
@@ -296,6 +467,13 @@ class ElevationCaptureDialog:
             state="readonly", width=22)
         self.local_observation_box.pack(side="left")
         self.local_observation_box.bind("<<ComboboxSelected>>", lambda _e: self._local_observation_selected())
+        ttk.Label(bar, text="分析范围").pack(side="left", padx=(10, 3))
+        self.scope_box = ttk.Combobox(bar, textvariable=self.scope_label,
+                                      values=("全幅自动", "分区分析"), state="readonly", width=12)
+        self.scope_box.pack(side="left")
+        self.scope_box.bind("<<ComboboxSelected>>", lambda _e: self._scope_selected())
+        self.zone_button = ttk.Button(bar, text="分区管理", command=self.open_zone_manager)
+        self.zone_button.pack(side="left", padx=3)
         ttk.Button(bar, text="打开基础现场", command=self.browse_session).pack(side="right", padx=3)
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
         photos = ttk.Frame(self.controls)
@@ -335,7 +513,7 @@ class ElevationCaptureDialog:
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role)
-        ttk.Label(frame, text="按管径、立面距离和双目局部点云自动匹配 STL/DXF；圆柱中段被遮挡时改用可见的平行局部条带。照片中的区域由算法生成。滚轮缩放，右键平移。", foreground="#355371").pack(anchor="w")
+        ttk.Label(frame, text="按管径、立面距离和双目局部点云自动匹配 STL/DXF；可选分区只限定管道组范围，照片中的管道区域仍由算法生成。滚轮缩放，右键平移。", foreground="#355371").pack(anchor="w")
 
         table_frame = ttk.Frame(frame)
         table_frame.pack(fill="x", pady=6)
@@ -442,6 +620,33 @@ class ElevationCaptureDialog:
             self.invalidate()
             self.refresh_table()
             self.message.set("模型单位已改变，请重新导入 STL 或 DXF")
+
+    def _scope_selected(self) -> None:
+        if self.scope_label.get() == "分区分析":
+            if not self.zone_settings.get("zones"):
+                self.message.set("分区分析需要至少一个分区；点击“分区管理”在左目图上框选管道组。")
+            self.zone_settings["scope"] = "zones"
+        else:
+            self.zone_settings = normalize_zone_settings()
+            self.message.set("已切换为全幅自动分析；分区配置已停用。")
+        self.invalidate()
+
+    def open_zone_manager(self) -> None:
+        if self.busy:
+            return
+        try:
+            if self.views["left"].image is None:
+                raise ValueError("请先载入左目矫正图，再配置分区")
+            ZoneEditorDialog(self)
+        except (OSError, ValueError) as error:
+            self.show_error(error)
+
+    def _restore_zone_settings(self, payload: Mapping[str, Any] | None) -> None:
+        image = self.views["left"].image
+        size = (image.shape[1], image.shape[0]) if image is not None else None
+        self.zone_settings = normalize_zone_settings(payload, image_size=size)
+        self.scope_label.set("分区分析" if self.zone_settings["scope"] == "zones"
+                             else "全幅自动")
 
     def _matching_settings_from_controls(self) -> dict[str, Any]:
         from .matching_config import normalize_matching_settings
@@ -578,6 +783,8 @@ class ElevationCaptureDialog:
         self._analyze_after_camera_capture = False
         self.registration_settings = {"axis_world": [0.0, 0.0, 1.0] if suffix == ".dxf" else None,
                                       "anchors": {}, "local_observation_mode": "auto"}
+        self.zone_settings = normalize_zone_settings()
+        self.scope_label.set("全幅自动")
         self.local_observation_label.set("自动（圆柱/平行局部）")
         self.last_manifest = None
         self.confirmed.set(False)
@@ -912,6 +1119,7 @@ class ElevationCaptureDialog:
         views = manifest["capture"]["capture_groups"][-1]["views"]
         self.timestamp_sources = {role: views[role]["timestamp_source"] for role in ("left", "right")}
         self.load_images()
+        self._restore_zone_settings(loaded.get("scope_settings"))
         self.registration_settings = restored_registration
         local_labels = {
             "auto": "自动（圆柱/平行局部）",
@@ -963,6 +1171,8 @@ class ElevationCaptureDialog:
             settings = _analysis_config(settings)
             if count + settings["stereo_matching"]["min_disparity"] >= left.shape[1]:
                 raise ValueError("视差搜索范围必须小于每目图像宽度")
+            scope_settings = normalize_zone_settings(
+                self.zone_settings, image_size=(left.shape[1], left.shape[0]))
             arguments = dict(output_root=self.output_root / "captures", calibration=calibration,
                 analysis_settings=settings,
                 left_path=Path(self.fields["left"].get()), right_path=Path(self.fields["right"].get()),
@@ -974,6 +1184,7 @@ class ElevationCaptureDialog:
                 rectification_recipe=copy.deepcopy((self.profile or {}).get("rectification_recipe")),
                 camera_capture_provenance=copy.deepcopy(self.camera_capture_provenance),
                 status_refresh=copy.deepcopy(self.status_refresh_metadata),
+                scope_settings=scope_settings,
                 _preview_hashes=copy.deepcopy(self.image_hashes))
             registration = copy.deepcopy(self.registration_settings)
             count_text = self.present_pipe_count.get().strip()
@@ -1000,7 +1211,7 @@ class ElevationCaptureDialog:
             from .elevation_dataset import create_elevation_dataset, elevation_history_compatible, load_elevation_dataset
             expected_hashes = arguments.pop("_preview_hashes")
             previous = arguments["previous_manifest"]
-            history_kwargs = dict(calibration=arguments["calibration"], pipe_specs=arguments["pipe_specs"], model_path=arguments["model_path"], stl_unit=arguments["stl_unit"], rectification_recipe=arguments["rectification_recipe"], analysis_settings=arguments["analysis_settings"])
+            history_kwargs = dict(calibration=arguments["calibration"], pipe_specs=arguments["pipe_specs"], model_path=arguments["model_path"], stl_unit=arguments["stl_unit"], rectification_recipe=arguments["rectification_recipe"], analysis_settings=arguments["analysis_settings"], scope_settings=arguments["scope_settings"])
             history_kwargs.update(mode="elevation_auto", registration_settings=arguments.get("registration_settings"))
             reset_history = bool(previous and not elevation_history_compatible(previous, **history_kwargs))
             if reset_history:

@@ -1,10 +1,11 @@
 """Portable packages for automatic STL/DXF elevation and manual ROI compatibility.
 
 Automatic packages bind the full straight-pipe catalogue to the actual STL or
-DXF layout, and store only direction/optional correspondence settings rather
-than ROIs.  A DXF catalogue uses full circles as pipe cross-sections and a
-configurable common axis for its 3-D depth projection.  The package format has
-one supported mode, ``elevation_auto``; per-pipe ROI packages are rejected.
+DXF layout.  They can run on the full rectified frame or on bounded group
+zones; zones are never per-pipe ROIs.  A DXF catalogue uses full circles as
+pipe cross-sections and a configurable common axis for its 3-D depth
+projection.  The package format has one supported mode, ``elevation_auto``;
+legacy per-pipe ROI packages are rejected.
 """
 
 from __future__ import annotations
@@ -292,7 +293,8 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
                                   rectification_recipe: Mapping[str, Any] | None = None,
                                   mode: str = "elevation_auto",
                                   registration_settings: Mapping | None = None,
-                                  analysis_settings: Mapping | None = None) -> bool:
+                                  analysis_settings: Mapping | None = None,
+                                  scope_settings: Mapping | None = None) -> bool:
     """Return whether a prior package can be reused under this configuration.
 
     A changed configuration returns ``False``.  A tampered or malformed prior
@@ -307,6 +309,7 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
     loaded = load_elevation_dataset(old_path)
     old = loaded["manifest"]
     from .stereo_analyzer import _analysis_config
+    from .elevation_zones import normalize_zone_settings
     current_analysis = _analysis_config(dict(analysis_settings or {}))
     old_analysis = _analysis_config(old.get("analysis") or {})
     for value in (current_analysis, old_analysis):
@@ -324,6 +327,11 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
     else:
         current_recipe = None
     old_model = old.get("model") or {}
+    current_scope = normalize_zone_settings(scope_settings)
+    old_scope_payload = (old.get("analysis") or {}).get(mode) or {}
+    old_scope = normalize_zone_settings({key: old_scope_payload[key] for key in
+                                         ("scope", "zone_schema_version", "right_roi_padding_px", "zones")
+                                         if key in old_scope_payload})
     current_hash = None
     source_unit = None
     if model_path is not None:
@@ -338,6 +346,7 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
     return bool(old.get("stereo_calibration") == dict(calibration) and old_specs == new_specs and
                 same_model and old_recipe == current_recipe and loaded["mode"] == mode and
                 old_analysis == current_analysis and
+                old_scope == current_scope and
                 loaded["registration_settings"] == normalize_registration_settings(registration_settings))
 
 
@@ -352,7 +361,8 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
                              mode: str = "elevation_auto",
                              analysis_settings: Mapping | None = None,
                              registration_settings: Mapping | None = None,
-                             status_refresh: Mapping | None = None) -> Path:
+                             status_refresh: Mapping | None = None,
+                             scope_settings: Mapping | None = None) -> Path:
     """Validate and atomically create a portable basic elevation package."""
     if mode != "elevation_auto":
         raise ValueError("当前基础现场只支持 elevation_auto；逐管手工区域已移除")
@@ -372,6 +382,8 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
     if set(settings) - set(_analysis_config({})):
         raise ValueError("analysis_settings包含未知字段")
     settings = _analysis_config(settings)
+    from .elevation_zones import normalize_zone_settings
+    scope = normalize_zone_settings(scope_settings, image_size=(parsed.left.width, parsed.left.height))
     recipe = None
     if rectification_recipe is not None:
         from .workbench_profile import validate_rectification_recipe
@@ -439,6 +451,7 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
                      "capture_group_id": run_id, "interval_minutes": 5, "capture_groups": []},
     }
     manifest["analysis"][mode]["registration"] = registration
+    manifest["analysis"][mode].update(copy.deepcopy(scope))
     if registration["anchors"]:
         manifest["analysis"][mode]["anchor_pair_sha256"] = {"left": view_left["sha256"], "right": view_right["sha256"]}
     if recipe is not None:
@@ -469,9 +482,16 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
             and bool(old_model.get("path")) == bool(model_record.get("path"))
             and old_model.get("source_unit") == model_record.get("source_unit")
         )
+        old_scope_payload = old.get("analysis", {}).get(mode) or {}
+        old_scope = normalize_zone_settings(
+            {key: old_scope_payload[key] for key in
+             ("scope", "zone_schema_version", "right_roi_padding_px", "zones")
+             if key in old_scope_payload},
+            image_size=(parsed.left.width, parsed.left.height),
+        )
         if (old.get("stereo_calibration") != calibration or old_specs != specs or
                 loaded["rectification_recipe"] != recipe or not same_model or loaded["mode"] != mode or
-                loaded["registration_settings"] != registration):
+                loaded["registration_settings"] != registration or old_scope != scope):
             raise ValueError("历史数据只能在标定、管道配置和模型完全相同时复用")
         old_records, old_assets = _history(old_path, old, run_id)
         manifest["capture"]["capture_groups"].extend(old_records)
@@ -552,6 +572,11 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
     settings = manifest["analysis"].get(mode) or {}
     specs = _specs(settings.get("pipes"), calibration.left.width, calibration.left.height, mode=mode)
     registration = normalize_registration_settings(settings.get("registration"))
+    from .elevation_zones import normalize_zone_settings
+    scope = normalize_zone_settings(
+        {key: settings[key] for key in ("scope", "zone_schema_version", "right_roi_padding_px", "zones") if key in settings},
+        image_size=(calibration.left.width, calibration.left.height),
+    )
     if not model.get("path"):
         raise ValueError("自动立面数据包缺少 STL 或 DXF 模型")
     validate_auto_model_binding(model_file, model.get("source_unit"), specs)
@@ -573,7 +598,8 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
             "left_path": resolve_photo_path(manifest_path, left["path"]),
             "right_path": resolve_photo_path(manifest_path, right["path"]),
             "left_time": left["captured_at"], "right_time": right["captured_at"],
-            "rectification_recipe": recipe, "mode": mode, "registration_settings": registration}
+            "rectification_recipe": recipe, "mode": mode, "registration_settings": registration,
+            "scope_settings": scope}
 
 
 __all__ = ["create_elevation_dataset", "load_elevation_dataset", "elevation_history_compatible", "normalize_registration_settings"]

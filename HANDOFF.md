@@ -2,11 +2,21 @@
 
 更新时间：2026-10-04（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
 
-## 2026-10-04 现场主线清理（本次不含分区）
+## 2026-10-04 第二阶段：可选组级分区与全局匹配策略
 
-本次提交只做流程清理，不加入分区分析。基础立面现场统一为 `elevation_auto`：模型输入只接受 DXF/STL，管道区域、直径和立面证据由双目算法自动生成；旧 `elevation_depth.py` 逐管手工区域模块及其测试已删除。主 GUI 隐藏旧的清单/合成示例/二维码/DXF 草稿与逐管绑定入口，模型预览不再支持两点拾取和观察到模型的手工绑定；已有相机标定、双目抓拍、状态刷新、日志和识别后端注册接口保留。
+当前 `main` 的第二阶段提交在第一阶段 `d4be2d3` 的基础上加入可选分区分析。默认仍是全幅自动，现有旧 manifest 没有 `scope` 时按全幅兼容；现场端选择“分区分析”后，在左目矫正图用“分区管理”框选包含若干平行管道的组，最多 8 个区，允许重叠。右目 ROI 按 `right_roi_padding_px` 自动扩展，裁剪时同步平移左右目矫正内参主点，避免把裁剪像素直接当成全图坐标。
 
-现场 manifest 不再接受 `elevation_depth`，没有模型的自动现场也会拒绝；旧 3DM/3MF、二维码和逐管手工框选只留在离线历史回归代码/资产中，不属于现场输入。操作说明已改写为 DXF/STL 自动流程，并明确“本版本不包含分区”。
+分区保存在 `analysis.elevation_auto.scope/zones`，每区记录 `zone_id`、名称、启用状态、`rectified_left` 坐标系和 `roi_rect_px`。每区独立执行已有识别后端和模型配准，所有区继承全局 `analysis.matching`；没有逐区颜色或逐管手工绑定。合并阶段给观察编号加 `zone_id` 前缀，重叠区同一管道的证据合并；同一管道出现安装/未安装冲突时保持 `UNKNOWN`，并在 `zone_registration_audit`、`capture_audit.groups[*].zone_audits` 和管道行的 `zone_results` 中保留来源。
+
+现场验证建议：先用一个覆盖全图的 Z01 验证分区路径与全幅结果一致，再把画面按管组拆成两个有少量重叠的区域；每次修改范围都会使历史兼容性失效并开启新历史。报告仍不能把模型直径当作实测值，曝光/标定/双目证据不足继续保持 `UNKNOWN`。
+
+验证命令：`python -m pytest -q tests/test_elevation_zones.py tests/test_elevation_dataset.py tests/test_elevation_auto.py tests/test_elevation_gui.py`；本次完整回归为 **523 passed、1 skipped、256 subtests passed**，`python -m compileall -q pipe_twin` 和 `git diff --check` 通过。
+
+## 2026-10-04 现场主线清理
+
+本次提交只做流程清理。基础立面现场统一为 `elevation_auto`：模型输入只接受 DXF/STL，管道区域、直径和立面证据由双目算法自动生成；旧 `elevation_depth.py` 逐管手工区域模块及其测试已删除。主 GUI 隐藏旧的清单/合成示例/二维码/DXF 草稿与逐管绑定入口，模型预览不再支持两点拾取和观察到模型的手工绑定；已有相机标定、双目抓拍、状态刷新、日志和识别后端注册接口保留。分区功能在后续第二阶段独立提交。
+
+现场 manifest 不再接受 `elevation_depth`，没有模型的自动现场也会拒绝；旧 3DM/3MF、二维码和逐管手工框选只留在离线历史回归代码/资产中，不属于现场输入。操作说明已改写为 DXF/STL 自动流程；第二阶段增加的分区是组级 ROI，不恢复逐管手工框选。
 
 验证：`python -m pytest -q` → **510 passed, 1 skipped, 256 subtests passed**；`python -m compileall -q pipe_twin` 和 `git diff --check` 通过。提交后现场端只需拉取 `main`，重新打开主 GUI；不需要迁移旧手工现场包，需用 DXF/STL 重新建立基础现场。
 

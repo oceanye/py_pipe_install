@@ -7,6 +7,7 @@ common axial interval actually seen on the registration pipes.
 """
 from __future__ import annotations
 
+import copy
 import hashlib
 import json
 import math
@@ -19,6 +20,13 @@ import numpy as np
 
 from .logging_config import get_logger, log_event
 from .pipe_geometry import cylinder_section_geometry, pipe_measurement_record
+from .elevation_zones import (
+    crop_calibration_for_zone,
+    crop_stereo_group_for_zone,
+    enabled_zones,
+    normalize_zone_settings,
+    offset_observation_pixels,
+)
 
 LOGGER = get_logger("elevation_auto")
 STATE_ZH = {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "遮蔽不确定"}
@@ -361,6 +369,332 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                                 "identity_or_absence_proof": False}}
 
 
+def _zone_observation_id(zone_id: str, value: Any) -> str:
+    text = str(value or "")
+    return text if text.startswith(f"{zone_id}:") else f"{zone_id}:{text}"
+
+
+def _offset_evidence_boxes(evidence: Mapping[str, Any], offsets: Mapping[str, int]) -> dict[str, Any]:
+    result = copy.deepcopy(dict(evidence))
+    for role, key in (("left", "left_x"), ("right", "right_x")):
+        view = result.get(role)
+        if isinstance(view, Mapping):
+            view = dict(view)
+            view["region_xywh"] = (
+                [int(view["region_xywh"][0]) + int(offsets[key]),
+                 int(view["region_xywh"][1]) + int(offsets[f"{role}_y"]),
+                 int(view["region_xywh"][2]), int(view["region_xywh"][3])]
+                if isinstance(view.get("region_xywh"), (list, tuple)) and len(view["region_xywh"]) == 4
+                else None
+            )
+            result[role] = view
+    return result
+
+
+def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
+                         offsets: Mapping[str, int]) -> dict[str, Any]:
+    """Make local IDs and boxes globally auditable after a zone crop."""
+
+    zone_id = str(zone["zone_id"])
+    result = copy.deepcopy(dict(report))
+    surface = result.get("local_surface")
+    if isinstance(surface, Mapping):
+        surface = dict(surface)
+        observations = []
+        for raw in surface.get("observations", []):
+            item = offset_observation_pixels(raw, offsets)
+            item["observation_id"] = _zone_observation_id(zone_id, item.get("observation_id"))
+            observations.append(item)
+        surface["observations"] = observations
+        rejected = []
+        for raw in surface.get("rejected", []):
+            item = copy.deepcopy(raw)
+            for role, key in (("left", "left_x"), ("right", "right_x")):
+                box_key = f"{role}_region_px"
+                if isinstance(item.get(box_key), (list, tuple)) and len(item[box_key]) == 4:
+                    item[box_key] = [int(item[box_key][0]) + int(offsets[key]),
+                                     int(item[box_key][1]) + int(offsets[f"{role}_y"]),
+                                     int(item[box_key][2]), int(item[box_key][3])]
+            rejected.append(item)
+        surface["rejected"] = rejected
+        surface.setdefault("audit", {})["zone_id"] = zone_id
+        result["local_surface"] = surface
+
+    def qualify_registration(registration: Any) -> Any:
+        if not isinstance(registration, Mapping):
+            return registration
+        value = copy.deepcopy(dict(registration))
+        for item in value.get("matches", []) if isinstance(value.get("matches"), list) else []:
+            if isinstance(item, Mapping) and item.get("observation_id"):
+                item["observation_id"] = _zone_observation_id(zone_id, item["observation_id"])
+        relative = value.get("relative_layout")
+        if isinstance(relative, Mapping):
+            relative = dict(relative)
+            for item in relative.get("matches", []) if isinstance(relative.get("matches"), list) else []:
+                if isinstance(item, Mapping) and item.get("observation_id"):
+                    item["observation_id"] = _zone_observation_id(zone_id, item["observation_id"])
+            value["relative_layout"] = relative
+        return value
+
+    result["registration"] = qualify_registration(result.get("registration"))
+    for row in result.get("pipes", []) if isinstance(result.get("pipes"), list) else []:
+        if not isinstance(row, Mapping):
+            continue
+        if row.get("current_evidence"):
+            row["current_evidence"] = _offset_evidence_boxes(row["current_evidence"], offsets)
+            if row["current_evidence"].get("observation_id"):
+                row["current_evidence"]["observation_id"] = _zone_observation_id(
+                    zone_id, row["current_evidence"]["observation_id"])
+    audit = result.get("capture_audit")
+    if isinstance(audit, Mapping):
+        audit = dict(audit)
+        groups = []
+        for group in audit.get("groups", []) if isinstance(audit.get("groups"), list) else []:
+            item = copy.deepcopy(group)
+            item["zone_id"] = zone_id
+            item["registration"] = qualify_registration(item.get("registration"))
+            item["local_observations"] = []
+            for raw in group.get("local_observations", []) if isinstance(group, Mapping) else []:
+                observation = offset_observation_pixels(raw, offsets)
+                observation["observation_id"] = _zone_observation_id(zone_id, observation.get("observation_id"))
+                item["local_observations"].append(observation)
+            if isinstance(item.get("pipes"), Mapping):
+                item["pipes"] = {
+                    pipe_id: _offset_evidence_boxes(evidence, offsets)
+                    for pipe_id, evidence in item["pipes"].items()
+                }
+                for evidence in item["pipes"].values():
+                    if evidence.get("observation_id"):
+                        evidence["observation_id"] = _zone_observation_id(zone_id, evidence["observation_id"])
+            groups.append(item)
+        audit["groups"] = groups
+        audit["zone_id"] = zone_id
+        result["capture_audit"] = audit
+    result["zone_id"] = zone_id
+    result["zone_label"] = zone.get("label", zone_id)
+    result["zone_offsets"] = dict(offsets)
+    return result
+
+
+def _merge_zone_registrations(registrations: list[Mapping[str, Any]]) -> dict[str, Any]:
+    matched = [item for item in registrations if item.get("status") == "MATCHED"]
+    base = copy.deepcopy(max(matched or registrations, key=lambda item: len(item.get("matches", [])))) if registrations else {
+        "status": "INSUFFICIENT_OBSERVATIONS", "matches": []}
+    by_pipe: dict[str, dict[str, Any]] = {}
+    by_observation: dict[str, str] = {}
+    conflicts: list[dict[str, Any]] = []
+    for registration in matched:
+        for raw in registration.get("matches", []):
+            if not isinstance(raw, Mapping):
+                continue
+            item = copy.deepcopy(dict(raw))
+            pipe_id = str(item.get("pipe_id", ""))
+            observation_id = str(item.get("observation_id", ""))
+            if not pipe_id or not observation_id:
+                continue
+            previous = by_pipe.get(pipe_id)
+            if previous is None or float(item.get("residual_mm", math.inf)) < float(previous.get("residual_mm", math.inf)):
+                by_pipe[pipe_id] = item
+            old_pipe = by_observation.get(observation_id)
+            if old_pipe is not None and old_pipe != pipe_id:
+                conflicts.append({"observation_id": observation_id, "pipe_ids": [old_pipe, pipe_id]})
+            by_observation[observation_id] = pipe_id
+    if not matched:
+        base["status"] = base.get("status", "INSUFFICIENT_OBSERVATIONS")
+    elif conflicts:
+        base["status"] = "ZONE_MATCH_CONFLICT"
+        base["reason_codes"] = sorted(set((base.get("reason_codes") or []) + ["ZONE_MATCH_CONFLICT"]))
+    else:
+        base["status"] = "MATCHED"
+    base["matches"] = list(by_pipe.values())
+    base["zone_registrations"] = [
+        {"zone_id": item.get("zone_id"), "status": item.get("status"),
+         "match_count": len(item.get("matches", [])),
+         "reason_codes": list(item.get("reason_codes") or [])}
+        for item in registrations
+    ]
+    if conflicts:
+        base["zone_conflicts"] = conflicts
+    return base
+
+
+def _merge_zone_rows(zone_reports: list[Mapping[str, Any]], pipe_specs: list[dict]) -> list[dict[str, Any]]:
+    by_pipe: dict[str, list[tuple[str, Mapping[str, Any]]]] = {spec["pipe_id"]: [] for spec in pipe_specs}
+    for report in zone_reports:
+        zone_id = str(report.get("zone_id"))
+        for row in report.get("pipes", []):
+            if isinstance(row, Mapping) and row.get("pipe_id") in by_pipe:
+                by_pipe[row["pipe_id"]].append((zone_id, row))
+    rows = []
+    for spec in pipe_specs:
+        entries = by_pipe[spec["pipe_id"]]
+        installed = [entry for entry in entries if entry[1].get("installation_state") == "INSTALLED"]
+        negative = [entry for entry in entries if entry[1].get("installation_state") == "NOT_INSTALLED"]
+        unknown = [entry for entry in entries if entry[1].get("installation_state") == "UNKNOWN"]
+        if installed and negative:
+            state = "UNKNOWN"
+            chosen = installed[0][1]
+            reasons = ["ZONE_RESULT_CONFLICT"]
+        elif installed:
+            state = "INSTALLED"
+            chosen = max(installed, key=lambda item: bool(item[1].get("measurement", {}).get("measured_section")))[1]
+            reasons = list(chosen.get("reason_codes") or ["LOCAL_CYLINDER_MATCHED_TO_STL"])
+        elif negative and not unknown:
+            state = "NOT_INSTALLED"
+            chosen = negative[0][1]
+            reasons = list(chosen.get("reason_codes") or ["REPEATED_REGISTERED_FREE_SPACE"])
+        elif entries:
+            state = "UNKNOWN"
+            chosen = next((item[1] for item in entries if item[1].get("current_evidence")), entries[0][1])
+            reasons = ["ZONE_PARTIAL_EVIDENCE"] if negative else list(chosen.get("reason_codes") or ["ZONE_NO_EVIDENCE"])
+        else:
+            state = "UNKNOWN"
+            chosen = {"pipe_id": spec["pipe_id"], "measurement": {}, "current_evidence": {}}
+            reasons = ["ZONE_NO_EVIDENCE"]
+        row = copy.deepcopy(dict(chosen))
+        row.update(pipe_id=spec["pipe_id"], installation_state=state,
+                   installation_state_zh=STATE_ZH[state], reason_codes=reasons,
+                   state_basis=reasons[0], zone_ids=[zone_id for zone_id, _ in entries],
+                   zone_results=[{"zone_id": zone_id, "installation_state": item.get("installation_state"),
+                                  "reason_codes": list(item.get("reason_codes") or [])}
+                                 for zone_id, item in entries])
+        rows.append(row)
+    return rows
+
+
+def _merge_zone_capture_groups(zone_reports: list[Mapping[str, Any]], group_count: int,
+                               pipe_specs: list[dict]) -> list[dict[str, Any]]:
+    merged = []
+    for index in range(group_count):
+        entries = [report.get("capture_audit", {}).get("groups", [])[index]
+                   for report in zone_reports]
+        base = copy.deepcopy(entries[0])
+        base["zone_ids"] = [str(item.get("zone_id")) for item in entries]
+        base["zone_audits"] = [{"zone_id": item.get("zone_id"), "surface_audit": item.get("surface_audit"),
+                                 "registration": item.get("registration")} for item in entries]
+        base["registration"] = _merge_zone_registrations([item.get("registration", {}) for item in entries])
+        observations = []
+        for item in entries:
+            observations.extend(item.get("local_observations", []))
+        base["local_observations"] = observations
+        pipes = {}
+        for spec in pipe_specs:
+            candidates = [item.get("pipes", {}).get(spec["pipe_id"]) for item in entries
+                          if spec["pipe_id"] in item.get("pipes", {})]
+            candidates = [item for item in candidates if isinstance(item, Mapping)]
+            if not candidates:
+                continue
+            chosen = max(candidates, key=lambda item: (bool(item.get("installed_candidate")),
+                                                       bool(item.get("measured_diameter_mm") is not None),
+                                                       bool(item.get("free_space_candidate"))))
+            evidence = copy.deepcopy(dict(chosen))
+            evidence["zone_ids"] = [str(item.get("zone_id")) for item in entries
+                                     if spec["pipe_id"] in item.get("pipes", {})]
+            evidence["zone_evidence"] = [copy.deepcopy(item.get("pipes", {}).get(spec["pipe_id"]))
+                                          for item in entries if spec["pipe_id"] in item.get("pipes", {})]
+            evidence["installed_candidate"] = any(bool(item.get("pipes", {}).get(spec["pipe_id"], {}).get("installed_candidate"))
+                                                  for item in entries)
+            evidence["free_space_candidate"] = any(bool(item.get("pipes", {}).get(spec["pipe_id"], {}).get("free_space_candidate"))
+                                                for item in entries)
+            pipes[spec["pipe_id"]] = evidence
+        base["pipes"] = pipes
+        base["surface_audit"] = {"scope": "zones", "zones": base["zone_audits"]}
+        merged.append(base)
+    return merged
+
+
+def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[Mapping[str, Any]],
+                        calibration: Any, pipe_specs: list[dict], matching: Mapping[str, Any],
+                        scope: Mapping[str, Any]) -> dict[str, Any]:
+    if not zone_reports:
+        raise ValueError("至少需要一个启用分区")
+    latest_surfaces = [report.get("local_surface", {}) for report in zone_reports]
+    observations = [observation for surface in latest_surfaces for observation in surface.get("observations", [])]
+    rejected = [item for surface in latest_surfaces for item in surface.get("rejected", [])]
+    point_cloud = {"points_camera_mm": [], "colors_srgb": []}
+    for surface in latest_surfaces:
+        cloud = surface.get("point_cloud", {}) if isinstance(surface, Mapping) else {}
+        point_cloud["points_camera_mm"].extend(cloud.get("points_camera_mm", []))
+        point_cloud["colors_srgb"].extend(cloud.get("colors_srgb", []))
+    point_cloud["points_camera_mm"] = point_cloud["points_camera_mm"][:6000]
+    point_cloud["colors_srgb"] = point_cloud["colors_srgb"][:len(point_cloud["points_camera_mm"])]
+    latest_regs = [report.get("registration", {}) for report in zone_reports]
+    merged_groups = _merge_zone_capture_groups(zone_reports, len(groups), pipe_specs)
+    latest_group_registrations = [group.get("registration", {}) for group in merged_groups]
+    registration = _merge_zone_registrations(latest_group_registrations)
+    rows = _merge_zone_rows(zone_reports, pipe_specs)
+    current = zone_reports[0]
+    audit = {"scope": "zones", "zone_count": len(zone_reports),
+             "zones": [{"zone_id": report.get("zone_id"), "label": report.get("zone_label"),
+                        "offsets": report.get("zone_offsets"), "audit": report.get("local_surface", {}).get("audit", {})}
+                       for report in zone_reports],
+             "observation_count": len(observations), "rejected_count": len(rejected),
+             "truncated": any(bool(surface.get("audit", {}).get("truncated")) for surface in latest_surfaces)}
+    scene_inventory = {
+        "present_pipe_count": current.get("scene_inventory", {}).get("present_pipe_count"),
+        "model_candidate_count": len(pipe_specs),
+        "observed_cylinder_count": len(observations),
+        "observed_local_strip_count": sum(bool(item.get("parallel_local")) for item in observations),
+        "observed_geometry_only_count": sum(item.get("observation_basis") == "DEPTH_ONLY_LOCAL_CYLINDER" for item in observations),
+        "identity_or_absence_proof": False,
+    }
+    return {
+        "mode": "elevation_auto", "scope": "zones", "scope_settings": copy.deepcopy(dict(scope)),
+        "counts": {state: sum(row["installation_state"] == state for row in rows) for state in STATE_ZH},
+        "pipes": rows, "registration": registration,
+        "local_surface": {"observations": observations, "rejected": rejected, "point_cloud": point_cloud, "audit": audit},
+        "status_refresh": current.get("status_refresh"),
+        "capture_audit": {"count": len(merged_groups), "groups": merged_groups},
+        "registration_required": True, "qr_registration_required": False,
+        "production_authority": False, "longitudinal_installation_segments_assessed": False,
+        "counts_scope": "MODEL_CANDIDATE_POSITIONS_NOT_PHYSICAL_INVENTORY",
+        "matching": copy.deepcopy(dict(matching)), "scene_inventory": scene_inventory,
+        "zone_registration_audit": {"registrations": latest_regs,
+                                      "anchors_ignored": bool(current.get("registration", {}).get("anchors"))},
+    }
+
+
+def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pipe_specs: list[dict],
+                                 registration_settings: Mapping | None = None,
+                                 matching_settings: Mapping | None = None,
+                                 scope_settings: Mapping | None = None) -> dict:
+    """Analyze configured group zones and merge their independent evidence."""
+
+    settings = normalize_zone_settings(scope_settings, image_size=(calibration.left.width, calibration.left.height))
+    zones = enabled_zones(settings)
+    if not groups:
+        raise ValueError("至少需要一组双目照片")
+    if not zones:
+        raise ValueError("分区模式至少需要一个启用分区")
+    from .elevation_dataset import normalize_registration_settings
+    global_registration = normalize_registration_settings(registration_settings)
+    zone_registration = dict(global_registration, anchors={})
+    matching_payload = {"color_filter_enabled": True} if matching_settings is None else matching_settings
+    from .matching_config import normalize_matching_settings
+    matching = normalize_matching_settings(matching_payload)
+    reports = []
+    for zone in zones:
+        cropped_groups = []
+        offsets = None
+        for group in groups:
+            cropped, offsets = crop_stereo_group_for_zone(
+                group, calibration, zone, right_padding_px=settings["right_roi_padding_px"])
+            cropped_groups.append(cropped)
+        report = analyze_elevation_auto_groups(
+            cropped_groups, calibration=crop_calibration_for_zone(
+                calibration, zone, right_padding_px=settings["right_roi_padding_px"]),
+            pipe_specs=pipe_specs, registration_settings=zone_registration,
+            matching_settings=matching,
+        )
+        reports.append(_qualify_zone_report(report, zone, offsets or {}))
+    result = _merge_zone_reports(reports, groups=groups, calibration=calibration,
+                                 pipe_specs=pipe_specs, matching=matching, scope=settings)
+    if global_registration["anchors"]:
+        result["zone_registration_audit"]["anchors_ignored"] = True
+        result["zone_registration_audit"]["reason"] = "ZONE_MODE_DOES_NOT_USE_PER_PIPE_ANCHORS"
+    return result
+
+
 def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_path: str | Path | None = None,
                                     evidence_dir: str | Path | None = None) -> dict:
     from .elevation_dataset import load_elevation_dataset
@@ -411,9 +745,19 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                            quality=quality, photos=photos, anchors_apply=anchors_apply))
     if loaded["registration_settings"]["anchors"] and not any(g["anchors_apply"] for g in groups):
         raise ValueError("手工基准对应缺少匹配的照片哈希，请在当前照片上重新指定")
-    result = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
-                                           registration_settings=loaded["registration_settings"],
-                                           matching_settings=config["matching"])
+    scope_settings = loaded.get("scope_settings") or {"scope": "full_frame", "zones": []}
+    if scope_settings.get("scope") == "zones":
+        result = analyze_elevation_auto_zones(
+            groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
+            registration_settings=loaded["registration_settings"],
+            matching_settings=config["matching"], scope_settings=scope_settings,
+        )
+    else:
+        result = analyze_elevation_auto_groups(
+            groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
+            registration_settings=loaded["registration_settings"],
+            matching_settings=config["matching"],
+        )
     result.update(schema_version="2.0", report_type="stereo-auto-elevation-state", dataset_id=manifest["dataset_id"],
                   generated_at=datetime.now(timezone.utc).isoformat(), inputs=hashes,
                   calibration_audit={"calibration_id": calibration.calibration_id, "validated": calibration.validated,
