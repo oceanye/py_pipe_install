@@ -400,6 +400,8 @@ class ZoneEditorDialog:
         self.pending_rect = None
         self._refresh_list()
         self.listbox.selection_set(self.selected_index)
+        log_event(LOGGER, "elevation_zone_model_roi_bound", zone_id=zone["zone_id"],
+                  model_pipe_ids=list(zone.get("model_pipe_ids", [])), roi_rect_px=list(zone["roi_rect_px"]))
         self.status.set(f"已将框选范围绑定到{zone['zone_id']}；请点击“确认/启用所选候选”")
 
     def _auto_propose(self) -> None:
@@ -451,6 +453,10 @@ class ZoneEditorDialog:
             self.selected_index = None
             self._refresh_list()
             projected_fresh = sum(zone.get("roi_source") == "matched_section" for zone in fresh)
+            log_event(LOGGER, "elevation_zone_model_candidates_generated",
+                      model_pipe_count=len(self.owner.pipes), candidate_count=len(fresh),
+                      projected_count=projected_fresh,
+                      candidate_ids=[zone["zone_id"] for zone in fresh])
             self.status.set(f"已生成{len(fresh)}个 STL 平行管组候选，其中{projected_fresh}个已投影到当前照片；请逐项确认或删除")
         except (OSError, ValueError) as error:
             self.status.set(str(error))
@@ -463,6 +469,7 @@ class ZoneEditorDialog:
         if zone.get("source") != "stl_parallel":
             zone["enabled"] = True
             self._refresh_list()
+            log_event(LOGGER, "elevation_zone_confirmed", zone_id=zone["zone_id"], source="manual")
             self.status.set(f"已确认{zone['zone_id']}")
             return
         if not zone.get("roi_rect_px"):
@@ -480,12 +487,16 @@ class ZoneEditorDialog:
             return
         self._refresh_list()
         self.listbox.selection_set(self.selected_index)
+        log_event(LOGGER, "elevation_zone_confirmed", zone_id=zone["zone_id"], source="stl_parallel",
+                  model_pipe_ids=list(zone.get("model_pipe_ids", [])), roi_source=zone.get("roi_source"))
         self.status.set(f"已确认并启用{zone['zone_id']}；保存后用于分区分析")
 
     def _delete(self) -> None:
         if self.selected_index is None:
             return
-        self.zones.pop(self.selected_index)
+        zone = self.zones.pop(self.selected_index)
+        log_event(LOGGER, "elevation_zone_deleted", zone_id=zone.get("zone_id"),
+                  source=zone.get("source", "manual"), model_pipe_ids=list(zone.get("model_pipe_ids", [])))
         self.selected_index = None
         self._refresh_list()
 
@@ -499,6 +510,9 @@ class ZoneEditorDialog:
         self.owner.zone_settings = settings
         self.owner.scope_label.set("分区分析")
         self.owner.invalidate()
+        log_event(LOGGER, "elevation_zones_saved", scope=settings["scope"],
+                  zones=[{"zone_id": zone["zone_id"], "source": zone.get("source", "manual"),
+                          "enabled": zone["enabled"]} for zone in settings["zones"]])
         self.owner.message.set("分区已保存；各分区继承全局直径/颜色匹配策略，保存并评估后执行。")
         self.window.destroy()
 
