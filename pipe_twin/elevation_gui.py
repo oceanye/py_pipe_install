@@ -11,7 +11,7 @@ import queue
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 import cv2
 import numpy as np
@@ -271,6 +271,10 @@ class ElevationCaptureDialog:
         self.summary = tk.StringVar(value="尚未建立管道目录")
         self.matching_preset = tk.StringVar(value="原始灰度")
         self.disparity_count = tk.StringVar(value="256")
+        self.diameter_tolerance_mm = tk.StringVar(value="3.0")
+        self.diameter_tolerance_ratio = tk.StringVar(value="0.10")
+        self.color_delta_lab = tk.StringVar(value="45.0")
+        self.color_filter_enabled = tk.BooleanVar(value=False)
         self.present_pipe_count = tk.StringVar(value="")
 
         frame = ttk.Frame(self.window, padding=12)
@@ -308,6 +312,16 @@ class ElevationCaptureDialog:
         ttk.Label(matching_bar, text="视差搜索范围（像素，16 的倍数）").pack(side="left")
         ttk.Entry(matching_bar, textvariable=self.disparity_count, width=7).pack(side="left", padx=6)
         ttk.Label(matching_bar, text="近距离需扩大范围；弱光处理保留原始照片与颜色", foreground="#355371").pack(side="left")
+        policy_bar = ttk.Frame(self.controls)
+        policy_bar.pack(fill="x", pady=3)
+        ttk.Label(policy_bar, text="直径容差 mm").pack(side="left")
+        ttk.Entry(policy_bar, textvariable=self.diameter_tolerance_mm, width=7).pack(side="left", padx=(4, 10))
+        ttk.Label(policy_bar, text="相对容差").pack(side="left")
+        ttk.Entry(policy_bar, textvariable=self.diameter_tolerance_ratio, width=7).pack(side="left", padx=(4, 10))
+        ttk.Checkbutton(policy_bar, text="启用颜色筛选（辅助）", variable=self.color_filter_enabled).pack(side="left", padx=(4, 10))
+        ttk.Label(policy_bar, text="颜色容差 Lab").pack(side="left")
+        ttk.Entry(policy_bar, textvariable=self.color_delta_lab, width=7).pack(side="left", padx=(4, 6))
+        ttk.Label(policy_bar, text="直径始终为主筛选；STL 颜色需先按管径确认", foreground="#355371").pack(side="left")
         scene_bar = ttk.Frame(self.controls)
         scene_bar.pack(fill="x", pady=3)
         ttk.Label(scene_bar, text="现场实际管数（未知可留空）").pack(side="left")
@@ -363,6 +377,10 @@ class ElevationCaptureDialog:
         self.confirmed.trace_add("write", lambda *_args: self.invalidate())
         self.matching_preset.trace_add("write", lambda *_args: self.invalidate())
         self.disparity_count.trace_add("write", lambda *_args: self.invalidate())
+        self.diameter_tolerance_mm.trace_add("write", lambda *_args: self.invalidate())
+        self.diameter_tolerance_ratio.trace_add("write", lambda *_args: self.invalidate())
+        self.color_delta_lab.trace_add("write", lambda *_args: self.invalidate())
+        self.color_filter_enabled.trace_add("write", lambda *_args: self.invalidate())
         self.present_pipe_count.trace_add("write", lambda *_args: self.invalidate())
         if self.profile:
             self.fields["calibration"].set(self.profile.get("calibration_path", ""))
@@ -424,6 +442,31 @@ class ElevationCaptureDialog:
             self.invalidate()
             self.refresh_table()
             self.message.set("模型单位已改变，请重新导入 STL 或 DXF")
+
+    def _matching_settings_from_controls(self) -> dict[str, Any]:
+        from .matching_config import normalize_matching_settings
+
+        try:
+            payload = {
+                "diameter_filter_enabled": True,
+                "diameter_tolerance_mm": float(self.diameter_tolerance_mm.get()),
+                "diameter_tolerance_ratio": float(self.diameter_tolerance_ratio.get()),
+                "color_filter_enabled": bool(self.color_filter_enabled.get()),
+                "color_filter_mode": "hint",
+                "color_delta_lab": float(self.color_delta_lab.get()),
+            }
+        except (TypeError, ValueError) as error:
+            raise ValueError("直径/颜色匹配设置必须是有效数字") from error
+        return normalize_matching_settings(payload)
+
+    def _restore_matching_settings(self, payload: Mapping[str, Any] | None) -> None:
+        from .matching_config import normalize_matching_settings
+
+        settings = normalize_matching_settings(payload)
+        self.diameter_tolerance_mm.set(str(settings["diameter_tolerance_mm"]))
+        self.diameter_tolerance_ratio.set(str(settings["diameter_tolerance_ratio"]))
+        self.color_delta_lab.set(str(settings["color_delta_lab"]))
+        self.color_filter_enabled.set(bool(settings["color_filter_enabled"]))
 
     def selected_id(self) -> str | None:
         selected = self.tree.selection()
@@ -526,6 +569,9 @@ class ElevationCaptureDialog:
         for row in pipes:
             if suffix == ".stl":
                 row["color_srgb"] = PALETTE[diameters.index(round(row["nominal_diameter_mm"], 1)) % len(PALETTE)]
+                row["color_source"] = "stl_synthetic_by_diameter"
+            else:
+                row["color_source"] = str(row.get("color_source") or "dxf")
             row["axis"] = "auto"
         self.pipes = pipes
         self.status_refresh_metadata = None
@@ -538,7 +584,7 @@ class ElevationCaptureDialog:
         self.invalidate()
         self.refresh_table()
         skipped_count = len(skipped)
-        self.summary.set(f"识别 {len(pipes)} 根管；未纳入 {skipped_count} 个图元。" + (" DXF 对象颜色已保留；请核对共同管长方向。" if suffix == ".dxf" else " 颜色仅作显示/辅助线索，请设置共同管长方向。"))
+        self.summary.set(f"识别 {len(pipes)} 根管；未纳入 {skipped_count} 个图元。" + (" DXF 对象/图层颜色已保留；请核对共同管长方向。" if suffix == ".dxf" else " STL 无标准颜色；当前颜色按管径生成，启用筛选前请按管径确认现场颜色。"))
 
     def edit_pipe(self) -> None:
         spec = self.selected_pipe()
@@ -572,7 +618,7 @@ class ElevationCaptureDialog:
                 color = fields["color_srgb"].get().strip().upper()
                 if not math.isfinite(diameter) or diameter <= 0 or not re.fullmatch(r"#[0-9A-F]{6}", color):
                     raise ValueError("请输入正数管径和 #RRGGBB 颜色")
-                spec.update(nominal_diameter_mm=diameter, color_srgb=color)
+                spec.update(nominal_diameter_mm=diameter, color_srgb=color, color_source="user")
                 self._clear_registration_anchors()
                 self.invalidate()
                 self.refresh_table()
@@ -589,6 +635,7 @@ class ElevationCaptureDialog:
             for row in self.pipes:
                 if abs(row["nominal_diameter_mm"] - spec["nominal_diameter_mm"]) <= 0.2:
                     row["color_srgb"] = spec["color_srgb"]
+                    row["color_source"] = "user"
             self._clear_registration_anchors()
             self.invalidate()
             self.refresh_table()
@@ -828,9 +875,11 @@ class ElevationCaptureDialog:
         from .stereo_analyzer import _analysis_config
         self.analysis_settings = {k: v for k, v in (manifest.get("analysis") or {}).items()
                                   if k not in {"mode", "elevation_auto"}}
-        matching = _analysis_config(self.analysis_settings)["stereo_matching"]
-        self.matching_preset.set("弱光降噪" if matching["preprocessing"] == "low_light" else "原始灰度")
-        self.disparity_count.set(str(matching["num_disparities"]))
+        normalized_analysis = _analysis_config(self.analysis_settings)
+        stereo_matching = normalized_analysis["stereo_matching"]
+        self.matching_preset.set("弱光降噪" if stereo_matching["preprocessing"] == "low_light" else "原始灰度")
+        self.disparity_count.set(str(stereo_matching["num_disparities"]))
+        self._restore_matching_settings(normalized_analysis["matching"])
         loaded_mode = str(loaded.get("mode") or (manifest.get("analysis") or {}).get("mode") or "")
         if loaded_mode != "elevation_auto":
             raise ValueError("当前版本只支持 DXF/STL 自动立面现场；请重新导入模型并建立现场")
@@ -910,6 +959,7 @@ class ElevationCaptureDialog:
             settings["stereo_matching"] = {**settings.get("stereo_matching", {}),
                 "num_disparities": count,
                 "preprocessing": "low_light" if self.matching_preset.get() == "弱光降噪" else "none"}
+            settings["matching"] = self._matching_settings_from_controls()
             settings = _analysis_config(settings)
             if count + settings["stereo_matching"]["min_disparity"] >= left.shape[1]:
                 raise ValueError("视差搜索范围必须小于每目图像宽度")
@@ -950,7 +1000,7 @@ class ElevationCaptureDialog:
             from .elevation_dataset import create_elevation_dataset, elevation_history_compatible, load_elevation_dataset
             expected_hashes = arguments.pop("_preview_hashes")
             previous = arguments["previous_manifest"]
-            history_kwargs = dict(calibration=arguments["calibration"], pipe_specs=arguments["pipe_specs"], model_path=arguments["model_path"], stl_unit=arguments["stl_unit"], rectification_recipe=arguments["rectification_recipe"])
+            history_kwargs = dict(calibration=arguments["calibration"], pipe_specs=arguments["pipe_specs"], model_path=arguments["model_path"], stl_unit=arguments["stl_unit"], rectification_recipe=arguments["rectification_recipe"], analysis_settings=arguments["analysis_settings"])
             history_kwargs.update(mode="elevation_auto", registration_settings=arguments.get("registration_settings"))
             reset_history = bool(previous and not elevation_history_compatible(previous, **history_kwargs))
             if reset_history:

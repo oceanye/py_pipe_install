@@ -166,6 +166,7 @@ def _common_axis(obs: list[dict]) -> tuple[np.ndarray, list[int], bool]:
 
 def _config(payload: Mapping | None) -> dict:
     defaults = {"max_residual_mm": 5., "ambiguity_delta_mm": 3., "diameter_tolerance_mm": 3.,
+                "diameter_tolerance_ratio": 0.10,
                 "max_angle_hypotheses": 2000, "max_hypotheses": 50000}
     if payload is not None and (not isinstance(payload, Mapping) or set(payload) - set(defaults)):
         raise ElevationRegistrationError("unknown registration config fields")
@@ -177,12 +178,14 @@ def _config(payload: Mapping | None) -> dict:
             valid = type(value) in (int, float) and math.isfinite(value) and (value >= 0 if key == "ambiguity_delta_mm" else value > 0)
         if not valid:
             raise ElevationRegistrationError(f"invalid registration config: {key}")
+    if cfg["diameter_tolerance_ratio"] > 1:
+        raise ElevationRegistrationError("diameter_tolerance_ratio cannot exceed 1")
     return cfg
 
 
-def _candidates(specs: list[dict], observation: dict, tolerance: float) -> list[int]:
+def _candidates(specs: list[dict], observation: dict, tolerance: float, ratio: float = 0.10) -> list[int]:
     candidates = [i for i, spec in enumerate(specs)
-        if abs(spec["diameter_mm"] - observation["diameter_mm"]) <= max(tolerance, .10 * max(spec["diameter_mm"], observation["diameter_mm"]))
+        if abs(spec["diameter_mm"] - observation["diameter_mm"]) <= max(tolerance, ratio * max(spec["diameter_mm"], observation["diameter_mm"]))
         and (not observation["color_identity_validated"] or spec["color"] is None or observation["color"] is None or spec["color"] == observation["color"])]
     # Colour is a secondary hint after the metric diameter gate.  If the hint
     # has no compatible member, preserve the diameter candidates and let the
@@ -315,7 +318,7 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
     obs, candidates = [], []
     for i in inliers:
         item = parsed_obs[i]
-        compatible = _candidates(specs, item, cfg["diameter_tolerance_mm"])
+        compatible = _candidates(specs, item, cfg["diameter_tolerance_mm"], cfg["diameter_tolerance_ratio"])
         target = anchor_map.get(item["observation_id"])
         if target is not None:
             compatible = [j for j in compatible if specs[j]["pipe_id"] == target]

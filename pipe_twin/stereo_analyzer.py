@@ -695,6 +695,7 @@ def _analysis_config(payload: object) -> dict[str, Any]:
         "minimum_depth_mm": 100.0,
         "maximum_depth_mm": 5000.0,
         "left_right_consistency_px": 2.0,
+        "matching": {},
         "stereo_matching": {
             "preprocessing": "none",
             "min_disparity": 0,
@@ -707,6 +708,8 @@ def _analysis_config(payload: object) -> dict[str, Any]:
         },
     }
     config = {**defaults, **payload}
+    from .matching_config import normalize_matching_settings
+    config["matching"] = normalize_matching_settings(payload.get("matching"))
     if isinstance(payload.get("stereo_matching"), dict):
         config["stereo_matching"] = {
             **defaults["stereo_matching"],

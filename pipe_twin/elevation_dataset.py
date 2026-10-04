@@ -94,6 +94,13 @@ def _specs(value: Any, width: int, height: int, *, mode: str = "elevation_auto")
             "color_srgb": color.upper(),
             "nominal_diameter_mm": float(diameter),
         }
+        if "color_source" in raw:
+            color_source = raw["color_source"]
+            if not isinstance(color_source, str) or color_source not in {
+                "dxf", "stl_synthetic_by_diameter", "user", "none", "unknown"
+            }:
+                raise ValueError(f"{pipe_id}.color_source无效")
+            item["color_source"] = color_source
         if raw.get("cad_object_id") is not None:
             if not isinstance(raw["cad_object_id"], str) or not raw["cad_object_id"].strip():
                 raise ValueError(f"{pipe_id}.cad_object_id必须是非空字符串")
@@ -284,7 +291,8 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
                                   stl_unit: str | None = None,
                                   rectification_recipe: Mapping[str, Any] | None = None,
                                   mode: str = "elevation_auto",
-                                  registration_settings: Mapping | None = None) -> bool:
+                                  registration_settings: Mapping | None = None,
+                                  analysis_settings: Mapping | None = None) -> bool:
     """Return whether a prior package can be reused under this configuration.
 
     A changed configuration returns ``False``.  A tampered or malformed prior
@@ -298,6 +306,12 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
         old_path /= "manifest.json"
     loaded = load_elevation_dataset(old_path)
     old = loaded["manifest"]
+    from .stereo_analyzer import _analysis_config
+    current_analysis = _analysis_config(dict(analysis_settings or {}))
+    old_analysis = _analysis_config(old.get("analysis") or {})
+    for value in (current_analysis, old_analysis):
+        value.pop("mode", None)
+        value.pop("elevation_auto", None)
     parsed = _calibration_ok(calibration)
     old_specs = loaded["pipe_specs"]
     new_specs = _specs(pipe_specs, parsed.left.width, parsed.left.height, mode=mode)
@@ -323,6 +337,7 @@ def elevation_history_compatible(path: Path, calibration: Mapping[str, Any],
                   (model_path is None or old_model.get("source_unit") == source_unit))
     return bool(old.get("stereo_calibration") == dict(calibration) and old_specs == new_specs and
                 same_model and old_recipe == current_recipe and loaded["mode"] == mode and
+                old_analysis == current_analysis and
                 loaded["registration_settings"] == normalize_registration_settings(registration_settings))
 
 

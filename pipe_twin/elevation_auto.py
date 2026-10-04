@@ -250,12 +250,20 @@ def _same_alignment(first: Mapping, second: Mapping, specs: list[dict]) -> bool:
 
 
 def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pipe_specs: list[dict],
-                                   registration_settings: Mapping | None = None) -> dict:
+                                   registration_settings: Mapping | None = None,
+                                   matching_settings: Mapping | None = None) -> dict:
     """Pure in-memory entry point; every capture estimates its own alignment."""
     from .elevation_registration import register_elevation
     from .elevation_dataset import normalize_registration_settings
+    from .matching_config import normalize_matching_settings
     from .recognition import recognize_local_pipes
     settings = normalize_registration_settings(registration_settings)
+    # Preserve the pre-policy Python API behaviour for callers that invoke the
+    # in-memory analyzer directly.  Persisted GUI/manifests pass an explicit
+    # normalized policy (whose colour filter defaults off); old integrations
+    # with no argument continue to use the colour-aware detector.
+    matching_payload = {"color_filter_enabled": True} if matching_settings is None else matching_settings
+    matching = normalize_matching_settings(matching_payload)
     if not groups:
         raise ValueError("至少需要一组双目照片")
     captures = []
@@ -267,15 +275,26 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         # remain independent of the chosen observation backend.
         surface = recognize_local_pipes(
             observation_mode, group["left"], group["right"], group["depth"],
-            calibration, pipe_specs,
+            calibration, pipe_specs, matching_settings=matching,
         )
         surface.setdefault("audit", {}).update({
             "local_observation_mode": observation_mode,
             "fixed_camera_relative_layout": True,
             "model_axis_world": settings.get("axis_world"),
+            "diameter_filter_enabled": matching["diameter_filter_enabled"],
+            "diameter_tolerance_mm": matching["diameter_tolerance_mm"],
+            "diameter_tolerance_ratio": matching["diameter_tolerance_ratio"],
+            "color_filter_enabled": matching["color_filter_enabled"],
+            "color_filter_mode": matching["color_filter_mode"],
         })
         anchors = settings["anchors"] if group.get("anchors_apply", group is groups[-1]) else {}
-        registration = register_elevation(pipe_specs, surface["observations"], settings["axis_world"], anchors=anchors)
+        registration = register_elevation(
+            pipe_specs, surface["observations"], settings["axis_world"], anchors=anchors,
+            config={
+                "diameter_tolerance_mm": matching["diameter_tolerance_mm"],
+                "diameter_tolerance_ratio": matching["diameter_tolerance_ratio"],
+            },
+        )
         present_count = settings.get("present_pipe_count")
         if present_count is not None and len(surface["observations"]) > present_count:
             registration = {"status": "SCENE_INVENTORY_CONFLICT", "matches": [],
@@ -332,6 +351,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             "registration_required": True, "qr_registration_required": False,
             "production_authority": False, "longitudinal_installation_segments_assessed": False,
             "counts_scope": "MODEL_CANDIDATE_POSITIONS_NOT_PHYSICAL_INVENTORY",
+            "matching": matching,
             "scene_inventory": {"present_pipe_count": settings.get("present_pipe_count"),
                                 "model_candidate_count": len(pipe_specs),
                                 "observed_cylinder_count": len(current_surface["observations"]),
@@ -392,7 +412,8 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     if loaded["registration_settings"]["anchors"] and not any(g["anchors_apply"] for g in groups):
         raise ValueError("手工基准对应缺少匹配的照片哈希，请在当前照片上重新指定")
     result = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
-                                           registration_settings=loaded["registration_settings"])
+                                           registration_settings=loaded["registration_settings"],
+                                           matching_settings=config["matching"])
     result.update(schema_version="2.0", report_type="stereo-auto-elevation-state", dataset_id=manifest["dataset_id"],
                   generated_at=datetime.now(timezone.utc).isoformat(), inputs=hashes,
                   calibration_audit={"calibration_id": calibration.calibration_id, "validated": calibration.validated,

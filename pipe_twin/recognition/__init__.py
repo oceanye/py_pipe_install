@@ -75,12 +75,18 @@ def available_recognizers() -> tuple[str, ...]:
 
 
 def _invoke(name: str, left: Any, right: Any, depth: Any, calibration: Any,
-            pipe_specs: list[dict]) -> dict[str, Any]:
+            pipe_specs: list[dict], matching_settings: Mapping[str, Any] | None = None) -> dict[str, Any]:
     backend = _BACKENDS.get(name)
     if backend is None:
         names = "、".join(available_recognizers()) or "无"
         raise RecognitionBackendError(f"未注册的管道识别算法：{name}（当前可用：{names}）")
-    result = backend(left, right, depth, calibration, pipe_specs)
+    if name in {"auto", "cylinder", "geometry_only", "parallel_strip"}:
+        result = backend(left, right, depth, calibration, pipe_specs, matching_settings)
+    else:
+        # Keep the public custom-backend contract at five arguments.  The
+        # matching policy is enforced by the built-ins and registration layer;
+        # external recognizers can opt in later without breaking old plugins.
+        result = backend(left, right, depth, calibration, pipe_specs)
     if not isinstance(result, Mapping):
         raise RecognitionBackendError(f"识别算法 {name} 未返回对象")
     observations = result.get("observations")
@@ -94,7 +100,8 @@ def _invoke(name: str, left: Any, right: Any, depth: Any, calibration: Any,
 
 
 def recognize_local_pipes(mode: str, left: Any, right: Any, depth: Any,
-                          calibration: Any, pipe_specs: list[dict]) -> dict[str, Any]:
+                          calibration: Any, pipe_specs: list[dict], *,
+                          matching_settings: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Run a registered backend and add a stable audit record.
 
     ``mode`` is deliberately the same value persisted by the elevation
@@ -102,7 +109,7 @@ def recognize_local_pipes(mode: str, left: Any, right: Any, depth: Any,
     actually used after its bounded fallback decision.
     """
     name = _check_name(mode)
-    result = _invoke(name, left, right, depth, calibration, pipe_specs)
+    result = _invoke(name, left, right, depth, calibration, pipe_specs, matching_settings)
     audit = result["audit"]
     audit["recognizer_backend"] = name
     audit.setdefault("recognizer_backend_used", name)
@@ -111,14 +118,21 @@ def recognize_local_pipes(mode: str, left: Any, right: Any, depth: Any,
 
 
 def _cylinder(left: Any, right: Any, depth: Any, calibration: Any,
-              pipe_specs: list[dict]) -> Mapping[str, Any]:
+              pipe_specs: list[dict], matching_settings: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
     from ..local_surface import extract_local_pipes
 
-    return extract_local_pipes(left, right, depth, calibration, pipe_specs)
+    settings = dict(matching_settings or {})
+    return extract_local_pipes(
+        left, right, depth, calibration, pipe_specs,
+        config={
+            "geometry_only": not bool(settings.get("color_filter_enabled", True)),
+            "color_delta_lab": float(settings.get("color_delta_lab", 45.0)),
+        },
+    )
 
 
 def _geometry_only(left: Any, right: Any, depth: Any, calibration: Any,
-                   pipe_specs: list[dict]) -> Mapping[str, Any]:
+                   pipe_specs: list[dict], matching_settings: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
     from ..local_surface import extract_local_pipes
 
     return extract_local_pipes(
@@ -128,15 +142,28 @@ def _geometry_only(left: Any, right: Any, depth: Any, calibration: Any,
 
 
 def _parallel_strip(left: Any, right: Any, depth: Any, calibration: Any,
-                    pipe_specs: list[dict]) -> Mapping[str, Any]:
+                    pipe_specs: list[dict], matching_settings: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
+    settings = dict(matching_settings or {})
+    if not bool(settings.get("color_filter_enabled", True)):
+        from ..local_surface import extract_local_pipes
+
+        result = extract_local_pipes(
+            left, right, depth, calibration, pipe_specs,
+            config={"geometry_only": True},
+        )
+        result.setdefault("audit", {})["color_filter_fallback"] = "GEOMETRY_ONLY"
+        return result
     from ..parallel_local import extract_parallel_local_pipes
 
-    return extract_parallel_local_pipes(left, right, depth, calibration, pipe_specs)
+    return extract_parallel_local_pipes(
+        left, right, depth, calibration, pipe_specs,
+        config={"color_delta_lab": float(settings.get("color_delta_lab", 72.0))},
+    )
 
 
 def _auto(left: Any, right: Any, depth: Any, calibration: Any,
-          pipe_specs: list[dict]) -> Mapping[str, Any]:
-    cylinder = _invoke("cylinder", left, right, depth, calibration, pipe_specs)
+          pipe_specs: list[dict], matching_settings: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
+    cylinder = _invoke("cylinder", left, right, depth, calibration, pipe_specs, matching_settings)
     if cylinder["observations"] and not cylinder.get("audit", {}).get("truncated"):
         cylinder["audit"].setdefault("recognizer_backend_used", "cylinder")
         return cylinder
@@ -144,7 +171,7 @@ def _auto(left: Any, right: Any, depth: Any, calibration: Any,
     # A bounded strip fallback is useful when a foreground board hides the
     # curved section needed by the strict cylinder fitter.  Keep both audits
     # so a future backend can be evaluated against the same evidence.
-    strip = _invoke("parallel_strip", left, right, depth, calibration, pipe_specs)
+    strip = _invoke("parallel_strip", left, right, depth, calibration, pipe_specs, matching_settings)
     audit = dict(strip.get("audit", {}))
     audit["fallback_from"] = "CYLINDER_SURFACE"
     audit["cylinder_surface_audit"] = cylinder.get("audit", {})

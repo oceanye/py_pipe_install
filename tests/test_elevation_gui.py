@@ -147,6 +147,12 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.load_model(model)
         self.assertTrue(self.dialog.pipes)
         self.assertTrue(self.dialog.selected_id())
+        self.assertTrue(all(row.get("color_source") == "stl_synthetic_by_diameter" for row in self.dialog.pipes))
+        colors_by_diameter = {}
+        for row in self.dialog.pipes:
+            diameter = round(row["nominal_diameter_mm"], 1)
+            colors_by_diameter.setdefault(diameter, row["color_srgb"])
+            self.assertEqual(row["color_srgb"], colors_by_diameter[diameter])
         self.assertTrue(all("left_region_px" not in row for row in self.dialog.pipes))
         self.dialog.show_catalog()
         self.root.update_idletasks()

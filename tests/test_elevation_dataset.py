@@ -92,6 +92,25 @@ class ElevationDatasetTests(unittest.TestCase):
         third = self._create(previous_manifest=second, analysis_settings={"stereo_matching": {"num_disparities": 64}})
         self.assertEqual(load_elevation_dataset(third)["manifest"]["analysis"]["stereo_matching"]["num_disparities"], 64)
 
+    def test_diameter_colour_matching_policy_is_persisted(self):
+        path = self._create(analysis_settings={
+            "matching": {
+                "color_filter_enabled": True,
+                "diameter_tolerance_mm": 4.0,
+                "diameter_tolerance_ratio": 0.15,
+                "color_delta_lab": 60.0,
+            }
+        })
+        matching = load_elevation_dataset(path)["manifest"]["analysis"]["matching"]
+        assert matching == {
+            "diameter_filter_enabled": True,
+            "diameter_tolerance_mm": 4.0,
+            "diameter_tolerance_ratio": 0.15,
+            "color_filter_enabled": True,
+            "color_filter_mode": "hint",
+            "color_delta_lab": 60.0,
+        }
+
     def test_status_refresh_timestamp_is_preserved_across_history(self):
         first = self._create(status_refresh={
             "action": "STATUS_REFRESH", "requested_at": "2026-10-03T08:00:00+00:00"})
