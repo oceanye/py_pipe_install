@@ -16,22 +16,12 @@ class ElevationModelViewer:
         controls = ttk.Frame(self.window); controls.pack(fill="x", padx=8)
         ttk.Label(controls, text="方向").pack(side="left")
         self.direction_mode = tk.StringVar(value="自动")
-        direction_values = ("自动", "Z", "自定义") if getattr(owner, "model_kind", "") == "dxf" else ("自动", "X", "Y", "Z", "两点拾取", "自定义")
+        direction_values = ("自动", "Z", "自定义") if getattr(owner, "model_kind", "") == "dxf" else ("自动", "X", "Y", "Z", "自定义")
         ttk.Combobox(controls, textvariable=self.direction_mode, values=direction_values, state="readonly", width=10).pack(side="left", padx=5)
         self.custom = tk.StringVar(value="0,0,1"); ttk.Entry(controls, textvariable=self.custom, width=16).pack(side="left")
         ttk.Button(controls, text="应用方向", command=self.apply_direction).pack(side="left", padx=5)
         ttk.Button(controls, text="反向", command=self.reverse_axis).pack(side="left")
-        observations = ((report or {}).get("local_surface") or {}).get("observations") or []
-        obs_ids = [str(item.get("observation_id")) for item in observations if item.get("observation_id")]
-        if obs_ids:
-            self.observation_var = tk.StringVar(value=obs_ids[0]); self.pipe_var = tk.StringVar(value=str(pipes[0].get("pipe_id", "")))
-            ttk.Label(controls, text="基准").pack(side="left", padx=(12, 2))
-            ttk.Combobox(controls, textvariable=self.observation_var, values=obs_ids, state="readonly", width=12).pack(side="left")
-            ttk.Label(controls, text="→").pack(side="left")
-            ttk.Combobox(controls, textvariable=self.pipe_var, values=[str(p.get("pipe_id")) for p in pipes], state="readonly", width=12).pack(side="left")
-            ttk.Button(controls, text="绑定", command=self.bind_anchor).pack(side="left", padx=3)
-        ttk.Button(controls, text="清除基准对应", command=self.clear_anchors).pack(side="right")
-        self.info = tk.StringVar(value=("DXF 圆形截面按模型 ±Z 作为管轴；相机俯视角度由双目配准估计。右键拖动旋转，滚轮缩放。" if getattr(owner, "model_kind", "") == "dxf" else "两点拾取：左键点击同一根管道的两个端点；右键拖动旋转，滚轮缩放。"))
+        self.info = tk.StringVar(value=("DXF 圆形截面按模型 ±Z 作为管轴；相机俯视角度由双目配准估计。右键拖动旋转，滚轮缩放。" if getattr(owner, "model_kind", "") == "dxf" else "管长方向由模型中心线自动估计，也可选择 X/Y/Z 或输入向量；右键拖动旋转，滚轮缩放。"))
         ttk.Label(self.window, textvariable=self.info).pack(fill="x", padx=8, pady=(3, 8))
         self.zoom, self.yaw, self.pitch, self.drag_start = 1.0, 0.0, 0.0, None
         self.snapshot_hashes = dict(getattr(owner, "image_hashes", {})); self.snapshot_generation = int(getattr(owner, "generation", 0)); self.snapshot_model = str(getattr(owner, "fields", {}).get("model").get()) if getattr(owner, "fields", {}).get("model") is not None else ""
@@ -51,7 +41,7 @@ class ElevationModelViewer:
             # Without a solved pose, model and camera points have different
             # frames.  Keep the local cloud out of this model canvas.
             self.display_cloud = np.empty((0, 3))
-        self.canvas.bind("<Button-1>", self.pick); self.canvas.bind("<ButtonPress-3>", self.begin_orbit); self.canvas.bind("<B3-Motion>", self.orbit); self.canvas.bind("<MouseWheel>", self.wheel); self.canvas.bind("<Configure>", lambda _e: self.draw()); self.window.protocol("WM_DELETE_WINDOW", self.close); self.draw()
+        self.canvas.bind("<ButtonPress-3>", self.begin_orbit); self.canvas.bind("<B3-Motion>", self.orbit); self.canvas.bind("<MouseWheel>", self.wheel); self.canvas.bind("<Configure>", lambda _e: self.draw()); self.window.protocol("WM_DELETE_WINDOW", self.close); self.draw()
 
     def _rotation(self) -> np.ndarray:
         cy, sy, cp, sp = math.cos(self.yaw), math.sin(self.yaw), math.cos(self.pitch), math.sin(self.pitch)
@@ -71,27 +61,11 @@ class ElevationModelViewer:
         self.canvas.delete("all"); lines = self._project(self.display_lines.reshape(-1, 3)).reshape((-1, 2, 2)) if len(self.display_lines) else np.empty((0, 2, 2))
         for index, line in enumerate(lines):
             pipe = self.pipes[index]; color = pipe.get("color_srgb", "#B0B0B0"); self.canvas.create_line(*line[0], *line[1], fill=color, width=5)
-            for endpoint, point in enumerate(line):
-                selected = (index, endpoint) in self.selected; self.canvas.create_oval(point[0]-5, point[1]-5, point[0]+5, point[1]+5, fill="#FFD166" if selected else color, outline="#FFFFFF")
             self.canvas.create_text(line[0][0]+4, line[0][1]-5, text=str(pipe.get("pipe_id", index+1)), fill="#DCE9F5", anchor="sw")
         if len(self.display_cloud):
             for x, y in self._project(self.display_cloud[::max(1, len(self.display_cloud)//1200)]): self.canvas.create_oval(x, y, x+1, y+1, fill="#66C2FF", outline="")
         if self.display_axis is not None and len(self.display_lines):
             centre = self.display_lines.reshape(-1, 3).mean(axis=0); axis = np.asarray(self.display_axis, float); axis /= max(np.linalg.norm(axis), 1e-9); length = max(float(np.ptp(self.display_lines.reshape(-1, 3), axis=0).max()), 30)*.35; projected = self._project(np.vstack((centre-axis*length, centre+axis*length))); self.canvas.create_line(*projected[0], *projected[1], fill="#FFD166", width=3, arrow="last")
-
-    def _nearest_endpoint(self, event: Any) -> tuple[int, int] | None:
-        if not len(self.display_lines): return None
-        projected = self._project(self.display_lines.reshape(-1, 3)).reshape((-1, 2, 2)); distance = np.linalg.norm(projected - np.asarray([event.x, event.y]), axis=2); hit = np.unravel_index(int(np.argmin(distance)), distance.shape); return (int(hit[0]), int(hit[1])) if float(distance[hit]) <= 35 else None
-
-    def pick(self, event: Any) -> None:
-        if self.direction_mode.get() not in {"两点拾取", "自动"}: return
-        hit = self._nearest_endpoint(event)
-        if hit is None: return
-        self.selected = [x for x in self.selected if x != hit] + [hit]; self.selected = self.selected[-2:]
-        if len(self.selected) == 2 and self.selected[0][0] == self.selected[1][0] and self.selected[0][1] != self.selected[1][1]:
-            vector = self.source_lines[self.selected[1][0], self.selected[1][1]] - self.source_lines[self.selected[0][0], self.selected[0][1]]; norm = float(np.linalg.norm(vector)); self.axis = vector/norm if norm > 1e-6 else self.axis; self.info.set(f"已从模型源坐标选择管长方向 {np.round(self.axis, 4).tolist()}；点击应用方向保存。")
-        elif len(self.selected) == 2: self.info.set("请选择同一根管道的两个端点，避免把截面方向误存为管长方向。")
-        self.draw()
 
     def apply_preset(self) -> None:
         mode = self.direction_mode.get(); values = {"X": [1,0,0], "Y": [0,1,0], "Z": [0,0,1]}
@@ -104,7 +78,7 @@ class ElevationModelViewer:
             except ValueError: self.info.set("自定义方向格式应为 x,y,z"); return
         else: vector = self.axis
         if vector is None or np.asarray(vector).shape != (3,) or not np.all(np.isfinite(vector)) or np.linalg.norm(vector) <= 1e-9: self.info.set("方向必须是有限的非零三维向量"); return
-        self.axis = np.asarray(vector, float)/np.linalg.norm(vector); self.display_axis = self.registration_rotation @ self.axis if self.registration_rotation is not None else self.axis; self.selected = []; self.info.set(f"已选择模型管长方向 {np.round(self.axis, 4).tolist()}；点击应用方向保存。"); self.draw()
+        self.axis = np.asarray(vector, float)/np.linalg.norm(vector); self.display_axis = self.registration_rotation @ self.axis if self.registration_rotation is not None else self.axis; self.info.set(f"已选择模型管长方向 {np.round(self.axis, 4).tolist()}；点击应用方向保存。"); self.draw()
 
     def apply_direction(self) -> None:
         if not self._is_current(): self.info.set("现场输入已改变，请关闭窗口后重新打开模型预览。"); return
@@ -118,22 +92,6 @@ class ElevationModelViewer:
             self.info.set("请先选择方向")
             return
         self.axis = -np.asarray(self.axis, float); self.display_axis = self.registration_rotation @ self.axis if self.registration_rotation is not None else self.axis; self.info.set(f"已反向模型管长方向 {np.round(self.axis, 4).tolist()}"); self.draw()
-    def clear_anchors(self) -> None:
-        if hasattr(self.owner, "registration_settings"):
-            self.owner.registration_settings["anchors"] = {}
-            if hasattr(self.owner, "invalidate"): self.owner.invalidate()
-            self.snapshot_generation = int(getattr(self.owner, "generation", self.snapshot_generation))
-            self.info.set("已清除基准对应；重新分析时使用自动身份匹配。")
-    def bind_anchor(self) -> None:
-        if not hasattr(self, "observation_var") or not hasattr(self.owner, "registration_settings") or not self._is_current():
-            self.info.set("现场输入已改变，请重新打开模型预览。"); return
-        observation, pipe = self.observation_var.get().strip(), self.pipe_var.get().strip()
-        if not observation or not pipe: return
-        anchors = dict(self.owner.registration_settings.get("anchors") or {})
-        if pipe in anchors.values() and anchors.get(observation) != pipe:
-            self.info.set("同一模型管道只能绑定一个观察；请先清除旧基准对应。"); return
-        anchors[observation] = pipe; self.owner.registration_settings["anchors"] = anchors; self.owner.invalidate(); self.snapshot_hashes = dict(getattr(self.owner, "image_hashes", {})); self.snapshot_generation = int(getattr(self.owner, "generation", self.snapshot_generation)); self.info.set(f"已绑定 {observation} → {pipe}；该对应只对当前照片哈希有效。")
-
     def _is_current(self) -> bool:
         fields = getattr(self.owner, "fields", {})
         model = fields.get("model").get() if fields.get("model") is not None else ""

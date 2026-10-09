@@ -1439,26 +1439,12 @@ class _PipeTwinApplication:
         toolbar = ttk.Frame(self.root, padding=8)
         toolbar.pack(fill="x")
         ttk.Button(toolbar, text="基础立面评估", command=self._open_elevation).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="载入清单", command=self._choose_manifest).pack(
-            side="left", padx=3
-        )
-        ttk.Button(toolbar, text="载入识别结果", command=self._choose_report).pack(
-            side="left", padx=3
-        )
-        ttk.Button(toolbar, text="现场数据录入", command=self._input_capture).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="棋盘格标定向导", command=self._open_calibration_wizard).pack(
-            side="left", padx=3
-        )
-        ttk.Button(toolbar, text="一键抓拍并分析", command=self._quick_capture).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="打开合成示例", command=self._open_demo).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="导入DXF侧立面", command=self._import_dxf).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="DXF自动建档", command=self._automate_dxf_setup).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="从DXF生成manifest草稿", command=self._create_dxf_manifest_draft).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="管径颜色配置", command=self._configure_dxf_diameter_colors).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="绑定DXF图元", command=self._bind_dxf_entity).pack(side="left", padx=3)
-        ttk.Button(toolbar, text="保存DXF映射到manifest", command=self._save_dxf_bindings).pack(side="left", padx=3)
+        ttk.Label(toolbar, text="现场识别入口：导入 DXF/STL → 双目抓拍 → 自动匹配 → 状态刷新",
+                  foreground="#355371").pack(side="left", padx=(14, 3))
+        # The legacy dashboard actions remain callable for report rendering and
+        # command-line integrations, but are intentionally no longer exposed
+        # as operator buttons.  Keep the widget object for those guarded paths.
         self.run_button = ttk.Button(toolbar, text="运行双目识别与测量", command=self._run_analysis)
-        self.run_button.pack(side="left", padx=(14, 3))
         ttk.Label(toolbar, text="模型视图：").pack(side="left", padx=(18, 2))
         projection = ttk.Combobox(
             toolbar,
@@ -1678,8 +1664,8 @@ class _PipeTwinApplication:
         log_event(_LOGGER, "gui_sources_load_start", manifest=manifest_path, report=report_path)
         try:
             manifest = _read_json_object(manifest_path, "manifest")
-            if isinstance(manifest.get("analysis"), Mapping) and manifest["analysis"].get("mode") in {"elevation_depth", "elevation_auto"}:
-                # Region-based reports have their own presentation contract;
+            if isinstance(manifest.get("analysis"), Mapping) and manifest["analysis"].get("mode") == "elevation_auto":
+                # Automatic elevation reports have their own presentation contract;
                 # keep the CAD dashboard's geometry validation unchanged.
                 self._open_elevation(manifest_path)
                 return

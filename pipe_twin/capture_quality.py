@@ -62,9 +62,11 @@ def patch_mask(image: np.ndarray, region: list[int]) -> np.ndarray:
     return mask
 
 
-def measure_patch(image: np.ndarray, color: str, mask: np.ndarray) -> dict[str, Any]:
+def measure_patch(image: np.ndarray, color: str, mask: np.ndarray, *, delta_lab: float = DEFAULT_COLOR_DELTA_LAB) -> dict[str, Any]:
     """Measure an independent operator mask, not the color detector's own output."""
     color = validate_color(color)
+    from .matching_config import normalize_matching_settings
+    delta_lab = normalize_matching_settings({"color_delta_lab": delta_lab})["color_delta_lab"]
     if (not isinstance(image, np.ndarray) or image.dtype != np.uint8
             or image.ndim != 3 or image.shape[2] != 3 or not isinstance(mask, np.ndarray)
             or mask.dtype != np.bool_ or mask.shape != image.shape[:2]):
@@ -73,7 +75,7 @@ def measure_patch(image: np.ndarray, color: str, mask: np.ndarray) -> dict[str, 
         raise ValueError("管面取样至少需要 64 个像素")
     pixels = image[mask].reshape(-1, 1, 3)
     lab = cv2.cvtColor(pixels, cv2.COLOR_BGR2LAB)
-    coverage = float(np.mean(color_candidate_mask(lab, color)) * 100)
+    coverage = float(np.mean(color_candidate_mask(lab, color, delta_lab=delta_lab)) * 100)
     bright = (pixels[:, 0] >= POLICY["highlight_channel_min"]).sum(axis=1) >= POLICY["highlight_required_channels"]
     highlight = float(np.mean(bright) * 100)
     gray = cv2.cvtColor(pixels, cv2.COLOR_BGR2GRAY).ravel()
@@ -86,6 +88,7 @@ def measure_patch(image: np.ndarray, color: str, mask: np.ndarray) -> dict[str, 
         sampled_color = "#" + "".join(f"{v:02X}" for v in bgr[::-1])
     return {
         "pixel_count": int(mask.sum()), "target_color_srgb": color,
+        "color_delta_lab_used": delta_lab,
         "color_coverage_percent": coverage,
         "color_level": _color_level(coverage),
         "highlight_risk_percent": highlight,

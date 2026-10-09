@@ -24,6 +24,10 @@ class LocalSurfaceError(ValueError):
 
 DEFAULT_COLOR_DELTA_LAB = 45.0
 _DEFAULTS = {
+    # When enabled, candidate generation is driven exclusively by connected
+    # stereo-depth surfaces.  The RGB image is still sampled for an audit
+    # colour, but it cannot create, reject, or identify a pipe candidate.
+    "geometry_only": False,
     "color_delta_lab": DEFAULT_COLOR_DELTA_LAB,
     "minimum_component_pixels": 80,
     "minimum_valid_fraction": 0.10,
@@ -98,7 +102,9 @@ def _settings(value: Mapping[str, Any] | None) -> dict[str, Any]:
     if unknown:
         raise LocalSurfaceError(f"Unknown local surface settings: {sorted(unknown)}")
     cfg = {**_DEFAULTS, **dict(value or {})}
-    for key in set(cfg) - {"minimum_component_pixels", "maximum_cloud_points", "maximum_component_candidates"}:
+    if type(cfg["geometry_only"]) is not bool:
+        raise LocalSurfaceError("config.geometry_only must be boolean")
+    for key in set(cfg) - {"geometry_only", "minimum_component_pixels", "maximum_cloud_points", "maximum_component_candidates"}:
         cfg[key] = _positive(cfg[key], f"config.{key}")
     for key in ("minimum_component_pixels", "maximum_cloud_points", "maximum_component_candidates"):
         if type(cfg[key]) is not int or cfg[key] <= 0:
@@ -480,15 +486,21 @@ def _rejection_diagnostics(rows: list[Mapping[str, Any]]) -> tuple[dict[str, Any
 
 def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibration: Any,
                         pipe_specs: list[Mapping[str, Any]], *, config: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    """Extract paired local cylinders, with no CAD-world identity assignment."""
+    """Extract paired local cylinders, with no CAD-world identity assignment.
+
+    ``geometry_only`` is the fixed-camera path: RGB segmentation is skipped
+    and every candidate comes from a measured depth-connected surface.  Each
+    stereo pair is clipped to the axial interval visible in both eyes before
+    its centre, diameter, and point cloud are fused.
+    """
     arrays = _validate_arrays(left, right, depth, calibration)
     specs, cfg = _catalog(pipe_specs), _settings(config)
     colors = sorted({spec["color_srgb"] for spec in specs})
-    candidate_colors = {color: {} for color in colors}
+    candidate_colors = {} if cfg["geometry_only"] else {color: {} for color in colors}
     rejected, view_candidates = [], {}
     depth_audit = {}
     fit_budgets = {}
-    considered_colors = colors[:32]
+    considered_colors = [] if cfg["geometry_only"] else colors[:32]
     # Keep a fixed total per eye, but reserve a small independent quota for
     # every configured display colour.  This prevents the depth-fragment pass
     # from starving colour proposals while retaining the larger geometry-first
@@ -528,25 +540,26 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
                              "attempted_candidates": depth_budget["attempted"],
                              "refill_allocated_candidates": 0,
                              "refill_attempted_candidates": 0}
-        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
-        for color in considered_colors:
-            color_mask = color_candidate_mask(lab, color, delta_lab=cfg["color_delta_lab"])
-            color_budget = {"remaining": color_quotas[color], "attempted": 0, "allocated": color_quotas[color]}
-            fits, errors = _fit_components(image, z, valid, color_mask, calibration, role, "rgb_component", cfg, color, budget=color_budget)
-            budget["attempted"] += color_budget["attempted"]
-            budget["remaining"] -= color_budget["attempted"]
-            budget["sources"][f"rgb_component:{color}"] = color_budget
-            candidate_colors[color][role] = {"accepted_components": len(fits), "rejected_components": len(errors),
-                                             "allocated_candidates": color_quotas[color],
-                                             "attempted_candidates": color_budget["attempted"],
-                                             "source_skipped": any(row.get("source_skipped") for row in errors)}
-            accepted.extend(fits)
-            rejected.extend(errors)
+        if not cfg["geometry_only"]:
+            lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
+            for color in considered_colors:
+                color_mask = color_candidate_mask(lab, color, delta_lab=cfg["color_delta_lab"])
+                color_budget = {"remaining": color_quotas[color], "attempted": 0, "allocated": color_quotas[color]}
+                fits, errors = _fit_components(image, z, valid, color_mask, calibration, role, "rgb_component", cfg, color, budget=color_budget)
+                budget["attempted"] += color_budget["attempted"]
+                budget["remaining"] -= color_budget["attempted"]
+                budget["sources"][f"rgb_component:{color}"] = color_budget
+                candidate_colors[color][role] = {"accepted_components": len(fits), "rejected_components": len(errors),
+                                                 "allocated_candidates": color_quotas[color],
+                                                 "attempted_candidates": color_budget["attempted"],
+                                                 "source_skipped": any(row.get("source_skipped") for row in errors)}
+                accepted.extend(fits)
+                rejected.extend(errors)
         # Return unused colour slots to the geometry-first depth pass.  The
         # hard per-eye cap remains in force, and already-tried connected
         # components are excluded so the refill performs useful new work.
         refill_capacity = int(budget["remaining"])
-        if refill_capacity > 0:
+        if refill_capacity > 0 and not cfg["geometry_only"]:
             refill_budget = {"remaining": refill_capacity, "attempted": 0,
                              "allocated": refill_capacity}
             refill_fits, refill_errors = _fit_components(
@@ -573,7 +586,7 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
         # A source quota is an internal scheduling decision; expose the total
         # separately so callers can still enforce the original per-eye cap.
         fit_budgets[role] = budget
-    if len(colors) > 32:
+    if not cfg["geometry_only"] and len(colors) > 32:
         rejected.append({"reason": "COLOR_CANDIDATE_BUDGET_EXCEEDED", "skipped_colors": len(colors) - 32})
     pairs, pair_errors = _pair(view_candidates["left"], view_candidates["right"], cfg)
     rejected.extend(pair_errors)
@@ -600,6 +613,8 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
             "fit_rms_mm": float(max(lf["fit_rms_mm"], rf["fit_rms_mm"])),
             "diameter_source": "ROBUST_OUTER_CYLINDER_FIT_VISIBLE_SURFACE",
             "diameter_includes_near_surface": True,
+            "observation_basis": "DEPTH_ONLY_LOCAL_CYLINDER" if cfg["geometry_only"] else "DEPTH_AND_OPTIONAL_RGB_LOCAL_CYLINDER",
+            "color_used_as": "NONE_GEOMETRY_ONLY" if cfg["geometry_only"] else "AUDIT_ONLY",
             "left_region_px": lf["region_px"], "right_region_px": rf["region_px"],
             "point_count": int(lf["point_count"] + rf["point_count"]),
             "left_right_diameter_difference_mm": abs(lf["diameter_mm"] - rf["diameter_mm"]),
@@ -640,6 +655,11 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
                     for row in rejected)
     return {"observations": observations, "rejected": rejected, "point_cloud": point_cloud,
             "audit": {"coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM", "candidate_colors": candidate_colors,
+                      "observation_basis": "DEPTH_ONLY_LOCAL_CYLINDER" if cfg["geometry_only"] else "DEPTH_AND_OPTIONAL_RGB_LOCAL_CYLINDER",
+                      "local_truncation": {"enabled": True,
+                                           "axis_source": "FUSED_LEFT_RIGHT_LOCAL_PIPE_AXES",
+                                           "definition": "COMMON_AXIAL_INTERVAL_VISIBLE_IN_BOTH_EYES",
+                                           "minimum_common_support_mm": cfg["minimum_common_support_mm"]},
                       "truncated": truncated, "status": "TRUNCATED" if truncated else "COMPLETE",
                       "depth_surfaces": depth_audit, "components": component_audit,
                       "source_rejection_counts": source_rejection_counts,

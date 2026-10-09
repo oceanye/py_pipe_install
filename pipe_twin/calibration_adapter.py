@@ -350,6 +350,8 @@ def validate_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
         parsed = _calibration_from_manifest(candidate)
     except (StereoAnalysisError, TypeError, ValueError) as error:
         return {"valid": False, "error": str(error), "repair_hint": _repair_hint(str(error))}
+    camera_complete = bool(parsed.validated and parsed.rectified)
+    cad_registration_complete = bool(parsed.registration_validated)
     return {
         "valid": True,
         "calibration_id": parsed.calibration_id,
@@ -358,6 +360,9 @@ def validate_calibration(payload: Mapping[str, Any]) -> dict[str, Any]:
         "validated": parsed.validated,
         "registration_validated": parsed.registration_validated,
         "rectified": parsed.rectified,
+        "camera_calibration_complete": camera_complete,
+        "cad_registration_complete": cad_registration_complete,
+        "recalibration_required": not camera_complete,
         "ready_for_field_analysis": parsed.validated and parsed.registration_validated,
     }
 

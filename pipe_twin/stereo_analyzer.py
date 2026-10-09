@@ -695,6 +695,7 @@ def _analysis_config(payload: object) -> dict[str, Any]:
         "minimum_depth_mm": 100.0,
         "maximum_depth_mm": 5000.0,
         "left_right_consistency_px": 2.0,
+        "matching": {},
         "stereo_matching": {
             "preprocessing": "none",
             "min_disparity": 0,
@@ -707,6 +708,8 @@ def _analysis_config(payload: object) -> dict[str, Any]:
         },
     }
     config = {**defaults, **payload}
+    from .matching_config import normalize_matching_settings
+    config["matching"] = normalize_matching_settings(payload.get("matching"))
     if isinstance(payload.get("stereo_matching"), dict):
         config["stereo_matching"] = {
             **defaults["stereo_matching"],
@@ -892,6 +895,12 @@ def _capture_groups_from_manifest(
         if previous_time is not None and pair_time <= previous_time:
             raise StereoAnalysisError("capture_groups must be strictly chronological")
         previous_time = pair_time
+        refresh = group.get("status_refresh")
+        if refresh is not None:
+            if (not isinstance(refresh, dict) or set(refresh) != {"action", "requested_at"}
+                    or refresh.get("action") != "STATUS_REFRESH"):
+                raise StereoAnalysisError(f"{field}.status_refresh is invalid")
+            _parse_timestamp(refresh.get("requested_at"), f"{field}.status_refresh.requested_at")
         normalized.append(
             {
                 "capture_id": capture_id,
@@ -899,6 +908,7 @@ def _capture_groups_from_manifest(
                 "sync_delta_ms": delta_ms,
                 "sync_valid": delta_ms <= calibration.max_sync_delta_ms,
                 "captured_at": pair_time.isoformat(),
+                **({"status_refresh": dict(refresh)} if refresh is not None else {}),
             }
         )
     return run_id, interval, normalized
@@ -1917,12 +1927,6 @@ def analyze_stereo_capture(
     if isinstance(analysis_payload, dict) and analysis_payload.get("mode") == "elevation_auto":
         from .elevation_auto import analyze_elevation_auto_manifest
         return analyze_elevation_auto_manifest(manifest_file, report_output_path=report_output_path, evidence_dir=evidence_dir)
-    if isinstance(analysis_payload, dict) and analysis_payload.get("mode") == "elevation_depth":
-        from .elevation_depth import analyze_elevation_depth_manifest
-
-        return analyze_elevation_depth_manifest(
-            manifest_file, report_output_path=report_output_path, evidence_dir=evidence_dir
-        )
     dataset_id = _require_string(manifest.get("dataset_id"), "dataset_id")
     model_revision = _require_string(manifest.get("model_revision"), "model_revision")
     scene = _load_cad_scene(manifest_file, manifest.get("model"))

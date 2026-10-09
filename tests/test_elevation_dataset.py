@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,7 +11,11 @@ import cv2
 import numpy as np
 
 from pipe_twin.calibration_adapter import adapt_opencv_stereo_calibration
+from pipe_twin.dxf_elevation import catalog_from_dxf
 from pipe_twin.elevation_dataset import create_elevation_dataset, elevation_history_compatible, load_elevation_dataset
+
+
+MODEL_PATH = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.dxf"
 
 
 def _calibration() -> dict:
@@ -43,8 +48,7 @@ class ElevationDatasetTests(unittest.TestCase):
         self.left = root / "left.png"; self.right = root / "right.png"
         left = np.zeros((480, 640, 3), np.uint8); right = left.copy(); right[:, :, 2] = 32
         cv2.imwrite(str(self.left), left); cv2.imwrite(str(self.right), right)
-        self.specs = [{"pipe_id": "P1", "color_srgb": "#FF0000", "nominal_diameter_mm": 20,
-                       "left_region_px": [20, 20, 80, 40], "right_region_px": [18, 20, 80, 40], "axis": "horizontal"}]
+        self.specs, _ = catalog_from_dxf(MODEL_PATH, axis_world=(0.0, 0.0, 1.0), unitless_unit="millimeter")
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
@@ -52,15 +56,18 @@ class ElevationDatasetTests(unittest.TestCase):
     def _create(self, **kwargs) -> Path:
         calibration = kwargs.pop("calibration", _calibration())
         return create_elevation_dataset(output_root=Path(self.tmp.name) / "out", calibration=calibration,
-            left_path=self.left, right_path=self.right, left_time="2026-09-12T10:00:00+08:00",
-            right_time="2026-09-12T10:00:00.001+08:00", pipe_specs=self.specs, pair_confirmed=True, **kwargs)
+            left_path=self.left, right_path=self.right,
+            left_time=kwargs.pop("left_time", "2026-09-12T10:00:00+08:00"),
+            right_time=kwargs.pop("right_time", "2026-09-12T10:00:00.001+08:00"),
+            pipe_specs=self.specs, pair_confirmed=True,
+            model_path=kwargs.pop("model_path", MODEL_PATH), stl_unit=kwargs.pop("stl_unit", "millimeter"), **kwargs)
 
-    def test_create_and_restore_without_cad_or_registration(self):
+    def test_create_and_restore_without_absolute_registration(self):
         path = self._create()
         loaded = load_elevation_dataset(path)
-        self.assertEqual(loaded["manifest"]["analysis"]["mode"], "elevation_depth")
+        self.assertEqual(loaded["manifest"]["analysis"]["mode"], "elevation_auto")
         self.assertFalse(loaded["calibration"]["registration_validated"])
-        self.assertEqual(loaded["pipe_specs"][0]["pipe_id"], "P1")
+        self.assertEqual(loaded["pipe_specs"][0]["pipe_id"], "P001")
         self.assertEqual(loaded["left_path"].name, "left.png")
 
     def test_rectification_recipe_is_persisted_and_restored(self):
@@ -68,7 +75,7 @@ class ElevationDatasetTests(unittest.TestCase):
         path = create_elevation_dataset(output_root=Path(self.tmp.name) / "recipe", calibration=calibration,
             rectification_recipe=recipe, left_path=self.left, right_path=self.right,
             left_time="2026-09-12T10:00:00+08:00", right_time="2026-09-12T10:00:00.001+08:00",
-            pipe_specs=self.specs, pair_confirmed=True)
+            pipe_specs=self.specs, pair_confirmed=True, model_path=MODEL_PATH, stl_unit="millimeter")
         loaded = load_elevation_dataset(path)
         self.assertEqual(loaded["rectification_recipe"]["calibration_id"], "FIELD-USB-001")
 
@@ -84,6 +91,43 @@ class ElevationDatasetTests(unittest.TestCase):
         self.assertEqual(analysis["left_right_consistency_px"], 1.0)
         third = self._create(previous_manifest=second, analysis_settings={"stereo_matching": {"num_disparities": 64}})
         self.assertEqual(load_elevation_dataset(third)["manifest"]["analysis"]["stereo_matching"]["num_disparities"], 64)
+
+    def test_diameter_colour_matching_policy_is_persisted(self):
+        path = self._create(analysis_settings={
+            "matching": {
+                "color_filter_enabled": True,
+                "diameter_tolerance_mm": 4.0,
+                "diameter_tolerance_ratio": 0.15,
+                "color_delta_lab": 60.0,
+            }
+        })
+        matching = load_elevation_dataset(path)["manifest"]["analysis"]["matching"]
+        assert matching == {
+            "diameter_filter_enabled": True,
+            "diameter_tolerance_mm": 4.0,
+            "diameter_tolerance_ratio": 0.15,
+            "color_filter_enabled": True,
+            "color_filter_mode": "hint",
+            "color_delta_lab": 60.0,
+        }
+
+    def test_status_refresh_timestamp_is_preserved_across_history(self):
+        first = self._create(status_refresh={
+            "action": "STATUS_REFRESH", "requested_at": "2026-10-03T08:00:00+00:00"})
+        changed = cv2.imread(str(self.right), cv2.IMREAD_COLOR)
+        changed[0, 0, 0] = 33
+        cv2.imwrite(str(self.right), changed)
+        second = self._create(previous_manifest=first, status_refresh={
+            "action": "STATUS_REFRESH", "requested_at": "2026-10-03T09:00:00+00:00"},
+            left_time="2026-09-12T10:00:01+08:00", right_time="2026-09-12T10:00:01.001+08:00")
+        groups = load_elevation_dataset(second)["manifest"]["capture"]["capture_groups"]
+        self.assertEqual(len(groups), 2)
+        self.assertEqual(groups[0]["status_refresh"]["requested_at"], "2026-10-03T08:00:00+00:00")
+        self.assertEqual(groups[1]["status_refresh"]["requested_at"], "2026-10-03T09:00:00+00:00")
+
+    def test_status_refresh_metadata_is_validated(self):
+        with self.assertRaisesRegex(ValueError, "status_refresh"):
+            self._create(status_refresh={"action": "OTHER", "requested_at": "now"})
 
     def test_invalid_matching_settings_rejected_on_save_and_load(self):
         with self.assertRaises(ValueError):
@@ -128,7 +172,7 @@ class ElevationDatasetTests(unittest.TestCase):
         second = create_elevation_dataset(output_root=Path(self.tmp.name) / "out", calibration=_calibration(),
             left_path=self.left, right_path=self.right, left_time="2026-09-12T10:01:00+08:00",
             right_time="2026-09-12T10:01:00.001+08:00", pipe_specs=self.specs, pair_confirmed=True,
-            previous_manifest=first)
+            previous_manifest=first, model_path=MODEL_PATH, stl_unit="millimeter")
         manifest = json.loads(second.read_text(encoding="utf-8"))
         self.assertEqual(len(manifest["capture"]["capture_groups"]), 2)
         self.assertTrue((second.parent / "history/0000_left.png").is_file())
@@ -139,11 +183,11 @@ class ElevationDatasetTests(unittest.TestCase):
     def test_changed_specs_cannot_reuse_history(self):
         first = self._create()
         changed = copy.deepcopy(self.specs); changed[0]["nominal_diameter_mm"] = 25
-        with self.assertRaisesRegex(ValueError, "标定、管道配置和模型"):
+        with self.assertRaises(ValueError):
             create_elevation_dataset(output_root=Path(self.tmp.name) / "out", calibration=_calibration(),
                 left_path=self.left, right_path=self.right, left_time="2026-09-12T10:00:00+08:00",
                 right_time="2026-09-12T10:00:00.001+08:00", pipe_specs=changed, pair_confirmed=True,
-                previous_manifest=first)
+                previous_manifest=first, model_path=MODEL_PATH, stl_unit="millimeter")
 
     def test_identical_pair_is_idempotent(self):
         first = self._create()
@@ -156,16 +200,19 @@ class ElevationDatasetTests(unittest.TestCase):
         changed = copy.deepcopy(self.specs); changed[0]["nominal_diameter_mm"] = 25
         self.assertFalse(elevation_history_compatible(first, _calibration(), changed))
 
-    def test_no_model_ignores_gui_default_stl_unit(self):
-        first = self._create(stl_unit="millimeter")
-        self.assertTrue(elevation_history_compatible(
-            first, _calibration(), self.specs, stl_unit="millimeter"))
+    def test_model_is_required_for_automatic_scene(self):
+        with self.assertRaisesRegex(ValueError, "模型"):
+            self._create(model_path=None)
+
+    def test_legacy_manual_mode_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "elevation_auto"):
+            self._create(mode="elevation_depth")
 
     def test_tampered_model_raises_before_configuration_comparison(self):
-        model = Path(self.tmp.name) / "reference.stl"
-        model.write_text("solid reference\nendsolid reference\n", encoding="utf-8")
+        model = Path(self.tmp.name) / "reference.dxf"
+        shutil.copyfile(MODEL_PATH, model)
         first = self._create(model_path=model, stl_unit="millimeter")
-        (first.parent / "model/reference.stl").write_text("changed", encoding="utf-8")
+        (first.parent / "model/reference.dxf").write_text("changed", encoding="utf-8")
         changed = copy.deepcopy(self.specs); changed[0]["nominal_diameter_mm"] = 25
         with self.assertRaisesRegex(ValueError, "SHA-256"):
             elevation_history_compatible(first, _calibration(), changed,

@@ -10,11 +10,13 @@ PR #10 已合并到 `main`。下一轮办公室三管实测的点位、独立直
 
 2026-09-11 实测复核：已复算 GitHub 上传的四份标定诊断，并检查现场照片与算法。结论、修复和补拍步骤见 [实测素材与标定复算评估](doc/FIELD-20260911-实测素材与标定复算评估.md)。当前素材尚未通过标定质量检查，旧现场包使用的演示标定不能用于真实精度验收。
 
-基础立面评估默认采用自动匹配：双击 `run_gui.bat`，点击左上角 **基础立面评估**。程序从双目有效深度拟合可见管道的局部圆柱，将其与 STL 或 DXF 的管径和截面排列匹配，自动定位检查区域；斜视时按实际模型姿态处理，不要求逐管框选或二维码定位。完整操作见 [基础立面深度模式](doc/基础立面深度模式.md)。
+基础立面评估默认采用自动匹配：双击 `run_gui.bat`，点击左上角 **基础立面评估**。程序先从双目有效深度拟合可见管道的局部圆柱；当棋盘或遮挡切断圆弧、但仍有一段平行侧面可见时，会自动改用 `parallel_strip` 局部条带，按双目径向直径和立面截面距离与 STL/DXF 匹配。固定机位时也可在 GUI 的“局部建模”中选择“仅双目深度几何”，跳过颜色分割，沿共同管轴建立左右目共同局部截断，再以截面管心相对距离、直径和整体布局与模型匹配。现场新增安装管后点击 **状态刷新**，程序会重新拍摄并自动匹配，旧采集和时间记录会保留。直径筛选始终开启，GUI 中可设置绝对/相对直径容差；颜色筛选是可选辅助开关，默认关闭，不能替代直径和距离。DXF 保留对象/图层颜色；STL 没有统一颜色标准，导入时按管径生成初始颜色，可用“设置颜色/同径统一颜色”确认后再开启颜色筛选。左右目几何不一致或证据不足时保持 `UNKNOWN`。完整操作见 [基础立面深度模式](doc/基础立面深度模式.md)。
 
 GUI 新增 **颜色与反光检查**：在左右照片中独立框选可见管面，查看颜色候选覆盖率 C、高光/过曝风险 H、逐眼结果和调整建议；可取色并显式应用到同径模型候选。无需先识别成功，检查记录随照片保存。用法见 [颜色与反光检查](doc/颜色与反光检查.md)。这些指标辅助调光和取色，不代替管径、距离及安装状态验收。
 
-局部测量 GUI：双击 `run_gui.bat` 会启动集成办公室客户端；它同时启动 GUI、仅绑定本机或 Tailscale 的 8770 远程抓拍控制服务和只读 8765 证据文件服务。默认使用 Tailscale 内网作为信任边界，不再要求复制 token；如需额外认证，可用 `--require-token` 显式启用 Bearer token。客户端会尝试创建仅限 Tailscale 网段的 Windows 防火墙规则。若使用已有独立 8765 服务，客户端会先用临时文件验证其确实指向同一个证据目录再复用。也可以运行 `.\.venv\Scripts\python.exe -m pipe_twin office-client`。客户端启动后，家中端直接用 `remote-capture` 发起拍照，再用 `fetch-stereo` 下载。相机预览打开时仍会由相机锁拒绝远程拍照。GUI 支持已连接 USB 双目相机的实时左右预览与同步抓拍、CAD 侧立面四方向快速定位、管轴自动轻微倾斜校正、1:1 二维码完整位姿定位、现场模型/历史照片录入、局部管径与位置测量、中心距/净距/前后关系、实测样本校正和逐管状态导出。操作步骤及测量口径见 [局部测量工作台使用说明](doc/局部测量工作台使用说明.md)。默认 ±1 mm 为对照阈值，真实相机精度需实测验证。
+DXF/STL 侧立面、一次性标定复用、状态刷新、可选组级分区和可替换识别后端的完整主线见 [DXF / STL 双目立面识别主流程](doc/立面识别主流程.md)。识别后端集中在 `pipe_twin/recognition/`，后续算法可通过注册新名称替换，不需要改动现场包和状态机。
+
+局部测量 GUI：双击 `run_gui.bat` 会启动集成办公室客户端；它同时启动 GUI、仅绑定本机或 Tailscale 的 8770 远程抓拍控制服务和只读 8765 证据文件服务。默认使用 Tailscale 内网作为信任边界，不再要求复制 token；如需额外认证，可用 `--require-token` 显式启用 Bearer token。客户端启动后，家中端直接用 `remote-capture` 发起拍照，再用 `fetch-stereo` 下载。现场工作台只保留 DXF/STL 自动立面、一次双目标定复用、双目抓拍、自动直径/距离匹配和状态刷新；二维码定位、逐管手工框选和历史 3DM/3MF 导入不再出现在操作入口。操作步骤及测量口径见 [局部测量工作台使用说明](doc/局部测量工作台使用说明.md)。
 
 基于 CAD 先验和视觉证据的管道安装状态识别与数字孪生项目。
 基础模式的首次操作：
@@ -22,10 +24,10 @@ GUI 新增 **颜色与反光检查**：在左右照片中独立框选可见管�
 1. 选择 STL/DXF 并指定原坐标单位；
 2. 确认自动识别的管道直径颜色映射，例如 22=#E74C3C;50=#3498DB；
 3. 选择真实双目标定和左右已矫正照片，或点击“连接双目并抓拍”；
-4. 保持默认自动模式，点击“保存并评估”；必要时在三维预览中指定管长方向，或为有歧义的局部观测指定少量模型对应。
+4. 保持默认自动模式，点击“保存并评估”；必要时在三维预览中指定共同管长方向。
 
-程序自动保存现场包，在照片和表格中逐根显示“安装 / 未安装 / 遮蔽不确定”。固定机位后再次使用只需抓拍并评估。“未安装”需要可信匹配后预期位置的双目空位深度，且至少两次连续独立采集一致；匹配有歧义、遮挡或深度不足时保持不确定。管长方向的绝对位置不参与判定。旧的区域框选流程保留为手工兼容模式；二维码定位和三维姿态设置用于完整三维模式。
-当前交付 **M0 单层离线演示基线**、**M1 两层 CAD 合成双目/遮挡拓扑基线**，以及 **M2 真实双目静态照片 + 3DM/3MF/STL + 本地 GUI 软件候选版**。M2 已能输出逐管三态并完成合成回归；真实相机阈值、标定精度和现场验收仍要用到场实物确认。多机位和 3DGS 属于后续阶段。
+程序自动保存现场包，在照片和表格中逐根显示“安装 / 未安装 / 遮蔽不确定”。固定机位后再次使用只需抓拍并评估。“未安装”需要可信匹配后预期位置的双目空位深度，且至少两次连续独立采集一致；匹配有歧义、遮挡或深度不足时保持不确定。管长方向的绝对位置不参与判定。现场工作台只接受 DXF/STL，区域由算法自动生成，二维码定位和逐管手工框选不属于当前操作流程。
+当前交付 **M0/M1 离线回归基线** 与 **M2 DXF/STL 真实双目静态照片 + 本地 GUI 工作台**。历史 3DM/3MF 文件只留作离线回归资产，不属于现场输入；真实相机阈值、标定精度和现场验收仍要用到场实物确认。
 
 ## 生产采集主线：固定相机定时拍照
 
@@ -48,7 +50,7 @@ M0 使用以下历史回归资产：
 
 M1 使用 `管道群2.3mf` 的 9 根前后分层管道，生成一组可重复的虚拟双目 RGB、精确 CAD 深度、稳定实例 ID、正交立面及有向遮挡图。`管道群2.mkv` 只是固定 Fusion 视口中的对象显隐参考，不含相机运动，也不作为深度或双目真值。合成输出验证的是投影、Z-buffer 所有权和遮挡拓扑；它不代表真实深度相机性能。
 
-M2 新增统一 CAD 网格层：3MF 使用 object ID，3DM 使用 Rhino 对象 GUID，STL 使用按连通闭合网格计算的稳定组件 ID；仅 manifest 绑定的管道参与现场分析，辅助 Curve/Point/Text 可保留。直接 Mesh 可以读取，Brep/Extrusion 必须在 3DM 中带完整 Render Mesh 缓存；Block 实例、绑定对象无网格或 GUID 缺失会明确失败。STL 不保存单位、颜色和业务 ID，因此导入时必须明确选择原坐标单位，并逐管核对自动拆分的组件、设计外径、颜色和业务 ID；相接或共享顶点的多个实体会被视为同一组件。所有坐标统一换算为毫米。分析器从实际 CAD 三角网格生成逐相机 amodal 投影和设计遮挡关系，再将 OpenCV 左右一致视差、颜色和独立宽度指标与 CAD 证据融合。
+现场输入使用 DXF 圆形截面或 STL 连通管件组件；导入时明确原坐标单位，自动保留 DXF 对象颜色，并在 STL 没有颜色时按管径生成可编辑的初始映射；随后从几何得到设计外径、中心线和组件编号。所有坐标统一换算为毫米。分析器从模型几何和双目深度生成局部圆柱/平行条带观测，再以直径、立面距离和相对布局完成匹配；颜色只作为可选辅助证据。
 
 仓库中的 `field_stereo_demo_manifest.json` 把合成左右照片作为 M2 端到端回归：结果应为 8 根 `INSTALLED`、0 根 `NOT_INSTALLED`、1 根因左右目均完全遮挡而 `UNKNOWN`。这只证明软件链和安全状态机可运行，不是现场验收。
 
@@ -91,13 +93,15 @@ test_model/
   pipe_group2_manifest.json
   pipe_group2_synthetic_stereo/
   field_stereo_demo_manifest.json
-  管道群.3mf
+  管道布置.dxf
+  管道布置.stl
   管道群.mkv
   管道群2.3mf
   管道群2.mkv
 pipe_twin/
   __init__.py
   __main__.py
+  recognition/
   cad_model.py
   cli.py
   detector.py
@@ -124,7 +128,7 @@ tests/
 
 ## 干净环境安装
 
-运行时依赖为 `numpy`、无 GUI 后端的 `opencv-python-headless`、McNeel `rhino3dm` 和二进制 DXF 支持库 `ezdxf`，版本由根目录 `requirements.txt` 固定。桌面 GUI 使用 Python 标准库 Tkinter，不引入 Qt/VTK；Windows 官方 Python 通常自带 Tk，精简 Linux 环境若需打开 GUI 应另行安装系统 Tk 包。CI 只做无桌面测试。
+现场主线依赖为 `numpy`、无 GUI 后端的 `opencv-python-headless` 和二进制 DXF 支持库 `ezdxf`；根目录 `requirements.txt` 另外固定 `rhino3dm`，仅供保留的历史 3DM 离线回归读取器使用，现场 DXF/STL 工作台不会加载它。桌面 GUI 使用 Python 标准库 Tkinter，不引入 Qt/VTK；Windows 官方 Python 通常自带 Tk，精简 Linux 环境若需打开 GUI 应另行安装系统 Tk 包。CI 只做无桌面测试。
 
 ### 运行日志
 
@@ -132,13 +136,7 @@ CLI 和桌面 GUI 启动时会自动写入结构化 JSONL 日志，默认位置�
 
 ### DXF 侧立面导入
 
-在 GUI 工具栏点击“导入DXF侧立面”，选择 DXF 文件后切换到 `dxf` 视图。支持 `LINE`、`LWPOLYLINE`、`ARC` 和 `CIRCLE`；其中 `CIRCLE`/`ARC` 会绘制侧立面外轮廓圆弧。实体默认采用 DXF 对象自身颜色（ACI 或 true color），没有对象颜色时才回退到图层颜色。需要统一调整时，点击“管径颜色配置”，同一管径会使用同一种颜色，并随 manifest 保存。
-
-也可以直接点击“DXF自动建档”：程序会串联导入、图层颜色读取、默认流水号、初始图元映射和 manifest 草稿保存，减少重复操作。
-
-如果 DXF 图元没有业务编号，界面会显示 `P001`、`P002` 等默认流水号。先点击 DXF 图元，再在右侧管道列表选择目标管道，点击“绑定DXF图元”，最后点击“保存DXF映射到manifest”；映射会写入 manifest 的 `elevation.entity_bindings`，并绑定 DXF SHA-256。保存后的 manifest 报告需要重新分析。
-
-没有现场清单时，导入 DXF 后可点击“从DXF生成manifest草稿”。程序只把完整圆形作为管道截面，矩形边框等直线会被跳过；圆的直径由半径计算，管轴按 DXF 圆形截面的模型 ±Z 约定处理，俯视角度由双目配准估计。要做双目自动识别，在“基础立面评估”中直接选择 DXF，补充真实标定和左右照片，不需要 3DM/3MF。DXF 的同名 STL 若存在，可用于核对圆心布局，但不是自动识别的必需输入。
+在 **基础立面评估** 中选择 DXF 或 STL。程序读取 `CIRCLE`/`ARC` 的外轮廓、对象颜色（缺失时回退到图层颜色），或按 STL 连通组件生成管径、默认流水号和共同管轴，直接建立 `elevation_auto` 现场包；不需要另建 manifest 草稿、逐个绑定图元或再提供 3DM/3MF。需要缩小搜索范围时，在“分区管理”点击“根据 STL 自动生成候选”，人工绑定照片范围、确认或删除候选后再保存。随后载入一次真实双目标定，抓拍并评估；新增实物时点击“状态刷新”。
 
 ### Windows PowerShell
 
@@ -226,20 +224,19 @@ python -m pipe_twin analyze --manifest path/to/capture_manifest.json --output ou
 
 `analyze` 是兼容入口，仍只接受单目照片或历史视频；双目必须使用下面独立的 `analyze-stereo` 命令，避免旧 M0 契约被误升级。
 
-## 运行 3DM/3MF/STL + 双目安装状态识别
+## 运行 DXF/STL + 双目安装状态识别
 
-现场标定与启动已自动化：GUI 内置**棋盘格双目标定向导**——生成 A4 打印棋盘格，用已连接的双目相机抓拍 ≥10 组姿态多样的照片，自动完成左右目内参/畸变、双目联合标定和极线矫正；产出的标定写入清单格式文件，原始 K/D 与矫正映射存入工作台配置档案，抓拍时实时把相机原始帧转换为矫正图。标定、管件目录（含逐管颜色，可从照片点选取色）、二维码定位、相机方向修正、设备索引和最近清单都保存在 `outputs/measurement_workbench/workbench_profile.json`，下次启动自动恢复；工具栏“一键抓拍并分析”把抓拍、建档和识别合并为一步。向导只解决内参与极线矫正，CAD 配准仍需一次二维码定位或方向设置。详细的操作步骤和门禁口径见[局部测量工作台使用说明](doc/局部测量工作台使用说明.md)。
+现场标定与启动已自动化：GUI 内置**棋盘格双目标定向导**——生成 A4 打印棋盘格，用已连接的双目相机抓拍 ≥10 组姿态多样的照片，自动完成左右目内参/畸变、双目联合标定和极线矫正；产出的标定写入清单格式文件，原始 K/D 与矫正映射存入工作台配置档案，抓拍时实时把相机原始帧转换为矫正图。基础立面工作台保存相机设备、标定和模型共同管长方向；现场不需要二维码定位或逐管手工 ROI。详细的操作步骤和门禁口径见[局部测量工作台使用说明](doc/局部测量工作台使用说明.md)。
 
-先审计 CAD。报告会列出对象或组件 ID、网格来源、毫米包围盒和网格闭合性；3DM 还会列出 GUID、对象名、图层和颜色：
+先审计 DXF/STL。报告会列出对象或组件 ID、网格来源、毫米包围盒和网格闭合性：
 
 ```powershell
-python -m pipe_twin inspect-model path/to/pipes.3dm --output outputs/model_audit.json
 python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millimeter --output outputs/stl_model_audit.json
 ```
 
 `--stl-unit` 是 STL 必填项，可选 `millimeter/centimeter/meter/inch`。仓库样例 `管道布置.stl` 的自动审计结果为 12 个闭合管件组件、576 个顶点和 1104 个三角面，自动目录识别出的设计外径约为 26、41、51 mm 三组。
 
-如果 Rhino 文件还包含未网格化的 Curve/Point/Text 或辅助 BRep，未带过滤参数的审计会安全拒绝（不会静默漏掉对象）；可按 Rhino 中看到的 GUID 重复传入 `--object-id`，例如 `--object-id 1234... --object-id 5678...`。`analyze-stereo` 会直接从 manifest 的 `cad_object_id` 集合过滤绑定管道，并仍对每个绑定对象严格校验。
+现场不再读取 Rhino 3DM/3MF；仓库中保留的历史网格读取器只服务离线回归，不属于现场输入。`analyze-stereo` 会直接从 DXF/STL manifest 的 `cad_object_id` 集合过滤绑定管道，并仍对每个绑定对象严格校验。
 
 现场 manifest 使用 `schema_version=2.0`，显式绑定模型哈希、每根管的 `pipe_id ↔ cad_object_id`、中心线/外径/颜色、双目标定与 CAD 外参，以及按时间排序的 `capture.capture_groups[].views.left/right`。当前 M2 的 SGBM 与 `Z=fx·B/d` 门禁只接收已经完成共同极线矫正的左右图（`stereo_calibration.rectified=true`）；若相机输出原始未矫正图，先用同一组内参/双目标定执行 `cv2.stereoRectify` 和 `initUndistortRectifyMap`，再把矫正后的图及其哈希写入 manifest。完整字段和实物采集清单见[现场双目识别与 GUI 使用说明](doc/现场双目识别与GUI使用说明.md)。先把 GLM/OpenCV 的原始标定转换为 manifest 标定（必须显式提供 translation_unit 和 left_camera_pose，适配器不会猜单位或 CAD 外参）。
 
@@ -252,7 +249,7 @@ python -m pipe_twin inspect-model test_model/管道布置.stl --stl-unit millime
   # 远程主机无人值守采集：先核实实际设备编号、分辨率与棋盘；下面沿用现场历史配置
   python -m pipe_twin capture-stereo --output-dir outputs/remote_capture --left-index 0 --eye-width 1920 --eye-height 1080 --count 30 --interval-s 2 --detect-chessboard --board-columns 8 --board-rows 6
 
-`calibrate-stereo` 默认先用 classic 检测器处理所有棋盘照片；先严格使用 classic；只有 classic 同时检出的有效照片对少于 `--min-pairs` 时，才把整批可读照片严格改用 OpenCV SB 重试（SB 阶段不再回退 classic），避免跨照片对混用检测器。随后固定分别求得的两目内参，再求双目外参和 `stereoRectify`，并输出同时包含标定与原始帧矫正配方的便携 JSON。照片质量、姿态跨度、RMS、内参、基线、极线残差或视差方向任一不合格都会拒绝输出；需要不同规格时显式传 `--board-columns/--board-rows/--square-size-mm`，建议用 `--expected-baseline-mm` 填写实测镜头中心距。输出会在质量门禁通过后标记 `validated=true`，但仍保持 `registration_validated=false`；下一步在 GUI 中使用 QR 配准到 CAD，配准通过后才可用于现场分析。适配器会调用 stereoRectify，保留 R1/R2/P1/P2、统一毫米基线，并把原始 K/D/R/T 与 CAD 世界坐标位姿写进审计字段。`validated` 代表棋盘与极线几何通过，`registration_validated` 代表 CAD 配准通过；两者都通过才进入现场测量。
+`calibrate-stereo` 默认先用 classic 检测器处理所有棋盘照片；先严格使用 classic；只有 classic 同时检出的有效照片对少于 `--min-pairs` 时，才把整批可读照片严格改用 OpenCV SB 重试（SB 阶段不再回退 classic），避免跨照片对混用检测器。随后固定分别求得的两目内参，再求双目外参和 `stereoRectify`，并输出同时包含标定与原始帧矫正配方的便携 JSON。照片质量、姿态跨度、RMS、内参、基线、极线残差或视差方向任一不合格都会拒绝输出；需要不同规格时显式传 `--board-columns/--board-rows/--square-size-mm`，建议用 `--expected-baseline-mm` 填写实测镜头中心距。输出会在质量门禁通过后标记 `validated=true`；基础立面现场以 DXF/STL 的共同管长方向完成相对匹配，不要求二维码 CAD 外参。适配器会调用 stereoRectify，保留 R1/R2/P1/P2 并统一毫米基线。
 
 原厂 `camera_config.py` 可以安全转换为 manifest 标定，但不会执行旧 Python 文件，也不会猜测平移单位或 CAD 位姿。先准备只含 `rotation_world_to_camera` 和 `center_world_mm` 的 `left_pose.json`，再运行：
 
@@ -269,10 +266,10 @@ python -m pipe_twin adapt-legacy-calibration `
 
 `capture-stereo` 只保存原始采集证据，不会猜测标定、STL 位姿或单位，也不会自动把未矫正图送入分析器。按交接文件将整个采集包和日志上传后，再绑定正确标定和模型生成现场 manifest。`--duration-s` 是采集循环的时长限制，驱动阻塞需执行器另设进程超时；`--detect-chessboard` 默认规格来自资料中的 11×7 内角点，现场必须显式填当前板规格。该命令本身不执行 GitHub 上传，上传与回读校验由交接任务的执行者完成。
 
-建议的自动标定顺序是：打印一张已知方格边长的棋盘格；让棋盘在近/中/远距离、画面四角和不同倾角各拍一组左右同步照片（建议 8–15 组）；把左目照片放入 `calibration/left`、右目照片放入 `calibration/right`，两边按同一序号命名；运行上面的命令后，在快速双目评估窗口使用二维码配准。程序会报告每一组被接受或剔除的原因和 RMS 重投影误差，失败时只需补拍提示的照片。
+建议的自动标定顺序是：打印一张已知方格边长的棋盘格；让棋盘在近/中/远距离、画面四角和不同倾角各拍一组左右同步照片（建议 8–15 组）；把左目照片放入 `calibration/left`、右目照片放入 `calibration/right`，两边按同一序号命名；运行上面的命令后，在基础立面评估中载入标定并抓拍。程序会报告每一组被接受或剔除的原因和 RMS 重投影误差，失败时只需补拍提示的照片。
 运行分析：
 
-现场数据录入窗口可选择相机位于 CAD 的 ±X/±Y/±Z 方向，也可沿用当前外参并输入双目组中心、yaw、pitch、roll；它们作为刚性相机—CAD 外参调整参与完整三维投影、管件定位、角度匹配和前后关系判定。修改后的外参应使用固定控制点再次验证，不能用角度输入替代双目图像的极线矫正。
+基础立面工作台只保存共同管长方向和双目相对布局；它不再提供二维码、逐管手工对应或完整三维外参输入。需要绝对 CAD 位姿时，应另行建立受控的配准流程，不把它混入本次现场自动识别。
 
 ```powershell
 python -m pipe_twin analyze-stereo `
@@ -289,7 +286,7 @@ python -m pipe_twin gui `
   --report outputs/installation_status.json
 ```
 
-GUI 提供 CAD 状态立面/等轴示意、逐管清单、左右目当前照片和选中对象投影框。安装/未安装/不确定分别使用绿/红/琥珀，同时显示文字、英文枚举和原因码。手工载入报告时会核对模型字节哈希、manifest 哈希、model revision、采集批次、标定 ID、pipe ID 集合和 CAD 对象绑定；任一不符则全部安全降级为 `UNKNOWN`，避免用旧报告给新模型着色。
+GUI 提供模型布局、逐管清单、左右目当前照片和算法生成的投影证据框。安装/未安装/不确定分别使用绿/红/琥珀，同时显示文字、英文枚举和原因码；模型字节哈希、manifest 哈希、采集批次、标定 ID、pipe ID 集合和 CAD 对象绑定任一不符时全部安全降级为 `UNKNOWN`。
 
 仓库自带的软件回归可直接运行：
 

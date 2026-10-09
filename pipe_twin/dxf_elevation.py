@@ -354,6 +354,7 @@ def catalog_from_dxf(path: str | Path, *, axis_world: Sequence[float] | None = N
             "layer_id": entity.layer,
             "color_class": entity.layer,
             "color_srgb": color,
+            "color_source": "dxf",
             "nominal_diameter_mm": diameter,
             "centerline_world_mm": line.tolist(),
             "source_label": f"DXF {entity.entity_id} {entity.kind}",

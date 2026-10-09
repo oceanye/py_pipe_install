@@ -2784,8 +2784,8 @@ class ChessboardWizardDialog:
     Uses only the host application's Tk wrappers (``app.tk``/``app.ttk``/...)
     so the module import stays tkinter-free.  On success the calibration, its
     rectification recipe, and the wizard settings are persisted into the
-    workbench profile; CAD registration (QR/side-view) is intentionally NOT
-    done here and must follow once.
+    workbench profile; the side-elevation workflow uses the model axis and
+    does not require a separate CAD marker registration step.
     """
 
     def __init__(
@@ -2860,8 +2860,7 @@ class ChessboardWizardDialog:
                 "步骤：生成并 100% 打印棋盘格 → 量取实测格边长 → 打开预览，"
                 "把纸张固定在硬质平板上，覆盖各区域并改变远近、前后倾斜和左右倾斜，"
                 "抓拍 ≥10 组 → 完成标定。"
-                + ("基础模式标定后可直接抓拍评估。" if getattr(self.owner, "analysis_mode", None) in {"elevation_depth", "elevation_auto"}
-                   else "标定后仍需一次二维码定位。")
+                + "基础立面模式标定后可直接抓拍评估。"
             )
         )
 
@@ -4415,9 +4414,7 @@ class ChessboardWizardDialog:
                 f"{result.left_rms_px:.3f}/{result.right_rms_px:.3f} px，"
                 f"基线 {result.calibration['baseline_mm']:.2f} mm，共 {result.pair_count} 组。\n"
                 f"右目画面自动修正：{result.audit.get('right_frame_transform', 'none')}。\n"
-                + ("基础立面模式无需二维码；请重新抓拍并评估。"
-                   if getattr(self.owner, "analysis_mode", None) in {"elevation_depth", "elevation_auto"}
-                   else "注意：尚未配准 CAD——请点击“二维码定位”（或设置相机方向），然后保存工作台配置。")
+                + "基础立面模式无需额外 CAD 标记配准；请重新抓拍并评估。"
                 + checkpoint_note
             )
             if self.owner is not None and not getattr(self.owner, "closed", False):
@@ -4426,8 +4423,6 @@ class ChessboardWizardDialog:
                 self.owner.pose_adjustment = {"mode": "keep"}
                 self.owner.message.set(
                     "棋盘格标定已保存并选中；请双目抓拍并评估。"
-                    if getattr(self.owner, "analysis_mode", None) in {"elevation_depth", "elevation_auto"}
-                    else "棋盘格标定已保存并选中；请继续“二维码定位”完成 CAD 配准。"
                 )
                 if hasattr(self.owner, "refresh_calibration_status"):
                     from .workbench_profile import load_profile

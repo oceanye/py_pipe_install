@@ -9,12 +9,40 @@ from .capture_quality import (
     LEVEL_TEXT, REVISION, diagnostic_record, measure_patch, patch_mask,
     summarize_pair, validate_color,
 )
-from .elevation_gui import RegionCanvas
+from .elevation_gui import RegionCanvas, image_region
 from .pipeline import atomic_write_text
 from .logging_config import get_logger, log_event
 
 COLORS = {"GREEN": "#197344", "AMBER": "#956000", "RED": "#B3261E", "PENDING": "#526477"}
 LOGGER = get_logger("capture_quality_gui")
+
+
+class PatchCanvas(RegionCanvas):
+    """Manual diagnostic selection, independent of automatic recognition ROIs."""
+
+    def __init__(self, parent, owner, role):
+        super().__init__(parent, owner, role)
+        self.drag = None
+        self.canvas.bind("<ButtonPress-1>", self.start)
+        self.canvas.bind("<B1-Motion>", self.move)
+        self.canvas.bind("<ButtonRelease-1>", self.finish)
+
+    def start(self, event):
+        if self.image is not None and self.owner.selected_id():
+            self.drag = (event.x, event.y)
+
+    def move(self, event):
+        if self.drag is not None:
+            self.canvas.delete("drag")
+            self.canvas.create_rectangle(*self.drag, event.x, event.y, outline="white", dash=(4, 2), tags="drag")
+
+    def finish(self, event):
+        start, self.drag = self.drag, None
+        self.canvas.delete("drag")
+        if start is not None and self.image is not None:
+            region = image_region(start, (event.x, event.y), self.transform, (self.image.shape[1], self.image.shape[0]))
+            if region is not None:
+                self.owner.set_region(self.role, region)
 
 
 def metric_text(result: dict | None, kind: str) -> str:
@@ -34,7 +62,10 @@ class CaptureQualityDialog:
         self.results, self.report = {}, None
         self.busy, self.closed = False, False
         self.photo_hashes = {}
-        self.mode = tk.StringVar(value="elevation_depth")
+        self.delta_lab = 45.0
+        self.policy_valid = True
+        self.policy_traces = []
+        self.policy_status = tk.StringVar()
         self.window = tk.Toplevel(owner.window)
         self.window.title("颜色与反光检查 · 调整灯光、曝光和参考色")
         self.window.geometry("1120x800")
@@ -71,7 +102,7 @@ class CaptureQualityDialog:
         for role, title in (("left", "左目管面取样"), ("right", "右目管面取样")):
             box = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(box, weight=1)
-            self.views[role] = RegionCanvas(box, self, role)
+            self.views[role] = PatchCanvas(box, self, role)
         ttk.Label(frame, text="滚轮放大，右键拖动。框选后自动计算；换照片会清除旧框。颜色与高光均按左右较差值提示。",
                   foreground="#355371").pack(anchor="w")
         columns = ("color", "cl", "cr", "c", "hl", "hr", "h")
@@ -90,6 +121,7 @@ class CaptureQualityDialog:
         self.highlight_label = ttk.Label(row, text="H 待框选", font=("Microsoft YaHei UI", 11, "bold"))
         self.highlight_label.pack(side="left")
         ttk.Label(frame, textvariable=self.advice, wraplength=1050, foreground="#355371").pack(fill="x", pady=5)
+        ttk.Label(frame, textvariable=self.policy_status, wraplength=1050, foreground="#526477").pack(fill="x")
         actions = ttk.Frame(frame)
         actions.pack(fill="x")
         ttk.Button(actions, text="取左框非高光中位色", command=self.sample_color).pack(side="left")
@@ -103,6 +135,8 @@ class CaptureQualityDialog:
                   foreground="#526477", wraplength=1050).pack(anchor="w")
         ttk.Label(frame, textvariable=self.message, foreground="#355371", wraplength=1050).pack(fill="x", pady=4)
         self.refresh_inputs()
+        for variable in (owner.color_delta_lab, owner.color_filter_enabled, owner.local_observation_label):
+            self.policy_traces.append((variable, variable.trace_add("write", lambda *_: self.recalculate())))
 
     def selected_id(self):
         selected = self.tree.selection()
@@ -283,12 +317,25 @@ class CaptureQualityDialog:
             self.save(quiet=True)
 
     def recalculate(self, select=None):
+        from .matching_config import normalize_matching_settings
+        try:
+            self.delta_lab = normalize_matching_settings({"color_delta_lab": float(self.owner.color_delta_lab.get())})["color_delta_lab"]
+            enabled = self.owner.color_filter_enabled.get()
+            geometry_only = self.owner.local_observation_label.get() == "仅双目深度几何"
+            context = ("当前仅使用深度几何，C 供调色参考。" if geometry_only else
+                       "主界面颜色筛选开启；C 为 Lab 参考覆盖率。" if enabled else
+                       "主界面颜色筛选关闭，C 仅作调色参考；应用参考色不会自动开启筛选。")
+            self.policy_status.set(f"C 使用 Lab 参考色距离 ≤{self.delta_lab:g}。" + context)
+            self.policy_valid = True
+        except (ValueError, TypeError):
+            self.policy_valid = False
+            self.policy_status.set("主界面颜色偏差需为 0～150 之间的正数，请修正后计算。")
         for sample in self.pipes:
             eyes = {}
             for role in ("left", "right"):
                 image = self.views[role].image
                 box = sample.get(f"{role}_region_px")
-                eyes[role] = measure_patch(image, sample["color_srgb"], patch_mask(image, box)) if image is not None and box else None
+                eyes[role] = measure_patch(image, sample["color_srgb"], patch_mask(image, box), delta_lab=self.delta_lab) if self.policy_valid and image is not None and box else None
             sample["metrics"] = {"eyes": eyes, "summary": summarize_pair(eyes)}
         self.refresh_table(select)
 
@@ -330,6 +377,10 @@ class CaptureQualityDialog:
             return
         try:
             record = diagnostic_record(self.photo_hashes, self.pipes)
+            record["matching_context"] = {"color_filter_enabled": bool(self.owner.color_filter_enabled.get()),
+                                          "color_delta_lab_used": self.delta_lab if self.policy_valid else None,
+                                          "local_observation_label": self.owner.local_observation_label.get(),
+                                          "color_metric_scope": "LAB_REFERENCE_COVERAGE_NOT_ALL_PARALLEL_STRIP_HINTS"}
             record["saved_at"] = datetime.now(timezone.utc).isoformat()
             atomic_write_text(path, json.dumps(record, ensure_ascii=False, indent=2) + "\n")
             log_event(LOGGER, "capture_quality_saved", path=str(path), photo_sha256=self.photo_hashes,
@@ -341,5 +392,7 @@ class CaptureQualityDialog:
 
     def close(self):
         self.save(quiet=True)
+        for variable, trace in self.policy_traces:
+            variable.trace_remove("write", trace)
         self.closed = True
         self.window.destroy()

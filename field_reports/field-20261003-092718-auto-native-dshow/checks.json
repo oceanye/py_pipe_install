@@ -1,0 +1,52 @@
+{
+  "report_type": "remote_auto_native_dshow_ai_replay",
+  "executed_at": "2026-10-03T01:28:03+08:00",
+  "code_sha": "11322bb8dcb4d9fddbbdf7ece9904b4cd7dc294b",
+  "runtime": {
+    "capture_contract": "remote-auto-native-dshow-v1",
+    "opencv_version": "4.13.0",
+    "camera_backends": {"700": true, "1400": false},
+    "working_tree_dirty": false
+  },
+  "camera_profile": {
+    "left_index": 0,
+    "right_index": null,
+    "layout": "side_by_side_left_right",
+    "eye_width": 1920,
+    "eye_height": 1080
+  },
+  "capture": {
+    "job_id": "remote-20261003-092718-6ddaf287",
+    "run_url": "http://100.103.31.118:8765/remote-20261003-092718-6ddaf287/",
+    "state": "COMPLETED",
+    "quality_status": "USABLE",
+    "pair_count": 8,
+    "usable_pair_count": 8,
+    "unusable_pair_count": 0,
+    "fetch_status": "PASS",
+    "fetched_file_count": 18,
+    "fetched_bytes": 42203263,
+    "exposure": {
+      "status": "AUTO",
+      "backend": 700,
+      "control_api": "IAMCameraControl",
+      "native_range": {"minimum": -11, "maximum": -2, "step": 1, "default": -6, "capabilities": 3},
+      "readback_native": -2,
+      "readback_flags": 1,
+      "auto_accepted": true
+    },
+    "chessboard": {"pairs": 8, "left_found": 8, "right_found": 8, "inner_corners": [8, 6]}
+  },
+  "ai_replay": {
+    "manifest": "outputs/remote_checks/ai_replay_20261003_092718/manifest.json",
+    "report": "outputs/remote_checks/ai_replay_20261003_092718/report.json",
+    "pair_healthy_count": 8,
+    "analysis_healthy_count": 0,
+    "observation_count": 0,
+    "surface_audit_status": "TRUNCATED",
+    "registration_status": "INSUFFICIENT_OBSERVATIONS",
+    "counts": {"INSTALLED": 0, "NOT_INSTALLED": 0, "UNKNOWN": 12},
+    "decision": "SAFE_REFUSAL_NO_PIPE_MEASUREMENT"
+  },
+  "tests": {"pip_check": "PASS", "pytest": "517 passed, 1 skipped, 256 subtests passed"}
+}

@@ -1,12 +1,95 @@
 # 测试与远程开发交接
 
-更新时间：2026-10-02（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
+更新时间：2026-10-04（Asia/Shanghai）。PR #10 已 squash 合并到 `main`；本文件保留开发和测试背景，下一轮远程现场执行以 [远程现场三管实测要求与工作交接](doc/HANDOFF-REMOTE-FIELD-MEASUREMENT.md) 为准。用户最新分工：**本机侧重点完成测试、数据复核和汇报；现场端按 handoff 完成采集与回传。**
 
-## 当前硬件身份（现场补充，待确认）
+## 2026-10-04 第二阶段：可选组级分区与全局匹配策略
+
+当前 `main` 的第二阶段提交在第一阶段 `d4be2d3` 的基础上加入可选分区分析。默认仍是全幅自动，现有旧 manifest 没有 `scope` 时按全幅兼容；现场端选择“分区分析”后，在左目矫正图用“分区管理”框选包含若干平行管道的组，最多 8 个区，允许重叠。右目 ROI 按 `right_roi_padding_px` 自动扩展，裁剪时同步平移左右目矫正内参主点，避免把裁剪像素直接当成全图坐标。
+
+分区保存在 `analysis.elevation_auto.scope/zones`，每区记录 `zone_id`、名称、启用状态、`rectified_left` 坐标系和 `roi_rect_px`。每区独立执行已有识别后端和模型配准，所有区继承全局 `analysis.matching`；没有逐区颜色或逐管手工绑定。合并阶段给观察编号加 `zone_id` 前缀，重叠区同一管道的证据合并；同一管道出现安装/未安装冲突时保持 `UNKNOWN`，并在 `zone_registration_audit`、`capture_audit.groups[*].zone_audits` 和管道行的 `zone_results` 中保留来源。
+
+现场验证建议：先用一个覆盖全图的 Z01 验证分区路径与全幅结果一致，再把画面按管组拆成两个有少量重叠的区域；每次修改范围都会使历史兼容性失效并开启新历史。报告仍不能把模型直径当作实测值，曝光/标定/双目证据不足继续保持 `UNKNOWN`。
+
+验证命令：`python -m pytest -q tests/test_elevation_zones.py tests/test_elevation_dataset.py tests/test_elevation_auto.py tests/test_elevation_gui.py`；本次完整回归为 **523 passed、1 skipped、256 subtests passed**，`python -m compileall -q pipe_twin` 和 `git diff --check` 通过。
+
+## 2026-10-04 第三阶段：STL 平行管组自动候选与人工确认
+
+分区管理现在可以点击“根据 STL 自动生成候选”。`pipe_twin/model_zones.py` 从当前模型管道目录读取中心线、外径和方向，按方向容差、共同管长区间和横向净间距形成确定性的平行管组；每个候选保存 `model_pipe_ids`、模型目录 SHA-256、算法参数和共同管长区间。候选默认是 `confirmed=false/enabled=false`，因此不会未经人工确认进入分析。STL 已足够完成该步骤；同一规范化管道目录来自 DXF 时也可复用。`test_model/管道布置.stl` 当前会得到一个包含 12 根平行管的候选组；间距或方向不连续的模型会拆成多个候选，单根也保留供人工删除或确认。
+
+GUI 的确认流程是：先生成候选；若已有健康的全幅 `MATCHED` 配准，程序只把当前双目共同观测的轴向截面投影成候选照片范围，不使用 STL 端点猜测；否则候选显示为“未映射”。操作员在左目图拖出范围后，选择候选并点击“绑定框选到所选候选”，再点击“确认/启用所选候选”。不需要的候选可在列表中选择后删除；未绑定或未确认的草稿可保留，不能运行分区分析。保存后的模型候选带 `roi_source=matched_section/user`，报告会记录分区来源和绑定的模型管道编号。
+
+启用的 STL 分区只把绑定的模型管道子集交给该分区的注册与识别，再把各区证据合并到完整模型目录；跨区冲突仍保持 `UNKNOWN`。模型目录或管道几何改变后，目录哈希校验会拒绝旧候选，需重新生成。颜色筛选仍是可选辅助策略，直径和双目几何仍是主判据。
+
+新增回归覆盖候选确定性、方向/间距拆分、真实 12 管 STL、候选草稿/确认门禁、模型哈希变化、分区子目录和 GUI 绑定确认。当前验证：`python -m pytest tests -q` → **530 passed、1 skipped、256 subtests passed**；`python -m compileall -q pipe_twin` 与 `git diff --check` 通过。现场端拉取后需重新打开 GUI；旧分区 manifest 可以继续使用，STL 自动候选是新增可选流程，不会自动改变默认全幅模式。
+
+## 2026-10-04 现场主线清理
+
+本次提交只做流程清理。基础立面现场统一为 `elevation_auto`：模型输入只接受 DXF/STL，管道区域、直径和立面证据由双目算法自动生成；旧 `elevation_depth.py` 逐管手工区域模块及其测试已删除。主 GUI 隐藏旧的清单/合成示例/二维码/DXF 草稿与逐管绑定入口，模型预览不再支持两点拾取和观察到模型的手工绑定；已有相机标定、双目抓拍、状态刷新、日志和识别后端注册接口保留。分区功能在后续第二阶段独立提交。
+
+现场 manifest 不再接受 `elevation_depth`，没有模型的自动现场也会拒绝；旧 3DM/3MF、二维码和逐管手工框选只留在离线历史回归代码/资产中，不属于现场输入。操作说明已改写为 DXF/STL 自动流程；第二阶段增加的分区是组级 ROI，不恢复逐管手工框选。
+
+验证：`python -m pytest -q` → **510 passed, 1 skipped, 256 subtests passed**；`python -m compileall -q pipe_twin` 和 `git diff --check` 通过。提交后现场端只需拉取 `main`，重新打开主 GUI；不需要迁移旧手工现场包，需用 DXF/STL 重新建立基础现场。
+
+## 2026-10-03 主流程收敛与识别后端模块化
+
+DXF 侧立面的日常路径已收敛为：**导入 DXF → 核对管径/颜色/共同管长方向 → 载入一次真实双目标定 → 双目抓拍并评估 → 新增实物后点击状态刷新**。不再要求先单独“载入现场清单”；首次保存基础现场时程序会创建 schema 2.0 manifest。当前现场工作台只接受 DXF/STL，管道身份由模型几何、双目直径和立面距离自动匹配；二维码绝对配准、逐管手工区域和历史 3DM/3MF 入口已从操作主线移除。
+
+`pipe_twin/recognition/` 现在是局部管道识别的唯一调度入口。`auto`、`cylinder`、`parallel_strip`、`geometry_only` 四个内置后端保持原有行为；圆柱拟合、平行局部条带和固定机位深度局部截断都只通过统一的 `surface` 结果交给后续注册与状态机。后续算法可调用 `register_recognizer(name, backend)` 后在 `registration.local_observation_mode` 使用该名称；未注册名称在建档/载入时拒绝，避免现场包执行未知代码。每个报告的 `surface_audit` 会记录请求后端和实际使用后端。
+
+标定状态分为两层：`validated=true` + `rectified=true` 表示相机内参与双目矫正已完成，同一相机、镜头、分辨率、裁剪和左右布局不需要重复标定；`registration_validated` 表示 CAD 绝对坐标配准，基础立面相对布局模式可以在它为 `false` 时继续。现有现场候选 `field-chess-fb5dc0f71ee5` 是历史 15 姿态结果，本轮没有重新求解，`registration_validated=false`；只有更换硬件/图像几何或标定质量失效时才重新打开向导。GUI 状态栏现在会明确显示“相机标定已完成，无需重复”和 CAD 配准状态。
+
+详细操作、清理边界和替换算法示例见 [DXF / STL 双目立面识别主流程](doc/立面识别主流程.md)。
+本轮回归：`528 passed, 1 skipped, 256 subtests passed`；`python -m compileall -q pipe_twin` 和 `git diff --check` 通过。
+
+## 2026-10-03 平行管局部条带识别开发
+
+用户确认所有现场管道彼此平行，棋盘只遮挡局部时应利用露出的侧面。新增 `pipe_twin/parallel_local.py`：在左右矫正图中提取有颜色提示的细长局部条带，检查有效双目点、共同轴向和轴向支撑，用局部投影宽度估计直径，再把观测交给既有的 `elevation_registration`。颜色仍是候选分割提示，身份仍由管径和立面截面位置决定；没有至少三条非退化观测（或已绑定基准）时继续返回 `INSUFFICIENT_OBSERVATIONS`，不把局部条带当成安装证明。
+
+## 2026-10-03 固定机位共同轴局部截断与相对布局
+
+固定相机场景新增 `local_observation_mode="geometry_only"`。该路径跳过 RGB 候选生成，只从左右目深度连通表面拟合局部圆柱；每个左右目候选先沿拟合的共同管轴求交，截断到“两目共同可见”的轴向区间，再融合截面中心、外径和局部点云。照片颜色只作为审计采样，不参与候选生成或身份判定。
+
+`elevation_registration` 现在在匹配成功时写出 `registration.relative_layout`：它位于垂直于共同管轴的截面，逐管记录模型/现场相对管心偏移，并列出每一对管的模型中心距、双目实测中心距和误差。轴向平移明确排除，因此相机固定时重复抓拍可直接比较相对管位。GUI 的“局部建模 → 仅双目深度几何”会把该模式写入 manifest；普通 `auto` 和 `parallel_strip` 行为保持兼容。
+
+合成无颜色双目回放在 `geometry_only` 下仍恢复三根（约 24/36/50 mm），布局中心距最大误差小于 1 mm；这验证的是算法链和坐标约定，不是办公室相机精度验收。现场仍需在合格曝光、有效双目深度和共同可见侧面条件下复测。
+
+实现已推送到 `main`：`f914769`。本次全量回归为 **521 passed、1 skipped、256 subtests passed**；现场端拉取该提交后，在 GUI 选择“仅双目深度几何”，保存的 manifest 会记录 `local_observation_mode=geometry_only`。
+
+## 2026-10-03 现场新增管状态刷新
+
+基础立面 GUI 新增 **状态刷新**。现场新增安装管道后点击该按钮，客户端会重新打开双目抓拍；一对新照片完成后自动创建新的 capture group、沿用旧历史并执行自动匹配。每次刷新不覆盖旧结果：`status_refresh.requested_at` 记录按钮请求时间，左右目 `views.left/right.captured_at` 记录实际拍摄时间，报告顶层 `generated_at` 记录本次分析完成时间；`capture_audit.groups` 同样保留这些组级记录。若当前不是自动匹配模式，按钮会提示先切换到自动匹配。
+
+状态刷新实现提交为 `fdb86b1`，全量回归为 **524 passed、1 skipped、256 subtests passed**；提交后需推送并由现场端拉取最新 `main`。
+
+自动立面 manifest 的 `registration` 现在支持：
+
+```json
+{"axis_world": [0, 0, 1], "anchors": {}, "local_observation_mode": "auto"}
+```
+
+`auto` 先走严格圆柱拟合；圆柱候选为空或搜索被遮挡截断时自动回退到平行局部条带。也可明确使用 `"parallel_strip"`，或保留旧的 `"cylinder"`。当前合成三管回放在 `parallel_strip` 下恢复 3 根并正确匹配；此前较宽松的办公室棋盘回放只形成 1 条与 41/51 mm 均相容的蓝色局部观测，结果仍是 `0 INSTALLED / 0 NOT_INSTALLED / 12 UNKNOWN`，这是证据不足而非成功量测。
+
+## 2026-10-03 颜色与双目几何的保守复核
+
+随后收紧了 `parallel_local` 的证据链：左右目必须给出相同的红/蓝/白颜色类别；左右目局部三维中心、局部直径和中位深度必须在阈值内；直径以局部重建点到共同管轴的径向 95 分位为主，并用投影弦宽作独立下界，不再用固定倍数把短色带补成完整直径。通过直径门后，颜色只缩小候选管位，最终身份仍由截面刚体布局和立面距离决定。
+
+收紧后，办公室棋盘照片的局部观测数为 `0`：主要可见蓝色大块左右目中心相差约 `71 mm`，另一蓝色候选的几何直径约 `94 mm` 落在 DXF 管径目录之外；红色大块也没有通过局部几何门，白色没有形成可靠双目条带。报告会保留 `LOCAL_COLOR_CLASS_MISMATCH`、`STEREO_LOCAL_CENTER_DISAGREEMENT`、`LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE` 等拒绝计数，所以结果继续为 `12 UNKNOWN`。
+
+合成场景复核仍得到约 `24.1 / 37.5 / 52.0 mm`，颜色类别为 `RED / GREEN / BLUE`，三根均能在 `parallel_strip` 模式下完成布局匹配。当前仍需白天现场重新拍摄，让红、蓝、白三根管在左右目分别露出足够长的同一侧面；在形成三条几何一致的局部观测前，不输出现场三管身份。
+
+验证：`python -m pytest tests -q` → **520 passed, 1 skipped, 256 subtests passed**；新增局部条带回归覆盖部分遮挡、直径优先和 manifest 模式契约。办公室下一轮需在左右目同时露出蓝/红/白管的连续侧面，并回传新的代码 SHA、原图质量和 `surface_audit.observation_type`，再判断三根模型管位。
+
+## 当前硬件身份（用户已确认）
 
 用户已确认设备为“汇博视捷、基线 60 mm、视场角 80°”，项目型号状态为 `CONFIRMED_BY_USER`，记录型号 `HBVCAM-4M2214HD-2 V11`（双 `OV4689`、USB 2.0、滚动快门）。办公室 PnP `HardwareIds` 仍只用于确认驱动实例，不再作为型号确认门槛；具体证据和原厂链接见 [相机资料审查与接入建议](doc/相机资料审查与接入建议.md)。原厂未公开该型号 DirectShow 的数值曝光范围，当前约 `250 ms` 仅是现场驱动回读上限。
 
-## 2026-10-03 办公室部署与 AI 完整检查
+## 2026-10-03 最新主线现场回归（`11322bb`）
+
+办公室服务已重启到 GitHub 最新提交 `11322bb8dcb4d9fddbbdf7ece9904b4cd7dc294b`，健康响应同时确认工作树干净、DirectShow `700` 可用、Media Foundation `1400` 不可用。AUTO 远程抓拍任务 `remote-20261003-092718-6ddaf287` 完成 `8/8 USABLE`，左右棋盘均检测到 48 点，8765 取回 18 个文件并通过哈希校验。原生 `IAMCameraControl` 回报曝光范围 `-11..-2`，AUTO 回读 `-2`。
+
+把这 8 对接入最新 DXF manifest 回放后，AI 仍输出 `0 INSTALLED / 0 NOT_INSTALLED / 12 UNKNOWN`、局部圆柱 `0`、`surface_audit=TRUNCATED`。照片是固定棋盘标定场景，不能作为三管识别验收；这次结果说明采集链已恢复，AI 仍正确拒判。完整记录见 [最新 AUTO/DirectShow 与 AI 回放报告](field_reports/field-20261003-092718-auto-native-dshow/report.md)。
+
+## 2026-10-03 办公室部署与 AI 完整检查（`541fc38` 历史基线）
 
 办公室 `8770` 返回 `READY`，`8765` 可下载；当前配置为索引 `0`、并排左右、每目 `1920×1080`、DirectShow `700`。本轮 20 秒 AUTO 预热为 `0/3` 连续可用；手动 5 ms、AUTO 单帧和 1 秒请求均得到近黑图。1 秒请求已到达当前客户端，但驱动回读仍为 `250 ms`（`UNCONFIRMED`），所以不能把 1 秒当作真实曝光。完整证据见 [办公室部署与 AI 完整检查报告](field_reports/field-20261003-001845-office-ai-check/report.md)。
 
@@ -99,7 +182,7 @@ python -m pytest tests -q
 - `pipe_twin/pipe_geometry.py`：版本 `pipe-section-distances-v1`，在同一指定截面输出中心线、最小表面 Z、最近表面空间距离和轮廓切点。原点为左目矫正相机光心。
 - `elevation_auto.py`：模型与观测按同一观测轴向位置比较，避免 CAD 中点及 DXF 预览管长改变测距；实测/模型预测分列，健康失败保持未知。
 - `elevation_dataset.py`：新增可选 `present_pipe_count`；检出数量超过已知实物数量时拒绝本次配准，不强选 3 根，也不补造观测。
-- `elevation_depth.py`：手工区域的深度中位数明确标成诊断量，没有轴线/半径时不输出实测截面。
+- 旧的 `elevation_depth.py` 手工区域路径不再属于现场工作台主线；现场包统一使用 `elevation_auto`。
 - `elevation_gui.py`：增加实际管数和“尺寸与测距”，保存后可恢复。模型候选数与实物数分开显示。
 - `local_surface.py`、`metrology.py`：附带明确的距离定义；圆柱仍由双目表面拟合。
 

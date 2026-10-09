@@ -12,7 +12,8 @@ from unittest import mock
 import cv2
 import numpy as np
 
-from pipe_twin.elevation_gui import ElevationCaptureDialog, image_region
+from pipe_twin.dxf_elevation import catalog_from_dxf
+from pipe_twin.elevation_gui import ElevationCaptureDialog, ZoneEditorDialog, image_region
 from test_elevation_dataset import _calibration
 
 
@@ -47,20 +48,16 @@ class ElevationGuiTests(unittest.TestCase):
         self.profile_patch.start()
         self.dialog = ElevationCaptureDialog(self.app, output_root=self.output, restore=False)
         self.dialog.window.withdraw()
-        # Legacy ROI tests exercise the compatibility classifier explicitly;
-        # production dialogs default to automatic STL matching.
-        self.dialog.mode.set("elevation_depth")
         self.dialog.calibration_override = _calibration()
-        self.spec = {"pipe_id": "P001", "nominal_diameter_mm": 20.0, "color_srgb": "#FF0000",
-                     "left_region_px": [200, 100, 100, 40], "right_region_px": [170, 100, 100, 40],
-                     "expected_depth_mm": 1000.0, "axis": "horizontal"}
+        model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.dxf"
+        self.dialog.load_model(model)
+        self.spec = copy.deepcopy(self.dialog.pipes[0])
         for role, value in (("left", 50), ("right", 60)):
             path = Path(self.tmp.name) / f"{role}.png"
             cv2.imwrite(str(path), np.full((480, 640, 3), value, np.uint8))
             self.dialog.fields[role].set(str(path))
             self.dialog.fields[f"{role}_time"].set("2026-09-12T10:00:00+08:00")
         self.dialog.load_images()
-        self.dialog.pipes = [copy.deepcopy(self.spec)]
         self.dialog.refresh_table()
         self.dialog.confirmed.set(True)
 
@@ -84,13 +81,11 @@ class ElevationGuiTests(unittest.TestCase):
         saved = self.dialog.last_manifest
         self.assertTrue(saved.is_file())
         payload = json.loads(saved.read_text(encoding="utf-8"))
-        self.assertEqual(payload["analysis"]["mode"], "elevation_depth")
-        self.assertNotIn("path", payload["model"])
+        self.assertEqual(payload["analysis"]["mode"], "elevation_auto")
+        self.assertTrue(payload["model"]["path"].endswith(".dxf"))
         self.assertFalse(payload["stereo_calibration"]["registration_validated"])
-        self.dialog.clear_regions()
         self.dialog.load_session(saved)
-        self.assertEqual(self.dialog.pipes[0]["left_region_px"], self.spec["left_region_px"])
-        self.assertEqual(self.dialog.pipes[0]["expected_depth_mm"], 1000)
+        self.assertNotIn("left_region_px", self.dialog.pipes[0])
         self.assertFalse(self.dialog.confirmed.get())
         self.dialog.confirmed.set(True)
         self.dialog.submit(False)
@@ -103,9 +98,9 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.submit(True)
         self.finish_worker()
         self.assertEqual(self.dialog.results["P001"]["installation_state"], "UNKNOWN")
-        self.assertIn("不确定 1", self.dialog.summary.get())
+        self.assertIn("不确定 12", self.dialog.summary.get())
         self.assertTrue((self.dialog.last_manifest.parent / "report.json").is_file())
-        self.assertEqual(len(self.dialog.report["evidence_files"]), 2)
+        self.assertGreaterEqual(len(self.dialog.report["evidence_files"]), 2)
 
     def test_matching_controls_roundtrip_and_preserve_other_settings(self):
         self.dialog.analysis_settings = {"minimum_depth_mm": 350, "stereo_matching": {"block_size": 7}}
@@ -147,51 +142,62 @@ class ElevationGuiTests(unittest.TestCase):
         self.app.messagebox.showerror.assert_called_once()
         self.assertIn("预览后已改变", self.dialog.message.get())
 
-    def test_region_change_discards_reference_and_stale_worker_result(self):
-        self.dialog.report = {"old": True}
-        self.dialog.results = {"P001": {"installation_state": "INSTALLED"}}
-        generation = self.dialog.generation
-        self.dialog.set_region("left", [210, 100, 100, 40])
-        self.assertNotIn("expected_depth_mm", self.dialog.pipes[0])
-        self.assertIsNone(self.dialog.report)
-        self.dialog.messages.put((generation, "ok", (Path("stale.json"), {"pipes": [], "counts": {}}, False)))
-        self.dialog.window.after_cancel(self.dialog.poll_id)
-        self.dialog.poll()
-        self.assertIsNone(self.dialog.last_manifest)
-        self.assertIn("丢弃旧结果", self.dialog.message.get())
-
     def test_first_run_stl_catalog_and_model_id_preview(self):
         model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"
         self.dialog.load_model(model)
         self.assertTrue(self.dialog.pipes)
         self.assertTrue(self.dialog.selected_id())
+        self.assertTrue(all(row.get("color_source") == "stl_synthetic_by_diameter" for row in self.dialog.pipes))
+        colors_by_diameter = {}
+        for row in self.dialog.pipes:
+            diameter = round(row["nominal_diameter_mm"], 1)
+            colors_by_diameter.setdefault(diameter, row["color_srgb"])
+            self.assertEqual(row["color_srgb"], colors_by_diameter[diameter])
         self.assertTrue(all("left_region_px" not in row for row in self.dialog.pipes))
         self.dialog.show_catalog()
         self.root.update_idletasks()
 
+    def test_stl_zone_candidates_can_be_bound_confirmed_and_saved(self):
+        model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"
+        self.dialog.load_model(model)
+        editor = ZoneEditorDialog(self.dialog)
+        editor.window.withdraw()
+        try:
+            editor._auto_propose()
+            self.assertEqual(len(editor.zones), 1)
+            self.assertFalse(editor.zones[0]["confirmed"])
+            self.assertFalse(editor.zones[0]["enabled"])
+            editor.listbox.selection_set(0)
+            editor._selected()
+            editor.pending_rect = [0, 0, 640, 480]
+            editor._bind_pending()
+            self.assertEqual(editor.zones[0]["roi_source"], "user")
+            editor._confirm()
+            self.assertTrue(editor.zones[0]["confirmed"])
+            self.assertTrue(editor.zones[0]["enabled"])
+            editor._auto_propose()
+            self.assertEqual(len(editor.zones), 1)
+            self.assertTrue(editor.zones[0]["enabled"])
+            editor._save()
+            self.assertEqual(self.dialog.zone_settings["scope"], "zones")
+            self.assertEqual(self.dialog.zone_settings["zones"][0]["model_pipe_ids"],
+                             sorted(spec["pipe_id"] for spec in self.dialog.pipes))
+        finally:
+            if editor.window.winfo_exists():
+                editor.window.destroy()
+
     def test_auto_mode_is_roi_free_and_direction_is_normalized(self):
         model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.stl"
         self.dialog.load_model(model)
-        # The production default is automatic; switching from the legacy
-        # compatibility mode removes any stale hand-drawn rectangles.
+        # The production workflow is automatic; model geometry owns the pipe
+        # catalogue and the analyzer owns photo regions.
         self.dialog.pipes[0]["left_region_px"] = [20, 20, 20, 20]
-        self.dialog.mode.set("elevation_auto")
-        self.dialog.mode_changed()
-        self.assertTrue(all("left_region_px" not in row and "right_region_px" not in row for row in self.dialog.pipes))
+        self.assertTrue(all("left_region_px" not in row for row in self.dialog.pipes[1:]))
         self.dialog._set_axis_world([0.0, 0.0, 4.0])
         self.assertEqual(self.dialog.registration_settings["axis_world"], [0.0, 0.0, 1.0])
         self.assertEqual(self.dialog.registration_settings["anchors"], {})
 
-    def test_manual_mode_can_be_selected_after_auto(self):
-        self.dialog.mode.set("elevation_auto")
-        self.dialog.mode_changed()
-        self.dialog.mode.set("elevation_depth")
-        self.dialog.mode_changed()
-        self.assertEqual(self.dialog.mode.get(), "elevation_depth")
-        self.assertIn("手工", self.dialog.message.get())
-
     def test_auto_canvas_draws_unmatched_observation_overlay(self):
-        self.dialog.mode.set("elevation_auto")
         self.dialog.report = {
             "registration": {"status": "INSUFFICIENT_OBSERVATIONS"},
             "local_surface": {"observations": [{
@@ -220,10 +226,10 @@ class ElevationGuiTests(unittest.TestCase):
 
     def test_restore_keeps_verified_registration_settings_after_photo_load(self):
         manifest = {"model": {"source_unit": "millimeter", "path": None}, "capture": {"capture_groups": [{"views": {"left": {"timestamp_source": "MANIFEST_OPERATOR_CONFIRMED"}, "right": {"timestamp_source": "MANIFEST_OPERATOR_CONFIRMED"}}}]}}
-        loaded = {"manifest": manifest, "mode": "elevation_auto", "registration_settings": {"axis_world": [0, 0, 1], "anchors": {"OBS-0001": "P001"}}, "calibration": _calibration(), "pipe_specs": [copy.deepcopy(self.spec)], "left_path": Path(self.tmp.name) / "left.png", "right_path": Path(self.tmp.name) / "right.png", "left_time": "2026-09-12T10:00:00+08:00", "right_time": "2026-09-12T10:00:00+08:00", "rectification_recipe": None}
+        loaded = {"manifest": manifest, "mode": "elevation_auto", "registration_settings": {"axis_world": [0, 0, 1], "anchors": {}}, "calibration": _calibration(), "pipe_specs": [copy.deepcopy(self.spec)], "left_path": Path(self.tmp.name) / "left.png", "right_path": Path(self.tmp.name) / "right.png", "left_time": "2026-09-12T10:00:00+08:00", "right_time": "2026-09-12T10:00:00+08:00", "rectification_recipe": None}
         with mock.patch("pipe_twin.elevation_dataset.load_elevation_dataset", return_value=loaded), mock.patch.object(self.dialog, "load_images"):
             self.dialog.load_session(Path(self.tmp.name) / "manifest.json")
-        self.assertEqual(self.dialog.registration_settings["anchors"], {"OBS-0001": "P001"})
+        self.assertEqual(self.dialog.registration_settings["anchors"], {})
 
     def test_calibration_change_requires_new_images_and_regions(self):
         self.dialog.fields["calibration"].set("new-calibration.json")
@@ -231,7 +237,6 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertFalse(self.dialog.confirmed.get())
         self.assertFalse(self.dialog.image_hashes)
         self.assertNotIn("left_region_px", self.dialog.pipes[0])
-        self.assertNotIn("expected_depth_mm", self.dialog.pipes[0])
         self.assertIsNone(self.dialog.views["left"].image)
 
     def test_missing_eye_provides_actionable_error(self):
@@ -249,7 +254,6 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(self.dialog.profile["rectification_recipe"], recipe)
 
     def test_quality_check_operates_without_observations_and_preserves_analysis_regions(self):
-        self.dialog.mode.set("elevation_auto")
         original = copy.deepcopy(self.dialog.pipes)
         self.dialog.open_quality_check()
         quality = self.dialog.quality_dialog
@@ -286,25 +290,55 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertIsNone(quality.pipes[0]["metrics"]["summary"]["color_coverage_percent"])
         self.assertEqual(saved.read_bytes(), original_record)
 
+    def test_quality_mouse_selection_and_matching_policy_changes(self):
+        self.dialog.open_quality_check()
+        quality = self.dialog.quality_dialog
+        quality.window.withdraw()
+        quality.set_color("#505050")
+        for role in ("left", "right"):
+            view = quality.views[role]
+            self.assertTrue(view.canvas.bind("<ButtonPress-1>"))
+            view.transform = (1.0, 0.0, 0.0)
+            view.start(SimpleNamespace(x=20, y=20))
+            view.move(SimpleNamespace(x=60, y=60))
+            view.finish(SimpleNamespace(x=60, y=60))
+            self.assertEqual(quality.pipes[0][f"{role}_region_px"], [20, 20, 40, 40])
+        self.dialog.color_delta_lab.set("1")
+        self.assertEqual(quality.pipes[0]["metrics"]["summary"]["color_coverage_percent"], 0)
+        self.dialog.color_delta_lab.set("100")
+        self.assertEqual(quality.pipes[0]["metrics"]["summary"]["color_coverage_percent"], 100)
+        self.assertIn("筛选关闭", quality.policy_status.get())
+        quality.save()
+        record = json.loads(quality.record_path().read_text(encoding="utf-8"))
+        self.assertEqual(record["matching_context"]["color_delta_lab_used"], 100)
+        self.dialog.color_delta_lab.set("")
+        self.assertIsNone(quality.pipes[0]["metrics"]["summary"]["color_coverage_percent"])
+        self.assertIn("请修正", quality.policy_status.get())
+        self.dialog.color_delta_lab.set("45")
+        self.dialog.local_observation_label.set("仅双目深度几何")
+        self.assertIn("仅使用深度几何", quality.policy_status.get())
+
     def test_quality_color_application_invalidates_old_result_only_on_explicit_apply(self):
-        self.dialog.pipes.append(dict(self.spec, pipe_id="P002", color_srgb="#FFFFFF"))
+        originals = copy.deepcopy(self.dialog.pipes)
         self.dialog.open_quality_check()
         quality = self.dialog.quality_dialog
         quality.window.withdraw()
         self.dialog.report = {"old": True}
         self.dialog.results = {"P001": {"installation_state": "INSTALLED"}}
         quality.set_color("#ABCD12")
-        self.assertEqual(self.dialog.pipes[0]["color_srgb"], "#FF0000")
+        self.assertEqual(self.dialog.pipes[0]["color_srgb"], originals[0]["color_srgb"])
         self.assertTrue(self.dialog.results)
         quality.apply_color()
-        self.assertTrue(all(p["color_srgb"] == "#ABCD12" for p in self.dialog.pipes))
+        for row, old in zip(self.dialog.pipes, originals):
+            self.assertEqual(row["color_srgb"], "#ABCD12" if abs(row["nominal_diameter_mm"] - self.spec["nominal_diameter_mm"]) <= 0.2 else old["color_srgb"])
+        self.assertFalse(self.dialog.color_filter_enabled.get())
         self.assertFalse(self.dialog.results)
         self.assertIsNone(self.dialog.report)
 
     def test_live_dialogs_use_basic_owner_and_close_with_scene(self):
         self.dialog.open_calibration()
         wizard = self.dialog.calibration_dialog
-        self.assertIn("基础模式标定后可直接抓拍", wizard.message.get())
+        self.assertIn("基础立面模式标定后可直接抓拍", wizard.message.get())
         self.dialog.capture_camera()
         camera = self.dialog.camera_dialog
         self.assertIs(camera.owner, self.dialog)
