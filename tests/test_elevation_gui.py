@@ -248,6 +248,59 @@ class ElevationGuiTests(unittest.TestCase):
         persist.assert_called_once_with({"camera": {"left_index": 2}})
         self.assertEqual(self.dialog.profile["rectification_recipe"], recipe)
 
+    def test_quality_check_operates_without_observations_and_preserves_analysis_regions(self):
+        self.dialog.mode.set("elevation_auto")
+        original = copy.deepcopy(self.dialog.pipes)
+        self.dialog.open_quality_check()
+        quality = self.dialog.quality_dialog
+        quality.window.withdraw()
+        quality.set_region("left", [20, 20, 40, 40])
+        self.assertEqual(quality.pipes[0]["metrics"]["summary"]["status"], "INCOMPLETE")
+        quality.set_region("right", [18, 20, 40, 40])
+        self.assertEqual(quality.pipes[0]["metrics"]["summary"]["status"], "COMPLETE")
+        self.assertEqual(self.dialog.pipes, original)
+        self.assertFalse(self.dialog.results)
+        saved = quality.record_path()
+        self.assertTrue(saved.is_file())
+        record = json.loads(saved.read_text(encoding="utf-8"))
+        self.assertEqual(record["photo_sha256"], self.dialog.image_hashes)
+        quality.close()
+        self.dialog.open_quality_check()
+        restored = self.dialog.quality_dialog
+        restored.window.withdraw()
+        self.assertEqual(restored.pipes[0]["left_region_px"], [20, 20, 40, 40])
+        self.assertEqual(restored.pipes[0]["metrics"]["summary"]["status"], "COMPLETE")
+
+    def test_quality_check_clears_changed_photos_and_retains_old_record(self):
+        self.dialog.open_quality_check()
+        quality = self.dialog.quality_dialog
+        quality.window.withdraw()
+        for role in ("left", "right"):
+            quality.set_region(role, [20, 20, 40, 40])
+        saved = quality.record_path()
+        original_record = saved.read_bytes()
+        cv2.imwrite(self.dialog.fields["left"].get(), np.full((480, 640, 3), 180, np.uint8))
+        self.dialog.load_images()
+        self.assertNotEqual(quality.record_path(), saved)
+        self.assertNotIn("left_region_px", quality.pipes[0])
+        self.assertIsNone(quality.pipes[0]["metrics"]["summary"]["color_coverage_percent"])
+        self.assertEqual(saved.read_bytes(), original_record)
+
+    def test_quality_color_application_invalidates_old_result_only_on_explicit_apply(self):
+        self.dialog.pipes.append(dict(self.spec, pipe_id="P002", color_srgb="#FFFFFF"))
+        self.dialog.open_quality_check()
+        quality = self.dialog.quality_dialog
+        quality.window.withdraw()
+        self.dialog.report = {"old": True}
+        self.dialog.results = {"P001": {"installation_state": "INSTALLED"}}
+        quality.set_color("#ABCD12")
+        self.assertEqual(self.dialog.pipes[0]["color_srgb"], "#FF0000")
+        self.assertTrue(self.dialog.results)
+        quality.apply_color()
+        self.assertTrue(all(p["color_srgb"] == "#ABCD12" for p in self.dialog.pipes))
+        self.assertFalse(self.dialog.results)
+        self.assertIsNone(self.dialog.report)
+
     def test_live_dialogs_use_basic_owner_and_close_with_scene(self):
         self.dialog.open_calibration()
         wizard = self.dialog.calibration_dialog

@@ -174,7 +174,7 @@ class RegionCanvas:
             color = STATE_COLORS.get(result.get("installation_state"), "#58B6F2")
             canvas.create_rectangle(ox + x * scale, oy + y * scale, ox + (x + bw) * scale, oy + (y + bh) * scale,
                                     outline=color, width=3 if spec["pipe_id"] == selected else 1)
-            label = label_override or spec["pipe_id"]
+            label = label_override or spec.get("name") or spec["pipe_id"]
             if result:
                 label += " · " + result.get("installation_state_zh", "不确定")
             canvas.create_text(ox + x * scale + 2, max(12, oy + y * scale - 3), anchor="sw", text=label, fill=color)
@@ -264,6 +264,7 @@ class ElevationCaptureDialog:
         self.calibration_dialog = None
         self.camera_dialog = None
         self.model_viewer = None
+        self.quality_dialog = None
         self.messages: queue.Queue = queue.Queue()
         self.timestamp_sources = {role: "MANIFEST_OPERATOR_CONFIRMED" for role in ("left", "right")}
         self.camera_capture_provenance = {}
@@ -330,6 +331,7 @@ class ElevationCaptureDialog:
         ttk.Label(scene_bar, text="现场实际管数（未知可留空）").pack(side="left")
         ttk.Entry(scene_bar, textvariable=self.present_pipe_count, width=5).pack(side="left", padx=6)
         ttk.Label(scene_bar, text="模型目录可多于现场实物；数量不代替管道身份确认", foreground="#355371").pack(side="left")
+        ttk.Button(scene_bar, text="颜色与反光检查", command=self.open_quality_check).pack(side="right", padx=4)
 
         panes = ttk.Panedwindow(frame, orient="horizontal")
         panes.pack(fill="both", expand=True, pady=8)
@@ -416,6 +418,8 @@ class ElevationCaptureDialog:
 
     def _field_changed(self, key: str) -> None:
         self.invalidate()
+        if key in {"left", "right", "calibration"} and self.quality_dialog is not None and not self.quality_dialog.closed:
+            self.quality_dialog.clear_inputs()
         if key == "calibration":
             self.calibration_override = None
             self._clear_registration_anchors()
@@ -447,6 +451,16 @@ class ElevationCaptureDialog:
     def selected_id(self) -> str | None:
         selected = self.tree.selection()
         return str(selected[0]) if selected else None
+
+    def open_quality_check(self) -> None:
+        if self.busy:
+            return
+        from .capture_quality_gui import CaptureQualityDialog
+        if self.quality_dialog is not None and not self.quality_dialog.closed:
+            self.quality_dialog.refresh_inputs()
+            self.quality_dialog.window.lift()
+        else:
+            self.quality_dialog = CaptureQualityDialog(self)
 
     def selected_pipe(self) -> dict[str, Any] | None:
         return next((row for row in self.pipes if row["pipe_id"] == self.selected_id()), None)
@@ -853,6 +867,8 @@ class ElevationCaptureDialog:
             view.set_image(image)
         self.invalidate()
         self.refresh_table()
+        if self.quality_dialog is not None and not self.quality_dialog.closed:
+            self.quality_dialog.refresh_inputs()
 
     def browse_session(self) -> None:
         if self.busy:
@@ -1079,7 +1095,7 @@ class ElevationCaptureDialog:
 
     def close(self) -> None:
         self.closed = True
-        for dialog in (self.camera_dialog, self.calibration_dialog, self.model_viewer):
+        for dialog in (self.camera_dialog, self.calibration_dialog, self.model_viewer, self.quality_dialog):
             if dialog is not None and dialog.window.winfo_exists():
                 dialog.close()
         if getattr(self, "poll_id", None):

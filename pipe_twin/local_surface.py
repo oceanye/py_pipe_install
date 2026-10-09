@@ -22,8 +22,9 @@ class LocalSurfaceError(ValueError):
     """Invalid stereo arrays, calibration, or pipe catalogue."""
 
 
+DEFAULT_COLOR_DELTA_LAB = 45.0
 _DEFAULTS = {
-    "color_delta_lab": 45.0,
+    "color_delta_lab": DEFAULT_COLOR_DELTA_LAB,
     "minimum_component_pixels": 80,
     "minimum_valid_fraction": 0.10,
     "depth_discontinuity_mm": 8.0,
@@ -81,6 +82,13 @@ def _hex_bgr(value: Any) -> np.ndarray:
     except ValueError as error:
         raise LocalSurfaceError("pipe color must be #RRGGBB") from error
     return np.asarray([[channels[:3][::-1]]], dtype=np.uint8)
+
+
+def color_candidate_mask(lab: np.ndarray, color: str, *, delta_lab: float | None = None) -> np.ndarray:
+    """Shared candidate rule on OpenCV uint8-encoded Lab (not CIE Delta E)."""
+    target = cv2.cvtColor(_hex_bgr(color), cv2.COLOR_BGR2LAB).astype(np.float32)[0, 0]
+    limit = _DEFAULTS["color_delta_lab"] if delta_lab is None else delta_lab
+    return np.linalg.norm(lab.astype(np.float32, copy=False) - target, axis=2) <= limit
 
 
 def _settings(value: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -522,8 +530,7 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
                              "refill_attempted_candidates": 0}
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB).astype(np.float32)
         for color in considered_colors:
-            target = cv2.cvtColor(_hex_bgr(color), cv2.COLOR_BGR2LAB).astype(np.float32)[0, 0]
-            color_mask = np.linalg.norm(lab - target, axis=2) <= cfg["color_delta_lab"]
+            color_mask = color_candidate_mask(lab, color, delta_lab=cfg["color_delta_lab"])
             color_budget = {"remaining": color_quotas[color], "attempted": 0, "allocated": color_quotas[color]}
             fits, errors = _fit_components(image, z, valid, color_mask, calibration, role, "rgb_component", cfg, color, budget=color_budget)
             budget["attempted"] += color_budget["attempted"]
