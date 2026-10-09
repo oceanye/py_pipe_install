@@ -1,0 +1,631 @@
+{
+  "schema_version": "1.0",
+  "capture_kind": "remote_stereo_raw",
+  "run_id": "remote-20261003-102022-6b61c4d1",
+  "status": "COMPLETED",
+  "started_at": "2026-10-03T10:20:22.306+08:00",
+  "camera_opened_at": "2026-10-03T10:20:28.357+08:00",
+  "first_frame_at": "2026-10-03T10:20:48.414+08:00",
+  "finished_at": "2026-10-03T10:20:54.777+08:00",
+  "pixel_policy": "RAW_CAMERA_BGR_PIXELS_NO_TRANSFORM",
+  "rectified": false,
+  "calibration_validated": false,
+  "validation_scope": "RAW_CAPTURE_ONLY_NOT_CALIBRATION_VALIDATION",
+  "camera_layout": "side_by_side_left_right",
+  "camera": {
+    "layout": "side_by_side_left_right",
+    "left_index": 0,
+    "right_index": null,
+    "backend": null
+  },
+  "camera_exposure": {
+    "0": {
+      "target_ms": 1000.0,
+      "status": "UNCONFIRMED",
+      "reported_ms": null,
+      "backend": 700,
+      "control_api": "IAMCameraControl",
+      "native_range": {
+        "minimum": -11,
+        "maximum": -2,
+        "step": 1,
+        "default": -6,
+        "capabilities": 3
+      },
+      "device_path": "@device:pnp:\\\\?\\usb#vid_1bcf&pid_0b15&mi_00#6&1340e285&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global",
+      "requested_native": 0,
+      "reason": "所选快门超出驱动声明范围；未写入不支持的值",
+      "observed_state": {
+        "value": -2,
+        "flags": 2
+      }
+    }
+  },
+  "requested_eye_size_px": [
+    1920,
+    1080
+  ],
+  "requested_frame_size_px": [
+    3840,
+    1080
+  ],
+  "pair_count": 3,
+  "usable_pair_count": 3,
+  "unusable_pair_count": 0,
+  "quality_status": "USABLE",
+  "quality_scope": "PER_FRAME_EXPOSURE_DIAGNOSTIC_RAW_FRAMES_RETAINED",
+  "image_health_policy": {
+    "name": "LUMINANCE_EXPOSURE_DIAGNOSTIC_V1",
+    "usable_rule": "p50>=3 AND p95>=12 AND max>=16 AND dark_fraction<0.995",
+    "purpose": "flag exposure transitions without discarding raw evidence"
+  },
+  "requested_exposure_ms": 1000.0,
+  "exposure_policy": "MANUAL_REQUEST",
+  "warmup_s": 20.0,
+  "requested_pair_count": 3,
+  "discarded_pair_count": 6,
+  "startup_warmup": {
+    "max_reads": 20,
+    "stable_required": 3,
+    "accepted_read": 24,
+    "attempt": 1,
+    "started_at": "2026-10-03T10:20:28.388+08:00",
+    "reads": 24,
+    "stable_observed": 22,
+    "discarded": [
+      {
+        "read": 1,
+        "reason": "BOTH_EYES_NEAR_BLACK",
+        "left_mean": 0.0,
+        "right_mean": 0.0,
+        "left_max": 0,
+        "right_max": 0,
+        "left_right_identical": true,
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "left_right_identical": true,
+          "pair_usable": false,
+          "reason_codes": [
+            "LEFT_RIGHT_IDENTICAL",
+            "LOW_LUMINANCE_MAX",
+            "LOW_LUMINANCE_P50",
+            "LOW_LUMINANCE_P95",
+            "NEAR_BLACK_FRACTION"
+          ]
+        }
+      },
+      {
+        "read": 2,
+        "reason": "BOTH_EYES_NEAR_BLACK",
+        "left_mean": 0.0,
+        "right_mean": 0.0,
+        "left_max": 0,
+        "right_max": 0,
+        "left_right_identical": true,
+        "image_health": {
+          "left": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "right": {
+            "width": 1920,
+            "height": 1080,
+            "mean": 0.0,
+            "p05": 0.0,
+            "p50": 0.0,
+            "p95": 0.0,
+            "max": 0,
+            "dark_fraction": 1.0,
+            "saturated_fraction": 0.0,
+            "usable": false,
+            "reason_codes": [
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "LOW_LUMINANCE_MAX",
+              "NEAR_BLACK_FRACTION"
+            ]
+          },
+          "left_right_identical": true,
+          "pair_usable": false,
+          "reason_codes": [
+            "LEFT_RIGHT_IDENTICAL",
+            "LOW_LUMINANCE_MAX",
+            "LOW_LUMINANCE_P50",
+            "LOW_LUMINANCE_P95",
+            "NEAR_BLACK_FRACTION"
+          ]
+        }
+      }
+    ],
+    "discarded_count": 2,
+    "elapsed_s": 20.484,
+    "finished_at": "2026-10-03T10:20:48.863+08:00",
+    "accepted_stats": {
+      "left_mean": 32.997,
+      "right_mean": 43.77,
+      "left_max": 255,
+      "right_max": 255,
+      "left_right_identical": false
+    }
+  },
+  "interval_s": 0.5,
+  "duration_limit_s": null,
+  "duration_policy": "CHECK_BETWEEN_READS_NOT_HARD_TIMEOUT",
+  "interval_buffer_policy": "CONTINUOUS_READ_AND_DISCARD",
+  "chessboard_detection": {
+    "enabled": true,
+    "inner_corners": [
+      8,
+      6
+    ]
+  },
+  "captures": [
+    {
+      "capture_id": "remote-20261003-102022-6b61c4d1-0001",
+      "left": {
+        "path": "pair_0001_left.png",
+        "sha256": "4dc2eef50fadf81ec60ecc093e5aba3b0b4439397e4b87d12e9b987df6e7b2f7",
+        "width": 1920,
+        "height": 1080,
+        "captured_at": "2026-10-03T10:20:48.414+08:00"
+      },
+      "right": {
+        "path": "pair_0001_right.png",
+        "sha256": "e3dbd5ec4446002e80cba1a7bfbe5bdb1ee414a356c994d019d078a870012bde",
+        "width": 1920,
+        "height": 1080,
+        "captured_at": "2026-10-03T10:20:48.414+08:00"
+      },
+      "sync_delta_ms": 0.0,
+      "timestamp_source": "HOST_SYSTEM_CLOCK",
+      "provenance": {
+        "left": {
+          "capture_backend": "OpenCV",
+          "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+          "capture_device_index": 0,
+          "side_by_side_order": "LEFT_THEN_RIGHT",
+          "capture_sync_method": "SAME_UVC_FRAME",
+          "capture_exposure_status": "UNCONFIRMED",
+          "capture_exposure_target_ms": 1000.0
+        },
+        "right": {
+          "capture_backend": "OpenCV",
+          "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+          "capture_device_index": 0,
+          "side_by_side_order": "LEFT_THEN_RIGHT",
+          "capture_sync_method": "SAME_UVC_FRAME",
+          "capture_exposure_status": "UNCONFIRMED",
+          "capture_exposure_target_ms": 1000.0
+        }
+      },
+      "image_health": {
+        "left": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 33.707,
+          "p05": 1.0,
+          "p50": 9.0,
+          "p95": 126.0,
+          "max": 254,
+          "dark_fraction": 0.273573,
+          "saturated_fraction": 8e-06,
+          "usable": true,
+          "reason_codes": []
+        },
+        "right": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 44.8,
+          "p05": 2.0,
+          "p50": 18.0,
+          "p95": 133.0,
+          "max": 253,
+          "dark_fraction": 0.193442,
+          "saturated_fraction": 1e-06,
+          "usable": true,
+          "reason_codes": []
+        },
+        "left_right_identical": false,
+        "pair_usable": true,
+        "reason_codes": []
+      },
+      "chessboard": {
+        "left": {
+          "found": true,
+          "inner_corners": [
+            8,
+            6
+          ],
+          "detector": "sb",
+          "errors": [],
+          "corner_count": 48,
+          "image_center_distance_px": 137.711
+        },
+        "right": {
+          "found": true,
+          "inner_corners": [
+            8,
+            6
+          ],
+          "detector": "sb",
+          "errors": [],
+          "corner_count": 48,
+          "image_center_distance_px": 259.008
+        }
+      }
+    },
+    {
+      "capture_id": "remote-20261003-102022-6b61c4d1-0002",
+      "left": {
+        "path": "pair_0002_left.png",
+        "sha256": "e5c3fb94ec79653f64881fcc57ae47c7173472e783d6bab52474c226dfcee7ba",
+        "width": 1920,
+        "height": 1080,
+        "captured_at": "2026-10-03T10:20:50.970+08:00"
+      },
+      "right": {
+        "path": "pair_0002_right.png",
+        "sha256": "e8d9a524f0221e9a6c54ed8f77e6275600783758bb241fd99dd3945d3d234a1f",
+        "width": 1920,
+        "height": 1080,
+        "captured_at": "2026-10-03T10:20:50.970+08:00"
+      },
+      "sync_delta_ms": 0.0,
+      "timestamp_source": "HOST_SYSTEM_CLOCK",
+      "provenance": {
+        "left": {
+          "capture_backend": "OpenCV",
+          "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+          "capture_device_index": 0,
+          "side_by_side_order": "LEFT_THEN_RIGHT",
+          "capture_sync_method": "SAME_UVC_FRAME",
+          "capture_exposure_status": "UNCONFIRMED",
+          "capture_exposure_target_ms": 1000.0
+        },
+        "right": {
+          "capture_backend": "OpenCV",
+          "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+          "capture_device_index": 0,
+          "side_by_side_order": "LEFT_THEN_RIGHT",
+          "capture_sync_method": "SAME_UVC_FRAME",
+          "capture_exposure_status": "UNCONFIRMED",
+          "capture_exposure_target_ms": 1000.0
+        }
+      },
+      "image_health": {
+        "left": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 33.509,
+          "p05": 1.0,
+          "p50": 9.0,
+          "p95": 125.0,
+          "max": 254,
+          "dark_fraction": 0.296595,
+          "saturated_fraction": 8e-06,
+          "usable": true,
+          "reason_codes": []
+        },
+        "right": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 44.785,
+          "p05": 2.0,
+          "p50": 18.0,
+          "p95": 133.0,
+          "max": 253,
+          "dark_fraction": 0.194952,
+          "saturated_fraction": 2e-06,
+          "usable": true,
+          "reason_codes": []
+        },
+        "left_right_identical": false,
+        "pair_usable": true,
+        "reason_codes": []
+      },
+      "chessboard": {
+        "left": {
+          "found": true,
+          "inner_corners": [
+            8,
+            6
+          ],
+          "detector": "sb",
+          "errors": [],
+          "corner_count": 48,
+          "image_center_distance_px": 137.713
+        },
+        "right": {
+          "found": true,
+          "inner_corners": [
+            8,
+            6
+          ],
+          "detector": "sb",
+          "errors": [],
+          "corner_count": 48,
+          "image_center_distance_px": 259.01
+        }
+      }
+    },
+    {
+      "capture_id": "remote-20261003-102022-6b61c4d1-0003",
+      "left": {
+        "path": "pair_0003_left.png",
+        "sha256": "c77c35af94fd3bda5d621ed1306a4238ae324e20f32ff01bca0d70f566a492f4",
+        "width": 1920,
+        "height": 1080,
+        "captured_at": "2026-10-03T10:20:53.554+08:00"
+      },
+      "right": {
+        "path": "pair_0003_right.png",
+        "sha256": "cccf7d51ce3437e57d956f8a6544d93236499bc90930ab0d65c297df7144fbbd",
+        "width": 1920,
+        "height": 1080,
+        "captured_at": "2026-10-03T10:20:53.554+08:00"
+      },
+      "sync_delta_ms": 0.0,
+      "timestamp_source": "HOST_SYSTEM_CLOCK",
+      "provenance": {
+        "left": {
+          "capture_backend": "OpenCV",
+          "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+          "capture_device_index": 0,
+          "side_by_side_order": "LEFT_THEN_RIGHT",
+          "capture_sync_method": "SAME_UVC_FRAME",
+          "capture_exposure_status": "UNCONFIRMED",
+          "capture_exposure_target_ms": 1000.0
+        },
+        "right": {
+          "capture_backend": "OpenCV",
+          "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+          "capture_device_index": 0,
+          "side_by_side_order": "LEFT_THEN_RIGHT",
+          "capture_sync_method": "SAME_UVC_FRAME",
+          "capture_exposure_status": "UNCONFIRMED",
+          "capture_exposure_target_ms": 1000.0
+        }
+      },
+      "image_health": {
+        "left": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 33.491,
+          "p05": 1.0,
+          "p50": 9.0,
+          "p95": 125.0,
+          "max": 254,
+          "dark_fraction": 0.297623,
+          "saturated_fraction": 8e-06,
+          "usable": true,
+          "reason_codes": []
+        },
+        "right": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 44.77,
+          "p05": 2.0,
+          "p50": 18.0,
+          "p95": 133.0,
+          "max": 254,
+          "dark_fraction": 0.199157,
+          "saturated_fraction": 2e-06,
+          "usable": true,
+          "reason_codes": []
+        },
+        "left_right_identical": false,
+        "pair_usable": true,
+        "reason_codes": []
+      },
+      "chessboard": {
+        "left": {
+          "found": true,
+          "inner_corners": [
+            8,
+            6
+          ],
+          "detector": "sb",
+          "errors": [],
+          "corner_count": 48,
+          "image_center_distance_px": 137.698
+        },
+        "right": {
+          "found": true,
+          "inner_corners": [
+            8,
+            6
+          ],
+          "detector": "sb",
+          "errors": [],
+          "corner_count": 48,
+          "image_center_distance_px": 259.01
+        }
+      }
+    }
+  ],
+  "startup_warmup_attempts": [
+    {
+      "max_reads": 20,
+      "stable_required": 3,
+      "accepted_read": 24,
+      "attempt": 1,
+      "started_at": "2026-10-03T10:20:28.388+08:00",
+      "reads": 24,
+      "stable_observed": 22,
+      "discarded": [
+        {
+          "read": 1,
+          "reason": "BOTH_EYES_NEAR_BLACK",
+          "left_mean": 0.0,
+          "right_mean": 0.0,
+          "left_max": 0,
+          "right_max": 0,
+          "left_right_identical": true,
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": true,
+            "pair_usable": false,
+            "reason_codes": [
+              "LEFT_RIGHT_IDENTICAL",
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          }
+        },
+        {
+          "read": 2,
+          "reason": "BOTH_EYES_NEAR_BLACK",
+          "left_mean": 0.0,
+          "right_mean": 0.0,
+          "left_max": 0,
+          "right_max": 0,
+          "left_right_identical": true,
+          "image_health": {
+            "left": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "right": {
+              "width": 1920,
+              "height": 1080,
+              "mean": 0.0,
+              "p05": 0.0,
+              "p50": 0.0,
+              "p95": 0.0,
+              "max": 0,
+              "dark_fraction": 1.0,
+              "saturated_fraction": 0.0,
+              "usable": false,
+              "reason_codes": [
+                "LOW_LUMINANCE_P50",
+                "LOW_LUMINANCE_P95",
+                "LOW_LUMINANCE_MAX",
+                "NEAR_BLACK_FRACTION"
+              ]
+            },
+            "left_right_identical": true,
+            "pair_usable": false,
+            "reason_codes": [
+              "LEFT_RIGHT_IDENTICAL",
+              "LOW_LUMINANCE_MAX",
+              "LOW_LUMINANCE_P50",
+              "LOW_LUMINANCE_P95",
+              "NEAR_BLACK_FRACTION"
+            ]
+          }
+        }
+      ],
+      "discarded_count": 2,
+      "elapsed_s": 20.484,
+      "finished_at": "2026-10-03T10:20:48.863+08:00",
+      "accepted_stats": {
+        "left_mean": 32.997,
+        "right_mean": 43.77,
+        "left_max": 255,
+        "right_max": 255,
+        "left_right_identical": false
+      }
+    }
+  ],
+  "stop_reason": "COUNT_LIMIT"
+}

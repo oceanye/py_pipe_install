@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "run_id": "remote-20261003-102022-3bf09748",
+  "generated_at": "2026-10-03T02:20:54.865+00:00",
+  "hash_algorithm": "SHA-256",
+  "self_excluded": true,
+  "file_count": 8,
+  "total_size_bytes": 9226344,
+  "files": [
+    {
+      "path": "capture.json",
+      "size_bytes": 17919,
+      "sha256": "930285439a1289898562519e4e44daf1a22383fd85e945494c73a20a1a8ecc52"
+    },
+    {
+      "path": "job.json",
+      "size_bytes": 1085,
+      "sha256": "c7ffa3e09c13def74861ef1a72dad51839d396acdd44704785d367398fbc94e3"
+    },
+    {
+      "path": "pair_0001_left.png",
+      "size_bytes": 1421339,
+      "sha256": "4dc2eef50fadf81ec60ecc093e5aba3b0b4439397e4b87d12e9b987df6e7b2f7"
+    },
+    {
+      "path": "pair_0001_right.png",
+      "size_bytes": 1663258,
+      "sha256": "e3dbd5ec4446002e80cba1a7bfbe5bdb1ee414a356c994d019d078a870012bde"
+    },
+    {
+      "path": "pair_0002_left.png",
+      "size_bytes": 1401699,
+      "sha256": "e5c3fb94ec79653f64881fcc57ae47c7173472e783d6bab52474c226dfcee7ba"
+    },
+    {
+      "path": "pair_0002_right.png",
+      "size_bytes": 1661646,
+      "sha256": "e8d9a524f0221e9a6c54ed8f77e6275600783758bb241fd99dd3945d3d234a1f"
+    },
+    {
+      "path": "pair_0003_left.png",
+      "size_bytes": 1402415,
+      "sha256": "c77c35af94fd3bda5d621ed1306a4238ae324e20f32ff01bca0d70f566a492f4"
+    },
+    {
+      "path": "pair_0003_right.png",
+      "size_bytes": 1656983,
+      "sha256": "cccf7d51ce3437e57d956f8a6544d93236499bc90930ab0d65c297df7144fbbd"
+    }
+  ]
+}
