@@ -840,6 +840,15 @@ class ElevationCaptureDialog:
     def redraw(self) -> None:
         for view in self.views.values():
             view.draw()
+        if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
+            self.model_viewer.draw()
+
+    def select_model_pipe(self, pipe_id: str) -> None:
+        """Navigation only: selecting a model pipe never creates an association."""
+        if self.tree.exists(pipe_id):
+            self.tree.selection_set(pipe_id)
+            self.tree.see(pipe_id)
+            self.redraw()
 
     def _local_observation_selected(self) -> None:
         """Persist the local 3-D observation basis in the scene manifest."""
@@ -1006,27 +1015,9 @@ class ElevationCaptureDialog:
             self.refresh_table()
 
     def show_catalog(self) -> None:
-        specs = [row for row in self.pipes if row.get("centerline_world_mm")]
-        if not specs:
-            self.message.set("当前现场只保存图像区域；导入 STL 或 DXF 后可查看模型管道编号。")
-            return
-        window = self.app.tk.Toplevel(self.window)
-        window.title("模型管道编号 · 沿共同长度轴观察的截面")
-        canvas = self.app.tk.Canvas(window, width=740, height=580, bg="#F2F5F8")
-        canvas.pack(fill="both", expand=True)
-        lines = np.asarray([row["centerline_world_mm"] for row in specs], dtype=float)
-        directions = lines[:, 1] - lines[:, 0]
-        directions /= np.linalg.norm(directions, axis=1)[:, None]
-        _, _, axes = np.linalg.svd(directions, full_matrices=True)
-        centers = lines.mean(axis=1) @ axes[1:].T
-        low, high = centers.min(axis=0), centers.max(axis=0)
-        scale = min(630 / max(high[0] - low[0], 1), 460 / max(high[1] - low[1], 1))
-        for spec, pos in zip(specs, centers):
-            x, y = 60 + (pos[0] - low[0]) * scale, 520 - (pos[1] - low[1]) * scale
-            radius = max(5, min(24, spec["nominal_diameter_mm"] * scale / 2))
-            canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=spec["color_srgb"], outline="#273B51")
-            canvas.create_text(x, y-radius-4, text=spec["pipe_id"], anchor="s")
-        canvas.create_text(12, 12, anchor="nw", text="仅用于核对模型编号与布局；照片区域由双目局部点云自动生成。")
+        self.open_model_viewer()
+        if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
+            self.model_viewer.focus_section()
 
     def _restore_camera_side_control(self) -> None:
         label = camera_side_label(self.registration_settings.get("camera_side_world"))
@@ -1045,6 +1036,8 @@ class ElevationCaptureDialog:
         side = normalize_camera_side(side)
         if side == self.registration_settings.get("camera_side_world"):
             return
+        live_viewer = (self.model_viewer if self.model_viewer is not None
+                       and self.model_viewer.window.winfo_exists() and self.model_viewer._is_current() else None)
         if side is None:
             self.registration_settings.pop("camera_side_world", None)
         else:
@@ -1052,6 +1045,8 @@ class ElevationCaptureDialog:
         self._restore_camera_side_control()
         self._clear_registration_anchors()
         self.invalidate()
+        if live_viewer is not None:
+            live_viewer.sync_from_owner()
         self.message.set(f"相机观察方向：{camera_side_label(side)}。改变观察侧后需重新评估；下次保存会开始新历史。")
 
     def open_model_viewer(self) -> None:
@@ -1077,6 +1072,8 @@ class ElevationCaptureDialog:
                                                  on_axis=self._set_axis_world)
 
     def _set_axis_world(self, axis: list[float]) -> None:
+        live_viewer = (self.model_viewer if self.model_viewer is not None
+                       and self.model_viewer.window.winfo_exists() and self.model_viewer._is_current() else None)
         vector = np.asarray(axis, dtype=float)
         norm = float(np.linalg.norm(vector))
         if norm <= 1e-9 or not np.all(np.isfinite(vector)):
@@ -1097,6 +1094,8 @@ class ElevationCaptureDialog:
         self.registration_settings["axis_world"] = axis.tolist()
         self.registration_settings["anchors"] = {}
         self.invalidate()
+        if live_viewer is not None:
+            live_viewer.sync_from_owner()
         self.message.set(f"已保存共同管长方向：{np.round(axis, 4).tolist()}；下一次评估将自动匹配 {self.model_kind.upper() or '模型'}。")
 
     def _clear_registration_anchors(self) -> None:
