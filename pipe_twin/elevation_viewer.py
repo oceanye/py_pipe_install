@@ -5,25 +5,40 @@ from pathlib import Path
 from typing import Any, Callable
 import numpy as np
 
+from .camera_view import CAMERA_SIDE_PRESETS, camera_side_label, preview_rotation
+
 
 class ElevationModelViewer:
     """Orbitable STL/DXF layout preview; axis picks remain model coordinates."""
-    def __init__(self, owner: Any, *, model_path: Path, pipes: list[dict[str, Any]], axis_world: list[float] | None = None, on_axis: Callable[[list[float]], None] | None = None, report: dict[str, Any] | None = None) -> None:
+    def __init__(self, owner: Any, *, model_path: Path, pipes: list[dict[str, Any]], axis_world: list[float] | None = None, on_axis: Callable[[list[float]], None] | None = None, report: dict[str, Any] | None = None, camera_side_world: list[float] | None = None, on_camera_side: Callable | None = None) -> None:
         self.owner, self.pipes, self.on_axis = owner, pipes, on_axis
+        self.on_camera_side = on_camera_side
+        self.camera_side_world = camera_side_world
         tk, ttk = owner.app.tk, owner.app.ttk
-        self.window = tk.Toplevel(owner.window); self.window.title("立面模型匹配 · 管长方向"); self.window.geometry("800x680")
+        self.window = tk.Toplevel(owner.window); self.window.title("立面模型 · 管长与相机观察方向"); self.window.geometry("860x730")
         self.canvas = tk.Canvas(self.window, width=780, height=540, bg="#101923", highlightthickness=0); self.canvas.pack(fill="both", expand=True, padx=8, pady=8)
         controls = ttk.Frame(self.window); controls.pack(fill="x", padx=8)
-        ttk.Label(controls, text="方向").pack(side="left")
+        ttk.Label(controls, text="管长方向").pack(side="left")
         self.direction_mode = tk.StringVar(value="自动")
         direction_values = ("自动", "Z", "自定义") if getattr(owner, "model_kind", "") == "dxf" else ("自动", "X", "Y", "Z", "自定义")
         ttk.Combobox(controls, textvariable=self.direction_mode, values=direction_values, state="readonly", width=10).pack(side="left", padx=5)
         self.custom = tk.StringVar(value="0,0,1"); ttk.Entry(controls, textvariable=self.custom, width=16).pack(side="left")
         ttk.Button(controls, text="应用方向", command=self.apply_direction).pack(side="left", padx=5)
         ttk.Button(controls, text="反向", command=self.reverse_axis).pack(side="left")
-        self.info = tk.StringVar(value=("DXF 圆形截面按模型 ±Z 作为管轴；相机俯视角度由双目配准估计。右键拖动旋转，滚轮缩放。" if getattr(owner, "model_kind", "") == "dxf" else "管长方向由模型中心线自动估计，也可选择 X/Y/Z 或输入向量；右键拖动旋转，滚轮缩放。"))
-        ttk.Label(self.window, textvariable=self.info).pack(fill="x", padx=8, pady=(3, 8))
+        view_controls = ttk.Frame(self.window); view_controls.pack(fill="x", padx=8, pady=6)
+        ttk.Label(view_controls, text="相机观察侧").pack(side="left")
+        self.view_mode = tk.StringVar(value=camera_side_label(camera_side_world))
+        self.view_choices = dict(CAMERA_SIDE_PRESETS)
+        self.view_choices[self.view_mode.get()] = camera_side_world
+        self.view_box = ttk.Combobox(view_controls, textvariable=self.view_mode,
+            values=tuple(self.view_choices), state="readonly", width=26)
+        self.view_box.pack(side="left", padx=5)
+        self.view_box.bind("<<ComboboxSelected>>", lambda _e: self.preview_side())
+        ttk.Button(view_controls, text="应用相机观察侧", command=self.apply_camera_side).pack(side="left", padx=5)
+        self.info = tk.StringVar(value="右键拖动只改变预览，滚轮缩放。X/Y/Z 为模型坐标；选择观察侧后点击应用保存。")
+        ttk.Label(self.window, textvariable=self.info, wraplength=830).pack(fill="x", padx=8, pady=(3, 8))
         self.zoom, self.yaw, self.pitch, self.drag_start = 1.0, 0.0, 0.0, None
+        self.base_rotation = np.eye(3)
         self.snapshot_hashes = dict(getattr(owner, "image_hashes", {})); self.snapshot_generation = int(getattr(owner, "generation", 0)); self.snapshot_model = str(getattr(owner, "fields", {}).get("model").get()) if getattr(owner, "fields", {}).get("model") is not None else ""
         self.selected: list[tuple[int, int]] = []; self.axis = np.asarray(axis_world, dtype=float) if axis_world is not None else None
         self.source_lines = np.asarray([np.asarray(p["centerline_world_mm"], dtype=float) for p in pipes], dtype=float) if pipes else np.empty((0, 2, 3))
@@ -41,11 +56,29 @@ class ElevationModelViewer:
             # Without a solved pose, model and camera points have different
             # frames.  Keep the local cloud out of this model canvas.
             self.display_cloud = np.empty((0, 3))
-        self.canvas.bind("<ButtonPress-3>", self.begin_orbit); self.canvas.bind("<B3-Motion>", self.orbit); self.canvas.bind("<MouseWheel>", self.wheel); self.canvas.bind("<Configure>", lambda _e: self.draw()); self.window.protocol("WM_DELETE_WINDOW", self.close); self.draw()
+        self.canvas.bind("<ButtonPress-3>", self.begin_orbit); self.canvas.bind("<B3-Motion>", self.orbit); self.canvas.bind("<MouseWheel>", self.wheel); self.canvas.bind("<Configure>", lambda _e: self.draw()); self.window.protocol("WM_DELETE_WINDOW", self.close); self.preview_side()
 
     def _rotation(self) -> np.ndarray:
         cy, sy, cp, sp = math.cos(self.yaw), math.sin(self.yaw), math.cos(self.pitch), math.sin(self.pitch)
-        return np.asarray([[cy, -sy, 0], [sy, cy, 0], [0, 0, 1]], float) @ np.asarray([[1, 0, 0], [0, cp, -sp], [0, sp, cp]], float)
+        return np.asarray([[cy, -sy, 0], [sy, cy, 0], [0, 0, 1]], float) @ np.asarray([[1, 0, 0], [0, cp, -sp], [0, sp, cp]], float) @ self.base_rotation
+
+    def preview_side(self) -> None:
+        side = self.view_choices[self.view_mode.get()]
+        self.yaw = self.pitch = 0.
+        self.base_rotation = np.eye(3)
+        if side is not None:
+            self.base_rotation = preview_rotation(side)
+            if self.registration_rotation is not None:
+                self.base_rotation = self.base_rotation @ self.registration_rotation.T
+        self.draw()
+
+    def apply_camera_side(self) -> None:
+        if not self._is_current() or getattr(self.owner, "busy", False):
+            self.info.set("现场输入已改变或正在分析，请重新打开方向预览。")
+            return
+        if self.on_camera_side:
+            self.on_camera_side(self.view_choices[self.view_mode.get()])
+        self.close()
 
     def _frame(self) -> tuple[np.ndarray, float]:
         groups = [self.display_lines.reshape(-1, 3)]
@@ -66,6 +99,22 @@ class ElevationModelViewer:
             for x, y in self._project(self.display_cloud[::max(1, len(self.display_cloud)//1200)]): self.canvas.create_oval(x, y, x+1, y+1, fill="#66C2FF", outline="")
         if self.display_axis is not None and len(self.display_lines):
             centre = self.display_lines.reshape(-1, 3).mean(axis=0); axis = np.asarray(self.display_axis, float); axis /= max(np.linalg.norm(axis), 1e-9); length = max(float(np.ptp(self.display_lines.reshape(-1, 3), axis=0).max()), 30)*.35; projected = self._project(np.vstack((centre-axis*length, centre+axis*length))); self.canvas.create_line(*projected[0], *projected[1], fill="#FFD166", width=3, arrow="last")
+        # A fixed-size model-coordinate triad remains readable after zooming
+        # or switching to the matched camera-coordinate overlay.
+        rotation = self._rotation()
+        if self.registration_rotation is not None:
+            rotation = rotation @ self.registration_rotation
+        origin = np.array([75., 140.])
+        for index, (name, color) in enumerate(zip("XYZ", ("#FF7777", "#77DD99", "#79BFFF"))):
+            vector = rotation[:, index]
+            end = origin + 48 * vector[:2] * [1, -1]
+            self.canvas.create_line(*origin, *end, fill=color, width=2, arrow="last")
+            label = f"+{name}" + (" 朝向你" if vector[2] > .99 else " 背向你" if vector[2] < -.99 else "")
+            if np.linalg.norm(end-origin) < 8:
+                end += [12, 18]
+            self.canvas.create_text(*end, text=label, fill=color, anchor="sw")
+        self.canvas.create_text(12, 12, text="模型坐标 · 预览可旋转（不改变已保存观察侧）", fill="#DCE9F5", anchor="nw")
+        self.canvas.create_text(12, 32, text=f"待应用：{self.view_mode.get()}", fill="#FFD166", anchor="nw")
 
     def apply_preset(self) -> None:
         mode = self.direction_mode.get(); values = {"X": [1,0,0], "Y": [0,1,0], "Z": [0,0,1]}
