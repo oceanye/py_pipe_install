@@ -128,9 +128,11 @@ def normalize_registration_settings(payload: Mapping | None = None) -> dict:
     """Small, portable UI contract; direction is expressed in model coordinates."""
     from .recognition import available_recognizers, is_recognizer_registered
 
-    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode"}
+    from .camera_view import normalize_camera_side
+
+    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode", "camera_side_world"}
     if payload is not None and (not isinstance(payload, Mapping) or set(payload) - allowed):
-        raise ValueError("立面匹配配置只能包含axis_world、anchors、present_pipe_count和local_observation_mode")
+        raise ValueError("立面匹配配置只能包含axis_world、anchors、present_pipe_count、local_observation_mode和camera_side_world")
     payload = dict(payload or {})
     axis = payload.get("axis_world")
     if axis is not None:
@@ -154,6 +156,9 @@ def normalize_registration_settings(payload: Mapping | None = None) -> dict:
             f"（当前：{available}）"
         )
     result = {"axis_world": axis, "anchors": dict(anchors), "local_observation_mode": mode}
+    side = normalize_camera_side(payload.get("camera_side_world"))
+    if side is not None:
+        result["camera_side_world"] = side
     if "present_pipe_count" in payload:
         count = payload["present_pipe_count"]
         if type(count) is not int or not 1 <= count <= 128:

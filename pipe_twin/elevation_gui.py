@@ -20,6 +20,7 @@ from .pipeline import atomic_write_text
 from .logging_config import get_logger, log_event
 from .elevation_zones import MAX_ZONES, normalize_zone_settings
 from .model_zones import project_model_zone, propose_model_zones
+from .camera_view import CAMERA_SIDE_PRESETS, camera_side_label, normalize_camera_side
 
 
 ROOT = Path(__file__).resolve().parents[1] / "outputs" / "elevation_workbench"
@@ -27,6 +28,7 @@ STATE_COLORS = {"INSTALLED": "#228B55", "NOT_INSTALLED": "#D84A40", "UNKNOWN": "
 PALETTE = ("#E74C3C", "#3498DB", "#FFFFFF", "#2ECC71", "#F1C40F", "#9B59B6")
 LOGGER = get_logger("elevation_gui")
 REASON_TEXT = {
+    "CAMERA_SIDE_CONFLICT": "所选相机观察侧与双目几何冲突，请核对模型坐标方向",
     "OBSERVATIONS_EXCEED_PRESENT_PIPE_COUNT": "观测数量超过已知现场管数，请核对误检",
     "LOW_LIGHT": "图像偏暗，请增加照明或调整曝光",
     "DARK_REGION_DOMINANT": "目标区域大部分接近黑色",
@@ -559,8 +561,10 @@ class ElevationCaptureDialog:
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
         self.window.title("基础立面评估 · 双目管道状态")
-        self.window.geometry("1120x820")
-        self.window.minsize(940, 720)
+        available_width = max(640, self.window.winfo_screenwidth()-80)
+        available_height = max(480, self.window.winfo_screenheight()-100)
+        self.window.geometry(f"{min(1120, available_width)}x{min(860, available_height)}")
+        self.window.minsize(min(940, available_width), min(660, available_height))
         self.window.protocol("WM_DELETE_WINDOW", self.close)
         self.fields = {key: tk.StringVar() for key in ("model", "calibration", "left", "right", "left_time", "right_time")}
         self.stl_unit = tk.StringVar(value="millimeter")
@@ -578,6 +582,7 @@ class ElevationCaptureDialog:
         self.color_filter_enabled = tk.BooleanVar(value=False)
         self.present_pipe_count = tk.StringVar(value="")
         self.scope_label = tk.StringVar(value="全幅自动")
+        self.camera_side_label = tk.StringVar(value=camera_side_label(None))
 
         frame = ttk.Frame(self.window, padding=12)
         frame.pack(fill="both", expand=True)
@@ -589,23 +594,32 @@ class ElevationCaptureDialog:
         ttk.Combobox(bar, textvariable=self.stl_unit, values=("millimeter", "centimeter", "meter", "inch"), state="readonly", width=11).pack(side="left")
         ttk.Button(bar, text="② 相机标定", command=self.browse_calibration).pack(side="left", padx=3)
         ttk.Button(bar, text="重新标定（仅换设备/分辨率）", command=self.open_calibration).pack(side="left", padx=3)
-        ttk.Button(bar, text="③ 双目抓拍", command=self.capture_camera).pack(side="left", padx=3)
-        ttk.Button(bar, text="状态刷新", command=self.refresh_status).pack(side="left", padx=3)
-        ttk.Label(bar, text="局部建模").pack(side="left", padx=(10, 3))
+        ttk.Button(bar, text="打开基础现场", command=self.browse_session).pack(side="right", padx=3)
+        action_bar = ttk.Frame(self.controls)
+        action_bar.pack(fill="x", pady=(0, 7))
+        ttk.Button(action_bar, text="③ 双目抓拍", command=self.capture_camera).pack(side="left", padx=3)
+        self.run_button = ttk.Button(action_bar, text="④ 保存并评估", command=lambda: self.submit(True))
+        self.run_button.pack(side="left", padx=6)
+        ttk.Button(action_bar, text="状态刷新", command=self.refresh_status).pack(side="left", padx=3)
+        self.save_button = ttk.Button(action_bar, text="仅保存基础现场", command=lambda: self.submit(False))
+        self.save_button.pack(side="left", padx=12)
+        ttk.Label(action_bar, text="已抓拍：点击④开始分析", foreground="#355371").pack(side="left", padx=6)
+        method_bar = ttk.Frame(self.controls)
+        method_bar.pack(fill="x", pady=(0, 4))
+        ttk.Label(method_bar, text="局部建模").pack(side="left", padx=(3, 3))
         self.local_observation_box = ttk.Combobox(
-            bar, textvariable=self.local_observation_label,
+            method_bar, textvariable=self.local_observation_label,
             values=("自动（圆柱/平行局部）", "仅双目深度几何", "平行局部条带（颜色辅助）"),
             state="readonly", width=22)
         self.local_observation_box.pack(side="left")
         self.local_observation_box.bind("<<ComboboxSelected>>", lambda _e: self._local_observation_selected())
-        ttk.Label(bar, text="分析范围").pack(side="left", padx=(10, 3))
-        self.scope_box = ttk.Combobox(bar, textvariable=self.scope_label,
+        ttk.Label(method_bar, text="分析范围").pack(side="left", padx=(10, 3))
+        self.scope_box = ttk.Combobox(method_bar, textvariable=self.scope_label,
                                       values=("全幅自动", "分区分析"), state="readonly", width=12)
         self.scope_box.pack(side="left")
         self.scope_box.bind("<<ComboboxSelected>>", lambda _e: self._scope_selected())
-        self.zone_button = ttk.Button(bar, text="分区管理", command=self.open_zone_manager)
+        self.zone_button = ttk.Button(method_bar, text="分区管理", command=self.open_zone_manager)
         self.zone_button.pack(side="left", padx=3)
-        ttk.Button(bar, text="打开基础现场", command=self.browse_session).pack(side="right", padx=3)
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
         photos = ttk.Frame(self.controls)
         photos.pack(fill="x", pady=6)
@@ -638,6 +652,20 @@ class ElevationCaptureDialog:
         ttk.Label(scene_bar, text="模型目录可多于现场实物；数量不代替管道身份确认", foreground="#355371").pack(side="left")
         ttk.Button(scene_bar, text="颜色与反光检查", command=self.open_quality_check).pack(side="right", padx=4)
 
+        view_bar = ttk.Frame(self.controls)
+        view_bar.pack(fill="x", pady=3)
+        ttk.Label(view_bar, text="相机从哪侧看（模型坐标）").pack(side="left")
+        self.camera_side_box = ttk.Combobox(view_bar, textvariable=self.camera_side_label,
+            values=tuple(CAMERA_SIDE_PRESETS), state="readonly", width=25)
+        self.camera_side_box.pack(side="left", padx=6)
+        self.camera_side_box.bind("<<ComboboxSelected>>", lambda _e: self._camera_side_selected())
+        ttk.Button(view_bar, text="查看方向示意", command=self.open_model_viewer).pack(side="left", padx=4)
+        ttk.Label(view_bar, text="允许斜视；管长方向另设。不确定时保留自动判断。", foreground="#355371").pack(side="left")
+
+        # Reserve results and status before the expanding photo pane consumes
+        # space, so shorter displays do not lose the bottom of the workflow.
+        footer = ttk.Frame(frame)
+        footer.pack(side="bottom", fill="x")
         panes = ttk.Panedwindow(frame, orient="horizontal")
         panes.pack(fill="both", expand=True, pady=8)
         self.views = {}
@@ -645,9 +673,9 @@ class ElevationCaptureDialog:
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role)
-        ttk.Label(frame, text="按管径、立面距离和双目局部点云自动匹配 STL/DXF；可选分区只限定管道组范围，照片中的管道区域仍由算法生成。滚轮缩放，右键平移。", foreground="#355371").pack(anchor="w")
+        ttk.Label(footer, text="按管径、立面距离和双目局部点云自动匹配；照片滚轮缩放、右键平移。", foreground="#355371").pack(anchor="w")
 
-        table_frame = ttk.Frame(frame)
+        table_frame = ttk.Frame(footer)
         table_frame.pack(fill="x", pady=6)
         columns = ("diameter", "color", "left", "right", "reference", "state", "reason")
         self.tree = ttk.Treeview(table_frame, columns=columns, height=5, selectmode="browse")
@@ -664,22 +692,18 @@ class ElevationCaptureDialog:
             self.tree.tag_configure(state, foreground=color)
         self.tree.bind("<<TreeviewSelect>>", lambda _e: self.redraw())
         self.tree.bind("<Double-1>", lambda _e: self.edit_pipe())
-        row = ttk.Frame(frame)
+        row = ttk.Frame(footer)
         row.pack(fill="x")
         actions = [("设置颜色", self.edit_pipe), ("同径统一颜色", self.apply_diameter_color),
-                   ("设置管长方向", self.open_model_viewer), ("查看模型管道编号", self.show_catalog),
+                   ("管长与观察方向", self.open_model_viewer), ("查看模型管道编号", self.show_catalog),
                    ("尺寸与测距", self.show_measurement)]
         for name, action in actions:
             ttk.Button(row, text=name, command=action).pack(side="left", padx=2)
-        bottom = ttk.Frame(frame)
+        bottom = ttk.Frame(footer)
         bottom.pack(fill="x", pady=(8, 4))
         ttk.Checkbutton(bottom, text="沿用上次场景历史（相机未移动）", variable=self.history).pack(side="left")
-        self.save_button = ttk.Button(bottom, text="保存基础现场", command=lambda: self.submit(False))
-        self.save_button.pack(side="right", padx=3)
-        self.run_button = ttk.Button(bottom, text="④ 保存并评估", command=lambda: self.submit(True))
-        self.run_button.pack(side="right", padx=3)
-        ttk.Label(frame, textvariable=self.summary).pack(anchor="w")
-        ttk.Label(frame, textvariable=self.message, wraplength=1050, foreground="#355371").pack(fill="x", pady=3)
+        ttk.Label(footer, textvariable=self.summary).pack(anchor="w")
+        ttk.Label(footer, textvariable=self.message, wraplength=860, foreground="#355371").pack(fill="x", pady=3)
 
         for key, variable in self.fields.items():
             variable.trace_add("write", lambda *_args, k=key: self._field_changed(k))
@@ -827,6 +851,15 @@ class ElevationCaptureDialog:
     def redraw(self) -> None:
         for view in self.views.values():
             view.draw()
+        if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
+            self.model_viewer.draw()
+
+    def select_model_pipe(self, pipe_id: str) -> None:
+        """Navigation only: selecting a model pipe never creates an association."""
+        if self.tree.exists(pipe_id):
+            self.tree.selection_set(pipe_id)
+            self.tree.see(pipe_id)
+            self.redraw()
 
     def _local_observation_selected(self) -> None:
         """Persist the local 3-D observation basis in the scene manifest."""
@@ -927,6 +960,7 @@ class ElevationCaptureDialog:
         self._analyze_after_camera_capture = False
         self.registration_settings = {"axis_world": [0.0, 0.0, 1.0] if suffix == ".dxf" else None,
                                       "anchors": {}, "local_observation_mode": "auto"}
+        self._restore_camera_side_control()
         self.zone_settings = normalize_zone_settings()
         self.scope_label.set("全幅自动")
         self.local_observation_label.set("自动（圆柱/平行局部）")
@@ -992,27 +1026,39 @@ class ElevationCaptureDialog:
             self.refresh_table()
 
     def show_catalog(self) -> None:
-        specs = [row for row in self.pipes if row.get("centerline_world_mm")]
-        if not specs:
-            self.message.set("当前现场只保存图像区域；导入 STL 或 DXF 后可查看模型管道编号。")
+        self.open_model_viewer()
+        if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
+            self.model_viewer.focus_section()
+
+    def _restore_camera_side_control(self) -> None:
+        label = camera_side_label(self.registration_settings.get("camera_side_world"))
+        self.camera_side_label.set(label)
+        self.camera_side_box.configure(values=tuple(dict.fromkeys((*CAMERA_SIDE_PRESETS, label))))
+
+    def _camera_side_selected(self) -> None:
+        label = self.camera_side_label.get()
+        if label in CAMERA_SIDE_PRESETS:
+            self._set_camera_side(CAMERA_SIDE_PRESETS[label])
+
+    def _set_camera_side(self, side: list[float] | None) -> None:
+        if self.busy:
+            self._restore_camera_side_control()
             return
-        window = self.app.tk.Toplevel(self.window)
-        window.title("模型管道编号 · 沿共同长度轴观察的截面")
-        canvas = self.app.tk.Canvas(window, width=740, height=580, bg="#F2F5F8")
-        canvas.pack(fill="both", expand=True)
-        lines = np.asarray([row["centerline_world_mm"] for row in specs], dtype=float)
-        directions = lines[:, 1] - lines[:, 0]
-        directions /= np.linalg.norm(directions, axis=1)[:, None]
-        _, _, axes = np.linalg.svd(directions, full_matrices=True)
-        centers = lines.mean(axis=1) @ axes[1:].T
-        low, high = centers.min(axis=0), centers.max(axis=0)
-        scale = min(630 / max(high[0] - low[0], 1), 460 / max(high[1] - low[1], 1))
-        for spec, pos in zip(specs, centers):
-            x, y = 60 + (pos[0] - low[0]) * scale, 520 - (pos[1] - low[1]) * scale
-            radius = max(5, min(24, spec["nominal_diameter_mm"] * scale / 2))
-            canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=spec["color_srgb"], outline="#273B51")
-            canvas.create_text(x, y-radius-4, text=spec["pipe_id"], anchor="s")
-        canvas.create_text(12, 12, anchor="nw", text="仅用于核对模型编号与布局；照片区域由双目局部点云自动生成。")
+        side = normalize_camera_side(side)
+        if side == self.registration_settings.get("camera_side_world"):
+            return
+        live_viewer = (self.model_viewer if self.model_viewer is not None
+                       and self.model_viewer.window.winfo_exists() and self.model_viewer._is_current() else None)
+        if side is None:
+            self.registration_settings.pop("camera_side_world", None)
+        else:
+            self.registration_settings["camera_side_world"] = side
+        self._restore_camera_side_control()
+        self._clear_registration_anchors()
+        self.invalidate()
+        if live_viewer is not None:
+            live_viewer.sync_from_owner()
+        self.message.set(f"相机观察方向：{camera_side_label(side)}。改变观察侧后需重新评估；下次保存会开始新历史。")
 
     def open_model_viewer(self) -> None:
         if self.busy:
@@ -1022,17 +1068,23 @@ class ElevationCaptureDialog:
             return
         from .elevation_viewer import ElevationModelViewer
         if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
-            self.model_viewer.window.lift(); return
+            if self.model_viewer._is_current():
+                self.model_viewer.window.lift(); return
+            self.model_viewer.close()
         path = self.fields["model"].get().strip()
         if not path:
             self.message.set("请先导入 STL 或 DXF，再设置共同管长方向。")
             return
         self.model_viewer = ElevationModelViewer(self, model_path=Path(path), pipes=self.pipes,
                                                  axis_world=self.registration_settings.get("axis_world"),
+                                                 camera_side_world=self.registration_settings.get("camera_side_world"),
                                                  report=self.report,
+                                                 on_camera_side=self._set_camera_side,
                                                  on_axis=self._set_axis_world)
 
     def _set_axis_world(self, axis: list[float]) -> None:
+        live_viewer = (self.model_viewer if self.model_viewer is not None
+                       and self.model_viewer.window.winfo_exists() and self.model_viewer._is_current() else None)
         vector = np.asarray(axis, dtype=float)
         norm = float(np.linalg.norm(vector))
         if norm <= 1e-9 or not np.all(np.isfinite(vector)):
@@ -1053,6 +1105,8 @@ class ElevationCaptureDialog:
         self.registration_settings["axis_world"] = axis.tolist()
         self.registration_settings["anchors"] = {}
         self.invalidate()
+        if live_viewer is not None:
+            live_viewer.sync_from_owner()
         self.message.set(f"已保存共同管长方向：{np.round(axis, 4).tolist()}；下一次评估将自动匹配 {self.model_kind.upper() or '模型'}。")
 
     def _clear_registration_anchors(self) -> None:
@@ -1267,6 +1321,7 @@ class ElevationCaptureDialog:
         self.load_images()
         self._restore_zone_settings(loaded.get("scope_settings"))
         self.registration_settings = restored_registration
+        self._restore_camera_side_control()
         local_labels = {
             "auto": "自动（圆柱/平行局部）",
             "geometry_only": "仅双目深度几何",

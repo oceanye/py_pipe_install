@@ -19,6 +19,8 @@ from typing import Any
 
 import numpy as np
 
+from .camera_view import VIEW_POLICY, VIEW_POLICY_SHA256, normalize_camera_side
+
 
 class ElevationRegistrationError(ValueError):
     """Malformed model or local-surface registration input."""
@@ -282,6 +284,7 @@ def _result(reason: str, model_axis: np.ndarray, camera_axis: np.ndarray | None,
 
 def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Sequence[Mapping[str, Any]],
                        axis_world: Sequence[float] | None = None, *, anchors: Mapping[str, str] | None = None,
+                       camera_side_world: Sequence[float] | None = None,
                        config: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Metric cross-section registration with bounded maximum-consensus search.
 
@@ -290,10 +293,18 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
     one.  Axial translation is a display gauge, never an installation station.
     Unmatched clutter is allowed; anchors cannot override measured geometry.
     A truncated search cannot establish either a match or absence.
+    An optional camera-side vector constrains the viewing hemisphere in model
+    coordinates; it supplies neither translation nor an observed pipe identity.
     """
     cfg = _config(config)
     specs, model_axis = _model_inputs(pipe_specs, axis_world)
     parsed_obs = _observations(observations)
+    try:
+        side = normalize_camera_side(camera_side_world)
+    except ValueError as error:
+        raise ElevationRegistrationError(str(error)) from error
+    view_audit = {**VIEW_POLICY, "policy_sha256": VIEW_POLICY_SHA256,
+                  "camera_side_world": side, "rejected_pose_count": 0}
     if anchors is not None and (not isinstance(anchors, Mapping) or any(not isinstance(k, str) or not isinstance(v, str) for k,v in anchors.items())):
         raise ElevationRegistrationError("anchors must map observation IDs to pipe IDs")
     anchor_map = dict(anchors or {})
@@ -301,7 +312,9 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
             set(anchor_map.values()) - {s["pipe_id"] for s in specs} or len(set(anchor_map.values())) != len(anchor_map)):
         raise ElevationRegistrationError("anchors must map unique observation IDs to pipe IDs")
     if not parsed_obs:
-        return _result("NO_LOCAL_SURFACE_OBSERVATIONS", model_axis, None, status="INSUFFICIENT_OBSERVATIONS")
+        output = _result("NO_LOCAL_SURFACE_OBSERVATIONS", model_axis, None, status="INSUFFICIENT_OBSERVATIONS")
+        output["camera_view"] = dict(view_audit)
+        return output
     camera_axis, inliers, multiple_axes = _common_axis(parsed_obs)
     rejected = [o["observation_id"] for i,o in enumerate(parsed_obs) if i not in inliers]
 
@@ -309,6 +322,7 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
         output = _result(reason, model_axis, camera_axis, status=status)
         output["rejected_observation_ids"] = rejected.copy()
         output["settings"] = cfg
+        output["camera_view"] = dict(view_audit)
         return output
 
     if multiple_axes:
@@ -409,6 +423,15 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
                         rot, trans, errors = _rigid2(model_xy[targets], camera_xy[ids])
                         if float(errors.max()) > residual_gate:
                             return
+                        if side is not None:
+                            rlocal = np.eye(3); rlocal[:2, :2] = rot
+                            candidate_rotation = camera_basis @ rlocal @ model_basis.T
+                            # Camera +Z points into the scene.  The selected
+                            # outward side must point towards camera -Z.
+                            facing = -float((candidate_rotation @ side)[2])
+                            if facing <= VIEW_POLICY["minimum_facing_cosine_exclusive"]:
+                                view_audit["rejected_pose_count"] += 1
+                                return
                         if count > best_count:
                             solutions.clear(); best_count = count
                         key = (sign, tuple(assignments))
@@ -433,7 +456,9 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
         if limited:
             break
     if not solutions:
-        output = failure("SEARCH_SPACE_TRUNCATED" if limited else "NO_RIGID_MATCH_WITHIN_RESIDUAL_GATE", "SEARCH_LIMIT" if limited else "AMBIGUOUS")
+        reason = ("SEARCH_SPACE_TRUNCATED" if limited else "CAMERA_SIDE_CONFLICT"
+                  if view_audit["rejected_pose_count"] else "NO_RIGID_MATCH_WITHIN_RESIDUAL_GATE")
+        output = failure(reason, "SEARCH_LIMIT" if limited else "AMBIGUOUS")
         output.update(hypotheses_explored=nodes, pose_seeds=seed_count)
         return output
     ranked = sorted(solutions.values(), key=lambda s: (s["rms"],s["sign"],s["assignment"]))
@@ -451,6 +476,7 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
         camera_xy_solution = (observed_centers @ b)[:, :2]
         relative_layout = _relative_layout(specs, obs, model_xy, camera_xy_solution, ids, targets, solution["rotation2"])
         return {"rotation_model_to_camera":rotation.tolist(), "translation_model_to_camera_mm":translation.tolist(),
+            "estimated_camera_side_world": (rotation.T @ np.array([0., 0., -1.])).tolist(),
             "camera_axis": b[:,2].tolist(), "rms_mm":solution["rms"],
             "matches":[{"pipe_id":specs[j]["pipe_id"],"observation_id":obs[i]["observation_id"],"residual_mm":float(e)} for i,j,e in zip(ids,targets,solution["errors"])],
             "relative_layout": relative_layout}

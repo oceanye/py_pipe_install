@@ -68,11 +68,13 @@ def test_full_width_zone_reuses_automatic_geometry_and_qualifies_observations():
     result = analyze_elevation_auto_zones(
         groups, calibration=calibration, pipe_specs=specs,
         scope_settings={"scope": "zones", "zones": [{**_zone((0, 0, 640, 480)), "label": "全幅"}]},
+        registration_settings={"camera_side_world": [1, 0, 0]},
     )
     assert result["scope"] == "zones"
     assert result["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": 0, "UNKNOWN": 1}
     assert all(item["observation_id"].startswith("Z01:") for item in result["local_surface"]["observations"])
     assert result["capture_audit"]["groups"][0]["zone_ids"] == ["Z01"]
+    assert result["zone_registration_audit"]["registrations"][0]["camera_view"]["camera_side_world"] == [1, 0, 0]
 
 
 def test_confirmed_model_zone_limits_registration_catalog(monkeypatch):

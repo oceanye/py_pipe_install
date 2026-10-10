@@ -224,6 +224,112 @@ class ElevationGuiTests(unittest.TestCase):
         viewer.apply_direction()
         self.assertTrue(np.allclose(self.dialog.registration_settings["axis_world"], [0, 0, 1]))
 
+    def test_camera_side_control_persists_and_clears_stale_results(self):
+        self.dialog.report = {"old": True}
+        self.dialog.camera_side_label.set("从 -Y 侧朝 +Y 看")
+        self.dialog._camera_side_selected()
+        self.assertIsNone(self.dialog.report)
+        self.assertEqual(self.dialog.registration_settings["camera_side_world"], [0, -1, 0])
+        self.assertEqual(self.dialog.registration_settings["axis_world"], [0, 0, 1])
+        self.dialog.submit(False)
+        self.finish_worker()
+        saved = self.dialog.last_manifest
+        self.dialog._set_camera_side([0, 1, 0])
+        self.dialog.load_session(saved)
+        self.assertEqual(self.dialog.camera_side_label.get(), "从 -Y 侧朝 +Y 看")
+        self.dialog.load_model(Path(self.dialog.fields["model"].get()))
+        self.assertNotIn("camera_side_world", self.dialog.registration_settings)
+        self.assertEqual(self.dialog.camera_side_label.get(), "自动判断（未指定）")
+
+    def test_viewer_separates_preview_from_applied_model_camera_side(self):
+        self.dialog.report = {"registration": {"status": "MATCHED",
+            "rotation_model_to_camera": [[0, 0, 1], [1, 0, 0], [0, 1, 0]],
+            "translation_model_to_camera_mm": [0, 0, 1000]}}
+        self.dialog.open_model_viewer()
+        viewer = self.dialog.model_viewer
+        viewer.view_mode.set("从 -Y 侧朝 +Y 看")
+        viewer.preview_side()
+        combined = viewer._rotation() @ viewer.registration_rotation
+        self.assertTrue(np.allclose(combined @ [0, -1, 0], [0, 0, 1]))
+        self.assertNotIn("camera_side_world", self.dialog.registration_settings)
+        viewer.apply_camera_side()
+        self.assertEqual(self.dialog.registration_settings["camera_side_world"], [0, -1, 0])
+        self.assertIsNone(self.dialog.report)
+        self.dialog.open_model_viewer()
+        stale = self.dialog.model_viewer
+        self.dialog._set_camera_side([1, 0, 0])
+        self.assertEqual(stale.view_mode.get(), "从 +X 侧朝 -X 看")
+        self.assertTrue(stale._is_current())
+        # Main-window side changes now update the linked viewer live. Other
+        # input changes still invalidate old model/photo geometry.
+        self.dialog.invalidate()
+        stale.apply_camera_side()
+        self.assertIn("输入已改变", stale.info.get())
+        self.assertEqual(self.dialog.registration_settings["camera_side_world"], [1, 0, 0])
+
+    def test_catalog_and_direction_share_selection_without_creating_identity(self):
+        self.dialog.show_catalog()
+        viewer = self.dialog.model_viewer
+        self.root.update_idletasks()
+        self.dialog.open_model_viewer()
+        self.assertIs(self.dialog.model_viewer, viewer)
+        generation = self.dialog.generation
+        settings = copy.deepcopy(self.dialog.registration_settings)
+        report = self.dialog.report
+        pid, x, y, _ = next(hit for hit in viewer.section_hits if hit[0] == "P006")
+        viewer.pick_section_pipe(SimpleNamespace(x=x, y=y))
+        self.assertEqual(self.dialog.selected_id(), pid)
+        for canvas in (viewer.canvas, viewer.section_canvas):
+            self.assertTrue(canvas.find_withtag("selected"))
+            self.assertTrue(all(f"pipe:{pid}" in canvas.gettags(item) for item in canvas.find_withtag("selected")))
+        line = viewer.projected_lines[2]
+        midpoint = line.mean(axis=0)
+        viewer.pick_model_pipe(SimpleNamespace(x=midpoint[0], y=midpoint[1]))
+        self.assertEqual(self.dialog.selected_id(), "P003")
+        self.dialog.tree.selection_set("P009")
+        self.root.update()
+        self.assertTrue(all("pipe:P009" in viewer.section_canvas.gettags(item)
+                            for item in viewer.section_canvas.find_withtag("selected")))
+        self.assertEqual(self.dialog.generation, generation)
+        self.assertEqual(self.dialog.registration_settings, settings)
+        self.assertIs(self.dialog.report, report)
+
+    def test_camera_arrow_updates_while_cross_section_remains_fixed(self):
+        self.dialog.show_catalog()
+        viewer = self.dialog.model_viewer
+        self.root.update_idletasks()
+        positions = {pid: (x, y) for pid, x, y, _ in viewer.section_hits}
+        directions = []
+        for label in ("从 +X 侧朝 -X 看", "从 -X 侧朝 +X 看"):
+            viewer.view_mode.set(label)
+            viewer.preview_side()
+            self.assertEqual(positions, {pid: (x, y) for pid, x, y, _ in viewer.section_hits})
+            line = next(item for item in viewer.section_canvas.find_withtag("camera_direction")
+                        if viewer.section_canvas.type(item) == "line")
+            x1, _, x2, _ = viewer.section_canvas.coords(line)
+            directions.append(x2-x1)
+        self.assertLess(directions[0], 0)
+        self.assertGreater(directions[1], 0)
+        self.assertNotIn("camera_side_world", self.dialog.registration_settings)
+        viewer.view_mode.set("从 +Z 侧朝 -Z 看")
+        viewer.preview_side()
+        captions = [viewer.section_canvas.itemcget(i, "text") for i in viewer.section_canvas.find_withtag("camera_direction")]
+        self.assertTrue(any("与截面同侧" in text for text in captions))
+
+    def test_axis_reverse_applies_to_both_views_and_invalid_axis_stays_unsaved(self):
+        self.dialog.show_catalog()
+        viewer = self.dialog.model_viewer
+        viewer.reverse_axis()
+        viewer.apply_direction()
+        self.assertEqual(self.dialog.registration_settings["axis_world"], [0, 0, -1])
+        self.assertTrue(np.allclose(viewer.section_basis[2], [0, 0, -1]))
+        self.assertTrue(np.allclose(viewer.display_axis, [0, 0, -1]))
+        self.assertTrue(viewer._is_current())
+        viewer.custom.set("invalid")
+        viewer.apply_direction()
+        self.assertEqual(self.dialog.registration_settings["axis_world"], [0, 0, -1])
+        self.assertIn("格式", viewer.info.get())
+
     def test_restore_keeps_verified_registration_settings_after_photo_load(self):
         manifest = {"model": {"source_unit": "millimeter", "path": None}, "capture": {"capture_groups": [{"views": {"left": {"timestamp_source": "MANIFEST_OPERATOR_CONFIRMED"}, "right": {"timestamp_source": "MANIFEST_OPERATOR_CONFIRMED"}}}]}}
         loaded = {"manifest": manifest, "mode": "elevation_auto", "registration_settings": {"axis_world": [0, 0, 1], "anchors": {}}, "calibration": _calibration(), "pipe_specs": [copy.deepcopy(self.spec)], "left_path": Path(self.tmp.name) / "left.png", "right_path": Path(self.tmp.name) / "right.png", "left_time": "2026-09-12T10:00:00+08:00", "right_time": "2026-09-12T10:00:00+08:00", "rectification_recipe": None}

@@ -290,6 +290,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             "local_observation_mode": observation_mode,
             "fixed_camera_relative_layout": True,
             "model_axis_world": settings.get("axis_world"),
+            "camera_side_world": settings.get("camera_side_world"),
             "diameter_filter_enabled": matching["diameter_filter_enabled"],
             "diameter_tolerance_mm": matching["diameter_tolerance_mm"],
             "diameter_tolerance_ratio": matching["diameter_tolerance_ratio"],
@@ -299,6 +300,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         anchors = settings["anchors"] if group.get("anchors_apply", group is groups[-1]) else {}
         registration = register_elevation(
             pipe_specs, surface["observations"], settings["axis_world"], anchors=anchors,
+            camera_side_world=settings.get("camera_side_world"),
             config={
                 "diameter_tolerance_mm": matching["diameter_tolerance_mm"],
                 "diameter_tolerance_ratio": matching["diameter_tolerance_ratio"],
