@@ -99,11 +99,7 @@ def measurement_summary_lines(spec: dict, result: dict | None) -> list[str]:
 
 def image_region(start: tuple[float, float], end: tuple[float, float],
                  transform: tuple[float, float, float], size: tuple[int, int]) -> list[int] | None:
-    """Legacy coordinate helper retained for non-UI geometry tests.
-
-    The workbench no longer binds this helper to individual-pipe selection;
-    recognition generates pipe regions from stereo evidence.
-    """
+    """Map a viewport drag to source pixels for a group assessment region."""
     scale, ox, oy = transform
     if not math.isfinite(scale) or scale <= 0:
         return None
@@ -115,8 +111,9 @@ def image_region(start: tuple[float, float], end: tuple[float, float],
 
 
 class RegionCanvas:
-    def __init__(self, parent: Any, owner: Any, role: str) -> None:
+    def __init__(self, parent: Any, owner: Any, role: str, *, assessment_regions: bool = False) -> None:
         self.owner, self.role = owner, role
+        self.assessment_regions = assessment_regions
         self.canvas = owner.app.tk.Canvas(parent, bg="#152235", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
         self.image: np.ndarray | None = None
@@ -125,12 +122,19 @@ class RegionCanvas:
         self.zoom = 1.0
         self.pan = [0.0, 0.0]
         self.pan_start = None
+        self.region_start: tuple[float, float] | None = None
         self.canvas.bind("<Configure>", lambda _e: self.draw())
         self.canvas.bind("<MouseWheel>", self.wheel)
         self.canvas.bind("<ButtonPress-3>", self.start_pan)
         self.canvas.bind("<B3-Motion>", self.move_pan)
+        if role == "left" and assessment_regions:
+            self.canvas.bind("<ButtonPress-1>", self.start_region)
+            self.canvas.bind("<B1-Motion>", self.move_region)
+            self.canvas.bind("<ButtonRelease-1>", self.finish_region)
 
     def set_image(self, image: np.ndarray | None) -> None:
+        if self.assessment_regions and self.role == "left" and self.owner.region_selection_active:
+            self.owner._set_region_selection(False)
         self.image = image
         self.zoom, self.pan = 1.0, [0.0, 0.0]
         self.draw()
@@ -145,6 +149,8 @@ class RegionCanvas:
         h, w = self.image.shape[:2]
         scale = min(cw / w, ch / h) * self.zoom
         ox, oy = (cw - w * scale) / 2 + self.pan[0], (ch - h * scale) / 2 + self.pan[1]
+        if (scale, ox, oy) != self.transform:
+            self.cancel_region_drag()
         self.transform = (scale, ox, oy)
         # Render only the viewport, so zooming does not allocate giant bitmaps.
         rendered = cv2.warpAffine(self.image, np.array([[scale, 0, ox], [0, scale, oy]], dtype=float), (cw, ch), borderValue=(53, 34, 21))
@@ -205,7 +211,63 @@ class RegionCanvas:
                     canvas.create_text(ox + x * scale + 2, max(12, oy + y * scale - 3),
                                        anchor="sw", text=oid, fill=color)
 
+        # Group search bounds are independent from automatic pipe identities.
+        if self.assessment_regions and self.role == "left" and self.owner.zone_settings.get("scope") == "zones":
+            for zone in self.owner.zone_settings.get("zones", []):
+                if not zone.get("enabled") or not zone.get("roi_rect_px"):
+                    continue
+                x, y, bw, bh = zone["roi_rect_px"]
+                canvas.create_rectangle(ox + x * scale, oy + y * scale,
+                                        ox + (x + bw) * scale, oy + (y + bh) * scale,
+                                        outline="#67E8A5", width=2, dash=(7, 3), tags="assessment-zone")
+                canvas.create_text(ox + x * scale + 4, oy + y * scale + 4,
+                                   anchor="nw", text=f"{zone['zone_id']} · 评估区域", fill="#67E8A5",
+                                   tags="assessment-zone")
+
+    def cancel_region_drag(self) -> None:
+        self.region_start = None
+        self.canvas.delete("pending-zone")
+
+    def start_region(self, event: Any) -> None:
+        if (self.role != "left" or self.image is None or self.owner.busy
+                or not self.owner.region_selection_active):
+            return
+        scale, ox, oy = self.transform
+        h, w = self.image.shape[:2]
+        if not (ox <= event.x < ox + w * scale and oy <= event.y < oy + h * scale):
+            return
+        self.canvas.focus_set()
+        self.region_start = (event.x, event.y)
+
+    def move_region(self, event: Any) -> None:
+        self.canvas.delete("pending-zone")
+        if self.region_start is None or self.image is None or self.owner.busy:
+            return
+        h, w = self.image.shape[:2]
+        rect = image_region(self.region_start, (event.x, event.y), self.transform, (w, h))
+        if rect:
+            scale, ox, oy = self.transform
+            x, y, bw, bh = rect
+            self.canvas.create_rectangle(ox + x * scale, oy + y * scale,
+                                         ox + (x + bw) * scale, oy + (y + bh) * scale,
+                                         outline="#FFE07A", width=2, dash=(4, 2), tags="pending-zone")
+
+    def finish_region(self, event: Any) -> None:
+        start = self.region_start
+        self.cancel_region_drag()
+        if (start is None or self.image is None or self.owner.busy
+                or not self.owner.region_selection_active):
+            return
+        h, w = self.image.shape[:2]
+        rect = image_region(start, (event.x, event.y), self.transform, (w, h))
+        if rect is None:
+            self.owner.message.set("框选区域太小，请在左图重新拖出至少 32×32 原图像素的区域。")
+            return
+        self.owner.add_left_region(rect)
+
     def wheel(self, event: Any) -> None:
+        if self.region_start is not None:
+            return
         old = self.zoom
         self.zoom = min(8.0, max(1.0, old * (1.2 if event.delta > 0 else 1 / 1.2)))
         if self.zoom == 1:
@@ -213,6 +275,7 @@ class RegionCanvas:
         self.draw()
 
     def start_pan(self, event: Any) -> None:
+        self.cancel_region_drag()
         self.pan_start = (event.x, event.y, *self.pan)
 
     def move_pan(self, event: Any) -> None:
@@ -227,6 +290,7 @@ class ZoneEditorDialog:
 
     def __init__(self, owner: Any) -> None:
         self.owner = owner
+        self.generation = owner.generation
         self.app = owner.app
         self.tk, self.ttk = self.app.tk, self.app.ttk
         image = owner.views["left"].image
@@ -503,8 +567,11 @@ class ZoneEditorDialog:
         self._refresh_list()
 
     def _save(self) -> None:
+        if self.owner.busy or self.owner.generation != self.generation:
+            self.status.set("现场输入或评估区域已改变，请关闭并重新打开分区管理。")
+            return
         try:
-            settings = normalize_zone_settings({"scope": "zones", "zones": self.zones},
+            settings = normalize_zone_settings({**self.owner.zone_settings, "scope": "zones", "zones": self.zones},
                                                image_size=(self.width, self.height))
         except ValueError as error:
             self.status.set(str(error))
@@ -512,6 +579,7 @@ class ZoneEditorDialog:
         self.owner.zone_settings = settings
         self.owner.scope_label.set("分区分析")
         self.owner.invalidate()
+        self.owner.redraw()
         log_event(LOGGER, "elevation_zones_saved", scope=settings["scope"],
                   zones=[{"zone_id": zone["zone_id"], "source": zone.get("source", "manual"),
                           "enabled": zone["enabled"]} for zone in settings["zones"]])
@@ -523,8 +591,8 @@ class ElevationCaptureDialog:
     """STL/DXF pipe layout → stereo capture → save/analyze/reopen."""
 
     # The field workflow is deliberately automatic.  Pipe identity comes from
-    # the DXF/STL geometry and the stereo local surface; there is no manual ROI
-    # or legacy elevation-depth mode in the operator UI.
+    # the DXF/STL geometry and the stereo local surface. Optional group search
+    # bounds never assign individual pipe identities.
     analysis_mode = "elevation_auto"
 
     def __init__(self, app: Any, manifest_path: Path | None = None, *, output_root: Path | None = None,
@@ -558,6 +626,7 @@ class ElevationCaptureDialog:
         self.model_half_length_mm = 1000.0
         self.analysis_settings: dict[str, Any] = {}
         self.zone_settings: dict[str, Any] = normalize_zone_settings()
+        self.region_selection_active = False
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
         self.window.title("基础立面评估 · 双目管道状态")
@@ -620,6 +689,9 @@ class ElevationCaptureDialog:
         self.scope_box.bind("<<ComboboxSelected>>", lambda _e: self._scope_selected())
         self.zone_button = ttk.Button(method_bar, text="分区管理", command=self.open_zone_manager)
         self.zone_button.pack(side="left", padx=3)
+        self.region_button = ttk.Button(method_bar, text="左图框选区域", command=self.toggle_region_selection)
+        self.region_button.pack(side="left", padx=3)
+        self.window.bind("<Escape>", lambda _e: self.toggle_region_selection() if self.region_selection_active else None)
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
         photos = ttk.Frame(self.controls)
         photos.pack(fill="x", pady=6)
@@ -669,11 +741,11 @@ class ElevationCaptureDialog:
         panes = ttk.Panedwindow(frame, orient="horizontal")
         panes.pack(fill="both", expand=True, pady=8)
         self.views = {}
-        for role, title in (("left", "左目 · 自动匹配结果"), ("right", "右目 · 自动匹配结果")):
+        for role, title in (("left", "左目 · 评估区域与匹配结果"), ("right", "右目 · 自动匹配结果")):
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
-            self.views[role] = RegionCanvas(view_frame, self, role)
-        ttk.Label(footer, text="按管径、立面距离和双目局部点云自动匹配；照片滚轮缩放、右键平移。", foreground="#355371").pack(anchor="w")
+            self.views[role] = RegionCanvas(view_frame, self, role, assessment_regions=True)
+        ttk.Label(footer, text="点击“左图框选区域”后在左图拖框；滚轮缩放、右键平移；Esc 取消框选。", foreground="#355371").pack(anchor="w")
 
         table_frame = ttk.Frame(footer)
         table_frame.pack(fill="x", pady=6)
@@ -743,6 +815,8 @@ class ElevationCaptureDialog:
 
     def invalidate(self) -> None:
         self.generation += 1
+        if self.region_selection_active:
+            self._set_region_selection(False)
         if self.report is not None or self.results:
             self.report, self.results = None, {}
             self.refresh_table()
@@ -754,6 +828,8 @@ class ElevationCaptureDialog:
             self.quality_dialog.clear_inputs()
         if key == "calibration":
             self.calibration_override = None
+            self.zone_settings = normalize_zone_settings()
+            self.scope_label.set("全幅自动")
             self._clear_registration_anchors()
             self.confirmed.set(False)
             for spec in self.pipes:
@@ -782,16 +858,67 @@ class ElevationCaptureDialog:
     def _scope_selected(self) -> None:
         if self.scope_label.get() == "分区分析":
             if not self.zone_settings.get("zones"):
-                self.message.set("分区分析需要至少一个分区；点击“分区管理”在左目图上框选管道组。")
+                self.message.set("分区分析需要至少一个区域；点击“左图框选区域”，在左图拖框。")
             self.zone_settings["scope"] = "zones"
         else:
             self.zone_settings = normalize_zone_settings()
             self.message.set("已切换为全幅自动分析；分区配置已停用。")
         self.invalidate()
+        self.redraw()
+
+    def _set_region_selection(self, active: bool) -> None:
+        self.region_selection_active = active
+        self.region_button.configure(text="取消框选（Esc）" if active else "左图框选区域")
+        view = self.views["left"]
+        view.cancel_region_drag()
+        view.canvas.configure(cursor="crosshair" if active else "")
+
+    def toggle_region_selection(self) -> None:
+        if self.busy:
+            return
+        if self.region_selection_active:
+            self._set_region_selection(False)
+            self.message.set("已取消框选；现有评估区域保持不变。")
+            return
+        if self.views["left"].image is None:
+            self.message.set("请先双目抓拍或导入左目矫正图，再框选评估区域。")
+            return
+        if len(self.zone_settings.get("zones", [])) >= MAX_ZONES:
+            self.message.set(f"评估区域最多 {MAX_ZONES} 个，请在“分区管理”中删除不需要的区域。")
+            return
+        self._set_region_selection(True)
+        self.message.set("在左侧照片按住左键拖出管道组范围，松开即可加入评估区域；Esc 取消。")
+
+    def add_left_region(self, rect: list[int]) -> None:
+        """Add a group ROI through the existing persisted zone contract."""
+        image = self.views["left"].image
+        if self.busy or image is None:
+            return
+        zones = copy.deepcopy(self.zone_settings.get("zones", []))
+        used = {zone["zone_id"] for zone in zones}
+        index = 1
+        while f"Z{index:02d}" in used:
+            index += 1
+        zone_id = f"Z{index:02d}"
+        zones.append({"zone_id": zone_id, "label": zone_id, "enabled": True,
+                      "coordinate_space": "rectified_left", "roi_rect_px": list(rect)})
+        try:
+            settings = normalize_zone_settings({**self.zone_settings, "scope": "zones", "zones": zones},
+                                               image_size=(image.shape[1], image.shape[0]))
+        except ValueError as error:
+            self.message.set(str(error))
+            return
+        self.zone_settings = settings
+        self.scope_label.set("分区分析")
+        self.invalidate()
+        self.redraw()
+        log_event(LOGGER, "elevation_left_region_added", zone_id=zone_id, roi_rect_px=rect)
+        self.message.set(f"已加入 {zone_id}，切换为分区分析。点击④保存并评估；修改或删除请用“分区管理”。")
 
     def open_zone_manager(self) -> None:
         if self.busy:
             return
+        self._set_region_selection(False)
         try:
             if self.views["left"].image is None:
                 raise ValueError("请先载入左目矫正图，再配置分区")
@@ -1245,7 +1372,9 @@ class ElevationCaptureDialog:
                 raise ValueError(f"无法读取 {role} 图像")
             if view.image is not None and view.image.shape != image.shape:
                 self.last_manifest = None
-                self.message.set("照片尺寸改变；请重新载入与标定尺寸一致的左右图。")
+                self.zone_settings = normalize_zone_settings()
+                self.scope_label.set("全幅自动")
+                self.message.set("照片尺寸改变，评估区域已清除；请载入与标定尺寸一致的左右图并重新框选。")
             digest = hashlib.sha256(data).hexdigest()
             if self.image_hashes.get(role) not in (None, digest):
                 # Observation anchors refer to one exact capture.  They must

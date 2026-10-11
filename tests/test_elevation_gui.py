@@ -102,6 +102,113 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertTrue((self.dialog.last_manifest.parent / "report.json").is_file())
         self.assertGreaterEqual(len(self.dialog.report["evidence_files"]), 2)
 
+    def test_left_drag_saves_source_pixels_reopens_and_runs_zone_analysis(self):
+        view = self.dialog.views["left"]
+        self.assertTrue(view.canvas.bind("<ButtonPress-1>"))
+        self.assertFalse(self.dialog.views["right"].canvas.bind("<ButtonPress-1>"))
+        self.dialog.report = {"old": True}
+        self.dialog.results = {"P001": {"installation_state": "INSTALLED"}}
+        self.dialog.zone_settings["right_roi_padding_px"] = 80
+        self.dialog.region_button.invoke()
+        view.transform = (2.0, 10.0, 10.0)
+        view.start_region(SimpleNamespace(x=210, y=130))
+        view.move_region(SimpleNamespace(x=30, y=50))
+        self.assertTrue(view.canvas.find_withtag("pending-zone"))
+        view.finish_region(SimpleNamespace(x=30, y=50))
+        self.assertEqual(self.dialog.zone_settings["zones"][0]["roi_rect_px"], [10, 20, 90, 40])
+        self.assertEqual(self.dialog.scope_label.get(), "分区分析")
+        self.assertFalse(self.dialog.region_selection_active)
+        self.assertIsNone(self.dialog.report)
+        self.assertFalse(self.dialog.results)
+        self.assertTrue(view.canvas.find_withtag("assessment-zone"))
+        self.assertTrue(all("left_region_px" not in p for p in self.dialog.pipes))
+        self.dialog.submit(False)
+        self.finish_worker()
+        saved = self.dialog.last_manifest
+        payload = json.loads(saved.read_text(encoding="utf-8"))["analysis"]["elevation_auto"]
+        self.assertEqual(payload["scope"], "zones")
+        self.assertEqual(payload["right_roi_padding_px"], 80)
+        self.assertEqual(payload["zones"][0]["roi_rect_px"], [10, 20, 90, 40])
+        self.dialog.load_session(saved)
+        self.assertTrue(view.canvas.find_withtag("assessment-zone"))
+        self.dialog.confirmed.set(True)
+        self.dialog.submit(True)
+        self.finish_worker()
+        self.assertEqual(self.dialog.report["scope"], "zones")
+        self.assertEqual(self.dialog.report["counts"]["UNKNOWN"], 12)
+        self.assertTrue(self.dialog.report["zone_registration_audit"])
+
+    def test_left_drag_clamps_edges_rejects_small_boxes_and_blocks_while_busy(self):
+        view = self.dialog.views["left"]
+        self.dialog.toggle_region_selection()
+        view.transform = (1., 0., 0.)
+        view.start_region(SimpleNamespace(x=-10, y=-10))
+        view.finish_region(SimpleNamespace(x=80, y=80))
+        self.assertFalse(self.dialog.zone_settings["zones"])
+        view.start_region(SimpleNamespace(x=10, y=10))
+        view.finish_region(SimpleNamespace(x=25, y=25))
+        self.assertTrue(self.dialog.region_selection_active)
+        self.assertFalse(self.dialog.zone_settings["zones"])
+        view.start_region(SimpleNamespace(x=80, y=80))
+        view.finish_region(SimpleNamespace(x=-50, y=-20))
+        self.assertEqual(self.dialog.zone_settings["zones"][0]["roi_rect_px"], [0, 0, 80, 80])
+        self.dialog.toggle_region_selection()
+        view.transform = (1., 0., 0.)
+        view.start_region(SimpleNamespace(x=80, y=80))
+        self.dialog.busy = True
+        try:
+            view.finish_region(SimpleNamespace(x=250, y=250))
+            self.dialog.add_left_region([100, 100, 80, 80])
+            self.assertEqual(len(self.dialog.zone_settings["zones"]), 1)
+        finally:
+            self.dialog.busy = False
+
+    def test_left_regions_append_with_unique_ids_and_respect_limit_and_full_frame(self):
+        for _ in range(8):
+            self.dialog.add_left_region([20, 20, 80, 80])
+        self.assertEqual([z["zone_id"] for z in self.dialog.zone_settings["zones"]],
+                         [f"Z{i:02d}" for i in range(1, 9)])
+        self.dialog.add_left_region([30, 30, 80, 80])
+        self.assertEqual(len(self.dialog.zone_settings["zones"]), 8)
+        self.dialog.toggle_region_selection()
+        self.assertFalse(self.dialog.region_selection_active)
+        self.assertIn("最多", self.dialog.message.get())
+        self.dialog.scope_label.set("全幅自动")
+        self.dialog._scope_selected()
+        self.assertFalse(self.dialog.zone_settings["zones"])
+        self.assertFalse(self.dialog.views["left"].canvas.find_withtag("assessment-zone"))
+
+    def test_new_photo_or_input_change_cancels_pending_drag(self):
+        view = self.dialog.views["left"]
+        self.dialog.add_left_region([20, 20, 80, 80])
+        self.dialog.toggle_region_selection()
+        view.transform = (1., 0., 0.)
+        view.start_region(SimpleNamespace(x=50, y=50))
+        self.dialog.invalidate()
+        view.finish_region(SimpleNamespace(x=150, y=150))
+        self.assertEqual(len(self.dialog.zone_settings["zones"]), 1)
+        self.assertFalse(self.dialog.region_selection_active)
+        self.dialog.toggle_region_selection()
+        self.dialog.load_images()
+        self.assertFalse(self.dialog.region_selection_active)
+        self.assertEqual(len(self.dialog.zone_settings["zones"]), 1)
+        cv2.imwrite(self.dialog.fields["left"].get(), np.zeros((240, 320, 3), np.uint8))
+        self.dialog.load_images()
+        self.assertFalse(self.dialog.zone_settings["zones"])
+        self.assertEqual(self.dialog.scope_label.get(), "全幅自动")
+
+    def test_zone_editor_cannot_overwrite_new_main_view_selection(self):
+        editor = ZoneEditorDialog(self.dialog)
+        editor.window.withdraw()
+        try:
+            self.dialog.add_left_region([20, 20, 80, 80])
+            editor.zones = [{"zone_id": "STALE", "roi_rect_px": [50, 50, 80, 80]}]
+            editor._save()
+            self.assertIn("已改变", editor.status.get())
+            self.assertEqual(self.dialog.zone_settings["zones"][0]["zone_id"], "Z01")
+        finally:
+            editor.window.destroy()
+
     def test_matching_controls_roundtrip_and_preserve_other_settings(self):
         self.dialog.analysis_settings = {"minimum_depth_mm": 350, "stereo_matching": {"block_size": 7}}
         self.dialog.disparity_count.set("256")

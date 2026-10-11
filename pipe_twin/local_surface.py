@@ -144,10 +144,13 @@ def _catalog(value: Any) -> list[dict[str, Any]]:
 def _validate_arrays(left: Any, right: Any, depth: Any, calibration: Any) -> tuple[np.ndarray, ...]:
     if not isinstance(left, np.ndarray) or not isinstance(right, np.ndarray) or left.dtype != np.uint8 or right.dtype != np.uint8:
         raise LocalSurfaceError("left and right must be uint8 BGR arrays")
-    if left.ndim != 3 or left.shape[2] != 3 or right.shape != left.shape or min(left.shape[:2]) <= 0:
-        raise LocalSurfaceError("left and right must be nonempty matching BGR images")
+    if any(image.ndim != 3 or image.shape[2] != 3 or min(image.shape[:2]) <= 0 for image in (left, right)):
+        raise LocalSurfaceError("left and right must be nonempty BGR images")
+    if left.shape[0] != right.shape[0]:
+        raise LocalSurfaceError("rectified image heights must match")
     arrays = tuple(getattr(depth, name, None) for name in ("left_depth_mm", "right_depth_mm", "left_valid", "right_valid"))
-    if any(not isinstance(item, np.ndarray) or item.shape != left.shape[:2] for item in arrays):
+    if any(not isinstance(item, np.ndarray) or item.shape != image.shape[:2]
+           for item, image in zip(arrays, (left, right, left, right))):
         raise LocalSurfaceError("depth arrays must match image dimensions")
     if arrays[2].dtype != np.bool_ or arrays[3].dtype != np.bool_:
         raise LocalSurfaceError("depth valid masks must be boolean")
@@ -157,7 +160,7 @@ def _validate_arrays(left: Any, right: Any, depth: Any, calibration: Any) -> tup
         raise LocalSurfaceError("validated rectified calibration is required")
     baseline = _positive(getattr(calibration, "baseline_mm", None), "calibration.baseline_mm")
     rotations, centres, matrices = [], [], []
-    for role in ("left", "right"):
+    for role, image in (("left", left), ("right", right)):
         camera = getattr(calibration, role, None)
         try:
             fx = _positive(getattr(camera, "fx", None), f"calibration.{role}.fx")
@@ -167,7 +170,7 @@ def _validate_arrays(left: Any, right: Any, depth: Any, calibration: Any) -> tup
             matrix = _intrinsic(camera)
         except (AttributeError, TypeError, ValueError) as error:
             raise LocalSurfaceError(f"calibration.{role} camera is invalid: {error}") from error
-        if (getattr(camera, "width", None), getattr(camera, "height", None)) != (left.shape[1], left.shape[0]):
+        if (getattr(camera, "width", None), getattr(camera, "height", None)) != (image.shape[1], image.shape[0]):
             raise LocalSurfaceError(f"calibration.{role} dimensions do not match images")
         if (rotation.shape != (3, 3) or centre.shape != (3,) or not np.all(np.isfinite(rotation))
                 or not np.all(np.isfinite(centre)) or not np.allclose(rotation @ rotation.T, np.eye(3), atol=1e-6)
@@ -181,8 +184,13 @@ def _validate_arrays(left: Any, right: Any, depth: Any, calibration: Any) -> tup
         centres.append(centre)
         matrices.append(matrix)
     baseline_left = rotations[0] @ (centres[1] - centres[0])
+    # Depth is computed on the full rectified pair before zone cropping.
+    # Each eye may have a different horizontal crop origin/width; back-project
+    # with its own shifted cx. Focal lengths and rectified rows must still agree.
+    right_aligned = matrices[1].copy()
+    right_aligned[0, 2] = matrices[0][0, 2]
     if (not np.allclose(rotations[0], rotations[1], atol=1e-5)
-            or not np.allclose(matrices[0], matrices[1], rtol=1e-5, atol=1e-6)
+            or not np.allclose(matrices[0], right_aligned, rtol=1e-5, atol=1e-6)
             or not np.allclose(baseline_left, [baseline, 0, 0], rtol=1e-4, atol=1e-3)):
         raise LocalSurfaceError("calibration does not describe a horizontal rectified stereo pair")
     return arrays
