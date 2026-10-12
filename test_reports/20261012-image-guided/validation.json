@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-12",
+  "suite": {
+    "command": ".venv\\Scripts\\python.exe -m pytest tests -q",
+    "passed": 588,
+    "skipped": 1,
+    "subtests_passed": 264,
+    "duration_seconds": 193.85
+  },
+  "compileall": "passed",
+  "git_diff_check": "passed",
+  "real_tk_layout_sizes": ["940x660", "1120x760", "1120x860"],
+  "real_tk_candidate_overlay_and_relative_dialog": "passed",
+  "saved_manifest_analysis_and_overlay_path": "passed",
+  "original_capture_unchanged": true,
+  "field_measurement_succeeded": false,
+  "field_middle_roi_image_candidates": {"left": 4, "right": 4},
+  "field_middle_roi_qualified_cylinders": 0,
+  "field_counts": {"INSTALLED": 0, "NOT_INSTALLED": 0, "UNKNOWN": 12},
+  "synthetic_sparse_depth_cylinders_before": 0,
+  "synthetic_sparse_depth_cylinders_after": 3,
+  "synthetic_results_are_not_field_accuracy_validation": true
+}

@@ -94,6 +94,24 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(len(repeated["capture"]["capture_groups"]), 1)
         self.assertNotIn("已开始新历史", self.dialog.message.get())
 
+    def test_image_guided_selection_and_diagnostic_overlay(self):
+        self.dialog.local_observation_label.set("图像引导圆柱")
+        self.dialog._local_observation_selected()
+        self.assertEqual(self.dialog.registration_settings["local_observation_mode"],"image_guided")
+        self.assertIn("剔除异常视差",self.dialog.message.get())
+        self.dialog.report={"local_surface":{"image_candidates":[
+            {"role":"left","candidate_id":"IMG-left-001","region_px":[20,40,100,30],
+             "reason_codes":["NO_DOMINANT_DISPARITY_SUPPORT"]}]}}
+        self.dialog.redraw()
+        self.assertEqual(len(self.dialog.views['left'].canvas.find_withtag('image-candidate')),2)
+        self.assertFalse(self.dialog.views['right'].canvas.find_withtag('image-candidate'))
+        self.dialog.show_measurement()
+        windows=[w for w in self.dialog.window.winfo_children() if isinstance(w,self.tk.Toplevel)]
+        self.assertTrue(windows)
+        texts=[w for w in windows[-1].winfo_children() if isinstance(w,self.tk.Text)]
+        self.assertIn('尚无可靠的管间尺寸对比',texts[0].get('1.0','end'))
+        windows[-1].destroy()
+
     def test_saved_scene_runs_real_analysis_and_renders_unknown_for_blank_images(self):
         self.dialog.submit(True)
         self.finish_worker()

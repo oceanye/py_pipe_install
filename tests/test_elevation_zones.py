@@ -77,7 +77,7 @@ def test_full_width_zone_reuses_automatic_geometry_and_qualifies_observations():
     assert result["zone_registration_audit"]["registrations"][0]["camera_view"]["camera_side_world"] == [1, 0, 0]
 
 
-@pytest.mark.parametrize("backend", ["cylinder", "geometry_only", "parallel_strip", "auto"])
+@pytest.mark.parametrize("backend", ["cylinder", "geometry_only", "parallel_strip", "image_guided", "auto"])
 def test_partial_zone_uses_real_backends_with_unequal_crop_widths(backend):
     calibration, specs, groups = _groups()
     result = analyze_elevation_auto_zones(

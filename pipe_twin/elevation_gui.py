@@ -9,6 +9,7 @@ import json
 import math
 import queue
 import threading
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -49,7 +50,13 @@ REASON_TEXT = {
     "LOCAL_CYLINDER_MATCHED_TO_STL": "局部管道与模型几何匹配",
     "LOCAL_DEPTH_GEOMETRY_MATCHED_TO_MODEL": "仅双目深度局部几何与模型匹配",
     "REPEATED_REGISTERED_FREE_SPACE": "连续独立照片确认预期位置为空",
-    "NO_LOCAL_SURFACE_OBSERVATIONS": "当前视图没有足够局部表面",
+    "NO_LOCAL_SURFACE_OBSERVATIONS": "没有通过三维验证的管段",
+    "INSUFFICIENT_VALID_DEPTH": "有效深度不足",
+    "NO_DOMINANT_DISPARITY_SUPPORT": "管面深度不一致",
+    "DISCONTINUOUS_AXIAL_DEPTH_SUPPORT": "沿管长的有效深度不连续",
+    "CYLINDER_FIT_RESIDUAL_TOO_LARGE": "圆柱拟合误差过大",
+    "LOCAL_AXIS_SUPPORT_TOO_SHORT": "连续管段太短",
+    "PROJECTED_AXIS_DISAGREEMENT": "三维轴与图像方向不一致",
     "COLLINEAR_WITHOUT_TWO_ANCHORS": "可见管道布局不足以唯一对应",
     "ALTERNATIVE_POSES_WITHIN_AMBIGUITY_GATE": "存在多个近似模型对应",
     "FOREGROUND_OCCLUSION": "前景遮挡",
@@ -63,6 +70,52 @@ REASON_TEXT = {
     "NO_RIGID_MATCH_WITHIN_RESIDUAL_GATE": "未找到满足几何误差的模型对应",
     "SEARCH_SPACE_TRUNCATED": "模型匹配搜索范围不足",
 }
+
+
+def recognition_summary(report: dict) -> str:
+    """Report proposal and metric stages separately, without counting pipes."""
+    surface = report.get("local_surface") or {}
+    candidates = surface.get("image_candidates",[])
+    counts = Counter(c.get("role") for c in candidates)
+    text = f"图像候选：左 {counts['left']} / 右 {counts['right']}；合格三维管段 {len(surface.get('observations',[]))}"
+    reasons = Counter(r.get("reason") for r in surface.get("rejected",[]))
+    if reasons:
+        text += "；" + "、".join(f"{REASON_TEXT.get(k,k)} {v}" for k,v in reasons.most_common(2))
+    return text
+
+
+def relative_layout_summary_lines(report: dict | None) -> list[str]:
+    lines = ["模型对比依据：管道之间的轴心间距、表面净距、直径及相对排列。",
+             "相机到管道的距离只用于三维重建，不作为模型匹配目标。",
+             "以下净距为共同管轴法向截面的轴心距减两半径；负值表示截面重叠。"]
+    registration = (report or {}).get("registration") or {}
+    registrations = ((report or {}).get("zone_registration_audit") or {}).get("registrations") or [registration]
+    if registration.get("status") in {"ZONE_MATCH_CONFLICT","ZONE_RESULT_CONFLICT"}:
+        registrations = []
+    available = False
+    for reg in registrations:
+        layout = reg.get("relative_layout")
+        if reg.get("status") != "MATCHED" or not layout:
+            continue
+        available = True
+        if not layout.get("axis_centers_resolved",True):
+            lines += ["", "本组使用局部条带估计，圆柱轴心未确认，暂不输出轴心距或表面净距对比。"]
+            continue
+        lines += ["", f"{reg.get('zone_id','全幅')} · 管径（模型 / 实测 / 偏差，mm）"]
+        for item in layout.get("matches",[]):
+            if item.get("observed_diameter_mm") is not None:
+                lines.append(f"{item['pipe_id']}：{item['model_diameter_mm']:.2f} / {item['observed_diameter_mm']:.2f} / {item['diameter_error_mm']:+.2f}")
+        lines.append("管间关系（模型 / 实测 / 偏差，mm）")
+        for pair in layout.get("pairwise",[]):
+            lines.append(f"{pair['pipe_id_a']} ↔ {pair['pipe_id_b']}  轴心距：{pair['model_distance_mm']:.2f} / {pair['observed_distance_mm']:.2f} / {pair['error_mm']:+.2f}")
+            if pair.get("observed_surface_gap_mm") is not None:
+                lines.append(f"    表面净距：{pair['model_surface_gap_mm']:.2f} / {pair['observed_surface_gap_mm']:.2f} / {pair['surface_gap_error_mm']:+.2f}")
+    if not available:
+        lines += ["", "尚无可靠的管间尺寸对比：需要先获得合格三维管段并确定模型对应。",
+                  "图像候选框不等于实测管道，模型尺寸不会填入实测结果。"]
+    if report:
+        lines += ["", recognition_summary(report)]
+    return lines
 
 
 def measurement_summary_lines(spec: dict, result: dict | None) -> list[str]:
@@ -192,6 +245,20 @@ class RegionCanvas:
         # with its OBS id.  Matching by model colour is only a convenience and
         # can hide observations when the physical pipe colour differs.
         report = self.owner.report if isinstance(self.owner.report, dict) else {}
+        # Image proposals deliberately have no model ID or measurement. Show
+        # their own IDs and failure stage even when every model row is UNKNOWN.
+        for candidate in (report.get("local_surface") or {}).get("image_candidates",[]):
+            if candidate.get("role") != self.role:
+                continue
+            x,y,bw,bh = candidate["region_px"]
+            canvas.create_rectangle(ox+x*scale,oy+y*scale,ox+(x+bw)*scale,oy+(y+bh)*scale,
+                                    outline="#FFD166",width=2,dash=(5,3),tags="image-candidate")
+            label = str(candidate.get("candidate_id","")) + " · 图像候选"
+            reasons = candidate.get("reason_codes") or []
+            if reasons:
+                label += " · " + REASON_TEXT.get(reasons[0],reasons[0])
+            canvas.create_text(ox+x*scale+2,oy+y*scale+2,anchor="nw",text=label,
+                               fill="#FFD166",tags="image-candidate")
         if self.owner.report is not None:
             registration = report.get("registration") if isinstance(report, dict) else None
             if not isinstance(registration, dict) or registration.get("status") != "MATCHED":
@@ -639,7 +706,7 @@ class ElevationCaptureDialog:
         self.stl_unit = tk.StringVar(value="millimeter")
         self.confirmed = tk.BooleanVar(value=False)
         self.history = tk.BooleanVar(value=True)
-        self.local_observation_label = tk.StringVar(value="自动（圆柱/平行局部）")
+        self.local_observation_label = tk.StringVar(value="自动（圆柱/图像引导）")
         self.message = tk.StringVar(value="首次：导入 STL 或 DXF → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
         self.calibration_status = tk.StringVar(value="未加载标定；同一相机、镜头和分辨率无需重复标定")
         self.summary = tk.StringVar(value="尚未建立管道目录")
@@ -678,7 +745,7 @@ class ElevationCaptureDialog:
         ttk.Label(method_bar, text="局部建模").pack(side="left", padx=(3, 3))
         self.local_observation_box = ttk.Combobox(
             method_bar, textvariable=self.local_observation_label,
-            values=("自动（圆柱/平行局部）", "仅双目深度几何", "平行局部条带（颜色辅助）"),
+            values=("自动（圆柱/图像引导）", "仅双目深度几何", "图像引导圆柱", "平行局部条带（颜色辅助）"),
             state="readonly", width=22)
         self.local_observation_box.pack(side="left")
         self.local_observation_box.bind("<<ComboboxSelected>>", lambda _e: self._local_observation_selected())
@@ -768,13 +835,13 @@ class ElevationCaptureDialog:
         row.pack(fill="x")
         actions = [("设置颜色", self.edit_pipe), ("同径统一颜色", self.apply_diameter_color),
                    ("管长与观察方向", self.open_model_viewer), ("查看模型管道编号", self.show_catalog),
-                   ("尺寸与测距", self.show_measurement)]
+                   ("管间尺寸对比", self.show_measurement)]
         for name, action in actions:
             ttk.Button(row, text=name, command=action).pack(side="left", padx=2)
         bottom = ttk.Frame(footer)
         bottom.pack(fill="x", pady=(8, 4))
         ttk.Checkbutton(bottom, text="沿用上次场景历史（相机未移动）", variable=self.history).pack(side="left")
-        ttk.Label(footer, textvariable=self.summary).pack(anchor="w")
+        ttk.Label(footer, textvariable=self.summary, wraplength=860).pack(anchor="w")
         ttk.Label(footer, textvariable=self.message, wraplength=860, foreground="#355371").pack(fill="x", pady=3)
 
         for key, variable in self.fields.items():
@@ -991,8 +1058,9 @@ class ElevationCaptureDialog:
     def _local_observation_selected(self) -> None:
         """Persist the local 3-D observation basis in the scene manifest."""
         labels = {
-            "自动（圆柱/平行局部）": "auto",
+            "自动（圆柱/图像引导）": "auto",
             "仅双目深度几何": "geometry_only",
+            "图像引导圆柱": "image_guided",
             "平行局部条带（颜色辅助）": "parallel_strip",
         }
         self.registration_settings["local_observation_mode"] = labels.get(
@@ -1000,10 +1068,12 @@ class ElevationCaptureDialog:
         self.invalidate()
         if self.registration_settings["local_observation_mode"] == "geometry_only":
             self.message.set("仅双目深度几何：沿共同管轴建立左右目共同局部截断，颜色不参与候选生成。")
+        elif self.registration_settings["local_observation_mode"] == "image_guided":
+            self.message.set("图像引导圆柱：按图像长条生成候选，剔除异常视差，再独立验证双目圆柱；不按模型颜色筛选。")
         elif self.registration_settings["local_observation_mode"] == "parallel_strip":
             self.message.set("平行局部条带：沿共同管轴测量可见条带，颜色仅作候选辅助。")
         else:
-            self.message.set("自动局部建模：优先圆柱表面，必要时回退到平行局部条带。")
+            self.message.set("自动局部建模：优先圆柱表面；颜色关闭时回退到图像引导圆柱，颜色开启时回退到平行条带。")
 
     def refresh_table(self) -> None:
         selected = self.selected_id()
@@ -1039,11 +1109,14 @@ class ElevationCaptureDialog:
             return
         tk, ttk = self.app.tk, self.app.ttk
         dialog = tk.Toplevel(self.window)
-        dialog.title(f"{spec['pipe_id']} · 模型尺寸与距离定义")
+        dialog.title("管间尺寸对比 · 模型与实测")
         dialog.geometry("850x660")
         text = tk.Text(dialog, wrap="word", padx=15, pady=15, font=("Microsoft YaHei", 10))
         text.pack(fill="both", expand=True)
-        text.insert("1.0", "\n".join(measurement_summary_lines(spec, self.results.get(spec["pipe_id"]))))
+        lines = relative_layout_summary_lines(self.report)
+        lines += ["", "—— 所选管道的相机坐标诊断 ——", ""]
+        lines += measurement_summary_lines(spec,self.results.get(spec["pipe_id"]))
+        text.insert("1.0", "\n".join(lines))
         text.configure(state="disabled")
         ttk.Button(dialog, text="关闭", command=dialog.destroy).pack(pady=6)
 
@@ -1090,7 +1163,7 @@ class ElevationCaptureDialog:
         self._restore_camera_side_control()
         self.zone_settings = normalize_zone_settings()
         self.scope_label.set("全幅自动")
-        self.local_observation_label.set("自动（圆柱/平行局部）")
+        self.local_observation_label.set("自动（圆柱/图像引导）")
         self.last_manifest = None
         self.confirmed.set(False)
         self.invalidate()
@@ -1452,12 +1525,13 @@ class ElevationCaptureDialog:
         self.registration_settings = restored_registration
         self._restore_camera_side_control()
         local_labels = {
-            "auto": "自动（圆柱/平行局部）",
+            "auto": "自动（圆柱/图像引导）",
             "geometry_only": "仅双目深度几何",
+            "image_guided": "图像引导圆柱",
             "parallel_strip": "平行局部条带（颜色辅助）",
         }
         self.local_observation_label.set(local_labels.get(
-            restored_registration.get("local_observation_mode", "auto"), "自动（圆柱/平行局部）"))
+            restored_registration.get("local_observation_mode", "auto"), "自动（圆柱/图像引导）"))
         self.present_pipe_count.set(str(restored_registration.get("present_pipe_count", "")))
         self.confirmed.set(False)
         self.refresh_table()
@@ -1599,6 +1673,8 @@ class ElevationCaptureDialog:
             inventory = report.get("scene_inventory", {}) if report else {}
             if inventory.get("present_pipe_count") is not None:
                 self.summary.set(f"现场实物 {inventory['present_pipe_count']} 根；模型候选 {inventory['model_candidate_count']} 个管位 · 已对应 {counts.get('INSTALLED', 0)} · 待确认 {counts.get('UNKNOWN', 0)}")
+            if report:
+                self.summary.set(self.summary.get()+"\n"+recognition_summary(report))
             self.message.set(f"已保存：{path.parent}。JSON 报告和叠图在同一目录。" if report else f"已保存：{path}")
             if report and (refresh_metadata or report.get("status_refresh")):
                 recorded = report.get("status_refresh") or refresh_metadata or {}

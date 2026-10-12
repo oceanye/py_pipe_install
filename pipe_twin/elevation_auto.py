@@ -30,7 +30,7 @@ from .elevation_zones import (
 from .model_zones import zone_model_specs
 
 LOGGER = get_logger("elevation_auto")
-STATE_ZH = {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "遮蔽不确定"}
+STATE_ZH = {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "不确定"}
 STATE_BGR = {"INSTALLED": (60, 180, 60), "NOT_INSTALLED": (50, 50, 220), "UNKNOWN": (0, 190, 240)}
 
 
@@ -325,6 +325,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                    "pair_healthy": sensor_healthy, "analysis_healthy": healthy, "pair_signature": digest.hexdigest(), "registration": registration,
                    "surface_audit": surface.get("audit", {}), "pipes": evidence,
                    "local_observations": surface["observations"],
+                   "image_candidates": surface.get("image_candidates", []),
                    "quality": group.get("quality"), "depth_audit": group["depth"].audit,
                    "photos": group.get("photos")}
         captures.append(capture)
@@ -400,6 +401,18 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
 
     zone_id = str(zone["zone_id"])
     result = copy.deepcopy(dict(report))
+    def qualify_image_candidates(items):
+        qualified = []
+        for raw in items:
+            item = copy.deepcopy(raw)
+            role = item.get("role")
+            if role in ("left","right") and item.get("region_px"):
+                x,y,w,h = item["region_px"]
+                item["region_px"] = [x+offsets[f"{role}_x"],y+offsets[f"{role}_y"],w,h]
+            item["candidate_id"] = _zone_observation_id(zone_id,item.get("candidate_id"))
+            item["zone_id"] = zone_id
+            qualified.append(item)
+        return qualified
     surface = result.get("local_surface")
     if isinstance(surface, Mapping):
         surface = dict(surface)
@@ -409,6 +422,7 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
             item["observation_id"] = _zone_observation_id(zone_id, item.get("observation_id"))
             observations.append(item)
         surface["observations"] = observations
+        surface["image_candidates"] = qualify_image_candidates(surface.get("image_candidates",[]))
         rejected = []
         for raw in surface.get("rejected", []):
             item = copy.deepcopy(raw)
@@ -427,6 +441,7 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
         if not isinstance(registration, Mapping):
             return registration
         value = copy.deepcopy(dict(registration))
+        value["zone_id"] = zone_id
         for item in value.get("matches", []) if isinstance(value.get("matches"), list) else []:
             if isinstance(item, Mapping) and item.get("observation_id"):
                 item["observation_id"] = _zone_observation_id(zone_id, item["observation_id"])
@@ -437,6 +452,10 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
                 if isinstance(item, Mapping) and item.get("observation_id"):
                     item["observation_id"] = _zone_observation_id(zone_id, item["observation_id"])
             value["relative_layout"] = relative
+            for pair in relative.get("pairwise",[]):
+                for key in ("observation_id_a","observation_id_b"):
+                    if pair.get(key):
+                        pair[key] = _zone_observation_id(zone_id,pair[key])
         return value
 
     result["registration"] = qualify_registration(result.get("registration"))
@@ -461,6 +480,7 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
                 item["zone_roi_source"] = zone.get("roi_source", "unmapped")
             item["registration"] = qualify_registration(item.get("registration"))
             item["local_observations"] = []
+            item["image_candidates"] = qualify_image_candidates(group.get("image_candidates",[]))
             for raw in group.get("local_observations", []) if isinstance(group, Mapping) else []:
                 observation = offset_observation_pixels(raw, offsets)
                 observation["observation_id"] = _zone_observation_id(zone_id, observation.get("observation_id"))
@@ -593,6 +613,7 @@ def _merge_zone_capture_groups(zone_reports: list[Mapping[str, Any]], group_coun
         for item in entries:
             observations.extend(item.get("local_observations", []))
         base["local_observations"] = observations
+        base["image_candidates"] = [candidate for item in entries for candidate in item.get("image_candidates",[])]
         pipes = {}
         for spec in pipe_specs:
             candidates = [item.get("pipes", {}).get(spec["pipe_id"]) for item in entries
@@ -626,6 +647,7 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
         raise ValueError("至少需要一个启用分区")
     latest_surfaces = [report.get("local_surface", {}) for report in zone_reports]
     observations = [observation for surface in latest_surfaces for observation in surface.get("observations", [])]
+    image_candidates = [item for surface in latest_surfaces for item in surface.get("image_candidates", [])]
     rejected = [item for surface in latest_surfaces for item in surface.get("rejected", [])]
     point_cloud = {"points_camera_mm": [], "colors_srgb": []}
     for surface in latest_surfaces:
@@ -661,7 +683,8 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
         "mode": "elevation_auto", "scope": "zones", "scope_settings": copy.deepcopy(dict(scope)),
         "counts": {state: sum(row["installation_state"] == state for row in rows) for state in STATE_ZH},
         "pipes": rows, "registration": registration,
-        "local_surface": {"observations": observations, "rejected": rejected, "point_cloud": point_cloud, "audit": audit},
+        "local_surface": {"observations": observations, "rejected": rejected, "point_cloud": point_cloud, "audit": audit,
+                          "image_candidates":image_candidates},
         "status_refresh": current.get("status_refresh"),
         "capture_audit": {"count": len(merged_groups), "groups": merged_groups},
         "registration_required": True, "qr_registration_required": False,
@@ -809,6 +832,13 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                         x, y, w, h = box
                         cv2.rectangle(overlay, (x, y), (x+w, y+h), (230, 180, 80), 2)
                         cv2.putText(overlay, observation["observation_id"], (x, max(15, y-3)), cv2.FONT_HERSHEY_SIMPLEX, .5, (230, 180, 80), 1)
+            for candidate in audit.get("image_candidates",[]):
+                if candidate.get("role") != role:
+                    continue
+                x,y,w,h = candidate["region_px"]
+                cv2.rectangle(overlay,(x,y),(x+w,y+h),(102,209,255),1)
+                cv2.putText(overlay,str(candidate["candidate_id"])+" IMAGE ONLY",(x,max(15,y-3)),
+                            cv2.FONT_HERSHEY_SIMPLEX,.45,(102,209,255),1)
             ok, encoded = cv2.imencode(".png", overlay)
             if not ok:
                 raise ValueError("无法保存匹配叠图")

@@ -142,6 +142,7 @@ def _observations(values: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
             "center": _finite_vector(raw.get("center_camera_mm"), "center_camera_mm"),
             "axis": _unit(raw.get("axis_camera"), "axis_camera"),
             "diameter_mm": _diameter(raw.get("diameter_mm"), "diameter_mm"),
+            "axis_center_resolved": not bool(raw.get("parallel_local", False)),
             "color": _color(raw.get("color_srgb"), "color_srgb"),
             "color_identity_validated": validated_color,
             "color_candidate_pipe_ids": color_hints})
@@ -246,12 +247,19 @@ def _relative_layout(specs: list[dict], observations: list[dict], model_xy: np.n
             "model_offset_transverse_mm": model_offsets[index].tolist(),
             "observed_offset_transverse_mm": observed_offsets[index].tolist(),
             "offset_error_mm": float(offset_errors[index]),
+            "model_diameter_mm": specs[target_index]["diameter_mm"],
+            "observed_diameter_mm": observations[observation_index]["diameter_mm"],
+            "diameter_error_mm": observations[observation_index]["diameter_mm"]-specs[target_index]["diameter_mm"],
+            "axis_center_resolved": observations[observation_index]["axis_center_resolved"],
         })
     pairwise = []
     for first in range(len(matches)):
         for second in range(first + 1, len(matches)):
             model_distance = float(np.linalg.norm(model_points[first] - model_points[second]))
             observed_distance = float(np.linalg.norm(observed_points[first] - observed_points[second]))
+            model_gap = model_distance - (specs[targets[first]]["diameter_mm"]+specs[targets[second]]["diameter_mm"])/2
+            resolved = observations[ids[first]]["axis_center_resolved"] and observations[ids[second]]["axis_center_resolved"]
+            observed_gap = (observed_distance - (observations[ids[first]]["diameter_mm"]+observations[ids[second]]["diameter_mm"])/2) if resolved else None
             pairwise.append({
                 "pipe_id_a": matches[first]["pipe_id"],
                 "pipe_id_b": matches[second]["pipe_id"],
@@ -260,11 +268,18 @@ def _relative_layout(specs: list[dict], observations: list[dict], model_xy: np.n
                 "model_distance_mm": model_distance,
                 "observed_distance_mm": observed_distance,
                 "error_mm": observed_distance - model_distance,
+                "model_surface_gap_mm": model_gap,
+                "observed_surface_gap_mm": observed_gap,
+                "surface_gap_error_mm": observed_gap-model_gap if resolved else None,
+                "axis_centers_resolved": resolved,
             })
     return {
         "coordinate_frame": "TRANSVERSE_PLANE_NORMAL_TO_COMMON_PIPE_AXIS",
         "measurement": "CENTRE_TO_CENTRE_RELATIVE_LAYOUT_MM",
         "axial_translation_excluded": True,
+        "camera_distance_used_as_model_target": False,
+        "axis_centers_resolved": all(observations[i]["axis_center_resolved"] for i in ids),
+        "surface_gap_definition": "TRANSVERSE_AXIS_SEPARATION_MINUS_MEASURED_RADII_SUM",
         "matches": matches,
         "pairwise": pairwise,
         "max_offset_error_mm": float(offset_errors.max()) if len(offset_errors) else 0.0,
