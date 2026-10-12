@@ -642,6 +642,7 @@ class StereoCameraDialog:
         self.owner = owner
         self.app = owner.app
         self.calibration = _calibration_from_manifest(calibration)
+        self._calibration_payload = copy.deepcopy(calibration)
         self.rectifier = rectifier
         self.on_capture = on_capture
         tk, ttk = self.app.tk, self.app.ttk
@@ -680,6 +681,10 @@ class StereoCameraDialog:
         self._opening = False
         self._closing = False
         self._pending_capture = False
+        self._pending_burst = False
+        self._burst_active = False
+        self._burst_after_id = None
+        self._burst_records = []
         self.last_pair: CapturedStereoPair | None = None
         self.preview_images: list[Any] = []
 
@@ -726,6 +731,12 @@ class StereoCameraDialog:
         ttk.Label(main, textvariable=self.exposure_status, foreground="#8A4E00", wraplength=950).pack(
             fill="x", pady=(0, 6)
         )
+        if hasattr(owner, "temporal_frames"):
+            burst_row = ttk.Frame(main)
+            burst_row.pack(fill="x", pady=(0, 6))
+            ttk.Button(burst_row, text="连续采集 20 对并使用", command=self.capture_burst).pack(side="left")
+            ttk.Label(burst_row, text="保持相机和管道静止；采集后回主界面点④保存并评估。",
+                      foreground="#355371").pack(side="left", padx=8)
         previews = ttk.Frame(main)
         previews.pack(fill="both", expand=True)
         previews.columnconfigure(0, weight=1)
@@ -752,6 +763,9 @@ class StereoCameraDialog:
         ).pack(side="right", padx=4)
 
     def _apply_exposure(self) -> None:
+        if getattr(self, "_burst_active", False):
+            self.message.set("连续采集中请保持快门不变；如需调整，请先停止再重新采集。")
+            return
         try:
             if self.session is not None:
                 self.session.set_exposure(EXPOSURE_PRESETS[self.exposure_preset.get()])
@@ -815,7 +829,7 @@ class StereoCameraDialog:
         except Exception as error:  # native cv2 errors included, never silent
             self.app.messagebox.showerror("相机检测失败", str(error), parent=self.window)
 
-    def start(self, *, auto_capture: bool = False) -> bool:
+    def start(self, *, auto_capture: bool = False, auto_burst: bool = False) -> bool:
         """Open the camera on a worker thread; the UI stays responsive.
 
         DirectShow device opens can block for several seconds, so the open
@@ -835,6 +849,7 @@ class StereoCameraDialog:
         self.stop()
         self._opening = True
         self._pending_capture = auto_capture
+        self._pending_burst = auto_burst
         self.exposure_status.set(f"快门 {self.exposure_preset.get()}；正在连接并设置")
         self.message.set("正在打开相机；部分设备在 DirectShow 下需要数秒，请稍候…")
         outcome: dict[str, Any] = {}
@@ -888,6 +903,9 @@ class StereoCameraDialog:
         if self._pending_capture:
             self._pending_capture = False
             self.capture()
+        elif self._pending_burst:
+            self._pending_burst = False
+            self.capture_burst()
 
     def _photo(self, frame: np.ndarray) -> Any:
         height, width = frame.shape[:2]
@@ -935,6 +953,12 @@ class StereoCameraDialog:
             self.app.messagebox.showerror("相机读取失败", str(error), parent=self.window)
 
     def stop(self) -> None:
+        self._burst_active = False
+        self._pending_burst = False
+        self._burst_records = []
+        if getattr(self, "_burst_after_id", None) is not None:
+            self.window.after_cancel(self._burst_after_id)
+            self._burst_after_id = None
         if self.after_id is not None:
             try:
                 self.window.after_cancel(self.after_id)
@@ -947,6 +971,8 @@ class StereoCameraDialog:
 
     def capture(self) -> None:
         try:
+            if getattr(self, "_burst_active", False):
+                return
             if self._opening:
                 self._pending_capture = True
                 self.message.set("相机仍在后台打开；打开后将自动完成本次抓拍。")
@@ -954,6 +980,7 @@ class StereoCameraDialog:
             if self.session is None:
                 self.start(auto_capture=True)
                 return
+            self._check_calibration_binding()
             pair = self.session.read_pair()
             if np.array_equal(pair.left, pair.right):
                 raise StereoCameraError(
@@ -1011,6 +1038,8 @@ class StereoCameraDialog:
                 "right": pair.timestamp_source,
             }
             self.owner.camera_capture_provenance = pair.provenance
+            if hasattr(self.owner, "temporal_frames"):
+                self.owner.temporal_frames = []
             try:
                 left_index, right_index = self._indices()
             except StereoCameraError:
@@ -1039,6 +1068,94 @@ class StereoCameraDialog:
             self.close()
         except Exception as error:  # native cv2 errors included, never silent
             self.app.messagebox.showerror("同步抓拍失败", str(error), parent=self.window)
+
+    def capture_burst(self) -> None:
+        """Capture a finite sequence on Tk ticks; never count it as history."""
+        if self._burst_active:
+            return
+        if self._opening:
+            self._pending_burst = True
+            self._pending_capture = False
+            return
+        if self.session is None:
+            self.start(auto_burst=True)
+            return
+        from .measurement_gui import OUTPUT_ROOT
+        import time
+        if self.after_id is not None:
+            self.window.after_cancel(self.after_id)
+            self.after_id = None
+        self._burst_active = True
+        self._burst_records = []
+        self._burst_controls = (self._layout(), self._indices(), self.exposure_preset.get())
+        self._burst_started = time.monotonic()
+        self._burst_directory = OUTPUT_ROOT / "camera_intake" / f"burst-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
+        self._burst_directory.mkdir(parents=True, exist_ok=False)
+        self.message.set("连续采集预热中，请保持相机和管道静止……")
+        self._burst_after_id = self.window.after(1000, self._burst_tick)
+
+    def _burst_tick(self) -> None:
+        import time
+        self._burst_after_id = None
+        if not self._burst_active or self.session is None:
+            return
+        try:
+            self._check_calibration_binding()
+            if (self._layout(), self._indices(), self.exposure_preset.get()) != self._burst_controls:
+                raise StereoCameraError("连续采集时设备或快门选项改变，请重新采集。")
+            if time.monotonic()-self._burst_started > 25:
+                raise StereoCameraError("连续采集超时；请检查相机后重试，未使用不完整序列。")
+            pair = self.session.read_pair()
+            if np.array_equal(pair.left, pair.right) or pair.sync_delta_ms > self.calibration.max_sync_delta_ms:
+                raise StereoCameraError("连续采集出现相同左右图或不同步帧，请等待画面稳定后重试。")
+            self._show_pair(pair)
+            images = {role: self.rectifier.rectify(role, getattr(pair, role)) if self.rectifier is not None
+                      else getattr(pair, role) for role in ("left", "right")}
+            index = len(self._burst_records)
+            record = {"timestamp_sources": {role: pair.timestamp_source for role in images},
+                      "camera_capture_provenance": copy.deepcopy(pair.provenance), "sha256": {}}
+            for role, frame in images.items():
+                camera = getattr(self.calibration, role)
+                if frame.shape[:2] != (camera.height, camera.width):
+                    raise StereoCameraError("连续采集图像尺寸与标定不一致")
+                ok, encoded = cv2.imencode(".png", frame)
+                if not ok:
+                    raise StereoCameraError("连续采集图像编码失败")
+                data = encoded.tobytes()
+                path = self._burst_directory / f"{index:03d}_{role}.png"
+                path.write_bytes(data)
+                record[f"{role}_path"] = str(path)
+                record[f"{role}_time"] = getattr(pair, f"{role}_captured_at")
+                record["sha256"][role] = hashlib.sha256(data).hexdigest()
+            self._burst_records.append(record)
+            self.message.set(f"连续采集 {index+1}/20 对；请保持静止。采集完毕后将检查运动、重复帧和深度一致性。")
+            if index+1 < 20:
+                self._burst_after_id = self.window.after(150, self._burst_tick)
+                return
+            for role in ("left", "right"):
+                self.owner.fields[role].set(record[f"{role}_path"])
+                self.owner.fields[f"{role}_time"].set(record[f"{role}_time"])
+            self.owner.timestamp_sources = record["timestamp_sources"]
+            self.owner.camera_capture_provenance = record["camera_capture_provenance"]
+            self.owner.temporal_frames = list(self._burst_records)
+            same_frame = self._layout() in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}
+            self.owner.confirmed.set(same_frame)
+            left_index, right_index = self._indices()
+            self.owner._persist_profile(("camera",), camera={"layout": self._layout(),
+                "left_index": left_index, "right_index": right_index, "exposure_ms": self.session.exposure_ms})
+            self.owner.message.set("已采集 20 对图像；预览为末帧。框选管道区域后点击④保存并评估，检查多帧融合结果。"
+                                   + ("" if same_frame else "独立设备需先确认硬件同步。"))
+            self._burst_active = False
+            if self.on_capture is not None:
+                self.on_capture({role: Path(record[f"{role}_path"]) for role in images}, pair)
+            self.close()
+        except Exception as error:
+            self.stop()
+            self.app.messagebox.showerror("连续采集失败", str(error), parent=self.window)
+
+    def _check_calibration_binding(self) -> None:
+        if hasattr(self.owner, "current_calibration") and self.owner.current_calibration() != self._calibration_payload:
+            raise StereoCameraError("相机窗口打开后标定发生改变，请关闭相机窗口并重新打开，使用新的矫正配方。")
 
     def close(self) -> None:
         self._closing = True

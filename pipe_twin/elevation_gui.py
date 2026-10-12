@@ -29,6 +29,16 @@ STATE_COLORS = {"INSTALLED": "#228B55", "NOT_INSTALLED": "#D84A40", "UNKNOWN": "
 PALETTE = ("#E74C3C", "#3498DB", "#FFFFFF", "#2ECC71", "#F1C40F", "#9B59B6")
 LOGGER = get_logger("elevation_gui")
 REASON_TEXT = {
+    "BURST_IMAGE_SIZE_CHANGED": "序列中图像尺寸改变",
+    "BURST_EXPOSURE_UNSTABLE": "曝光变化过大，该帧已排除",
+    "BURST_MOTION_UNVERIFIABLE": "可跟踪纹理不足，无法确认相机和场景静止",
+    "BURST_SCENE_MOVED": "帧间位移检查未通过，可能有运动或噪声；请稳定画面后重试",
+    "BURST_FRAME_QUALITY_FAILED": "该帧清晰度或曝光未通过",
+    "BURST_DUPLICATE_FRAME": "重复画面，不计作新增样本",
+    "BURST_FRAME_DEPTH_INVALID": "该帧没有可用双目深度",
+    "BURST_REFERENCE_OR_SCENE_UNSTABLE": "末帧质量或场景稳定性不足，本序列未用于测量",
+    "BURST_TOO_FEW_VALID_FRAMES": "有效且不同的帧不足 3 对",
+    "BURST_NO_CONSISTENT_DEPTH": "没有获得足够的多帧一致深度",
     "CAMERA_SIDE_CONFLICT": "所选相机观察侧与双目几何冲突，请核对模型坐标方向",
     "OBSERVATIONS_EXCEED_PRESENT_PIPE_COUNT": "观测数量超过已知现场管数，请核对误检",
     "LOW_LIGHT": "图像偏暗，请增加照明或调整曝光",
@@ -95,12 +105,28 @@ def recognition_diagnostic_lines(report: dict | None) -> list[str]:
     if not report:
         return lines + ["", "请先点击④保存并评估。"]
     lines += ["", recognition_summary(report)]
+    temporal = report.get("temporal_fusion")
+    if temporal:
+        status = "已融合" if temporal.get("status") == "VALID" else "未通过"
+        lines += ["", f"多帧融合：{status}，有效 {temporal.get('accepted_frames', 0)}/{temporal.get('requested_frames', 0)} 对",
+                  "本序列只算一次评估；时间稳定性不代表绝对尺寸准确。"]
+        for role, label in (("left", "左"), ("right", "右")):
+            value = temporal.get(role) or {}
+            lines.append(f"{label}目：每点至少 {value.get('required_support_frames', '—')} 帧支持；"
+                         f"视差波动 MAD 中位数 {value.get('median_disparity_mad_px', '—')} px")
+        reasons = list(temporal.get("reason_codes", []))
+        reasons.extend(code for frame in temporal.get("frames", []) for code in frame.get("reason_codes", []))
+        if reasons:
+            lines.append("序列提示：" + "；".join(REASON_TEXT.get(code, code) for code in dict.fromkeys(reasons)))
+        lines.append("运动/曝光不稳定时保持机位、待画面稳定后重新连续采集；纹理不足时可能无法确认静止。")
+    else:
+        lines.append("本次使用单对图像，未进行多帧融合。")
     def percent(value):
         return "未计算" if value is None else f"{100*value:.1f}%"
     for candidate in (report.get("local_surface") or {}).get("image_candidates",[]):
         eye = "左目" if candidate.get("role") == "left" else "右目"
         lines += ["", f"{candidate.get('candidate_id')} · {eye} · 区域 {candidate.get('region_px')}",
-                  f"原始有效深度：{percent(candidate.get('valid_depth_fraction'))}"]
+                  f"用于拟合的有效深度：{percent(candidate.get('valid_depth_fraction'))}"]
         diagnostic = candidate.get("correspondence_diagnostic") or {}
         lines.append(f"图像唯一匹配：{percent(diagnostic.get('sampled_unique_match_fraction'))}"
                      f"（抽样 {diagnostic.get('comparison_count',0)} 点）；高光 H：{percent(diagnostic.get('highlight_fraction'))}")
@@ -728,6 +754,7 @@ class ElevationCaptureDialog:
         self.messages: queue.Queue = queue.Queue()
         self.timestamp_sources = {role: "MANIFEST_OPERATOR_CONFIRMED" for role in ("left", "right")}
         self.camera_capture_provenance = {}
+        self.temporal_frames: list[dict] = []
         self.image_paths: dict[str, str] = {}
         self.image_hashes: dict[str, str] = {}
         self.status_refresh_metadata: dict[str, str] | None = None
@@ -751,7 +778,7 @@ class ElevationCaptureDialog:
         self.history = tk.BooleanVar(value=True)
         self.local_observation_label = tk.StringVar(value="自动（圆柱/图像引导）")
         self.message = tk.StringVar(value="首次：导入 STL 或 DXF → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
-        self.calibration_status = tk.StringVar(value="未加载标定；同一相机、镜头和分辨率无需重复标定")
+        self.calibration_status = tk.StringVar(value="未加载标定；重投影通过后仍需独立尺寸复核")
         self.summary = tk.StringVar(value="尚未建立管道目录")
         self.matching_preset = tk.StringVar(value="原始灰度")
         self.disparity_count = tk.StringVar(value="256")
@@ -772,7 +799,7 @@ class ElevationCaptureDialog:
         ttk.Button(bar, text="① 导入 STL/DXF", command=self.browse_model).pack(side="left", padx=3)
         ttk.Combobox(bar, textvariable=self.stl_unit, values=("millimeter", "centimeter", "meter", "inch"), state="readonly", width=11).pack(side="left")
         ttk.Button(bar, text="② 相机标定", command=self.browse_calibration).pack(side="left", padx=3)
-        ttk.Button(bar, text="重新标定（仅换设备/分辨率）", command=self.open_calibration).pack(side="left", padx=3)
+        ttk.Button(bar, text="重新标定 / 质量检查", command=self.open_calibration).pack(side="left", padx=3)
         ttk.Button(bar, text="打开基础现场", command=self.browse_session).pack(side="right", padx=3)
         action_bar = ttk.Frame(self.controls)
         action_bar.pack(fill="x", pady=(0, 7))
@@ -935,6 +962,8 @@ class ElevationCaptureDialog:
 
     def _field_changed(self, key: str) -> None:
         self.invalidate()
+        if key in {"left", "right", "left_time", "right_time", "calibration"}:
+            self.temporal_frames = []
         if key in {"left", "right", "calibration"} and self.quality_dialog is not None and not self.quality_dialog.closed:
             self.quality_dialog.clear_inputs()
         if key == "calibration":
@@ -1402,17 +1431,19 @@ class ElevationCaptureDialog:
     def refresh_calibration_status(self) -> None:
         try:
             from .stereo_analyzer import _calibration_from_manifest
-            parsed = _calibration_from_manifest(self.current_calibration())
+            calibration = self.current_calibration()
+            parsed = _calibration_from_manifest(calibration)
             if parsed.validated and parsed.rectified:
                 registration = (
                     "CAD配准已确认"
                     if parsed.registration_validated
                     else "CAD配准未确认（立面相对布局仍可继续；完整绝对坐标需另行配准）"
                 )
+                from .calibration_quality import calibration_quality_text
                 self.calibration_status.set(
-                    f"相机标定已完成，无需重复 · {parsed.calibration_id} · "
-                    f"{parsed.left.width}×{parsed.left.height} 每目 · 基线 {parsed.baseline_mm:g} mm · {registration}"
-                )
+                    f"已加载标定 · {parsed.calibration_id} · "
+                    f"{parsed.left.width}×{parsed.left.height} 每目 · 基线 {parsed.baseline_mm:g} mm · {registration}\n"
+                    + calibration_quality_text(calibration))
             else:
                 self.calibration_status.set("标定文件已载入，但尚未满足现场双目门禁；请完成一次标定向导")
         except (OSError, ValueError) as error:
@@ -1420,6 +1451,8 @@ class ElevationCaptureDialog:
 
     def open_calibration(self) -> None:
         if not self.busy:
+            if self.camera_dialog is not None and self.camera_dialog.window.winfo_exists():
+                self.camera_dialog.close()
             from .calibration_wizard import ChessboardWizardDialog
             if self.calibration_dialog is not None and self.calibration_dialog.window.winfo_exists():
                 self.calibration_dialog.window.lift()
@@ -1442,6 +1475,10 @@ class ElevationCaptureDialog:
             from .capture_gui import StereoCameraDialog
             calibration = self.current_calibration()
             rectifier = rectifier_for_calibration(calibration, self.profile)
+            if self.calibration_dialog is not None and self.calibration_dialog.window.winfo_exists():
+                # The wizard archives accepted pairs. Release its UVC session
+                # (including an in-flight open) before opening measurement.
+                self.calibration_dialog.close()
             self._analyze_after_camera_capture = bool(analyze_after_capture)
             if self.camera_dialog is not None and self.camera_dialog.window.winfo_exists():
                 self.camera_dialog.on_capture = self._camera_capture_finished
@@ -1580,7 +1617,17 @@ class ElevationCaptureDialog:
         self.image_paths.clear(); self.image_hashes.clear()
         views = manifest["capture"]["capture_groups"][-1]["views"]
         self.timestamp_sources = {role: views[role]["timestamp_source"] for role in ("left", "right")}
+        self.camera_capture_provenance = {role: {k: v for k, v in views[role].items()
+             if k.startswith("capture_") or k == "side_by_side_order"} for role in ("left", "right")}
         self.load_images()
+        self.temporal_frames = [
+            {**{f"{role}_path": str(path.parent / frame["views"][role]["path"]) for role in ("left", "right")},
+             **{f"{role}_time": frame["views"][role]["captured_at"] for role in ("left", "right")},
+             "sha256": {role: frame["views"][role]["sha256"] for role in ("left", "right")},
+             "timestamp_sources": {role: frame["views"][role]["timestamp_source"] for role in ("left", "right")},
+             "camera_capture_provenance": {role: {k: v for k, v in frame["views"][role].items()
+                   if k.startswith("capture_") or k == "side_by_side_order"} for role in ("left", "right")}}
+            for frame in manifest["capture"]["capture_groups"][-1].get("temporal_frames", [])]
         self._restore_zone_settings(loaded.get("scope_settings"))
         self.registration_settings = restored_registration
         self._restore_camera_side_control()
@@ -1648,6 +1695,7 @@ class ElevationCaptureDialog:
                 rectification_recipe=copy.deepcopy((self.profile or {}).get("rectification_recipe")),
                 camera_capture_provenance=copy.deepcopy(self.camera_capture_provenance),
                 status_refresh=copy.deepcopy(self.status_refresh_metadata),
+                temporal_frames=copy.deepcopy(getattr(self, "temporal_frames", [])),
                 scope_settings=scope_settings,
                 _preview_hashes=copy.deepcopy(self.image_hashes))
             registration = copy.deepcopy(self.registration_settings)
@@ -1686,7 +1734,8 @@ class ElevationCaptureDialog:
             if any(latest[role]["sha256"] != expected_hashes[role] for role in ("left", "right")):
                 raise ValueError("保存期间照片发生变化，请重新载入")
             from .stereo_analyzer import analyze_stereo_capture
-            report = analyze_stereo_capture(path, report_output_path=path.parent / "report.json", evidence_dir=path.parent / "evidence") if analyze else None
+            report = analyze_stereo_capture(path, report_output_path=path.parent / "report.json", evidence_dir=path.parent / "evidence",
+                progress=lambda text: self.messages.put((generation, "progress", text))) if analyze else None
             self.messages.put((generation, "ok", (path, report, reset_history)))
         except Exception as error:
             log_event(LOGGER, "elevation_gui_run_failed", error=str(error), saved_manifest=str(locals().get("path", "")))
@@ -1712,6 +1761,11 @@ class ElevationCaptureDialog:
         except queue.Empty:
             self.poll_id = self.window.after(100, self.poll)
             return
+        if kind == "progress":
+            if generation == self.generation:
+                self.message.set(payload)
+            self.poll_id = self.window.after(100, self.poll)
+            return
         self.busy = False
         self._set_controls(True)
         if generation != self.generation:
@@ -1735,6 +1789,10 @@ class ElevationCaptureDialog:
                 self.summary.set(f"现场实物 {inventory['present_pipe_count']} 根；模型候选 {inventory['model_candidate_count']} 个管位 · 已对应 {counts.get('INSTALLED', 0)} · 待确认 {counts.get('UNKNOWN', 0)}")
             if report:
                 self.summary.set(self.summary.get()+"\n"+recognition_summary(report))
+                temporal = report.get("temporal_fusion")
+                if temporal:
+                    status = "已融合" if temporal["status"] == "VALID" else "未通过"
+                    self.summary.set(self.summary.get()+f" · 多帧 {temporal['accepted_frames']}/{temporal['requested_frames']} 对（{status}）")
             self.message.set(f"已保存：{path.parent}。JSON 报告和叠图在同一目录。" if report else f"已保存：{path}")
             if report and (refresh_metadata or report.get("status_refresh")):
                 recorded = report.get("status_refresh") or refresh_metadata or {}

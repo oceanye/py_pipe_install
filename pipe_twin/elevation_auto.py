@@ -747,7 +747,7 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
 
 
 def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_path: str | Path | None = None,
-                                    evidence_dir: str | Path | None = None) -> dict:
+                                    evidence_dir: str | Path | None = None, progress=None) -> dict:
     from .elevation_dataset import load_elevation_dataset
     from .stereo_analyzer import _analysis_config, _calibration_from_manifest, _capture_groups_from_manifest, _compute_stereo_depth, _quality
     from .photo_capture import load_photo_snapshot, resolve_photo_path
@@ -763,10 +763,16 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     _, _, captures = _capture_groups_from_manifest(path, manifest["capture"], calibration)
     config = _analysis_config(manifest["analysis"])
     settings = manifest["analysis"]["elevation_auto"]
+    from .temporal_stereo import validate_burst_records, fuse_stereo_burst
+    bursts = {group["capture_id"]: validate_burst_records(group, calibration, path)
+              for group in manifest["capture"]["capture_groups"]}
     inputs = {"manifest": path, "model": path.parent / manifest["model"]["path"]}
     for capture in captures:
         for role in ("left", "right"):
             inputs[f"{capture['capture_id']}_{role}"] = resolve_photo_path(path, capture["views"][role]["path"])
+        for index, frame in enumerate(bursts[capture["capture_id"]]):
+            for role in ("left", "right"):
+                inputs[f"{capture['capture_id']}_burst_{index}_{role}"] = resolve_photo_path(path, frame["views"][role]["path"])
     outputs = {}
     if report_output_path is not None:
         outputs["report"] = Path(report_output_path).resolve()
@@ -783,11 +789,21 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     hashes = {key: hashlib.sha256(p.read_bytes()).hexdigest() for key, p in inputs.items()}
     groups = []
     for capture in captures:
+        if progress is not None:
+            progress(f"正在处理拍摄组 {len(groups)+1}/{len(captures)} 的双目深度……")
         images, photos, quality = {}, {}, {}
         for role in ("left", "right"):
             images[role], photos[role] = load_photo_snapshot(path, capture["views"][role])
             quality[role] = _quality(images[role], config)
-        depth = _compute_stereo_depth(images["left"], images["right"], calibration, config)
+        if bursts[capture["capture_id"]]:
+            depth = fuse_stereo_burst(bursts[capture["capture_id"]],
+                load_images=lambda frame: {role: load_photo_snapshot(path, frame["views"][role])[0]
+                                            for role in ("left", "right")},
+                compute_depth=lambda left, right: _compute_stereo_depth(left, right, calibration, config),
+                quality_check=lambda image: _quality(image, config), calibration=calibration,
+                progress=(lambda index, total: progress(f"拍摄组 {len(groups)+1}/{len(captures)}：多帧深度 {index}/{total}……")) if progress else None)
+        else:
+            depth = _compute_stereo_depth(images["left"], images["right"], calibration, config)
         bound_anchors = settings.get("anchor_pair_sha256")
         anchors_apply = bool(bound_anchors and all(bound_anchors.get(r) == photos[r]["actual_sha256"] for r in ("left", "right")))
         groups.append(dict(images, depth=depth, capture_id=capture["capture_id"], captured_at=capture["captured_at"],
@@ -797,6 +813,8 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     if loaded["registration_settings"]["anchors"] and not any(g["anchors_apply"] for g in groups):
         raise ValueError("手工基准对应缺少匹配的照片哈希，请在当前照片上重新指定")
     scope_settings = loaded.get("scope_settings") or {"scope": "full_frame", "zones": []}
+    if progress is not None:
+        progress("深度处理完成，正在拟合管段并比较管间尺寸……")
     if scope_settings.get("scope") == "zones":
         result = analyze_elevation_auto_zones(
             groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
@@ -812,7 +830,9 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     result.update(schema_version="2.0", report_type="stereo-auto-elevation-state", dataset_id=manifest["dataset_id"],
                   generated_at=datetime.now(timezone.utc).isoformat(), inputs=hashes,
                   calibration_audit={"calibration_id": calibration.calibration_id, "validated": calibration.validated,
+                                     "quality_audit": loaded["calibration"].get("quality_audit"),
                                      "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM"})
+    result["temporal_fusion"] = groups[-1]["depth"].audit.get("temporal_fusion")
     # All inference used immutable decoded images. Recheck bound snapshots
     # before publishing any output, including the optional STL reference.
     if path.read_bytes() != original or any(hashlib.sha256(p.read_bytes()).hexdigest() != hashes[key] for key, p in inputs.items()):

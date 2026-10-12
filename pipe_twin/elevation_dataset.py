@@ -288,6 +288,13 @@ def _history(old_path: Path, old: Mapping[str, Any], root_name: str) -> tuple[li
             assets[name] = data
             copied["path"] = name
             views[role] = copied
+        for frame_index, frame in enumerate(record.get("temporal_frames", [])):
+            for role in ("left", "right"):
+                data, copied = _safe_old_view(old_path, frame["views"][role])
+                name = f"history/{index:04d}_burst_{frame_index:03d}_{role}.png"
+                assets[name] = data
+                copied["path"] = name
+                frame["views"][role] = copied
         records.append(record)
     return records, assets
 
@@ -367,7 +374,8 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
                              analysis_settings: Mapping | None = None,
                              registration_settings: Mapping | None = None,
                              status_refresh: Mapping | None = None,
-                             scope_settings: Mapping | None = None) -> Path:
+                             scope_settings: Mapping | None = None,
+                             temporal_frames: list[dict] | None = None) -> Path:
     """Validate and atomically create a portable basic elevation package."""
     if mode != "elevation_auto":
         raise ValueError("当前基础现场只支持 elevation_auto；逐管手工区域已移除")
@@ -513,6 +521,28 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
         if status_refresh is not None:
             group["status_refresh"] = copy.deepcopy(dict(status_refresh))
         manifest["capture"]["capture_groups"].append(group)
+    if temporal_frames:
+        from .temporal_stereo import POLICY, validate_burst_records
+        if not isinstance(temporal_frames, list) or not POLICY["min_frames"] <= len(temporal_frames) <= POLICY["max_frames"]:
+            raise ValueError("连续采集必须包含 3～24 对图像")
+        burst = []
+        for index, frame in enumerate(temporal_frames):
+            views = {}
+            for role in ("left", "right"):
+                data, view = _read_photo(Path(frame[f"{role}_path"]), role, getattr(parsed, role),
+                    frame[f"{role}_time"], frame.get("timestamp_sources", {}).get(role, "MANIFEST_OPERATOR_CONFIRMED"))
+                expected = frame.get("sha256", {}).get(role)
+                if expected is None or expected != view["sha256"]:
+                    raise ValueError("连续采集照片哈希不匹配，请重新抓拍")
+                from .capture_gui import _capture_provenance
+                view.update(_capture_provenance(frame.get("camera_capture_provenance", {}), role))
+                view["path"] = f"burst/{index:03d}_{role}.png"
+                assets[view["path"]] = data
+                views[role] = view
+            burst.append({"capture_id": f"{run_id}-F{index+1:03d}", "views": views})
+        latest_group = manifest["capture"]["capture_groups"][-1]
+        latest_group["temporal_frames"] = burst
+        validate_burst_records(latest_group, parsed, Path(output_root).resolve() / "manifest.json")
     output_parent = Path(output_root).resolve()
     output_parent.mkdir(parents=True, exist_ok=True)
     target = output_parent / run_id
@@ -598,6 +628,10 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
         gviews = group.get("views", {})
         for role in ("left", "right"):
             load_photo_snapshot(manifest_path, gviews[role])
+        from .temporal_stereo import validate_burst_records
+        for frame in validate_burst_records(group, calibration, manifest_path):
+            for role in ("left", "right"):
+                load_photo_snapshot(manifest_path, frame["views"][role])
     left = views["left"]; right = views["right"]
     return {"manifest": manifest, "calibration": manifest["stereo_calibration"], "pipe_specs": specs,
             "left_path": resolve_photo_path(manifest_path, left["path"]),

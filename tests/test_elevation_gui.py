@@ -578,6 +578,85 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertFalse(wizard.window.winfo_exists())
         self.assertFalse(camera.window.winfo_exists())
         # tearDown owns the final root destruction.
+
+    def test_continuous_capture_save_reopen_and_calibration_change(self):
+        from pipe_twin.stereo_camera import CapturedStereoPair
+        self.dialog.capture_camera()
+        camera = self.dialog.camera_dialog
+        camera.window.withdraw()
+        frames = []
+        for i in range(20):
+            left = np.full((480, 640, 3), 80+i, np.uint8)
+            right = np.full_like(left, 100+i)
+            stamp = f"2026-10-12T10:00:{i:02d}+08:00"
+            frames.append(CapturedStereoPair(left, right, stamp, stamp, 0., "HOST_SYSTEM_CLOCK", {}))
+        session = mock.Mock(exposure_ms=None)
+        session.read_pair.side_effect = frames
+        camera.session = session
+        camera._show_pair = mock.Mock()
+        with mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(self.tmp.name)), mock.patch.object(self.dialog, "_persist_profile"):
+            camera.capture_burst()
+            for _ in range(20):
+                camera.window.after_cancel(camera._burst_after_id)
+                camera._burst_tick()
+        self.assertEqual(len(self.dialog.temporal_frames), 20)
+        self.assertTrue(self.dialog.confirmed.get())
+        self.assertTrue(session.close.called)
+        self.dialog.submit(False)
+        self.finish_worker()
+        self.app.messagebox.showerror.assert_not_called()
+        path = self.dialog.last_manifest
+        self.dialog.load_session(path)
+        self.assertEqual(len(self.dialog.temporal_frames), 20)
+        self.assertEqual(len(json.loads(path.read_text(encoding="utf-8"))["capture"]["capture_groups"]), 1)
+        self.dialog.fields["calibration"].set("new-calibration.json")
+        self.assertEqual(self.dialog.temporal_frames, [])
+        self.assertIsNone(self.dialog.last_manifest)
+
+    def test_stopping_burst_never_adopts_partial_capture(self):
+        self.dialog.capture_camera()
+        camera = self.dialog.camera_dialog
+        camera.session = mock.Mock()
+        old_paths = {role: self.dialog.fields[role].get() for role in ("left", "right")}
+        with mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(self.tmp.name)):
+            camera.capture_burst()
+        camera.stop()
+        self.assertFalse(camera._burst_active)
+        self.assertIsNone(camera._burst_after_id)
+        self.assertEqual(self.dialog.temporal_frames, [])
+        self.assertEqual(old_paths, {role: self.dialog.fields[role].get() for role in old_paths})
+
+    def test_print_dimension_is_not_silently_used_as_measured_dimension(self):
+        self.dialog.open_calibration()
+        wizard = self.dialog.calibration_dialog
+        wizard.window.withdraw()
+        wizard.square_mm.set("19")
+        wizard.measured_square_mm.set("17")
+        wizard.columns.set("9")
+        wizard.rows.set("7")
+        self.assertEqual(wizard._pattern(), (8, 6))
+        self.assertIn("本次求解格长：17", wizard.fit_hint.get())
+        self.app.filedialog.asksaveasfilename.return_value = str(Path(self.tmp.name)/"board.png")
+        wizard.export_target()
+        self.assertEqual(wizard.measured_square_mm.get(), "")
+
+    def test_camera_rejects_stale_rectification_after_calibration_change(self):
+        self.dialog.capture_camera()
+        camera = self.dialog.camera_dialog
+        self.dialog.calibration_override = dict(_calibration(), calibration_id="FIELD-CHANGED")
+        with self.assertRaisesRegex(ValueError, "标定发生改变"):
+            camera._check_calibration_binding()
+
+    def test_wizard_and_measurement_release_each_others_camera(self):
+        self.dialog.open_calibration()
+        wizard_session = mock.Mock()
+        self.dialog.calibration_dialog.session = wizard_session
+        self.dialog.capture_camera()
+        wizard_session.close.assert_called_once()
+        capture_session = mock.Mock()
+        self.dialog.camera_dialog.session = capture_session
+        self.dialog.open_calibration()
+        capture_session.close.assert_called_once()
         self.dialog = ElevationCaptureDialog(self.app, output_root=self.output, restore=False)
         self.dialog.window.withdraw()
 
