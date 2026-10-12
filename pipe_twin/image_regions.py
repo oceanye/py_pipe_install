@@ -13,12 +13,17 @@ import math
 import cv2
 import numpy as np
 
-REVISION = "image-strips-disparity-consensus-v1"
+REVISION = "image-strips-local-support-v2"
 POLICY = {"maximum_regions": 24, "minimum_pixels": 120, "minimum_length_px": 48,
           "minimum_aspect": 2.0, "minimum_fill": 0.55,
           "axis_tolerance_deg": 12.0, "disparity_residual_px": 2.0,
           "minimum_disparity_inlier_fraction": 0.6, "minimum_axial_bins": 6,
-          "ransac_trials": 96, "maximum_samples": 4096, "chromatic_saturation_min": 120}
+          "ransac_trials": 96, "maximum_samples": 4096, "chromatic_saturation_min": 120,
+          "highlight_gap_max_px": 21, "highlight_gap_width_fraction": 0.5,
+          "maximum_local_windows": 3, "local_window_length_fraction": 0.5,
+          "local_window_min_length_px": 160, "local_window_width_multiple": 4.0,
+          "direction_kernel_odd": True, "clipped_minimum_aspect": 1.3,
+          "clipped_boundary_margin_px": 2}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
 
 
@@ -71,7 +76,9 @@ def propose_regions(image):
             error = np.abs(np.sin(angles-a))
             scores.append(float(weights[error < math.sin(math.radians(8))].sum()))
         angle = float(angles[int(np.argmax(scores))])
-        length = max(21, min(81, int(max(image.shape[:2]) * 0.08)))
+        # A centred odd kernel avoids a one-pixel shift of the paint mask.
+        # Such a shift leaves a false dark seam alongside a real highlight.
+        length = max(21, min(81, int(max(image.shape[:2]) * 0.08))) | 1
         kernel = np.zeros((length, length), np.uint8)
         center = (length-1)/2
         dx, dy = math.cos(angle)*center, math.sin(angle)*center
@@ -112,7 +119,13 @@ def propose_regions(image):
         for p in members:
             x,y,w,h = p["region_px"]
             combined[y:y+h,x:x+w] |= p["mask"]
-        joined = cv2.morphologyEx(combined,cv2.MORPH_CLOSE,np.ones((9,9),np.uint8))
+        # A fixed 9px kernel splits wider pipes at a broad highlight. Scale
+        # the bridge to the thinner paint fragment, with a hard pixel cap;
+        # still only bridge bright neutral pixels, never a dark pipe gap.
+        gap = min(POLICY["highlight_gap_max_px"], max(9, int(min(
+            p["width_px"] for p in members) * POLICY["highlight_gap_width_fraction"])))
+        gap += 1 - gap % 2
+        joined = cv2.morphologyEx(combined,cv2.MORPH_CLOSE,np.ones((gap,gap),np.uint8))
         bright = (hsv[:,:,1] < 100) & (hsv[:,:,2] >= 180)
         joined = combined | ((joined > 0) & bright).astype(np.uint8)
         count, labels, stats, _ = cv2.connectedComponentsWithStats(joined,8)
@@ -129,7 +142,20 @@ def propose_regions(image):
                            "sampled_color_srgb":"#%02X%02X%02X" % tuple(rgb),"mask":local,
                            "score":float(major*math.sqrt(minor))})
         proposals = [p for p in proposals if p["appearance"] != kind] + merged
-    proposals = [p for p in proposals if p["length_px"] / p["width_px"] >= POLICY["minimum_aspect"]]
+    elongated = []
+    for p in proposals:
+        x,y,w,h = p["region_px"]
+        ax,ay = p["axis_image"]
+        edge = POLICY["clipped_boundary_margin_px"]
+        clipped = ((abs(ax) >= .9 and x <= edge and x+w >= image.shape[1]-edge)
+                   or (abs(ay) >= .9 and y <= edge and y+h >= image.shape[0]-edge))
+        p["axially_clipped"] = bool(clipped)
+        # A user crop can truncate both ends of a thick pipe. Retain its
+        # image proposal; the unchanged metric length gate still applies.
+        minimum_aspect = POLICY["clipped_minimum_aspect"] if clipped else POLICY["minimum_aspect"]
+        if p["length_px"] / p["width_px"] >= minimum_aspect:
+            elongated.append(p)
+    proposals = elongated
     proposals.sort(key=lambda p: -p["score"])
     unique = []
     for p in proposals:
@@ -159,6 +185,37 @@ def propose_regions(image):
     return unique, {"revision":REVISION, "policy_sha256":POLICY_SHA256,
                     "scope":"IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
                     "truncated":truncated, "candidate_count":len(unique)}
+
+
+def axial_windows(region):
+    """Bounded overlapping masks for independently measured local segments.
+
+    The image width sets a minimum useful segment length, never a CAD radius.
+    Windows only restrict the original proposal; depth holes stay holes.
+    """
+    mask = region["mask"].astype(bool)
+    rows, cols = np.nonzero(mask)
+    if len(rows) < POLICY["minimum_pixels"]:
+        return []
+    axis = np.asarray(region["axis_image"], dtype=float)
+    if axis[int(np.argmax(np.abs(axis)))] < 0:
+        axis = -axis
+    station = cols * axis[0] + rows * axis[1]
+    low, high = float(station.min()), float(station.max())
+    span = high - low
+    length = max(POLICY["local_window_min_length_px"],
+                 POLICY["local_window_width_multiple"] * region["width_px"],
+                 POLICY["local_window_length_fraction"] * span)
+    if length >= .8 * span:
+        return []
+    result = []
+    for index, start in enumerate(np.linspace(low, high-length, POLICY["maximum_local_windows"])):
+        selected = (station >= start) & (station <= start+length)
+        local = np.zeros(mask.shape, np.uint8)
+        local[rows[selected], cols[selected]] = 1
+        result.append({"window_id": f"W{index+1:02d}", "mask": local,
+                       "axial_interval_px": [float(start),float(start+length)]})
+    return result
 
 
 def filter_disparity(depth, support, camera, baseline_mm, axis_image):

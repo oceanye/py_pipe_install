@@ -57,6 +57,9 @@ REASON_TEXT = {
     "CYLINDER_FIT_RESIDUAL_TOO_LARGE": "圆柱拟合误差过大",
     "LOCAL_AXIS_SUPPORT_TOO_SHORT": "连续管段太短",
     "PROJECTED_AXIS_DISAGREEMENT": "三维轴与图像方向不一致",
+    "LOW_HORIZONTAL_TEXTURE": "沿视差方向纹理不足",
+    "LOW_PATCH_CORRELATION": "左右管面图像对应较差",
+    "AMBIGUOUS_PATCH_CORRESPONDENCE": "多个位置图像相似，匹配不唯一",
     "COLLINEAR_WITHOUT_TWO_ANCHORS": "可见管道布局不足以唯一对应",
     "ALTERNATIVE_POSES_WITHIN_AMBIGUITY_GATE": "存在多个近似模型对应",
     "FOREGROUND_OCCLUSION": "前景遮挡",
@@ -80,8 +83,48 @@ def recognition_summary(report: dict) -> str:
     text = f"图像候选：左 {counts['left']} / 右 {counts['right']}；合格三维管段 {len(surface.get('observations',[]))}"
     reasons = Counter(r.get("reason") for r in surface.get("rejected",[]))
     if reasons:
-        text += "；" + "、".join(f"{REASON_TEXT.get(k,k)} {v}" for k,v in reasons.most_common(2))
+        text += "；" + "、".join(f"{REASON_TEXT.get(k,k)} {v} 次" for k,v in reasons.most_common(2))
     return text
+
+
+def recognition_diagnostic_lines(report: dict | None) -> list[str]:
+    """Separate image similarity, measured depth support and cylinder gates."""
+    lines = ["图像候选不是实物管数；重叠分区会重复列出同一管面。",
+             "图像唯一匹配比例来自有限抽样，仅作诊断，不代表测量合格率。",
+             "高光 H 只统计多通道近饱和像素，不能覆盖全部反光。"]
+    if not report:
+        return lines + ["", "请先点击④保存并评估。"]
+    lines += ["", recognition_summary(report)]
+    def percent(value):
+        return "未计算" if value is None else f"{100*value:.1f}%"
+    for candidate in (report.get("local_surface") or {}).get("image_candidates",[]):
+        eye = "左目" if candidate.get("role") == "left" else "右目"
+        lines += ["", f"{candidate.get('candidate_id')} · {eye} · 区域 {candidate.get('region_px')}",
+                  f"原始有效深度：{percent(candidate.get('valid_depth_fraction'))}"]
+        diagnostic = candidate.get("correspondence_diagnostic") or {}
+        lines.append(f"图像唯一匹配：{percent(diagnostic.get('sampled_unique_match_fraction'))}"
+                     f"（抽样 {diagnostic.get('comparison_count',0)} 点）；高光 H：{percent(diagnostic.get('highlight_fraction'))}")
+        warnings = diagnostic.get("warning_codes",[])
+        if warnings:
+            lines.append("图像提示：" + "；".join(REASON_TEXT.get(code,code) for code in warnings))
+        for attempt in candidate.get("attempts",[]):
+            label = "整段" if attempt["window_id"] == "FULL" else f"局部 {attempt['window_id']}"
+            if attempt.get("fit_count"):
+                lines.append(f"{label}：单眼拟合通过，仍需左右共同区间验证及模型匹配")
+            for rejected in attempt.get("rejections",[]):
+                text = f"{label}：{REASON_TEXT.get(rejected.get('reason'),rejected.get('reason'))}"
+                trend = rejected.get("disparity_filter") or {}
+                if trend.get("retained_fraction") is not None:
+                    text += f"；主导深度支持 {percent(trend['retained_fraction'])}"
+                fit = rejected.get("fit_diagnostics") or {}
+                if fit.get("fit_rms_mm") is not None:
+                    text += f"；拟合误差 {fit['fit_rms_mm']:.2f} mm / 上限 {fit['maximum_fit_rms_mm']:.2f} mm"
+                lines.append(text)
+        if not candidate.get("attempts"):
+            lines.append("旧报告未记录局部分段诊断；重新评估可生成。")
+    lines += ["", "纹理不足或匹配多解：用少量可移除的哑光随机纹理做对照；高光变化不等于深度改善。",
+              "深度支持足够但拟合仍失败：继续检查双目矫正、深度误差及圆柱形状，不宜放宽尺寸容差。"]
+    return lines
 
 
 def relative_layout_summary_lines(report: dict | None) -> list[str]:
@@ -841,6 +884,7 @@ class ElevationCaptureDialog:
         bottom = ttk.Frame(footer)
         bottom.pack(fill="x", pady=(8, 4))
         ttk.Checkbutton(bottom, text="沿用上次场景历史（相机未移动）", variable=self.history).pack(side="left")
+        ttk.Button(bottom, text="识别诊断", command=self.show_recognition_diagnostics).pack(side="left", padx=8)
         ttk.Label(footer, textvariable=self.summary, wraplength=860).pack(anchor="w")
         ttk.Label(footer, textvariable=self.message, wraplength=860, foreground="#355371").pack(fill="x", pady=3)
 
@@ -1117,6 +1161,22 @@ class ElevationCaptureDialog:
         lines += ["", "—— 所选管道的相机坐标诊断 ——", ""]
         lines += measurement_summary_lines(spec,self.results.get(spec["pipe_id"]))
         text.insert("1.0", "\n".join(lines))
+        text.configure(state="disabled")
+        ttk.Button(dialog, text="关闭", command=dialog.destroy).pack(pady=6)
+
+    def show_recognition_diagnostics(self) -> None:
+        tk, ttk = self.app.tk, self.app.ttk
+        dialog = tk.Toplevel(self.window)
+        dialog.title("识别诊断 · 图像、深度与圆柱拟合")
+        dialog.geometry("900x660")
+        frame = ttk.Frame(dialog)
+        frame.pack(fill="both", expand=True)
+        text = tk.Text(frame, wrap="word", padx=15, pady=15, font=("Microsoft YaHei",10))
+        scroll = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
+        text.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        text.pack(side="left", fill="both", expand=True)
+        text.insert("1.0", "\n".join(recognition_diagnostic_lines(self.report)))
         text.configure(state="disabled")
         ttk.Button(dialog, text="关闭", command=dialog.destroy).pack(pady=6)
 

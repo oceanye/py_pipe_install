@@ -401,6 +401,22 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
 
     zone_id = str(zone["zone_id"])
     result = copy.deepcopy(dict(report))
+    def qualify_rejection(raw):
+        item = copy.deepcopy(raw)
+        role = item.get("role")
+        if role in ("left","right") and item.get("region_px"):
+            x,y,w,h = item["region_px"]
+            item["region_px"] = [x+offsets[f"{role}_x"],y+offsets[f"{role}_y"],w,h]
+        if item.get("image_candidate_id"):
+            item["image_candidate_id"] = _zone_observation_id(zone_id,item["image_candidate_id"])
+        item["zone_id"] = zone_id
+        for role in ("left","right"):
+            key = f"{role}_region_px"
+            if isinstance(item.get(key),(list,tuple)) and len(item[key]) == 4:
+                x,y,w,h = item[key]
+                item[key] = [x+offsets[f"{role}_x"],y+offsets[f"{role}_y"],w,h]
+        return item
+
     def qualify_image_candidates(items):
         qualified = []
         for raw in items:
@@ -411,6 +427,8 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
                 item["region_px"] = [x+offsets[f"{role}_x"],y+offsets[f"{role}_y"],w,h]
             item["candidate_id"] = _zone_observation_id(zone_id,item.get("candidate_id"))
             item["zone_id"] = zone_id
+            for attempt in item.get("attempts",[]):
+                attempt["rejections"] = [qualify_rejection(e) for e in attempt.get("rejections",[])]
             qualified.append(item)
         return qualified
     surface = result.get("local_surface")
@@ -423,17 +441,7 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
             observations.append(item)
         surface["observations"] = observations
         surface["image_candidates"] = qualify_image_candidates(surface.get("image_candidates",[]))
-        rejected = []
-        for raw in surface.get("rejected", []):
-            item = copy.deepcopy(raw)
-            for role, key in (("left", "left_x"), ("right", "right_x")):
-                box_key = f"{role}_region_px"
-                if isinstance(item.get(box_key), (list, tuple)) and len(item[box_key]) == 4:
-                    item[box_key] = [int(item[box_key][0]) + int(offsets[key]),
-                                     int(item[box_key][1]) + int(offsets[f"{role}_y"]),
-                                     int(item[box_key][2]), int(item[box_key][3])]
-            rejected.append(item)
-        surface["rejected"] = rejected
+        surface["rejected"] = [qualify_rejection(raw) for raw in surface.get("rejected",[])]
         surface.setdefault("audit", {})["zone_id"] = zone_id
         result["local_surface"] = surface
 

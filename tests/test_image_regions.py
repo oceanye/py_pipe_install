@@ -205,3 +205,98 @@ def test_zone_relative_layout_displays_qualified_pairs():
                for p in reg['relative_layout']['pairwise'])
     text='\n'.join(relative_layout_summary_lines(result))
     assert 'Z09' in text and '表面净距：' in text
+
+
+@pytest.mark.parametrize('disjoint',[False,True])
+def test_local_windows_require_common_clean_segment_without_loosening_fit(disjoint):
+    cal,specs,groups = _groups(installed=(0,))
+    group = groups[0]
+    rng = np.random.default_rng(9)
+    for role in ('left','right'):
+        z = getattr(group['depth'],role+'_depth_mm')
+        k = getattr(cal,role).rectified_intrinsic
+        yy,xx = np.indices(z.shape)
+        world_x = (xx-k[0,2])*z/k[0,0] + (cal.baseline_mm if role=='right' else 0)
+        bad = (group[role][:,:,2]>150) & ((world_x>0) if disjoint and role=='right' else (world_x<0))
+        z[bad] = rng.uniform(1400,3000,bad.sum())
+    before = copy.deepcopy(group['depth'])
+    args = (group['left'],group['right'],group['depth'],cal,specs)
+    with patch('pipe_twin.image_regions.axial_windows',return_value=[]):
+        whole = extract_local_pipes(*args,config={'image_guided':True})
+    local = extract_local_pipes(*args,config={'image_guided':True})
+    assert not whole['observations']
+    assert len(local['observations'])==(0 if disjoint else 1)
+    if not disjoint:
+        observation = local['observations'][0]
+        assert observation['diameter_mm']==pytest.approx(24,abs=.1)
+        assert observation['left_right_center_difference_mm']<.1
+    assert all(len(c['attempts'])<=4 for c in local['image_candidates'])
+    assert all(c['attempts'][0]['fit_count']==0 for c in local['image_candidates'])
+    for role in ('left','right'):
+        np.testing.assert_array_equal(getattr(before,role+'_depth_mm'),getattr(group['depth'],role+'_depth_mm'))
+    json.dumps(local,allow_nan=False)
+
+
+def test_broad_highlight_joins_paint_without_joining_dark_interpipe_gap():
+    image = np.full((250,500,3),45,np.uint8)
+    cv2.rectangle(image,(30,25),(460,125),(220,90,10),-1)
+    cv2.rectangle(image,(30,68),(460,82),(255,255,245),-1)
+    cv2.rectangle(image,(30,155),(460,215),(220,90,10),-1)
+    regions,_ = propose_regions(image)
+    assert len(regions)==2
+    assert regions[0]['width_px']==pytest.approx(100,abs=2)
+    assert regions[1]['width_px']==pytest.approx(60,abs=2)
+
+
+def test_crop_keeps_thick_pipe_proposal_instead_of_only_its_highlight():
+    image = np.full((250,500,3),45,np.uint8)
+    cv2.rectangle(image,(30,25),(460,125),(220,90,10),-1)
+    cv2.rectangle(image,(30,68),(460,82),(255,255,245),-1)
+    regions,_ = propose_regions(image[:,120:283])
+    assert len(regions)==1
+    assert regions[0]['appearance']!='neutral'
+    assert regions[0]['axially_clipped']
+    assert regions[0]['width_px']==pytest.approx(100,abs=2)
+
+
+def test_rejected_fit_errors_expose_limits_without_exposing_a_measurement():
+    from pipe_twin.metrology import CylinderFitError,fit_local_cylinder
+    from test_metrology import cylinder
+    points = cylinder()
+    rng = np.random.default_rng(49)
+    points += rng.normal(0,3,points.shape)
+    with pytest.raises(CylinderFitError) as error:
+        fit_local_cylinder(points)
+    diagnostic = error.value.diagnostics
+    assert str(error.value)=='CYLINDER_FIT_RESIDUAL_TOO_LARGE'
+    assert diagnostic['fit_rms_mm']>diagnostic['maximum_fit_rms_mm']
+    assert 'diameter_mm' not in diagnostic
+    assert diagnostic['scope']=='REJECTED_FIT_NOT_MEASUREMENT'
+
+
+def test_zone_attempts_have_global_coordinates_and_candidate_links():
+    from pipe_twin.elevation_gui import recognition_diagnostic_lines
+    cal,specs,groups = _groups()
+    rng = np.random.default_rng(73)
+    for role in ('left','right'):
+        z = getattr(groups[0]['depth'],role+'_depth_mm')
+        z[:] = rng.uniform(700,4000,z.shape)
+    result = analyze_elevation_auto_zones(groups,calibration=cal,pipe_specs=specs,
+        scope_settings={'scope':'zones','zones':[{'zone_id':'Z09','roi_rect_px':[120,100,390,240]}]},
+        registration_settings={'local_observation_mode':'image_guided'})
+    assert not result['local_surface']['observations']
+    candidates = result['local_surface']['image_candidates']
+    for candidate in candidates:
+        for attempt in candidate['attempts']:
+            for rejected in attempt['rejections']:
+                assert rejected['image_candidate_id']==candidate['candidate_id']
+                assert rejected['zone_id']=='Z09'
+                if rejected.get('region_px'):
+                    assert rejected['region_px'][1]>=100
+                    if rejected['role']=='left':
+                        assert rejected['region_px'][0]>=120
+    assert all(r['zone_id']=='Z09' for r in result['local_surface']['rejected'])
+    text='\n'.join(recognition_diagnostic_lines(result))
+    assert '图像唯一匹配' in text and '主导深度支持' in text and 'Z09:IMG' in text
+    assert candidates==result['capture_audit']['groups'][0]['image_candidates']
+    json.dumps(result,allow_nan=False)

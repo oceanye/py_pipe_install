@@ -1,0 +1,145 @@
+{
+  "completed_at": "2026-10-12T10:18:44.419425+00:00",
+  "targeted": {
+    "passed": 58,
+    "elapsed_s": 23.26
+  },
+  "first_full_run": {
+    "passed": 601,
+    "failed": 1,
+    "skipped": 1,
+    "subtests_passed": 264,
+    "elapsed_s": 228.47,
+    "failure": "tests/test_capture_agent.py::test_capture_endpoint_requires_json_content_type",
+    "detail": "Windows 10053 ConnectionAbortedError after server logged HTTP 415; no related production code change"
+  },
+  "capture_agent_retry": {
+    "passed": 17,
+    "elapsed_s": 6.63
+  },
+  "final_full_run": {
+    "passed": 602,
+    "failed": 0,
+    "skipped": 1,
+    "subtests_passed": 264,
+    "elapsed_s": 208.56
+  },
+  "gui": {
+    "layouts": [
+      {
+        "size": "940x660",
+        "controls": {
+          "evaluate": {
+            "rect": [
+              111,
+              46,
+              87,
+              27
+            ],
+            "fully_visible": true
+          },
+          "region": {
+            "rect": [
+              515,
+              80,
+              87,
+              27
+            ],
+            "fully_visible": true
+          },
+          "diagnostic": {
+            "rect": [
+              223,
+              569,
+              87,
+              27
+            ],
+            "fully_visible": true
+          }
+        }
+      },
+      {
+        "size": "1120x760",
+        "controls": {
+          "evaluate": {
+            "rect": [
+              111,
+              46,
+              87,
+              27
+            ],
+            "fully_visible": true
+          },
+          "region": {
+            "rect": [
+              515,
+              80,
+              87,
+              27
+            ],
+            "fully_visible": true
+          },
+          "diagnostic": {
+            "rect": [
+              223,
+              669,
+              87,
+              27
+            ],
+            "fully_visible": true
+          }
+        }
+      },
+      {
+        "size": "1120x860",
+        "controls": {
+          "evaluate": {
+            "rect": [
+              111,
+              46,
+              87,
+              27
+            ],
+            "fully_visible": true
+          },
+          "region": {
+            "rect": [
+              515,
+              80,
+              87,
+              27
+            ],
+            "fully_visible": true
+          },
+          "diagnostic": {
+            "rect": [
+              223,
+              769,
+              87,
+              27
+            ],
+            "fully_visible": true
+          }
+        }
+      }
+    ],
+    "diagnostic_text_verified": true,
+    "read_only_scrollable": true,
+    "camera_opened": false
+  },
+  "compileall": "passed",
+  "git_diff_check": "passed",
+  "field_metric_accuracy_validated": false,
+  "field_replay_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "test_log_sha256": {
+    "pytest.log": "eaa7daf87ff8057ebffa4630fc98d5dc5f821d01d1097adfe9b61204a043572e",
+    "pytest-final.log": "c8e2de87fb8846520960a0c331ca6a882bbfe2483eb7de5d69b00cfb11e74961",
+    "capture-agent-retry.log": "1780ccaa2cd576c5a4c2ac752c57c8b64bca403cfdc1fe826632e30987fd066d",
+    "pytest-final.xml": "0f439a565bf90d5aa583a5ee54805e1787fc121fbcfa4e57ef2f89cabc58b6b4"
+  },
+  "metric_acceptance_gates_relaxed": false
+}

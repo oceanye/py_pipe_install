@@ -1,0 +1,103 @@
+{
+  "layouts": [
+    {
+      "size": "940x660",
+      "controls": {
+        "evaluate": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "region": {
+          "rect": [
+            515,
+            80,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "diagnostic": {
+          "rect": [
+            223,
+            569,
+            87,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "size": "1120x760",
+      "controls": {
+        "evaluate": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "region": {
+          "rect": [
+            515,
+            80,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "diagnostic": {
+          "rect": [
+            223,
+            669,
+            87,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "size": "1120x860",
+      "controls": {
+        "evaluate": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "region": {
+          "rect": [
+            515,
+            80,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "diagnostic": {
+          "rect": [
+            223,
+            769,
+            87,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    }
+  ],
+  "diagnostic_text_verified": true,
+  "read_only_scrollable": true,
+  "camera_opened": false
+}

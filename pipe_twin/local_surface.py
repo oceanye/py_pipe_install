@@ -364,7 +364,8 @@ def _fit_components(image: np.ndarray, depth: np.ndarray, valid: np.ndarray, mas
         try:
             fit = fit_local_cylinder(points)
         except (ValueError, np.linalg.LinAlgError) as error:
-            rejected.append(audit | {"reason": str(error)})
+            rejected.append(audit | {"reason": str(error),
+                                    **({"fit_diagnostics": error.diagnostics} if hasattr(error,"diagnostics") else {})})
             continue
         if source == "image_strip":
             # A depth outlier line pointing toward the camera cannot explain
@@ -556,24 +557,49 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
         budget = {"remaining": cfg["maximum_component_candidates"], "attempted": 0,
                   "allocated": cfg["maximum_component_candidates"], "sources": {}}
         if cfg["image_guided"]:
-            from .image_regions import propose_regions
+            from .image_regions import axial_windows, propose_regions
+            from .stereo_correspondence import patch_correspondence
             regions, proposal_audit = propose_regions(image)
             image_proposal_audits[role] = proposal_audit
             accepted = []
             for index, region in enumerate(regions):
-                mask = np.zeros(image.shape[:2],np.uint8)
                 x,y,w,h = region["region_px"]
-                mask[y:y+h,x:x+w] = region["mask"]
-                fits, errors = _fit_components(image,z,valid,mask,calibration,role,"image_strip",cfg,budget=budget)
+                candidate_id = f"IMG-{role}-{index+1:03d}"
+                attempts = []
+
+                def attempt(window_id, local_mask):
+                    mask = np.zeros(image.shape[:2],np.uint8)
+                    mask[y:y+h,x:x+w] = local_mask
+                    fits, errors = _fit_components(image,z,valid,mask,calibration,role,"image_strip",cfg,budget=budget)
+                    for item in fits + errors:
+                        item.update(image_candidate_id=candidate_id, window_id=window_id)
+                    attempts.append({"window_id":window_id, "fit_count":len(fits),
+                                     "rejections": errors})
+                    rejected.extend(errors)
+                    return fits
+
+                fits = attempt("FULL", region["mask"])
+                if not fits:
+                    for window in axial_windows(region):
+                        if budget["remaining"] <= 0:
+                            rejected.append({"role":role,"image_candidate_id":candidate_id,
+                                             "segmentation_source":"image_strip", "reason":"CANDIDATE_BUDGET_EXCEEDED"})
+                            break
+                        fits.extend(attempt(window["window_id"], window["mask"]))
                 accepted.extend(fits)
-                rejected.extend(errors)
+                peer_role = "right" if role == "left" else "left"
+                correspondence = patch_correspondence(image, right if role == "left" else left,
+                    z, valid, getattr(calibration,role), getattr(calibration,peer_role),
+                    calibration.baseline_mm, role, region)
                 image_candidates.append({
                     **{k:v for k,v in region.items() if k not in {"mask","score"}},
-                    "candidate_id":f"IMG-{role}-{index+1:03d}","role":role,
+                    "candidate_id":candidate_id,"role":role,
                     "status":"CYLINDER_FIT_CANDIDATE" if fits else "IMAGE_ONLY",
                     "measurement_authority":False,"identity_assigned":False,
                     "valid_depth_fraction":float(np.mean(valid[y:y+h,x:x+w][region["mask"].astype(bool)])),
-                    "reason_codes":list(dict.fromkeys(e.get("reason") for e in errors)),
+                    "reason_codes":([] if fits else list(dict.fromkeys(
+                        e.get("reason") for attempt_row in attempts for e in attempt_row["rejections"]))),
+                    "attempts":attempts, "correspondence_diagnostic":correspondence,
                 })
             if proposal_audit["truncated"]:
                 rejected.append({"role":role,"segmentation_source":"image_strip", "reason":"CANDIDATE_BUDGET_EXCEEDED"})
