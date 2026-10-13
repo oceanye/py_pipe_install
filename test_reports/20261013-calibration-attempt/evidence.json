@@ -1,0 +1,288 @@
+{
+  "solver_commit": "0e8be32a56f06f9ee8f5de3b79d32293dd78cceb",
+  "square_mm_user_confirmed": 17.0,
+  "board_fixed_to_rigid_plate_user_confirmed": true,
+  "inner_corners": [
+    8,
+    6
+  ],
+  "gui_squares": [
+    9,
+    7
+  ],
+  "input_pair_count": 31,
+  "training_input_indices": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    17,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    27,
+    28,
+    29,
+    30,
+    31
+  ],
+  "held_out_input_indices": [
+    5,
+    9,
+    13,
+    18,
+    22,
+    26
+  ],
+  "source_checkpoint_sha256": "e229877293c91b459a7e500879918f0d4c912c129252ae59726a8a2cedfd43ba",
+  "calibration_saved": false,
+  "current_calibration_unchanged": true,
+  "solve_mode": "baseline_anchored_centered_pinhole",
+  "stereo_rms_px": 2.6900463614030787,
+  "training_diversity": {
+    "pair_count": 25,
+    "unique_zones": 6,
+    "centroid_spread_ratio": 0.09880356843034563,
+    "zones": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        2,
+        1
+      ]
+    ]
+  },
+  "holdout": {
+    "algorithm_revision": "stereo-holdout-quality-v1",
+    "policy": {
+      "minimum_holdout_pairs": 3,
+      "holdout_fraction": 0.2,
+      "max_vertical_rms_px": 0.5,
+      "max_vertical_p95_px": 1.0,
+      "max_cross_reprojection_rms_px": 1.0,
+      "max_pair_cross_rms_px": 1.5
+    },
+    "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+    "status": "FAILED",
+    "pair_count": 6,
+    "pairs": [
+      {
+        "holdout_index": 1,
+        "passed": false,
+        "cross_reprojection_rms_px": 8.214216828788576,
+        "vertical_rms_px": 0.45263178896190714,
+        "vertical_p95_px": 0.8269893569741725,
+        "positive_disparity_fraction": 1.0
+      },
+      {
+        "holdout_index": 2,
+        "passed": false,
+        "cross_reprojection_rms_px": 1.6784712345336399,
+        "vertical_rms_px": 0.7304598092388432,
+        "vertical_p95_px": 1.247897802042037,
+        "positive_disparity_fraction": 1.0
+      },
+      {
+        "holdout_index": 3,
+        "passed": false,
+        "cross_reprojection_rms_px": 5.21003677206936,
+        "vertical_rms_px": 0.7255858945754284,
+        "vertical_p95_px": 1.2007970452152141,
+        "positive_disparity_fraction": 1.0
+      },
+      {
+        "holdout_index": 4,
+        "passed": false,
+        "cross_reprojection_rms_px": 2.8325948560074377,
+        "vertical_rms_px": 1.600700824758975,
+        "vertical_p95_px": 2.9138150784187586,
+        "positive_disparity_fraction": 1.0
+      },
+      {
+        "holdout_index": 5,
+        "passed": false,
+        "cross_reprojection_rms_px": 2.4098892709293867,
+        "vertical_rms_px": 1.0509453890552742,
+        "vertical_p95_px": 2.0028008027895545,
+        "positive_disparity_fraction": 1.0
+      },
+      {
+        "holdout_index": 6,
+        "passed": false,
+        "cross_reprojection_rms_px": 2.762637512993132,
+        "vertical_rms_px": 0.9607577993122846,
+        "vertical_p95_px": 1.5679158141596743,
+        "positive_disparity_fraction": 1.0
+      }
+    ],
+    "cross_reprojection_rms_px": 4.451562139789479,
+    "vertical_rms_px": 0.9878180373765637,
+    "vertical_p95_px": 2.0028008027895545,
+    "scale_verified_independently": false,
+    "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY",
+    "input_pair_indices": [
+      5,
+      9,
+      13,
+      18,
+      22,
+      26
+    ]
+  },
+  "extra_independent_pair_check": {
+    "algorithm_revision": "stereo-holdout-quality-v1",
+    "policy": {
+      "minimum_holdout_pairs": 3,
+      "holdout_fraction": 0.2,
+      "max_vertical_rms_px": 0.5,
+      "max_vertical_p95_px": 1.0,
+      "max_cross_reprojection_rms_px": 1.0,
+      "max_pair_cross_rms_px": 1.5
+    },
+    "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+    "status": "FAILED",
+    "pair_count": 1,
+    "pairs": [
+      {
+        "holdout_index": 1,
+        "passed": false,
+        "cross_reprojection_rms_px": 4.055797081974544,
+        "vertical_rms_px": 0.6399843074664905,
+        "vertical_p95_px": 0.8660135285039189,
+        "positive_disparity_fraction": 1.0
+      }
+    ],
+    "cross_reprojection_rms_px": 4.055797081974544,
+    "vertical_rms_px": 0.6399843074664905,
+    "vertical_p95_px": 0.8660135285039189,
+    "scale_verified_independently": false,
+    "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY"
+  },
+  "rejection_reasons": [
+    "当前仅得到固定主点、零畸变的简化模型，不能作为尺寸标定保存；请补拍覆盖边缘、远近及双方向倾斜的棋盘姿态",
+    "棋盘格位置变化不足：质心散布 0.10（要求 ≥ 0.10），请覆盖画面四角和中心",
+    "重投影误差过大：左右目 2.079/2.074 px，双目 2.690 px，上限 1.5 px",
+    "未参与求解的照片验证失败：请检查格板平整、同步、清晰度和边缘/倾斜覆盖；不要通过放宽 RMS 跳过此检查"
+  ],
+  "real_stability_check": {
+    "policy": {
+      "minimum_seconds": 0.8,
+      "minimum_observations": 3,
+      "maximum_gap_seconds": 2.0,
+      "median_motion_px": 0.4,
+      "p95_motion_px": 0.8,
+      "maximum_motion_px": 1.5
+    },
+    "actual_camera_frames": true,
+    "results": [
+      {
+        "elapsed_s": 0.0,
+        "detected_eyes": [
+          "left",
+          "right"
+        ],
+        "stationary_accepted": false,
+        "samples": 1
+      },
+      {
+        "elapsed_s": 1.694000005722046,
+        "detected_eyes": [
+          "left",
+          "right"
+        ],
+        "stationary_accepted": false,
+        "samples": 2
+      },
+      {
+        "elapsed_s": 3.4179999828338623,
+        "detected_eyes": [
+          "left",
+          "right"
+        ],
+        "stationary_accepted": true,
+        "samples": 3
+      },
+      {
+        "elapsed_s": 5.138999938964844,
+        "detected_eyes": [
+          "left",
+          "right"
+        ],
+        "stationary_accepted": true,
+        "samples": 4
+      },
+      {
+        "elapsed_s": 6.858000040054321,
+        "detected_eyes": [
+          "left",
+          "right"
+        ],
+        "stationary_accepted": true,
+        "samples": 5
+      }
+    ]
+  },
+  "new_code_sha256": {
+    "pipe_twin\\calibration_wizard.py": "8283bbb1934e0210bbd4c72c4a74b466e0ebc1673109c423e5fe7936c62fab22",
+    "tests\\test_calibration_capture_stability.py": "7eb0c6d9d9311e9f149eacf50e742da9708aa8391f537cbf7eb5e7dc8c3a3a73"
+  },
+  "tests": {
+    "passed": 109,
+    "subtests_passed": 4,
+    "elapsed_s": 67.28,
+    "local_log": "outputs\\calibration-20261013\\pytest-round2-focused.log"
+  },
+  "limitations": [
+    "Motion is not established as the sole cause",
+    "Board flatness is not measured by corner stability",
+    "No new valid calibration or independent metric scale verification"
+  ],
+  "gui_stability_cadence_fix": {
+    "observed_detection_gap_s": 2.6,
+    "observed_corner_median_motion_px": 0.06,
+    "old_gap_timeout_s": 2.0,
+    "new_gap_timeout_s": 5.0,
+    "spatial_motion_thresholds_unchanged": true,
+    "additional_stability_suite_passed": 13,
+    "new_session": "20261013_094747_800185_14e37398",
+    "first_pair_accepted": true
+  },
+  "round2_snapshot": {
+    "updated_at": "2026-10-13T01:52:35.900449+00:00",
+    "pair_count": 1,
+    "camera_open": true,
+    "continuous": true,
+    "capture_session": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\measurement_workbench\\calibration_captures\\20261013_094747_800185_14e37398",
+    "validated": false
+  }
+}
