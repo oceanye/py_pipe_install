@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import datetime
 
 import cv2
 import numpy as np
@@ -81,6 +82,29 @@ def holdout_quality(pairs, *, recipe: dict, pattern, square_mm: float, image_siz
             "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY"}
 
 
+def provisional_calibration_allowed(calibration: dict) -> bool:
+    """An explicit operator acceptance permits relative measurement, not certification."""
+    if not isinstance(calibration, dict) or calibration.get("validated") is not False:
+        return False
+    audit = calibration.get("quality_audit")
+    acceptance = audit.get("operator_acceptance") if isinstance(audit, dict) else None
+    if not isinstance(acceptance, dict):
+        return False
+    if (acceptance.get("status") != "PROVISIONAL"
+            or acceptance.get("authorized") is not True
+            or acceptance.get("scope") != "relative_elevation"
+            or not calibration.get("calibration_id")
+            or acceptance.get("calibration_id") != calibration["calibration_id"]
+            or not isinstance(acceptance.get("reason"), str)
+            or not acceptance["reason"].strip()):
+        return False
+    try:
+        accepted = datetime.fromisoformat(acceptance["accepted_at"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    return accepted.tzinfo is not None
+
+
 def calibration_quality_text(calibration: dict) -> str:
     audit = calibration.get("quality_audit") or {}
     holdout = audit.get("holdout") or {}
@@ -88,6 +112,10 @@ def calibration_quality_text(calibration: dict) -> str:
         return "旧标定未附质量审计；尺寸尺度尚需实物复核，建议重新标定"
     square = audit.get("square_mm")
     label = f"实测格长 {square:g} mm；" if isinstance(square, (float, int)) else ""
+    if provisional_calibration_allowed(calibration):
+        cross = holdout.get("cross_reprojection_rms_px")
+        error = f"；留出跨目误差 {cross:.3f} px" if isinstance(cross, (float, int)) else ""
+        return label + "暂用标定（用户已确认）；精度未验收，可继续立面相对尺寸评估" + error
     if audit.get("solve_mode") == "baseline_anchored_centered_pinhole":
         return label + "简化零畸变模型，仅供流程诊断；请补拍多姿态重新标定"
     if holdout.get("status") == "PASSED":

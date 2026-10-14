@@ -94,6 +94,34 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(len(repeated["capture"]["capture_groups"]), 1)
         self.assertNotIn("已开始新历史", self.dialog.message.get())
 
+    def test_auto_restore_uses_new_profile_calibration_and_clears_old_photos(self):
+        from pipe_twin.workbench_profile import save_camera_calibration_bundle
+        self.dialog.submit(False)
+        self.finish_worker()
+        historical = self.dialog.last_manifest
+        old_id = self.dialog.current_calibration()['calibration_id']
+        active = _calibration()
+        active['calibration_id'] = 'FIELD-NEW-001'
+        destination = Path(self.tmp.name)/'new-calibration.json'
+        save_camera_calibration_bundle(destination, active)
+        profile = {'calibration_current': active, 'calibration_path': str(destination),
+                   'rectification_recipe': None}
+        with mock.patch('pipe_twin.workbench_profile.load_profile', return_value=(profile, None)):
+            reopened = ElevationCaptureDialog(self.app, output_root=self.output, restore=True)
+        try:
+            self.assertEqual(reopened.current_calibration()['calibration_id'], 'FIELD-NEW-001')
+            self.assertGreater(len(reopened.pipes), 0)
+            self.assertIsNone(reopened.last_manifest)
+            self.assertEqual(reopened.temporal_frames, [])
+            for role in ('left', 'right'):
+                self.assertEqual(reopened.fields[role].get(), '')
+                self.assertIsNone(reopened.views[role].image)
+            reopened.load_session(historical)
+            self.assertEqual(reopened.current_calibration()['calibration_id'], old_id)
+            self.assertIsNotNone(reopened.views['left'].image)
+        finally:
+            reopened.close()
+
     def test_image_guided_selection_and_diagnostic_overlay(self):
         self.dialog.local_observation_label.set("图像引导圆柱")
         self.dialog._local_observation_selected()

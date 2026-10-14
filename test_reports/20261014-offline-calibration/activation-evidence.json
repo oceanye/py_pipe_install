@@ -1,0 +1,63 @@
+{
+  "status": "PROVISIONAL_CALIBRATION_ACTIVE",
+  "previous_id": "field-chess-fb5dc0f71ee5",
+  "calibration_id": "field-chess-provisional-20261014-5c62d5b4c50a",
+  "calibration_path": "outputs/measurement_workbench/calibration_current.json",
+  "backup_directory": "outputs/calibration-20261014/activate-provisional/backup-20261014-102955",
+  "source_result_sha256": "5c62d5b4c50a57c898c7dbaa16baaccd9aa7b92f08c107b21512a633b331df52",
+  "validated": false,
+  "holdout_status": "FAILED",
+  "converged": false,
+  "operator_acceptance": {
+    "status": "PROVISIONAL",
+    "authorized": true,
+    "scope": "relative_elevation",
+    "calibration_id": "field-chess-provisional-20261014-5c62d5b4c50a",
+    "accepted_at": "2026-10-14T02:29:55.342794+00:00",
+    "reason": "用户明确要求：基本可以用，替换现有标定",
+    "source_result_sha256": "5c62d5b4c50a57c898c7dbaa16baaccd9aa7b92f08c107b21512a633b331df52"
+  },
+  "display": "实测格长 17 mm；暂用标定（用户已确认）；精度未验收，可继续立面相对尺寸评估；留出跨目误差 1.996 px",
+  "remap_check": [
+    {
+      "role": "left",
+      "shape": [
+        1080,
+        1920,
+        3
+      ],
+      "mean": 122.55288966049383
+    },
+    {
+      "role": "right",
+      "shape": [
+        1080,
+        1920,
+        3
+      ],
+      "mean": 117.60635095164609
+    }
+  ],
+  "backups_sha256": {
+    "calibration_current.json": "fba55d8112ab463d219dbef9590c25ac541abef377a74043034cd28677fb3350",
+    "workbench_profile.json": "17532d4cd84bd3858a00932dcf49fc979a44e13db955489c4c78b5b708af605b"
+  },
+  "new_calibration_sha256": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+  "gui_check": {
+    "status": "PASSED",
+    "calibration_id": "field-chess-provisional-20261014-5c62d5b4c50a",
+    "calibration_status": "已加载标定 · field-chess-provisional-20261014-5c62d5b4c50a · 1920×1080 每目 · 基线 55.4986 mm · CAD配准未确认（立面相对布局仍可继续；完整绝对坐标需另行配准）\n实测格长 17 mm；暂用标定（用户已确认）；精度未验收，可继续立面相对尺寸评估；留出跨目误差 1.996 px",
+    "message": "当前标定已更新，请点击③双目抓拍，再保存并评估。历史照片仍保留在原现场包中。",
+    "restored_model_pipe_count": 12,
+    "old_photos_cleared": true,
+    "rectifier_constructed": true,
+    "physical_camera_opened": false,
+    "active_files_and_history_unchanged": true
+  },
+  "tests": {
+    "passed": 118,
+    "subtests_passed": 8,
+    "seconds": 50.07,
+    "junit": "outputs/calibration-20261014/activate-provisional/pytest-final.xml"
+  }
+}

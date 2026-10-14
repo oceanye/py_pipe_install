@@ -937,8 +937,22 @@ class ElevationCaptureDialog:
                 raise
         elif restore:
             try:
+                active_profile = copy.deepcopy(self.profile)
                 recent = json.loads((self.output_root / "last_scene.json").read_text(encoding="utf-8"))
                 self.load_session(Path(recent["manifest_path"]))
+                active = (active_profile or {}).get("calibration_current")
+                if (active and active_profile.get("calibration_path")
+                        and active.get("calibration_id") != self.calibration_override.get("calibration_id")):
+                    # Auto-resume model/settings with the newly selected calibration.
+                    # Explicitly opening a historical package still uses its own
+                    # calibration. Old rectified photos cannot be reused here.
+                    self.profile = active_profile
+                    self.fields["calibration"].set(active_profile["calibration_path"])
+                    self.calibration_override = copy.deepcopy(active)
+                    self.camera_capture_provenance = {}
+                    self.status_refresh_metadata = None
+                    self.summary.set("已恢复模型；当前标定已更新，等待新照片")
+                    self.message.set("当前标定已更新，请点击③双目抓拍，再保存并评估。历史照片仍保留在原现场包中。")
             except FileNotFoundError:
                 pass
             except (OSError, ValueError, KeyError) as error:
@@ -1433,7 +1447,8 @@ class ElevationCaptureDialog:
             from .stereo_analyzer import _calibration_from_manifest
             calibration = self.current_calibration()
             parsed = _calibration_from_manifest(calibration)
-            if parsed.validated and parsed.rectified:
+            from .calibration_quality import provisional_calibration_allowed
+            if (parsed.validated or provisional_calibration_allowed(calibration)) and parsed.rectified:
                 registration = (
                     "CAD配准已确认"
                     if parsed.registration_validated

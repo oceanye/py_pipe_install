@@ -251,7 +251,8 @@ def _calibration_ok(calibration: Mapping[str, Any]) -> Any:
         parsed = _calibration_from_manifest(dict(calibration))
     except Exception as exc:
         raise ValueError(f"标定不可用：{exc}") from exc
-    if parsed.validated is not True:
+    from .calibration_quality import provisional_calibration_allowed
+    if parsed.validated is not True and not provisional_calibration_allowed(dict(calibration)):
         raise ValueError("基础模式需要validated=true的真实标定")
     return parsed
 

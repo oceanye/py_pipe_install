@@ -398,7 +398,8 @@ def field_calibration_problem(calibration: Any) -> str | None:
             f"当前标定 ID“{calibration_id}”属于合成演示或格式示例，不能用于现场 USB 双目相机。"
             "请选择这台相机的真实标定 JSON；每目应为实际分辨率，并包含实测内参、畸变、毫米基线和极线校正状态。"
         )
-    if calibration.get("validated") is not True:
+    from .calibration_quality import provisional_calibration_allowed
+    if calibration.get("validated") is not True and not provisional_calibration_allowed(calibration):
         return "当前双目标定尚未标记为已验证（validated=true），不能用于现场测量。"
     if calibration.get("rectified") is not True:
         return "当前输入未声明为已极线校正（rectified=true），不能直接进行现场双目匹配。"
