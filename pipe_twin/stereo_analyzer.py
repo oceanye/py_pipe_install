@@ -43,6 +43,7 @@ from .state import (
     installation_state_label_zh,
 )
 from .logging_config import get_logger, log_event
+from .calibration_quality import provisional_calibration_allowed
 
 _LOGGER = get_logger("stereo_analyzer")
 
@@ -135,6 +136,9 @@ class StereoCalibration:
     max_sync_delta_ms: float
     left: CameraCalibration
     right: CameraCalibration
+    # Derived from the ID-bound operator record; never changes validated or
+    # registration_validated. Zone crops retain this relative-use permission.
+    relative_elevation_provisional: bool = False
 
 
 @dataclass(frozen=True)
@@ -504,6 +508,7 @@ def _calibration_from_manifest(payload: object) -> StereoCalibration:
         max_sync_delta_ms=max_sync_delta,
         left=left,
         right=right,
+        relative_elevation_provisional=provisional_calibration_allowed(payload),
     )
 
 

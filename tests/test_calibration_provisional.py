@@ -1,5 +1,7 @@
 """Operator-authorized use must not change the failed quality evidence."""
 import copy
+import json
+from dataclasses import replace
 from unittest.mock import Mock
 
 import cv2
@@ -89,3 +91,53 @@ def test_bundle_and_elevation_session_preserve_failed_quality(tmp_path):
     assert loaded['calibration'] == original
     assert loaded['calibration']['quality_audit']['holdout']['status'] == 'FAILED'
     assert loaded['calibration']['validated'] is False
+
+
+def test_provisional_manifest_runs_real_depth_recognition_and_report(tmp_path):
+    from test_elevation_auto import _package
+    from pipe_twin.stereo_analyzer import analyze_stereo_capture
+    calibration = provisional()
+    path, _ = _package(tmp_path, calibration=calibration)
+    before = path.read_bytes()
+    report_path = tmp_path/'report.json'
+    result = analyze_stereo_capture(path, report_output_path=report_path,
+                                    evidence_dir=tmp_path/'evidence')
+    assert result['counts'] == {'INSTALLED': 0, 'NOT_INSTALLED': 0, 'UNKNOWN': 12}
+    audit = json.loads(report_path.read_text(encoding='utf-8'))['calibration_audit']
+    assert audit['validated'] is False
+    assert audit['quality_audit'] == calibration['quality_audit']
+    assert path.read_bytes() == before
+
+
+@pytest.mark.parametrize('backend', ['cylinder', 'geometry_only', 'parallel_strip', 'image_guided', 'auto'])
+def test_provisional_calibration_reaches_cropped_geometry_backends(backend):
+    from test_elevation_auto import _groups
+    from test_elevation_zones import _zone
+    from pipe_twin.elevation_auto import analyze_elevation_auto_zones
+    from pipe_twin.stereo_analyzer import _calibration_from_manifest
+    calibration = _calibration_from_manifest(provisional())
+    _, specs, groups = _groups()
+    result = analyze_elevation_auto_zones(groups, calibration=calibration, pipe_specs=specs,
+        scope_settings={'scope': 'zones', 'right_roi_padding_px': 128,
+                        'zones': [_zone((120, 0, 440, 480))]},
+        registration_settings={'local_observation_mode': backend})
+    assert len(result['local_surface']['observations']) == 3
+    assert calibration.validated is False
+
+
+def test_backend_rejects_missing_acceptance_and_invalid_rectification():
+    from test_elevation_auto import _groups
+    from pipe_twin.local_surface import _validate_arrays, LocalSurfaceError
+    from pipe_twin.stereo_analyzer import _calibration_from_manifest
+    _, _, groups = _groups()
+    group = groups[0]
+    data = provisional()
+    data['quality_audit']['operator_acceptance']['authorized'] = False
+    # A raw input boolean must never substitute for the bound acceptance record.
+    data['relative_elevation_provisional'] = True
+    rejected = _calibration_from_manifest(data)
+    accepted = _calibration_from_manifest(provisional())
+    for calibration in (rejected, replace(accepted, rectified=False),
+                        replace(accepted, baseline_mm=120)):
+        with pytest.raises(LocalSurfaceError):
+            _validate_arrays(group['left'], group['right'], group['depth'], calibration)

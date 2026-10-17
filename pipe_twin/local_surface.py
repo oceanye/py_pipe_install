@@ -160,8 +160,11 @@ def _validate_arrays(left: Any, right: Any, depth: Any, calibration: Any) -> tup
         raise LocalSurfaceError("depth valid masks must be boolean")
     if any(item.dtype.kind not in "fiu" for item in arrays[:2]):
         raise LocalSurfaceError("depth values must have a real numeric dtype")
-    if getattr(calibration, "validated", None) is not True or getattr(calibration, "rectified", None) is not True:
-        raise LocalSurfaceError("validated rectified calibration is required")
+    validated = getattr(calibration, "validated", None)
+    provisional = (validated is False
+                   and getattr(calibration, "relative_elevation_provisional", False) is True)
+    if (validated is not True and not provisional) or getattr(calibration, "rectified", None) is not True:
+        raise LocalSurfaceError("需要已验证或已明确确认暂用的极线校正标定，才能评估相对尺寸")
     baseline = _positive(getattr(calibration, "baseline_mm", None), "calibration.baseline_mm")
     rotations, centres, matrices = [], [], []
     for role, image in (("left", left), ("right", right)):
