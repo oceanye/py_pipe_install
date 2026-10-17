@@ -1,0 +1,102 @@
+{
+  "layouts": [
+    {
+      "size": "940x660",
+      "controls": {
+        "evaluate": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "region": {
+          "rect": [
+            515,
+            80,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "relative": {
+          "rect": [
+            404,
+            521,
+            87,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "size": "1120x760",
+      "controls": {
+        "evaluate": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "region": {
+          "rect": [
+            515,
+            80,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "relative": {
+          "rect": [
+            404,
+            621,
+            87,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "size": "1120x860",
+      "controls": {
+        "evaluate": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "region": {
+          "rect": [
+            515,
+            80,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "relative": {
+          "rect": [
+            404,
+            721,
+            87,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    }
+  ],
+  "candidate_overlay_count_per_eye": 4,
+  "relative_dialog_precedes_camera_diagnostics": true
+}

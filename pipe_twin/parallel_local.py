@@ -25,7 +25,7 @@ from typing import Any, Mapping
 import cv2
 import numpy as np
 
-from .local_surface import _CloudBudget, _points, _to_left, _validate_arrays
+from .local_surface import _CloudBudget, _intrinsic, _points, _to_left, _validate_arrays
 
 
 class ParallelLocalError(ValueError):
@@ -324,8 +324,9 @@ def _pair_candidates(left: list[dict[str, Any]], right: list[dict[str, Any]],
     used: set[int] = set()
     fx = float(getattr(calibration.left, "fx"))
     baseline = float(calibration.baseline_mm)
+    principal_offset = float(_intrinsic(calibration.left)[0, 2] - _intrinsic(calibration.right)[0, 2])
     # Pair by a predictable stereo score.  Rectification preserves the image
-    # row, and the expected horizontal shift is baseline*fx/depth.
+    # row; account for different horizontal crop origins through shifted cx.
     for li, candidate in enumerate(sorted(left, key=lambda item: float(item["pixel_center"][1]))):
         options = []
         for ri, other in enumerate(right):
@@ -336,7 +337,7 @@ def _pair_candidates(left: list[dict[str, Any]], right: list[dict[str, Any]],
                 continue
             disparity = float(candidate["pixel_center"][0] - other["pixel_center"][0])
             depth = max(1.0, float(np.median(candidate["points"][:, 2])))
-            expected = fx * baseline / depth
+            expected = fx * baseline / depth + principal_offset
             disparity_error = abs(disparity - expected)
             if disparity_error > cfg["pair_disparity_tolerance_px"]:
                 continue

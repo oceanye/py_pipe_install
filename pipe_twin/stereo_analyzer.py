@@ -43,6 +43,7 @@ from .state import (
     installation_state_label_zh,
 )
 from .logging_config import get_logger, log_event
+from .calibration_quality import provisional_calibration_allowed
 
 _LOGGER = get_logger("stereo_analyzer")
 
@@ -135,6 +136,9 @@ class StereoCalibration:
     max_sync_delta_ms: float
     left: CameraCalibration
     right: CameraCalibration
+    # Derived from the ID-bound operator record; never changes validated or
+    # registration_validated. Zone crops retain this relative-use permission.
+    relative_elevation_provisional: bool = False
 
 
 @dataclass(frozen=True)
@@ -504,6 +508,7 @@ def _calibration_from_manifest(payload: object) -> StereoCalibration:
         max_sync_delta_ms=max_sync_delta,
         left=left,
         right=right,
+        relative_elevation_provisional=provisional_calibration_allowed(payload),
     )
 
 
@@ -1910,6 +1915,7 @@ def analyze_stereo_capture(
     evidence_dir: str | Path | None = None,
     *,
     measurement_options: dict[str, Any] | None = None,
+    progress=None,
 ) -> dict[str, Any]:
     """Analyze explicitly paired stereo photographs and return per-pipe states.
 
@@ -1926,7 +1932,7 @@ def analyze_stereo_capture(
     analysis_payload = manifest.get("analysis")
     if isinstance(analysis_payload, dict) and analysis_payload.get("mode") == "elevation_auto":
         from .elevation_auto import analyze_elevation_auto_manifest
-        return analyze_elevation_auto_manifest(manifest_file, report_output_path=report_output_path, evidence_dir=evidence_dir)
+        return analyze_elevation_auto_manifest(manifest_file, report_output_path=report_output_path, evidence_dir=evidence_dir, progress=progress)
     dataset_id = _require_string(manifest.get("dataset_id"), "dataset_id")
     model_revision = _require_string(manifest.get("model_revision"), "model_revision")
     scene = _load_cad_scene(manifest_file, manifest.get("model"))

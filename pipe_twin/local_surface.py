@@ -28,6 +28,7 @@ _DEFAULTS = {
     # stereo-depth surfaces.  The RGB image is still sampled for an audit
     # colour, but it cannot create, reject, or identify a pipe candidate.
     "geometry_only": False,
+    "image_guided": False,
     "color_delta_lab": DEFAULT_COLOR_DELTA_LAB,
     "minimum_component_pixels": 80,
     "minimum_valid_fraction": 0.10,
@@ -102,9 +103,12 @@ def _settings(value: Mapping[str, Any] | None) -> dict[str, Any]:
     if unknown:
         raise LocalSurfaceError(f"Unknown local surface settings: {sorted(unknown)}")
     cfg = {**_DEFAULTS, **dict(value or {})}
-    if type(cfg["geometry_only"]) is not bool:
-        raise LocalSurfaceError("config.geometry_only must be boolean")
-    for key in set(cfg) - {"geometry_only", "minimum_component_pixels", "maximum_cloud_points", "maximum_component_candidates"}:
+    for key in ("geometry_only", "image_guided"):
+        if type(cfg[key]) is not bool:
+            raise LocalSurfaceError(f"config.{key} must be boolean")
+    if cfg["geometry_only"] and cfg["image_guided"]:
+        raise LocalSurfaceError("image_guided and geometry_only are distinct proposal modes")
+    for key in set(cfg) - {"geometry_only", "image_guided", "minimum_component_pixels", "maximum_cloud_points", "maximum_component_candidates"}:
         cfg[key] = _positive(cfg[key], f"config.{key}")
     for key in ("minimum_component_pixels", "maximum_cloud_points", "maximum_component_candidates"):
         if type(cfg[key]) is not int or cfg[key] <= 0:
@@ -144,20 +148,26 @@ def _catalog(value: Any) -> list[dict[str, Any]]:
 def _validate_arrays(left: Any, right: Any, depth: Any, calibration: Any) -> tuple[np.ndarray, ...]:
     if not isinstance(left, np.ndarray) or not isinstance(right, np.ndarray) or left.dtype != np.uint8 or right.dtype != np.uint8:
         raise LocalSurfaceError("left and right must be uint8 BGR arrays")
-    if left.ndim != 3 or left.shape[2] != 3 or right.shape != left.shape or min(left.shape[:2]) <= 0:
-        raise LocalSurfaceError("left and right must be nonempty matching BGR images")
+    if any(image.ndim != 3 or image.shape[2] != 3 or min(image.shape[:2]) <= 0 for image in (left, right)):
+        raise LocalSurfaceError("left and right must be nonempty BGR images")
+    if left.shape[0] != right.shape[0]:
+        raise LocalSurfaceError("rectified image heights must match")
     arrays = tuple(getattr(depth, name, None) for name in ("left_depth_mm", "right_depth_mm", "left_valid", "right_valid"))
-    if any(not isinstance(item, np.ndarray) or item.shape != left.shape[:2] for item in arrays):
+    if any(not isinstance(item, np.ndarray) or item.shape != image.shape[:2]
+           for item, image in zip(arrays, (left, right, left, right))):
         raise LocalSurfaceError("depth arrays must match image dimensions")
     if arrays[2].dtype != np.bool_ or arrays[3].dtype != np.bool_:
         raise LocalSurfaceError("depth valid masks must be boolean")
     if any(item.dtype.kind not in "fiu" for item in arrays[:2]):
         raise LocalSurfaceError("depth values must have a real numeric dtype")
-    if getattr(calibration, "validated", None) is not True or getattr(calibration, "rectified", None) is not True:
-        raise LocalSurfaceError("validated rectified calibration is required")
+    validated = getattr(calibration, "validated", None)
+    provisional = (validated is False
+                   and getattr(calibration, "relative_elevation_provisional", False) is True)
+    if (validated is not True and not provisional) or getattr(calibration, "rectified", None) is not True:
+        raise LocalSurfaceError("需要已验证或已明确确认暂用的极线校正标定，才能评估相对尺寸")
     baseline = _positive(getattr(calibration, "baseline_mm", None), "calibration.baseline_mm")
     rotations, centres, matrices = [], [], []
-    for role in ("left", "right"):
+    for role, image in (("left", left), ("right", right)):
         camera = getattr(calibration, role, None)
         try:
             fx = _positive(getattr(camera, "fx", None), f"calibration.{role}.fx")
@@ -167,7 +177,7 @@ def _validate_arrays(left: Any, right: Any, depth: Any, calibration: Any) -> tup
             matrix = _intrinsic(camera)
         except (AttributeError, TypeError, ValueError) as error:
             raise LocalSurfaceError(f"calibration.{role} camera is invalid: {error}") from error
-        if (getattr(camera, "width", None), getattr(camera, "height", None)) != (left.shape[1], left.shape[0]):
+        if (getattr(camera, "width", None), getattr(camera, "height", None)) != (image.shape[1], image.shape[0]):
             raise LocalSurfaceError(f"calibration.{role} dimensions do not match images")
         if (rotation.shape != (3, 3) or centre.shape != (3,) or not np.all(np.isfinite(rotation))
                 or not np.all(np.isfinite(centre)) or not np.allclose(rotation @ rotation.T, np.eye(3), atol=1e-6)
@@ -181,8 +191,13 @@ def _validate_arrays(left: Any, right: Any, depth: Any, calibration: Any) -> tup
         centres.append(centre)
         matrices.append(matrix)
     baseline_left = rotations[0] @ (centres[1] - centres[0])
+    # Depth is computed on the full rectified pair before zone cropping.
+    # Each eye may have a different horizontal crop origin/width; back-project
+    # with its own shifted cx. Focal lengths and rectified rows must still agree.
+    right_aligned = matrices[1].copy()
+    right_aligned[0, 2] = matrices[0][0, 2]
     if (not np.allclose(rotations[0], rotations[1], atol=1e-5)
-            or not np.allclose(matrices[0], matrices[1], rtol=1e-5, atol=1e-6)
+            or not np.allclose(matrices[0], right_aligned, rtol=1e-5, atol=1e-6)
             or not np.allclose(baseline_left, [baseline, 0, 0], rtol=1e-4, atol=1e-3)):
         raise LocalSurfaceError("calibration does not describe a horizontal rectified stereo pair")
     return arrays
@@ -338,12 +353,36 @@ def _fit_components(image: np.ndarray, depth: np.ndarray, valid: np.ndarray, mas
         if fraction < cfg["minimum_valid_fraction"] or n_points < 80:
             rejected.append(audit | {"reason": "INSUFFICIENT_VALID_DEPTH"})
             continue
-        points = _to_left(_points(local_depth, local_valid, camera, core, offset=(x, y)), calibration, role)
+        if source == "image_strip":
+            from .image_regions import _axis, filter_disparity
+            pixel_axis, _, _ = _axis(component)
+            support, disparity_audit = filter_disparity(local_depth, support, camera,
+                                                       calibration.baseline_mm, pixel_axis)
+            audit["disparity_filter"] = disparity_audit
+            audit["fit_support_fraction"] = float(support.sum()/denominator)
+            if disparity_audit["reason"] or support.sum() < 80 or audit["fit_support_fraction"] < cfg["minimum_valid_fraction"]:
+                rejected.append(audit | {"reason": disparity_audit["reason"] or "INSUFFICIENT_VALID_DEPTH"})
+                continue
+        points = _to_left(_points(local_depth, support, camera, core, offset=(x, y)), calibration, role)
         try:
             fit = fit_local_cylinder(points)
         except (ValueError, np.linalg.LinAlgError) as error:
-            rejected.append(audit | {"reason": str(error)})
+            rejected.append(audit | {"reason": str(error),
+                                    **({"fit_diagnostics": error.diagnostics} if hasattr(error,"diagnostics") else {})})
             continue
+        if source == "image_strip":
+            # A depth outlier line pointing toward the camera cannot explain
+            # a long image strip. Check the projected fitted axis explicitly.
+            center = np.mean(np.asarray(fit["observed_segment_world_mm"]),axis=0)
+            if role == "right":
+                center = center - [calibration.baseline_mm, 0, 0]
+            direction = np.asarray(fit["axis_direction_world"])
+            projected = np.asarray([camera.fx*(direction[0]*center[2]-center[0]*direction[2]),
+                                    camera.fy*(direction[1]*center[2]-center[1]*direction[2])])
+            norm = float(np.linalg.norm(projected))
+            if norm < 1e-9 or abs(float(projected @ pixel_axis))/norm < math.cos(math.radians(12)):
+                rejected.append(audit | {"reason":"PROJECTED_AXIS_DISAGREEMENT"})
+                continue
         median_bgr = np.rint(np.median(local_image[support], axis=0)).astype(np.uint8)
         measured_color = "#%02X%02X%02X" % tuple(map(int, median_bgr[::-1]))
         # Keep at most the export budget for this candidate while the full
@@ -498,6 +537,7 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
     colors = sorted({spec["color_srgb"] for spec in specs})
     candidate_colors = {} if cfg["geometry_only"] else {color: {} for color in colors}
     rejected, view_candidates = [], {}
+    image_candidates, image_proposal_audits = [], {}
     depth_audit = {}
     fit_budgets = {}
     considered_colors = [] if cfg["geometry_only"] else colors[:32]
@@ -519,6 +559,56 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
     for role, image, z, valid in (("left", left, arrays[0], arrays[2]), ("right", right, arrays[1], arrays[3])):
         budget = {"remaining": cfg["maximum_component_candidates"], "attempted": 0,
                   "allocated": cfg["maximum_component_candidates"], "sources": {}}
+        if cfg["image_guided"]:
+            from .image_regions import axial_windows, propose_regions
+            from .stereo_correspondence import patch_correspondence
+            regions, proposal_audit = propose_regions(image)
+            image_proposal_audits[role] = proposal_audit
+            accepted = []
+            for index, region in enumerate(regions):
+                x,y,w,h = region["region_px"]
+                candidate_id = f"IMG-{role}-{index+1:03d}"
+                attempts = []
+
+                def attempt(window_id, local_mask):
+                    mask = np.zeros(image.shape[:2],np.uint8)
+                    mask[y:y+h,x:x+w] = local_mask
+                    fits, errors = _fit_components(image,z,valid,mask,calibration,role,"image_strip",cfg,budget=budget)
+                    for item in fits + errors:
+                        item.update(image_candidate_id=candidate_id, window_id=window_id)
+                    attempts.append({"window_id":window_id, "fit_count":len(fits),
+                                     "rejections": errors})
+                    rejected.extend(errors)
+                    return fits
+
+                fits = attempt("FULL", region["mask"])
+                if not fits:
+                    for window in axial_windows(region):
+                        if budget["remaining"] <= 0:
+                            rejected.append({"role":role,"image_candidate_id":candidate_id,
+                                             "segmentation_source":"image_strip", "reason":"CANDIDATE_BUDGET_EXCEEDED"})
+                            break
+                        fits.extend(attempt(window["window_id"], window["mask"]))
+                accepted.extend(fits)
+                peer_role = "right" if role == "left" else "left"
+                correspondence = patch_correspondence(image, right if role == "left" else left,
+                    z, valid, getattr(calibration,role), getattr(calibration,peer_role),
+                    calibration.baseline_mm, role, region)
+                image_candidates.append({
+                    **{k:v for k,v in region.items() if k not in {"mask","score"}},
+                    "candidate_id":candidate_id,"role":role,
+                    "status":"CYLINDER_FIT_CANDIDATE" if fits else "IMAGE_ONLY",
+                    "measurement_authority":False,"identity_assigned":False,
+                    "valid_depth_fraction":float(np.mean(valid[y:y+h,x:x+w][region["mask"].astype(bool)])),
+                    "reason_codes":([] if fits else list(dict.fromkeys(
+                        e.get("reason") for attempt_row in attempts for e in attempt_row["rejections"]))),
+                    "attempts":attempts, "correspondence_diagnostic":correspondence,
+                })
+            if proposal_audit["truncated"]:
+                rejected.append({"role":role,"segmentation_source":"image_strip", "reason":"CANDIDATE_BUDGET_EXCEEDED"})
+            view_candidates[role] = _deduplicate(accepted)
+            fit_budgets[role] = budget
+            continue
         # Geometry proposals work even when display colours differ from paint.
         mask = _depth_surface_mask(z, valid, cfg["depth_discontinuity_mm"])
         depth_budget = {"remaining": depth_quota, "attempted": 0, "allocated": depth_quota,
@@ -608,12 +698,12 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
             "nominal_diameter_mm": diameter_classes[0] if len(diameter_classes) == 1 else None,
             "identity_assigned": False, "diameter_mm": measured,
             "color_srgb": color, "measured_color_srgb": color,
-            "segmentation_source": "depth_connected_surface" if "depth_connected_surface" in sources else "rgb_component",
+            "segmentation_source": "image_strip" if cfg["image_guided"] else "depth_connected_surface" if "depth_connected_surface" in sources else "rgb_component",
             "segmentation_sources": sources,
             "fit_rms_mm": float(max(lf["fit_rms_mm"], rf["fit_rms_mm"])),
             "diameter_source": "ROBUST_OUTER_CYLINDER_FIT_VISIBLE_SURFACE",
             "diameter_includes_near_surface": True,
-            "observation_basis": "DEPTH_ONLY_LOCAL_CYLINDER" if cfg["geometry_only"] else "DEPTH_AND_OPTIONAL_RGB_LOCAL_CYLINDER",
+            "observation_basis": "IMAGE_GUIDED_STEREO_CYLINDER" if cfg["image_guided"] else "DEPTH_ONLY_LOCAL_CYLINDER" if cfg["geometry_only"] else "DEPTH_AND_OPTIONAL_RGB_LOCAL_CYLINDER",
             "color_used_as": "NONE_GEOMETRY_ONLY" if cfg["geometry_only"] else "AUDIT_ONLY",
             "left_region_px": lf["region_px"], "right_region_px": rf["region_px"],
             "point_count": int(lf["point_count"] + rf["point_count"]),
@@ -654,8 +744,10 @@ def extract_local_pipes(left: np.ndarray, right: np.ndarray, depth: Any, calibra
     truncated = any(row.get("reason") in {"CANDIDATE_BUDGET_EXCEEDED", "COLOR_CANDIDATE_BUDGET_EXCEEDED"}
                     for row in rejected)
     return {"observations": observations, "rejected": rejected, "point_cloud": point_cloud,
+            "image_candidates":image_candidates,
             "audit": {"coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM", "candidate_colors": candidate_colors,
-                      "observation_basis": "DEPTH_ONLY_LOCAL_CYLINDER" if cfg["geometry_only"] else "DEPTH_AND_OPTIONAL_RGB_LOCAL_CYLINDER",
+                      "observation_basis": "IMAGE_GUIDED_STEREO_CYLINDER" if cfg["image_guided"] else "DEPTH_ONLY_LOCAL_CYLINDER" if cfg["geometry_only"] else "DEPTH_AND_OPTIONAL_RGB_LOCAL_CYLINDER",
+                      "image_proposals": image_proposal_audits,
                       "local_truncation": {"enabled": True,
                                            "axis_source": "FUSED_LEFT_RIGHT_LOCAL_PIPE_AXES",
                                            "definition": "COMMON_AXIAL_INTERVAL_VISIBLE_IN_BOTH_EYES",

@@ -1,0 +1,193 @@
+{
+  "original_log": {
+    "timestamp": "2026-10-14T07:05:51.349694+00:00",
+    "error": "validated rectified calibration is required"
+  },
+  "tests": {
+    "passed": 109,
+    "subtests_passed": 20,
+    "seconds": 95.44
+  },
+  "replay": {
+    "status": "COMPLETED",
+    "elapsed_seconds": 101.10900000005495,
+    "manifest": "outputs\\elevation_workbench\\captures\\elevation-20261014-150423-df1c14c6\\manifest.json",
+    "report": "outputs\\elevation_workbench\\captures\\elevation-20261014-150423-df1c14c6\\report.json",
+    "unchanged_sha256": {
+      "outputs\\elevation_workbench\\captures\\elevation-20261014-150423-df1c14c6\\manifest.json": "8bcf91ba6525f4aaa5cd6804857b767d21653c820b11c0f08776c1657cdcd416",
+      "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+    },
+    "counts": {
+      "INSTALLED": 0,
+      "NOT_INSTALLED": 0,
+      "UNKNOWN": 12
+    },
+    "physical_camera_opened": false
+  },
+  "temporal": {
+    "status": "INVALID",
+    "requested_frames": 20,
+    "accepted_frames": 17,
+    "reason_codes": [
+      "BURST_REFERENCE_OR_SCENE_UNSTABLE"
+    ]
+  },
+  "observation_count": 0,
+  "registration_status": "INSUFFICIENT_OBSERVATIONS",
+  "baseline_check": {
+    "scope": "READ_ONLY_BASELINE_SUBSTITUTION_CHECK_NOT_JOINT_REFIT",
+    "user_confirmed_baseline_mm": 60.0,
+    "active_solved_baseline_mm": 55.49861605457772,
+    "difference_mm": 4.501383945422283,
+    "difference_percent_of_known": 7.502306575703805,
+    "scale_multiplier_if_only_baseline_changed": 1.0811080395409427,
+    "holdout_input_indices": [
+      5,
+      9,
+      13,
+      18,
+      22,
+      26
+    ],
+    "original_holdout": {
+      "algorithm_revision": "stereo-holdout-quality-v1",
+      "policy": {
+        "minimum_holdout_pairs": 3,
+        "holdout_fraction": 0.2,
+        "max_vertical_rms_px": 0.5,
+        "max_vertical_p95_px": 1.0,
+        "max_cross_reprojection_rms_px": 1.0,
+        "max_pair_cross_rms_px": 1.5
+      },
+      "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+      "status": "FAILED",
+      "pair_count": 6,
+      "pairs": [
+        {
+          "holdout_index": 1,
+          "passed": false,
+          "cross_reprojection_rms_px": 2.1781143282958357,
+          "vertical_rms_px": 0.361535722056752,
+          "vertical_p95_px": 0.5415457262691177,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 2,
+          "passed": true,
+          "cross_reprojection_rms_px": 0.9182453857556315,
+          "vertical_rms_px": 0.3109042803155722,
+          "vertical_p95_px": 0.4772716291707226,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 3,
+          "passed": false,
+          "cross_reprojection_rms_px": 3.54024325353644,
+          "vertical_rms_px": 0.15772707186707333,
+          "vertical_p95_px": 0.272259471431245,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 4,
+          "passed": false,
+          "cross_reprojection_rms_px": 1.804114758618799,
+          "vertical_rms_px": 0.2329713035448684,
+          "vertical_p95_px": 0.3416883281379995,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 5,
+          "passed": true,
+          "cross_reprojection_rms_px": 1.2671564853724013,
+          "vertical_rms_px": 0.3860131114196528,
+          "vertical_p95_px": 0.5349522773491769,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 6,
+          "passed": true,
+          "cross_reprojection_rms_px": 0.9596619729526612,
+          "vertical_rms_px": 0.1463729491758754,
+          "vertical_p95_px": 0.27604684602155627,
+          "positive_disparity_fraction": 1.0
+        }
+      ],
+      "cross_reprojection_rms_px": 1.9959185701834257,
+      "vertical_rms_px": 0.28194389801138386,
+      "vertical_p95_px": 0.48999485887500216,
+      "scale_verified_independently": false,
+      "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY"
+    },
+    "baseline_60_other_parameters_fixed_holdout": {
+      "algorithm_revision": "stereo-holdout-quality-v1",
+      "policy": {
+        "minimum_holdout_pairs": 3,
+        "holdout_fraction": 0.2,
+        "max_vertical_rms_px": 0.5,
+        "max_vertical_p95_px": 1.0,
+        "max_cross_reprojection_rms_px": 1.0,
+        "max_pair_cross_rms_px": 1.5
+      },
+      "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+      "status": "FAILED",
+      "pair_count": 6,
+      "pairs": [
+        {
+          "holdout_index": 1,
+          "passed": false,
+          "cross_reprojection_rms_px": 13.065175610079264,
+          "vertical_rms_px": 0.36153572205665546,
+          "vertical_p95_px": 0.5415457262690623,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 2,
+          "passed": false,
+          "cross_reprojection_rms_px": 11.520189222547272,
+          "vertical_rms_px": 0.3109042803154537,
+          "vertical_p95_px": 0.477271629170589,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 3,
+          "passed": false,
+          "cross_reprojection_rms_px": 16.495031744377354,
+          "vertical_rms_px": 0.15772707186710916,
+          "vertical_p95_px": 0.2722594714313004,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 4,
+          "passed": false,
+          "cross_reprojection_rms_px": 9.195012188657193,
+          "vertical_rms_px": 0.2329713035449933,
+          "vertical_p95_px": 0.34168832813815014,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 5,
+          "passed": false,
+          "cross_reprojection_rms_px": 11.286505070412858,
+          "vertical_rms_px": 0.38601311141977745,
+          "vertical_p95_px": 0.5349522773492736,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 6,
+          "passed": false,
+          "cross_reprojection_rms_px": 8.613425126603117,
+          "vertical_rms_px": 0.1463729491757957,
+          "vertical_p95_px": 0.276046846021471,
+          "positive_disparity_fraction": 1.0
+        }
+      ],
+      "cross_reprojection_rms_px": 11.983489919879545,
+      "vertical_rms_px": 0.28194389801138353,
+      "vertical_p95_px": 0.4899948588749993,
+      "scale_verified_independently": false,
+      "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY"
+    },
+    "active_sha256_unchanged": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+    "active_calibration_replaced": false
+  }
+}

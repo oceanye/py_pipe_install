@@ -1,0 +1,222 @@
+{
+  "layouts": [
+    {
+      "window": "基础立面评估 · 双目管道状态",
+      "size": [
+        940,
+        660
+      ],
+      "controls": {
+        "④ 保存并评估": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "识别诊断": {
+          "rect": [
+            223,
+            569,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "重新标定 / 质量检查": {
+          "rect": [
+            316,
+            12,
+            119,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "window": "基础立面评估 · 双目管道状态",
+      "size": [
+        1120,
+        760
+      ],
+      "controls": {
+        "④ 保存并评估": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "识别诊断": {
+          "rect": [
+            223,
+            669,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "重新标定 / 质量检查": {
+          "rect": [
+            316,
+            12,
+            119,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "window": "基础立面评估 · 双目管道状态",
+      "size": [
+        1120,
+        860
+      ],
+      "controls": {
+        "④ 保存并评估": {
+          "rect": [
+            111,
+            46,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "识别诊断": {
+          "rect": [
+            223,
+            769,
+            87,
+            27
+          ],
+          "fully_visible": true
+        },
+        "重新标定 / 质量检查": {
+          "rect": [
+            316,
+            12,
+            119,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "window": "连接双目相机并同步抓拍",
+      "size": [
+        850,
+        600
+      ],
+      "controls": {
+        "连续采集 20 对并使用": {
+          "rect": [
+            12,
+            130,
+            128,
+            27
+          ],
+          "fully_visible": true
+        },
+        "同步抓拍并使用": {
+          "rect": [
+            645,
+            561,
+            94,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "window": "连接双目相机并同步抓拍",
+      "size": [
+        1020,
+        700
+      ],
+      "controls": {
+        "连续采集 20 对并使用": {
+          "rect": [
+            12,
+            130,
+            128,
+            27
+          ],
+          "fully_visible": true
+        },
+        "同步抓拍并使用": {
+          "rect": [
+            815,
+            661,
+            94,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "window": "棋盘格双目标定向导",
+      "size": [
+        960,
+        700
+      ],
+      "controls": {
+        "完成标定并保存": {
+          "rect": [
+            851,
+            400,
+            96,
+            27
+          ],
+          "fully_visible": true
+        },
+        "生成 A4 棋盘格打印 PNG": {
+          "rect": [
+            20,
+            98,
+            147,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    },
+    {
+      "window": "棋盘格双目标定向导",
+      "size": [
+        1080,
+        780
+      ],
+      "controls": {
+        "完成标定并保存": {
+          "rect": [
+            971,
+            400,
+            96,
+            27
+          ],
+          "fully_visible": true
+        },
+        "生成 A4 棋盘格打印 PNG": {
+          "rect": [
+            20,
+            98,
+            147,
+            27
+          ],
+          "fully_visible": true
+        }
+      }
+    }
+  ],
+  "camera_opened": false,
+  "all_controls_visible": true
+}

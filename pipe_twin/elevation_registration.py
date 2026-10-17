@@ -19,6 +19,8 @@ from typing import Any
 
 import numpy as np
 
+from .camera_view import VIEW_POLICY, VIEW_POLICY_SHA256, normalize_camera_side
+
 
 class ElevationRegistrationError(ValueError):
     """Malformed model or local-surface registration input."""
@@ -140,6 +142,7 @@ def _observations(values: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
             "center": _finite_vector(raw.get("center_camera_mm"), "center_camera_mm"),
             "axis": _unit(raw.get("axis_camera"), "axis_camera"),
             "diameter_mm": _diameter(raw.get("diameter_mm"), "diameter_mm"),
+            "axis_center_resolved": not bool(raw.get("parallel_local", False)),
             "color": _color(raw.get("color_srgb"), "color_srgb"),
             "color_identity_validated": validated_color,
             "color_candidate_pipe_ids": color_hints})
@@ -244,12 +247,19 @@ def _relative_layout(specs: list[dict], observations: list[dict], model_xy: np.n
             "model_offset_transverse_mm": model_offsets[index].tolist(),
             "observed_offset_transverse_mm": observed_offsets[index].tolist(),
             "offset_error_mm": float(offset_errors[index]),
+            "model_diameter_mm": specs[target_index]["diameter_mm"],
+            "observed_diameter_mm": observations[observation_index]["diameter_mm"],
+            "diameter_error_mm": observations[observation_index]["diameter_mm"]-specs[target_index]["diameter_mm"],
+            "axis_center_resolved": observations[observation_index]["axis_center_resolved"],
         })
     pairwise = []
     for first in range(len(matches)):
         for second in range(first + 1, len(matches)):
             model_distance = float(np.linalg.norm(model_points[first] - model_points[second]))
             observed_distance = float(np.linalg.norm(observed_points[first] - observed_points[second]))
+            model_gap = model_distance - (specs[targets[first]]["diameter_mm"]+specs[targets[second]]["diameter_mm"])/2
+            resolved = observations[ids[first]]["axis_center_resolved"] and observations[ids[second]]["axis_center_resolved"]
+            observed_gap = (observed_distance - (observations[ids[first]]["diameter_mm"]+observations[ids[second]]["diameter_mm"])/2) if resolved else None
             pairwise.append({
                 "pipe_id_a": matches[first]["pipe_id"],
                 "pipe_id_b": matches[second]["pipe_id"],
@@ -258,11 +268,18 @@ def _relative_layout(specs: list[dict], observations: list[dict], model_xy: np.n
                 "model_distance_mm": model_distance,
                 "observed_distance_mm": observed_distance,
                 "error_mm": observed_distance - model_distance,
+                "model_surface_gap_mm": model_gap,
+                "observed_surface_gap_mm": observed_gap,
+                "surface_gap_error_mm": observed_gap-model_gap if resolved else None,
+                "axis_centers_resolved": resolved,
             })
     return {
         "coordinate_frame": "TRANSVERSE_PLANE_NORMAL_TO_COMMON_PIPE_AXIS",
         "measurement": "CENTRE_TO_CENTRE_RELATIVE_LAYOUT_MM",
         "axial_translation_excluded": True,
+        "camera_distance_used_as_model_target": False,
+        "axis_centers_resolved": all(observations[i]["axis_center_resolved"] for i in ids),
+        "surface_gap_definition": "TRANSVERSE_AXIS_SEPARATION_MINUS_MEASURED_RADII_SUM",
         "matches": matches,
         "pairwise": pairwise,
         "max_offset_error_mm": float(offset_errors.max()) if len(offset_errors) else 0.0,
@@ -282,6 +299,7 @@ def _result(reason: str, model_axis: np.ndarray, camera_axis: np.ndarray | None,
 
 def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Sequence[Mapping[str, Any]],
                        axis_world: Sequence[float] | None = None, *, anchors: Mapping[str, str] | None = None,
+                       camera_side_world: Sequence[float] | None = None,
                        config: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Metric cross-section registration with bounded maximum-consensus search.
 
@@ -290,10 +308,18 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
     one.  Axial translation is a display gauge, never an installation station.
     Unmatched clutter is allowed; anchors cannot override measured geometry.
     A truncated search cannot establish either a match or absence.
+    An optional camera-side vector constrains the viewing hemisphere in model
+    coordinates; it supplies neither translation nor an observed pipe identity.
     """
     cfg = _config(config)
     specs, model_axis = _model_inputs(pipe_specs, axis_world)
     parsed_obs = _observations(observations)
+    try:
+        side = normalize_camera_side(camera_side_world)
+    except ValueError as error:
+        raise ElevationRegistrationError(str(error)) from error
+    view_audit = {**VIEW_POLICY, "policy_sha256": VIEW_POLICY_SHA256,
+                  "camera_side_world": side, "rejected_pose_count": 0}
     if anchors is not None and (not isinstance(anchors, Mapping) or any(not isinstance(k, str) or not isinstance(v, str) for k,v in anchors.items())):
         raise ElevationRegistrationError("anchors must map observation IDs to pipe IDs")
     anchor_map = dict(anchors or {})
@@ -301,7 +327,9 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
             set(anchor_map.values()) - {s["pipe_id"] for s in specs} or len(set(anchor_map.values())) != len(anchor_map)):
         raise ElevationRegistrationError("anchors must map unique observation IDs to pipe IDs")
     if not parsed_obs:
-        return _result("NO_LOCAL_SURFACE_OBSERVATIONS", model_axis, None, status="INSUFFICIENT_OBSERVATIONS")
+        output = _result("NO_LOCAL_SURFACE_OBSERVATIONS", model_axis, None, status="INSUFFICIENT_OBSERVATIONS")
+        output["camera_view"] = dict(view_audit)
+        return output
     camera_axis, inliers, multiple_axes = _common_axis(parsed_obs)
     rejected = [o["observation_id"] for i,o in enumerate(parsed_obs) if i not in inliers]
 
@@ -309,6 +337,7 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
         output = _result(reason, model_axis, camera_axis, status=status)
         output["rejected_observation_ids"] = rejected.copy()
         output["settings"] = cfg
+        output["camera_view"] = dict(view_audit)
         return output
 
     if multiple_axes:
@@ -409,6 +438,15 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
                         rot, trans, errors = _rigid2(model_xy[targets], camera_xy[ids])
                         if float(errors.max()) > residual_gate:
                             return
+                        if side is not None:
+                            rlocal = np.eye(3); rlocal[:2, :2] = rot
+                            candidate_rotation = camera_basis @ rlocal @ model_basis.T
+                            # Camera +Z points into the scene.  The selected
+                            # outward side must point towards camera -Z.
+                            facing = -float((candidate_rotation @ side)[2])
+                            if facing <= VIEW_POLICY["minimum_facing_cosine_exclusive"]:
+                                view_audit["rejected_pose_count"] += 1
+                                return
                         if count > best_count:
                             solutions.clear(); best_count = count
                         key = (sign, tuple(assignments))
@@ -433,7 +471,9 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
         if limited:
             break
     if not solutions:
-        output = failure("SEARCH_SPACE_TRUNCATED" if limited else "NO_RIGID_MATCH_WITHIN_RESIDUAL_GATE", "SEARCH_LIMIT" if limited else "AMBIGUOUS")
+        reason = ("SEARCH_SPACE_TRUNCATED" if limited else "CAMERA_SIDE_CONFLICT"
+                  if view_audit["rejected_pose_count"] else "NO_RIGID_MATCH_WITHIN_RESIDUAL_GATE")
+        output = failure(reason, "SEARCH_LIMIT" if limited else "AMBIGUOUS")
         output.update(hypotheses_explored=nodes, pose_seeds=seed_count)
         return output
     ranked = sorted(solutions.values(), key=lambda s: (s["rms"],s["sign"],s["assignment"]))
@@ -451,6 +491,7 @@ def register_elevation(pipe_specs: Sequence[Mapping[str, Any]], observations: Se
         camera_xy_solution = (observed_centers @ b)[:, :2]
         relative_layout = _relative_layout(specs, obs, model_xy, camera_xy_solution, ids, targets, solution["rotation2"])
         return {"rotation_model_to_camera":rotation.tolist(), "translation_model_to_camera_mm":translation.tolist(),
+            "estimated_camera_side_world": (rotation.T @ np.array([0., 0., -1.])).tolist(),
             "camera_axis": b[:,2].tolist(), "rms_mm":solution["rms"],
             "matches":[{"pipe_id":specs[j]["pipe_id"],"observation_id":obs[i]["observation_id"],"residual_mm":float(e)} for i,j,e in zip(ids,targets,solution["errors"])],
             "relative_layout": relative_layout}

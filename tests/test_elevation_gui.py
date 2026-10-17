@@ -94,6 +94,52 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(len(repeated["capture"]["capture_groups"]), 1)
         self.assertNotIn("已开始新历史", self.dialog.message.get())
 
+    def test_auto_restore_uses_new_profile_calibration_and_clears_old_photos(self):
+        from pipe_twin.workbench_profile import save_camera_calibration_bundle
+        self.dialog.submit(False)
+        self.finish_worker()
+        historical = self.dialog.last_manifest
+        old_id = self.dialog.current_calibration()['calibration_id']
+        active = _calibration()
+        active['calibration_id'] = 'FIELD-NEW-001'
+        destination = Path(self.tmp.name)/'new-calibration.json'
+        save_camera_calibration_bundle(destination, active)
+        profile = {'calibration_current': active, 'calibration_path': str(destination),
+                   'rectification_recipe': None}
+        with mock.patch('pipe_twin.workbench_profile.load_profile', return_value=(profile, None)):
+            reopened = ElevationCaptureDialog(self.app, output_root=self.output, restore=True)
+        try:
+            self.assertEqual(reopened.current_calibration()['calibration_id'], 'FIELD-NEW-001')
+            self.assertGreater(len(reopened.pipes), 0)
+            self.assertIsNone(reopened.last_manifest)
+            self.assertEqual(reopened.temporal_frames, [])
+            for role in ('left', 'right'):
+                self.assertEqual(reopened.fields[role].get(), '')
+                self.assertIsNone(reopened.views[role].image)
+            reopened.load_session(historical)
+            self.assertEqual(reopened.current_calibration()['calibration_id'], old_id)
+            self.assertIsNotNone(reopened.views['left'].image)
+        finally:
+            reopened.close()
+
+    def test_image_guided_selection_and_diagnostic_overlay(self):
+        self.dialog.local_observation_label.set("图像引导圆柱")
+        self.dialog._local_observation_selected()
+        self.assertEqual(self.dialog.registration_settings["local_observation_mode"],"image_guided")
+        self.assertIn("剔除异常视差",self.dialog.message.get())
+        self.dialog.report={"local_surface":{"image_candidates":[
+            {"role":"left","candidate_id":"IMG-left-001","region_px":[20,40,100,30],
+             "reason_codes":["NO_DOMINANT_DISPARITY_SUPPORT"]}]}}
+        self.dialog.redraw()
+        self.assertEqual(len(self.dialog.views['left'].canvas.find_withtag('image-candidate')),2)
+        self.assertFalse(self.dialog.views['right'].canvas.find_withtag('image-candidate'))
+        self.dialog.show_measurement()
+        windows=[w for w in self.dialog.window.winfo_children() if isinstance(w,self.tk.Toplevel)]
+        self.assertTrue(windows)
+        texts=[w for w in windows[-1].winfo_children() if isinstance(w,self.tk.Text)]
+        self.assertIn('尚无可靠的管间尺寸对比',texts[0].get('1.0','end'))
+        windows[-1].destroy()
+
     def test_saved_scene_runs_real_analysis_and_renders_unknown_for_blank_images(self):
         self.dialog.submit(True)
         self.finish_worker()
@@ -101,6 +147,113 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertIn("不确定 12", self.dialog.summary.get())
         self.assertTrue((self.dialog.last_manifest.parent / "report.json").is_file())
         self.assertGreaterEqual(len(self.dialog.report["evidence_files"]), 2)
+
+    def test_left_drag_saves_source_pixels_reopens_and_runs_zone_analysis(self):
+        view = self.dialog.views["left"]
+        self.assertTrue(view.canvas.bind("<ButtonPress-1>"))
+        self.assertFalse(self.dialog.views["right"].canvas.bind("<ButtonPress-1>"))
+        self.dialog.report = {"old": True}
+        self.dialog.results = {"P001": {"installation_state": "INSTALLED"}}
+        self.dialog.zone_settings["right_roi_padding_px"] = 80
+        self.dialog.region_button.invoke()
+        view.transform = (2.0, 10.0, 10.0)
+        view.start_region(SimpleNamespace(x=210, y=130))
+        view.move_region(SimpleNamespace(x=30, y=50))
+        self.assertTrue(view.canvas.find_withtag("pending-zone"))
+        view.finish_region(SimpleNamespace(x=30, y=50))
+        self.assertEqual(self.dialog.zone_settings["zones"][0]["roi_rect_px"], [10, 20, 90, 40])
+        self.assertEqual(self.dialog.scope_label.get(), "分区分析")
+        self.assertFalse(self.dialog.region_selection_active)
+        self.assertIsNone(self.dialog.report)
+        self.assertFalse(self.dialog.results)
+        self.assertTrue(view.canvas.find_withtag("assessment-zone"))
+        self.assertTrue(all("left_region_px" not in p for p in self.dialog.pipes))
+        self.dialog.submit(False)
+        self.finish_worker()
+        saved = self.dialog.last_manifest
+        payload = json.loads(saved.read_text(encoding="utf-8"))["analysis"]["elevation_auto"]
+        self.assertEqual(payload["scope"], "zones")
+        self.assertEqual(payload["right_roi_padding_px"], 80)
+        self.assertEqual(payload["zones"][0]["roi_rect_px"], [10, 20, 90, 40])
+        self.dialog.load_session(saved)
+        self.assertTrue(view.canvas.find_withtag("assessment-zone"))
+        self.dialog.confirmed.set(True)
+        self.dialog.submit(True)
+        self.finish_worker()
+        self.assertEqual(self.dialog.report["scope"], "zones")
+        self.assertEqual(self.dialog.report["counts"]["UNKNOWN"], 12)
+        self.assertTrue(self.dialog.report["zone_registration_audit"])
+
+    def test_left_drag_clamps_edges_rejects_small_boxes_and_blocks_while_busy(self):
+        view = self.dialog.views["left"]
+        self.dialog.toggle_region_selection()
+        view.transform = (1., 0., 0.)
+        view.start_region(SimpleNamespace(x=-10, y=-10))
+        view.finish_region(SimpleNamespace(x=80, y=80))
+        self.assertFalse(self.dialog.zone_settings["zones"])
+        view.start_region(SimpleNamespace(x=10, y=10))
+        view.finish_region(SimpleNamespace(x=25, y=25))
+        self.assertTrue(self.dialog.region_selection_active)
+        self.assertFalse(self.dialog.zone_settings["zones"])
+        view.start_region(SimpleNamespace(x=80, y=80))
+        view.finish_region(SimpleNamespace(x=-50, y=-20))
+        self.assertEqual(self.dialog.zone_settings["zones"][0]["roi_rect_px"], [0, 0, 80, 80])
+        self.dialog.toggle_region_selection()
+        view.transform = (1., 0., 0.)
+        view.start_region(SimpleNamespace(x=80, y=80))
+        self.dialog.busy = True
+        try:
+            view.finish_region(SimpleNamespace(x=250, y=250))
+            self.dialog.add_left_region([100, 100, 80, 80])
+            self.assertEqual(len(self.dialog.zone_settings["zones"]), 1)
+        finally:
+            self.dialog.busy = False
+
+    def test_left_regions_append_with_unique_ids_and_respect_limit_and_full_frame(self):
+        for _ in range(8):
+            self.dialog.add_left_region([20, 20, 80, 80])
+        self.assertEqual([z["zone_id"] for z in self.dialog.zone_settings["zones"]],
+                         [f"Z{i:02d}" for i in range(1, 9)])
+        self.dialog.add_left_region([30, 30, 80, 80])
+        self.assertEqual(len(self.dialog.zone_settings["zones"]), 8)
+        self.dialog.toggle_region_selection()
+        self.assertFalse(self.dialog.region_selection_active)
+        self.assertIn("最多", self.dialog.message.get())
+        self.dialog.scope_label.set("全幅自动")
+        self.dialog._scope_selected()
+        self.assertFalse(self.dialog.zone_settings["zones"])
+        self.assertFalse(self.dialog.views["left"].canvas.find_withtag("assessment-zone"))
+
+    def test_new_photo_or_input_change_cancels_pending_drag(self):
+        view = self.dialog.views["left"]
+        self.dialog.add_left_region([20, 20, 80, 80])
+        self.dialog.toggle_region_selection()
+        view.transform = (1., 0., 0.)
+        view.start_region(SimpleNamespace(x=50, y=50))
+        self.dialog.invalidate()
+        view.finish_region(SimpleNamespace(x=150, y=150))
+        self.assertEqual(len(self.dialog.zone_settings["zones"]), 1)
+        self.assertFalse(self.dialog.region_selection_active)
+        self.dialog.toggle_region_selection()
+        self.dialog.load_images()
+        self.assertFalse(self.dialog.region_selection_active)
+        self.assertEqual(len(self.dialog.zone_settings["zones"]), 1)
+        cv2.imwrite(self.dialog.fields["left"].get(), np.zeros((240, 320, 3), np.uint8))
+        self.dialog.load_images()
+        self.assertFalse(self.dialog.zone_settings["zones"])
+        self.assertEqual(self.dialog.scope_label.get(), "全幅自动")
+
+    def test_zone_editor_cannot_overwrite_new_main_view_selection(self):
+        editor = ZoneEditorDialog(self.dialog)
+        editor.window.withdraw()
+        try:
+            self.dialog.add_left_region([20, 20, 80, 80])
+            editor.zones = [{"zone_id": "STALE", "roi_rect_px": [50, 50, 80, 80]}]
+            editor._save()
+            self.assertIn("已改变", editor.status.get())
+            self.assertEqual(self.dialog.zone_settings["zones"][0]["zone_id"], "Z01")
+        finally:
+            editor.window.destroy()
 
     def test_matching_controls_roundtrip_and_preserve_other_settings(self):
         self.dialog.analysis_settings = {"minimum_depth_mm": 350, "stereo_matching": {"block_size": 7}}
@@ -223,6 +376,112 @@ class ElevationGuiTests(unittest.TestCase):
         viewer.direction_mode.set("Z")
         viewer.apply_direction()
         self.assertTrue(np.allclose(self.dialog.registration_settings["axis_world"], [0, 0, 1]))
+
+    def test_camera_side_control_persists_and_clears_stale_results(self):
+        self.dialog.report = {"old": True}
+        self.dialog.camera_side_label.set("从 -Y 侧朝 +Y 看")
+        self.dialog._camera_side_selected()
+        self.assertIsNone(self.dialog.report)
+        self.assertEqual(self.dialog.registration_settings["camera_side_world"], [0, -1, 0])
+        self.assertEqual(self.dialog.registration_settings["axis_world"], [0, 0, 1])
+        self.dialog.submit(False)
+        self.finish_worker()
+        saved = self.dialog.last_manifest
+        self.dialog._set_camera_side([0, 1, 0])
+        self.dialog.load_session(saved)
+        self.assertEqual(self.dialog.camera_side_label.get(), "从 -Y 侧朝 +Y 看")
+        self.dialog.load_model(Path(self.dialog.fields["model"].get()))
+        self.assertNotIn("camera_side_world", self.dialog.registration_settings)
+        self.assertEqual(self.dialog.camera_side_label.get(), "自动判断（未指定）")
+
+    def test_viewer_separates_preview_from_applied_model_camera_side(self):
+        self.dialog.report = {"registration": {"status": "MATCHED",
+            "rotation_model_to_camera": [[0, 0, 1], [1, 0, 0], [0, 1, 0]],
+            "translation_model_to_camera_mm": [0, 0, 1000]}}
+        self.dialog.open_model_viewer()
+        viewer = self.dialog.model_viewer
+        viewer.view_mode.set("从 -Y 侧朝 +Y 看")
+        viewer.preview_side()
+        combined = viewer._rotation() @ viewer.registration_rotation
+        self.assertTrue(np.allclose(combined @ [0, -1, 0], [0, 0, 1]))
+        self.assertNotIn("camera_side_world", self.dialog.registration_settings)
+        viewer.apply_camera_side()
+        self.assertEqual(self.dialog.registration_settings["camera_side_world"], [0, -1, 0])
+        self.assertIsNone(self.dialog.report)
+        self.dialog.open_model_viewer()
+        stale = self.dialog.model_viewer
+        self.dialog._set_camera_side([1, 0, 0])
+        self.assertEqual(stale.view_mode.get(), "从 +X 侧朝 -X 看")
+        self.assertTrue(stale._is_current())
+        # Main-window side changes now update the linked viewer live. Other
+        # input changes still invalidate old model/photo geometry.
+        self.dialog.invalidate()
+        stale.apply_camera_side()
+        self.assertIn("输入已改变", stale.info.get())
+        self.assertEqual(self.dialog.registration_settings["camera_side_world"], [1, 0, 0])
+
+    def test_catalog_and_direction_share_selection_without_creating_identity(self):
+        self.dialog.show_catalog()
+        viewer = self.dialog.model_viewer
+        self.root.update_idletasks()
+        self.dialog.open_model_viewer()
+        self.assertIs(self.dialog.model_viewer, viewer)
+        generation = self.dialog.generation
+        settings = copy.deepcopy(self.dialog.registration_settings)
+        report = self.dialog.report
+        pid, x, y, _ = next(hit for hit in viewer.section_hits if hit[0] == "P006")
+        viewer.pick_section_pipe(SimpleNamespace(x=x, y=y))
+        self.assertEqual(self.dialog.selected_id(), pid)
+        for canvas in (viewer.canvas, viewer.section_canvas):
+            self.assertTrue(canvas.find_withtag("selected"))
+            self.assertTrue(all(f"pipe:{pid}" in canvas.gettags(item) for item in canvas.find_withtag("selected")))
+        line = viewer.projected_lines[2]
+        midpoint = line.mean(axis=0)
+        viewer.pick_model_pipe(SimpleNamespace(x=midpoint[0], y=midpoint[1]))
+        self.assertEqual(self.dialog.selected_id(), "P003")
+        self.dialog.tree.selection_set("P009")
+        self.root.update()
+        self.assertTrue(all("pipe:P009" in viewer.section_canvas.gettags(item)
+                            for item in viewer.section_canvas.find_withtag("selected")))
+        self.assertEqual(self.dialog.generation, generation)
+        self.assertEqual(self.dialog.registration_settings, settings)
+        self.assertIs(self.dialog.report, report)
+
+    def test_camera_arrow_updates_while_cross_section_remains_fixed(self):
+        self.dialog.show_catalog()
+        viewer = self.dialog.model_viewer
+        self.root.update_idletasks()
+        positions = {pid: (x, y) for pid, x, y, _ in viewer.section_hits}
+        directions = []
+        for label in ("从 +X 侧朝 -X 看", "从 -X 侧朝 +X 看"):
+            viewer.view_mode.set(label)
+            viewer.preview_side()
+            self.assertEqual(positions, {pid: (x, y) for pid, x, y, _ in viewer.section_hits})
+            line = next(item for item in viewer.section_canvas.find_withtag("camera_direction")
+                        if viewer.section_canvas.type(item) == "line")
+            x1, _, x2, _ = viewer.section_canvas.coords(line)
+            directions.append(x2-x1)
+        self.assertLess(directions[0], 0)
+        self.assertGreater(directions[1], 0)
+        self.assertNotIn("camera_side_world", self.dialog.registration_settings)
+        viewer.view_mode.set("从 +Z 侧朝 -Z 看")
+        viewer.preview_side()
+        captions = [viewer.section_canvas.itemcget(i, "text") for i in viewer.section_canvas.find_withtag("camera_direction")]
+        self.assertTrue(any("与截面同侧" in text for text in captions))
+
+    def test_axis_reverse_applies_to_both_views_and_invalid_axis_stays_unsaved(self):
+        self.dialog.show_catalog()
+        viewer = self.dialog.model_viewer
+        viewer.reverse_axis()
+        viewer.apply_direction()
+        self.assertEqual(self.dialog.registration_settings["axis_world"], [0, 0, -1])
+        self.assertTrue(np.allclose(viewer.section_basis[2], [0, 0, -1]))
+        self.assertTrue(np.allclose(viewer.display_axis, [0, 0, -1]))
+        self.assertTrue(viewer._is_current())
+        viewer.custom.set("invalid")
+        viewer.apply_direction()
+        self.assertEqual(self.dialog.registration_settings["axis_world"], [0, 0, -1])
+        self.assertIn("格式", viewer.info.get())
 
     def test_restore_keeps_verified_registration_settings_after_photo_load(self):
         manifest = {"model": {"source_unit": "millimeter", "path": None}, "capture": {"capture_groups": [{"views": {"left": {"timestamp_source": "MANIFEST_OPERATOR_CONFIRMED"}, "right": {"timestamp_source": "MANIFEST_OPERATOR_CONFIRMED"}}}]}}
@@ -347,6 +606,85 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertFalse(wizard.window.winfo_exists())
         self.assertFalse(camera.window.winfo_exists())
         # tearDown owns the final root destruction.
+
+    def test_continuous_capture_save_reopen_and_calibration_change(self):
+        from pipe_twin.stereo_camera import CapturedStereoPair
+        self.dialog.capture_camera()
+        camera = self.dialog.camera_dialog
+        camera.window.withdraw()
+        frames = []
+        for i in range(20):
+            left = np.full((480, 640, 3), 80+i, np.uint8)
+            right = np.full_like(left, 100+i)
+            stamp = f"2026-10-12T10:00:{i:02d}+08:00"
+            frames.append(CapturedStereoPair(left, right, stamp, stamp, 0., "HOST_SYSTEM_CLOCK", {}))
+        session = mock.Mock(exposure_ms=None)
+        session.read_pair.side_effect = frames
+        camera.session = session
+        camera._show_pair = mock.Mock()
+        with mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(self.tmp.name)), mock.patch.object(self.dialog, "_persist_profile"):
+            camera.capture_burst()
+            for _ in range(20):
+                camera.window.after_cancel(camera._burst_after_id)
+                camera._burst_tick()
+        self.assertEqual(len(self.dialog.temporal_frames), 20)
+        self.assertTrue(self.dialog.confirmed.get())
+        self.assertTrue(session.close.called)
+        self.dialog.submit(False)
+        self.finish_worker()
+        self.app.messagebox.showerror.assert_not_called()
+        path = self.dialog.last_manifest
+        self.dialog.load_session(path)
+        self.assertEqual(len(self.dialog.temporal_frames), 20)
+        self.assertEqual(len(json.loads(path.read_text(encoding="utf-8"))["capture"]["capture_groups"]), 1)
+        self.dialog.fields["calibration"].set("new-calibration.json")
+        self.assertEqual(self.dialog.temporal_frames, [])
+        self.assertIsNone(self.dialog.last_manifest)
+
+    def test_stopping_burst_never_adopts_partial_capture(self):
+        self.dialog.capture_camera()
+        camera = self.dialog.camera_dialog
+        camera.session = mock.Mock()
+        old_paths = {role: self.dialog.fields[role].get() for role in ("left", "right")}
+        with mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(self.tmp.name)):
+            camera.capture_burst()
+        camera.stop()
+        self.assertFalse(camera._burst_active)
+        self.assertIsNone(camera._burst_after_id)
+        self.assertEqual(self.dialog.temporal_frames, [])
+        self.assertEqual(old_paths, {role: self.dialog.fields[role].get() for role in old_paths})
+
+    def test_print_dimension_is_not_silently_used_as_measured_dimension(self):
+        self.dialog.open_calibration()
+        wizard = self.dialog.calibration_dialog
+        wizard.window.withdraw()
+        wizard.square_mm.set("19")
+        wizard.measured_square_mm.set("17")
+        wizard.columns.set("9")
+        wizard.rows.set("7")
+        self.assertEqual(wizard._pattern(), (8, 6))
+        self.assertIn("本次求解格长：17", wizard.fit_hint.get())
+        self.app.filedialog.asksaveasfilename.return_value = str(Path(self.tmp.name)/"board.png")
+        wizard.export_target()
+        self.assertEqual(wizard.measured_square_mm.get(), "")
+
+    def test_camera_rejects_stale_rectification_after_calibration_change(self):
+        self.dialog.capture_camera()
+        camera = self.dialog.camera_dialog
+        self.dialog.calibration_override = dict(_calibration(), calibration_id="FIELD-CHANGED")
+        with self.assertRaisesRegex(ValueError, "标定发生改变"):
+            camera._check_calibration_binding()
+
+    def test_wizard_and_measurement_release_each_others_camera(self):
+        self.dialog.open_calibration()
+        wizard_session = mock.Mock()
+        self.dialog.calibration_dialog.session = wizard_session
+        self.dialog.capture_camera()
+        wizard_session.close.assert_called_once()
+        capture_session = mock.Mock()
+        self.dialog.camera_dialog.session = capture_session
+        self.dialog.open_calibration()
+        capture_session.close.assert_called_once()
         self.dialog = ElevationCaptureDialog(self.app, output_root=self.output, restore=False)
         self.dialog.window.withdraw()
 
