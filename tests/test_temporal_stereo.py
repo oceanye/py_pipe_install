@@ -99,6 +99,45 @@ def test_intermittent_outliers_and_insufficient_support():
     assert audit["required_support_frames"] == 4
 
 
+def test_one_sided_outliers_do_not_displace_a_supported_static_surface():
+    # Eight real measurements form one 1.5px-wide cluster; four gross errors
+    # pull the ordinary median to its far edge, losing three good samples.
+    values = [11.25, 11.3, 11.4, 11.5, 12.4, 12.5, 12.6, 12.75, 30, 31, 32, 33]
+    samples = [np.full((2, 3), v, np.float32) for v in values]
+    # A never-observed point and a too-sparse point must remain missing.
+    for sample in samples:
+        sample[0, 0] = np.nan
+    for sample in samples[:8]:
+        sample[0, 1] = np.nan
+    fused, audit = _fuse_disparities(samples)
+    assert fused[1, 1] == pytest.approx(11.95, abs=.01)
+    assert np.isnan(fused[0, :2]).all()
+    assert audit["majority_cluster_recovered_pixels"] == 4
+
+
+@pytest.mark.parametrize("upper", [[13, 13, 13, 13], [13, 13.1, 13.2, 13.3]])
+def test_equal_competing_depth_modes_are_not_a_static_surface(upper):
+    samples = [np.full((2, 3), value, np.float32) for value in [11, 11, 11, 11]+upper]
+    fused, _ = _fuse_disparities(samples)
+    # The ordinary median 12 was never measured: accepting +/-1 around it
+    # would turn two equally supported alternatives into an invented surface.
+    assert np.isnan(fused).all()
+
+
+def test_majority_recovery_is_order_independent_and_never_uses_other_pixels():
+    values = [11.25, 11.3, 11.4, 11.5, 12.4, 12.5, 12.6, 12.75, 30, 31, 32, 33]
+    samples = [np.full((2, 3), value, np.float32) for value in values]
+    for sample in samples:
+        sample[0, 0] = np.nan
+    before = [sample.copy() for sample in samples]
+    forward, _ = _fuse_disparities(samples)
+    backward, _ = _fuse_disparities(list(reversed(samples)))
+    np.testing.assert_array_equal(forward, backward)
+    assert np.isnan(forward[0, 0])
+    for a, b in zip(samples, before):
+        np.testing.assert_array_equal(a, b)
+
+
 def test_inconsistent_eyes_remain_invalid_after_fusion():
     frames, cal = _burst(5)
     for frame in frames:

@@ -13,7 +13,7 @@ import math
 import cv2
 import numpy as np
 
-REVISION = "image-strips-direction-preserving-v3"
+REVISION = "image-strips-overlapping-hue-v4"
 POLICY = {"maximum_regions": 24, "minimum_pixels": 120, "minimum_length_px": 48,
           "minimum_aspect": 2.0, "minimum_fill": 0.55,
           "axis_tolerance_deg": 12.0, "disparity_residual_px": 2.0,
@@ -23,7 +23,8 @@ POLICY = {"maximum_regions": 24, "minimum_pixels": 120, "minimum_length_px": 48,
           "maximum_local_windows": 3, "local_window_length_fraction": 0.5,
           "local_window_min_length_px": 160, "local_window_width_multiple": 4.0,
           "direction_kernel_odd": True, "clipped_minimum_aspect": 1.3,
-          "clipped_boundary_margin_px": 2, "global_axis_filter": False}
+          "clipped_boundary_margin_px": 2, "global_axis_filter": False,
+          "hue_center_step": 15, "hue_half_width": 15}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
 
 
@@ -48,9 +49,14 @@ def propose_regions(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     threshold, _ = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     chromatic = (hsv[:, :, 1] >= POLICY["chromatic_saturation_min"]) & (hsv[:, :, 2] >= 40)
-    masks = [(f"hue-{hue}", chromatic & (np.minimum(abs(hsv[:, :, 0].astype(float)-hue),
-                                                     180-abs(hsv[:, :, 0].astype(float)-hue)) <= 15))
-             for hue in range(0, 180, 30)]
+    # Overlap equal-width colour windows instead of joining broad colour bins:
+    # a small shade change at H=105 must not split one blue surface. Each
+    # window still spans only 30 hue units, and spatial gaps remain gaps.
+    # Keep the original centers first for stable labels when masks tie.
+    centers = list(range(0, 180, 30)) + list(range(POLICY["hue_center_step"], 180, 30))
+    hue_values = hsv[:, :, 0].astype(np.int16)
+    masks = [(f"hue-{hue}", chromatic & (np.minimum(abs(hue_values-hue),
+                  180-abs(hue_values-hue)) <= POLICY["hue_half_width"])) for hue in centers]
     masks.append(("neutral", (hsv[:, :, 1] < 65) & (gray >= max(100, threshold))))
     proposals = []
     component_limit_hit = False

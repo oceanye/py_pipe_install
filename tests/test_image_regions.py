@@ -50,6 +50,36 @@ def test_background_majority_direction_does_not_erase_visible_pipes():
     assert not audit['truncated']
 
 
+def test_hue_boundary_does_not_fragment_one_pipe_or_bridge_a_dark_gap():
+    """A change of blue shade across a bin boundary is not a pipe boundary."""
+    hsv = np.zeros((260, 640, 3), np.uint8)
+    hsv[:, :, 2] = 45
+    for y0 in (30, 150):
+        for x in range(40, 600):
+            split = y0 + 40 + round(25*np.sin(x/70))
+            hsv[y0:split, x] = (102, 230, 210)
+            hsv[split:y0+80, x] = (108, 230, 210)
+    image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    before = image.copy()
+    regions, audit = propose_regions(image)
+    assert len(regions) == 2
+    assert [r['width_px'] for r in regions] == pytest.approx([79, 79], abs=2)
+    assert all(r['length_px'] > 550 for r in regions)
+    assert all(r['region_px'][3] < 85 for r in regions)
+    assert not audit['truncated']
+    np.testing.assert_array_equal(image, before)
+
+
+def test_hue_overlap_preserves_distinct_touching_colours():
+    hsv = np.zeros((200, 600, 3), np.uint8)
+    hsv[:, :, 2] = 45
+    hsv[30:90, 40:560] = (60, 230, 210)
+    hsv[90:150, 40:560] = (120, 230, 210)
+    regions, _ = propose_regions(cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR))
+    assert len(regions) == 2
+    assert [r['width_px'] for r in regions] == pytest.approx([59, 59], abs=2)
+
+
 def test_clipped_width_is_distinguished_from_clipped_pipe_ends():
     image = np.full((320, 640, 3), 60, np.uint8)
     cv2.rectangle(image, (40, 0), (590, 30), (30, 30, 230), -1)
@@ -75,6 +105,22 @@ def test_gui_explains_missing_depth_and_clipped_candidate_without_claiming_measu
     assert '95.0%' in text and '包含没有深度的区域' in text
     assert '保留完整管宽' in text and '2.0°' in text
     assert '图像唯一匹配：未计算' in text and '合格三维管段 0' in text
+
+
+def test_gui_distinguishes_static_scene_from_inconsistent_matching():
+    from pipe_twin.elevation_gui import recognition_diagnostic_lines
+    report = {'temporal_fusion': {'status': 'VALID', 'accepted_frames': 20, 'requested_frames': 20,
+        'frames': [{'motion': {r: {'passed': True} for r in ('left', 'right')}}],
+        'left': {'required_support_frames': 10, 'majority_cluster_recovered_pixels': 25,
+                 'insufficient_observation_pixels': 40, 'inconsistent_observation_pixels': 10,
+                 'pre_consistency_valid_fraction': .30, 'post_consistency_valid_fraction': .25}}}
+    text = '\n'.join(recognition_diagnostic_lines(report))
+    assert '本序列通过静止检查' in text
+    assert '不表示设备或管道发生移动' in text
+    assert '重新找回 25 个像素' in text and '30.0% → 左右复核后 25.0%' in text
+    assert '包含背景，不代表管面合格点数' in text
+    report['temporal_fusion']['frames'][0]['motion']['left']['passed'] = False
+    assert '本序列通过静止检查' not in '\n'.join(recognition_diagnostic_lines(report))
 
 
 def test_disparity_filter_removes_outliers_and_never_fills_holes():

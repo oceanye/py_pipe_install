@@ -62,7 +62,7 @@ REASON_TEXT = {
     "REPEATED_REGISTERED_FREE_SPACE": "连续独立照片确认预期位置为空",
     "NO_LOCAL_SURFACE_OBSERVATIONS": "没有通过三维验证的管段",
     "INSUFFICIENT_VALID_DEPTH": "有效深度不足",
-    "NO_DOMINANT_DISPARITY_SUPPORT": "管面深度不一致",
+    "NO_DOMINANT_DISPARITY_SUPPORT": "管面双目匹配缺少一致深度",
     "DISCONTINUOUS_AXIAL_DEPTH_SUPPORT": "沿管长的有效深度不连续",
     "CYLINDER_FIT_RESIDUAL_TOO_LARGE": "圆柱拟合误差过大",
     "LOCAL_AXIS_SUPPORT_TOO_SHORT": "断面附近采样范围不足以稳定估计管轴方向",
@@ -119,11 +119,24 @@ def recognition_diagnostic_lines(report: dict | None) -> list[str]:
             value = temporal.get(role) or {}
             lines.append(f"{label}目：每点至少 {value.get('required_support_frames', '—')} 帧支持；"
                          f"视差波动 MAD 中位数 {value.get('median_disparity_mad_px', '—')} px")
+            if value.get("majority_cluster_recovered_pixels") is not None:
+                lines.append(f"  时间检查重新找回 {value['majority_cluster_recovered_pixels']} 个像素；"
+                             f"支持帧不足 {value.get('insufficient_observation_pixels', 0)} 个，"
+                             f"匹配仍不稳定 {value.get('inconsistent_observation_pixels', 0)} 个"
+                             "（左右复核前的全图统计，包含背景，不代表管面合格点数）。")
+            if value.get("post_consistency_valid_fraction") is not None:
+                lines.append(f"  全图有效深度：时间检查后 {100*value['pre_consistency_valid_fraction']:.1f}% → "
+                             f"左右复核后 {100*value['post_consistency_valid_fraction']:.1f}%。")
         reasons = list(temporal.get("reason_codes", []))
         reasons.extend(code for frame in temporal.get("frames", []) for code in frame.get("reason_codes", []))
         if reasons:
             lines.append("序列提示：" + "；".join(REASON_TEXT.get(code, code) for code in dict.fromkeys(reasons)))
-        lines.append("运动/曝光不稳定时保持机位、待画面稳定后重新连续采集；纹理不足时可能无法确认静止。")
+        frames = temporal.get("frames") or []
+        if frames and all(all((frame.get("motion") or {}).get(role, {}).get("passed")
+                              for role in ("left", "right")) for frame in frames):
+            lines.append("本序列通过静止检查；管面深度不一致是匹配证据问题，不表示设备或管道发生移动。")
+        else:
+            lines.append("运动/曝光不稳定时保持机位、待画面稳定后重新连续采集；纹理不足时可能无法确认静止。")
     else:
         lines.append("本次使用单对图像，未进行多帧融合。")
     def percent(value):

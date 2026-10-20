@@ -17,12 +17,13 @@ import numpy as np
 
 from .stereo_analyzer import StereoDepthResult
 
-REVISION = "static-burst-disparity-v1"
+REVISION = "static-burst-majority-consensus-v2"
 POLICY = {"max_frames": 24, "min_frames": 3, "max_duration_s": 30,
           "min_support_fraction": .5, "inlier_delta_px": 1., "max_mad_px": .6,
           "motion_median_px": .35, "motion_p95_px": .9,
           "min_tracks": 24, "min_track_tiles": 6, "max_brightness_shift": 12.,
-          "max_changed_fraction": .02, "max_tile_difference": 20.}
+          "max_changed_fraction": .02, "max_tile_difference": 20.,
+          "require_observed_majority": True, "majority_interval_reseed": True}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
 
 
@@ -101,23 +102,71 @@ def static_pair_check(reference: np.ndarray, image: np.ndarray) -> dict:
             "maximum_tile_difference": tile_difference}
 
 
+def _majority_seed(stack, selected, minimum):
+    """Find a bounded majority interval only where the ordinary median fails.
+
+    A one-sided tail of gross mismatches can displace the median to the edge
+    of the real cluster. Search the shortest interval containing a strict
+    majority of measured frames, not a CAD-derived disparity. Its midpoint
+    is only a seed: the output remains the median of agreeing observations.
+    """
+    ordered = np.sort(stack[:, selected], axis=0)
+    needed = minimum[selected]
+    columns = np.arange(ordered.shape[1])
+    best_width = np.full(ordered.shape[1], np.inf, np.float32)
+    seed = np.full(ordered.shape[1], np.nan, np.float32)
+    for start in range(len(stack)):
+        end = start + needed - 1
+        in_bounds = end < len(stack)
+        high = ordered[np.minimum(end, len(stack)-1), columns]
+        low = ordered[start]
+        width = high-low
+        better = in_bounds & np.isfinite(width) & (width < best_width)
+        best_width[better] = width[better]
+        seed[better] = (low[better]+high[better])*.5
+    seed[best_width > 2*POLICY["inlier_delta_px"]] = np.nan
+    return seed
+
+
 def _fuse_disparities(samples: list[np.ndarray]) -> tuple[np.ndarray, dict]:
     """Tile the reduction to bound peak memory at full camera resolution."""
     shape = samples[0].shape
     output = np.full(shape, np.nan, np.float32)
     required = max(POLICY["min_frames"], math.ceil(len(samples)*POLICY["min_support_fraction"]))
     counts, spreads = [], []
+    recovered = 0
+    insufficient = 0
+    inconsistent = 0
     for y in range(0, shape[0], 64):
         stack = np.stack([value[y:y+64] for value in samples])
+        finite = np.isfinite(stack)
+        available = finite.sum(axis=0)
+        # The frame quorum is unchanged. Additionally, two equally supported
+        # competing layers must never masquerade as one stable surface.
+        minimum = np.maximum(required, available//2+1)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)  # unsupported pixels stay NaN
             center = np.nanmedian(stack, axis=0)
-            inliers = np.isfinite(stack) & (np.abs(stack-center) <= POLICY["inlier_delta_px"])
+            inliers = finite & (np.abs(stack-center) <= POLICY["inlier_delta_px"])
+            count = np.sum(inliers, axis=0)
+            retry = (available >= minimum) & (count < minimum)
+            if np.any(retry):
+                center[retry] = _majority_seed(stack, retry, minimum)
+                inliers = finite & (np.abs(stack-center) <= POLICY["inlier_delta_px"])
+                count = np.sum(inliers, axis=0)
+            retained = np.where(inliers, stack, np.nan)
+            median = np.nanmedian(retained, axis=0)
+            # A reseeded interval may be asymmetric. Require its samples to
+            # agree with the final measured median as well, not just the seed.
+            inliers &= np.abs(stack-median) <= POLICY["inlier_delta_px"]
             count = np.sum(inliers, axis=0)
             retained = np.where(inliers, stack, np.nan)
             median = np.nanmedian(retained, axis=0)
             mad = np.nanmedian(np.abs(retained-median), axis=0)
-        valid = (count >= required) & (mad <= POLICY["max_mad_px"])
+        valid = (count >= minimum) & (mad <= POLICY["max_mad_px"])
+        recovered += int(np.count_nonzero(valid & retry))
+        insufficient += int(np.count_nonzero(available < required))
+        inconsistent += int(np.count_nonzero((available >= required) & ~valid))
         output[y:y+64] = np.where(valid, median, np.nan)
         counts.extend(count[valid][::32].tolist())
         spreads.extend(mad[valid][::32].tolist())
@@ -125,6 +174,9 @@ def _fuse_disparities(samples: list[np.ndarray]) -> tuple[np.ndarray, dict]:
                     "median_support_frames": float(np.median(counts)) if counts else None,
                     "median_disparity_mad_px": float(np.median(spreads)) if spreads else None,
                     "p95_disparity_mad_px": float(np.percentile(spreads, 95)) if spreads else None,
+                    "majority_cluster_recovered_pixels": recovered,
+                    "insufficient_observation_pixels": insufficient,
+                    "inconsistent_observation_pixels": inconsistent,
                     "pre_consistency_valid_fraction": float(np.mean(np.isfinite(output)))}
 
 
@@ -212,6 +264,7 @@ def fuse_stereo_burst(frames: list[dict], *, load_images: Callable, compute_dept
             masks[role] = valid & np.isfinite(opposite) & (np.abs(disparity-opposite) <= limit)
         for role in fused:
             fused[role][~masks[role]] = np.nan
+            audit[role]["post_consistency_valid_fraction"] = float(np.mean(masks[role]))
     depths = {}
     for role, disparity in fused.items():
         valid = np.isfinite(disparity) & (disparity > 0)
