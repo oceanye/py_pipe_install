@@ -21,18 +21,23 @@ def main():
     parser.add_argument('mode',choices=('active','fixed60'))
     parser.add_argument('--raw',default='raw-burst')
     parser.add_argument('--tag',default='')
+    parser.add_argument('--output-root',type=Path,default=OUT)
+    parser.add_argument('--variants',nargs='+',choices=('single','burst'),default=['single','burst'])
+    parser.add_argument('--num-disparities',type=int)
+    parser.add_argument('--preprocessing',choices=('none','low_light'))
     args=parser.parse_args()
     mode=args.mode
-    out=OUT/(mode+args.tag)
+    output_root=args.output_root.resolve()
+    out=output_root/(mode+args.tag)
     out.mkdir(parents=True,exist_ok=True)
-    raw=OUT/args.raw
+    raw=output_root/args.raw
     frames=json.loads((raw/'raw-manifest.json').read_text(encoding='utf-8'))['frames']
     active=ROOT/'outputs/measurement_workbench/calibration_current.json'
     active_hash=hashlib.sha256(active.read_bytes()).hexdigest()
     bundle=json.loads(active.read_text(encoding='utf-8'))
     calibration=bundle['stereo_calibration']; recipe=bundle['rectification_recipe']
     if mode=='fixed60':
-        path=OUT/'fixed60-bounded-result.json'
+        path=output_root/'fixed60-bounded-result.json'
         digest=hashlib.sha256(path.read_bytes()).hexdigest()
         solve=json.loads(path.read_text(encoding='utf-8'))
         c=solve['selected']
@@ -79,8 +84,12 @@ def main():
     loaded=load_elevation_dataset(old)
     manifest=loaded['manifest']
     analysis={k:v for k,v in manifest['analysis'].items() if k not in ('mode','elevation_auto')}
+    if args.num_disparities is not None:
+        analysis['stereo_matching']['num_disparities']=args.num_disparities
+    if args.preprocessing is not None:
+        analysis['stereo_matching']['preprocessing']=args.preprocessing
     results=[]
-    for variant in ('single','burst'):
+    for variant in args.variants:
         last=records[-1]
         path=create_elevation_dataset(output_root=out/variant,calibration=calibration,
             left_path=Path(last['left_path']),right_path=Path(last['right_path']),

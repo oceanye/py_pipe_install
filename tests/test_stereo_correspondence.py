@@ -78,3 +78,48 @@ def test_missing_depth_cannot_report_zero_ambiguity_as_good():
     result = patch_correspondence(left,right,z,valid,camera,camera,60,"left",region)
     assert result["status"] == "INSUFFICIENT_SAMPLES"
     assert "sampled_unique_match_fraction" not in result
+
+
+def test_smooth_surface_is_diagnosed_even_without_any_depth():
+    left, right, z, valid, camera, region = scene('flat')
+    valid[:] = False
+    region['axis_to_epipolar_deg'] = 3.
+    region['transverse_boundary_contacts'] = ['top']
+    result = patch_correspondence(left, right, z, valid, camera, camera, 60, 'left', region)
+    assert result['status'] == 'INSUFFICIENT_SAMPLES'
+    assert result['surface_texture']['low_texture_fraction'] == 1.
+    assert result['surface_texture']['sample_count'] <= 512
+    assert 'LOW_SURFACE_HORIZONTAL_TEXTURE' in result['warning_codes']
+    assert 'SMOOTH_AXIS_NEAR_EPIPOLAR' in result['warning_codes']
+    assert 'CANDIDATE_WIDTH_CLIPPED' in result['warning_codes']
+    assert 'sampled_unique_match_fraction' not in result
+    assert not result['measurement_authority']
+    assert not valid.any()
+
+
+def test_surface_texture_does_not_only_sample_successful_depth_or_background_edges():
+    from pipe_twin.stereo_correspondence import surface_texture
+    left, right, z, valid, camera, region = scene('flat')
+    x, y, w, h = region['region_px']
+    # A bright boundary is outside the painted interior and must not count.
+    left[y:y+h, x:x+w] = 90
+    left[y-5:y, :] = 255
+    left[y+h:y+h+5, :] = 255
+    result = surface_texture(left, region)
+    assert result['low_texture_fraction'] == 1.
+    a, b, z, valid, camera, region = scene('random')
+    valid[:] = False
+    with_depth = patch_correspondence(a, b, z, ~valid, camera, camera, 60, 'left', region)
+    no_depth = patch_correspondence(a, b, z, valid, camera, camera, 60, 'left', region)
+    assert no_depth['surface_texture'] == with_depth['surface_texture']
+    assert no_depth['surface_texture']['low_texture_fraction'] < .05
+
+
+def test_too_thin_surface_does_not_claim_texture_is_good():
+    from pipe_twin.stereo_correspondence import surface_texture
+    left, _, _, _, _, region = scene()
+    region['mask'][:] = 0
+    region['mask'][50:53, :] = 1
+    result = surface_texture(left, region)
+    assert result['status'] == 'INSUFFICIENT_SAMPLES'
+    assert result['low_texture_fraction'] is None

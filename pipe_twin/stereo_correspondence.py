@@ -11,13 +11,43 @@ import json
 import cv2
 import numpy as np
 
-REVISION = "sampled-stereo-patch-check-v1"
+REVISION = "sampled-stereo-patch-check-v2"
 POLICY = {"maximum_samples": 512, "patch_half_width": 5, "patch_half_height": 4,
           "minimum_horizontal_texture": 1.5, "minimum_correlation": .8,
           "minimum_uniqueness_margin": .05,
           "alternative_offsets_px": [-32, -16, -8, -4, 4, 8, 16, 32],
-          "minimum_samples": 32, "highlight_channel_min": 250}
+          "minimum_samples": 32, "highlight_channel_min": 250,
+          "near_epipolar_angle_deg": 12., "surface_texture_independent_of_depth": True}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
+
+
+def surface_texture(image, region):
+    """Sample the whole candidate interior, even where stereo has no depth.
+
+    Require patches wholly inside the mask so paint/background boundaries
+    cannot disguise a smooth surface. This is an image diagnostic, not a
+    confidence score or permission to create depth.
+    """
+    x, y, w, h = region['region_px']
+    rx, ry = POLICY['patch_half_width'], POLICY['patch_half_height']
+    mask = region['mask'].astype(np.uint8)
+    interior = cv2.erode(mask, np.ones((2*ry+1, 2*rx+1), np.uint8),
+                         borderType=cv2.BORDER_CONSTANT, borderValue=0)
+    rows, cols = np.nonzero(interior)
+    result = {'scope': 'CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH',
+              'sample_count': min(len(rows), POLICY['maximum_samples']),
+              'horizontal_texture_median': None, 'low_texture_fraction': None}
+    if len(rows) < POLICY['minimum_samples']:
+        return result | {'status': 'INSUFFICIENT_SAMPLES'}
+    indexes = np.linspace(0, len(rows)-1, result['sample_count'], dtype=int)
+    rows, cols = rows[indexes], cols[indexes]
+    dy, dx = np.mgrid[-ry:ry+1, -rx:rx+1]
+    gray = cv2.cvtColor(image[y:y+h, x:x+w], cv2.COLOR_BGR2GRAY)
+    patches = gray[rows[:, None, None]+dy, cols[:, None, None]+dx].astype(np.float32)
+    texture = patches.std(axis=2).mean(axis=1)
+    return result | {'status': 'DIAGNOSTIC_ONLY',
+                     'horizontal_texture_median': float(np.median(texture)),
+                     'low_texture_fraction': float(np.mean(texture < POLICY['minimum_horizontal_texture']))}
 
 
 def patch_correspondence(image, peer_image, depth, valid, camera, peer_camera,
@@ -36,11 +66,20 @@ def patch_correspondence(image, peer_image, depth, valid, camera, peer_camera,
     highlights = np.count_nonzero(patch >= POLICY["highlight_channel_min"], axis=2) >= 2
     eligible = mask & valid[y:y+h, x:x+w] & np.isfinite(depth[y:y+h, x:x+w]) & (depth[y:y+h, x:x+w] > 0)
     rows, cols = np.nonzero(eligible)
+    surface = surface_texture(image, region)
+    warnings = []
+    if surface['low_texture_fraction'] is not None and surface['low_texture_fraction'] > .5:
+        warnings.append('LOW_SURFACE_HORIZONTAL_TEXTURE')
+        angle = region.get('axis_to_epipolar_deg')
+        if angle is not None and angle <= POLICY['near_epipolar_angle_deg']:
+            warnings.append('SMOOTH_AXIS_NEAR_EPIPOLAR')
+    if region.get('transverse_boundary_contacts'):
+        warnings.append('CANDIDATE_WIDTH_CLIPPED')
     audit = {"revision": REVISION, "policy_sha256": POLICY_SHA256,
              "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
              "measurement_authority": False, "eligible_depth_points": len(rows),
              "sample_count": 0, "highlight_fraction": float(highlights[mask].mean()) if mask.any() else 0.,
-             "warning_codes": []}
+             "surface_texture": surface, "warning_codes": warnings}
     if not len(rows):
         return audit | {"status": "INSUFFICIENT_SAMPLES"}
     indexes = np.linspace(0, len(rows)-1, min(len(rows), POLICY["maximum_samples"]), dtype=int)
@@ -93,7 +132,6 @@ def patch_correspondence(image, peer_image, depth, valid, camera, peer_camera,
     textured = texture >= POLICY["minimum_horizontal_texture"]
     similar = correlation >= POLICY["minimum_correlation"]
     unique = margin >= POLICY["minimum_uniqueness_margin"]
-    warnings = []
     if np.mean(~textured[tested]) > .5:
         warnings.append("LOW_HORIZONTAL_TEXTURE")
     if np.mean(~similar[tested]) > .5:

@@ -68,6 +68,9 @@ REASON_TEXT = {
     "LOCAL_AXIS_SUPPORT_TOO_SHORT": "连续管段太短",
     "PROJECTED_AXIS_DISAGREEMENT": "三维轴与图像方向不一致",
     "LOW_HORIZONTAL_TEXTURE": "沿视差方向纹理不足",
+    "LOW_SURFACE_HORIZONTAL_TEXTURE": "整个候选管面多数区域沿视差方向纹理不足",
+    "SMOOTH_AXIS_NEAR_EPIPOLAR": "光滑管面长方向接近视差方向，沿管长匹配容易出现多解",
+    "CANDIDATE_WIDTH_CLIPPED": "候选横截面碰到图像或框选边界，请调整取景保留完整管宽",
     "LOW_PATCH_CORRELATION": "左右管面图像对应较差",
     "AMBIGUOUS_PATCH_CORRESPONDENCE": "多个位置图像相似，匹配不唯一",
     "COLLINEAR_WITHOUT_TWO_ANCHORS": "可见管道布局不足以唯一对应",
@@ -128,6 +131,13 @@ def recognition_diagnostic_lines(report: dict | None) -> list[str]:
         lines += ["", f"{candidate.get('candidate_id')} · {eye} · 区域 {candidate.get('region_px')}",
                   f"用于拟合的有效深度：{percent(candidate.get('valid_depth_fraction'))}"]
         diagnostic = candidate.get("correspondence_diagnostic") or {}
+        surface_texture = diagnostic.get("surface_texture") or {}
+        if surface_texture:
+            lines.append(f"全候选管面弱纹理比例：{percent(surface_texture.get('low_texture_fraction'))}"
+                         f"（内部抽样 {surface_texture.get('sample_count',0)} 点，包含没有深度的区域）")
+        angle = candidate.get('axis_to_epipolar_deg')
+        if angle is not None:
+            lines.append(f"管面长方向与视差方向夹角：{angle:.1f}°（0° 为平行）")
         lines.append(f"图像唯一匹配：{percent(diagnostic.get('sampled_unique_match_fraction'))}"
                      f"（抽样 {diagnostic.get('comparison_count',0)} 点）；高光 H：{percent(diagnostic.get('highlight_fraction'))}")
         warnings = diagnostic.get("warning_codes",[])
@@ -149,6 +159,8 @@ def recognition_diagnostic_lines(report: dict | None) -> list[str]:
         if not candidate.get("attempts"):
             lines.append("旧报告未记录局部分段诊断；重新评估可生成。")
     lines += ["", "纹理不足或匹配多解：用少量可移除的哑光随机纹理做对照；高光变化不等于深度改善。",
+              "光滑管道接近视差方向时，可调整整台双目相机的安装朝向再取样；仅旋转显示图像无效。",
+              "取景应包含需要对比的多根管道，避开前景木条，并在图像和框选边界保留完整管宽。",
               "深度支持足够但拟合仍失败：继续检查双目矫正、深度误差及圆柱形状，不宜放宽尺寸容差。"]
     return lines
 

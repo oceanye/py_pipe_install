@@ -13,7 +13,7 @@ import math
 import cv2
 import numpy as np
 
-REVISION = "image-strips-local-support-v2"
+REVISION = "image-strips-direction-preserving-v3"
 POLICY = {"maximum_regions": 24, "minimum_pixels": 120, "minimum_length_px": 48,
           "minimum_aspect": 2.0, "minimum_fill": 0.55,
           "axis_tolerance_deg": 12.0, "disparity_residual_px": 2.0,
@@ -23,7 +23,7 @@ POLICY = {"maximum_regions": 24, "minimum_pixels": 120, "minimum_length_px": 48,
           "maximum_local_windows": 3, "local_window_length_fraction": 0.5,
           "local_window_min_length_px": 160, "local_window_width_multiple": 4.0,
           "direction_kernel_odd": True, "clipped_minimum_aspect": 1.3,
-          "clipped_boundary_margin_px": 2}
+          "clipped_boundary_margin_px": 2, "global_axis_filter": False}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
 
 
@@ -150,6 +150,19 @@ def propose_regions(image):
         clipped = ((abs(ax) >= .9 and x <= edge and x+w >= image.shape[1]-edge)
                    or (abs(ay) >= .9 and y <= edge and y+h >= image.shape[0]-edge))
         p["axially_clipped"] = bool(clipped)
+        contacts = []
+        if x <= edge:
+            contacts.append("left")
+        if y <= edge:
+            contacts.append("top")
+        if x+w >= image.shape[1]-edge:
+            contacts.append("right")
+        if y+h >= image.shape[0]-edge:
+            contacts.append("bottom")
+        p["boundary_contacts"] = contacts
+        transverse = {"top", "bottom"} if abs(ax) >= .9 else {"left", "right"} if abs(ay) >= .9 else set()
+        p["transverse_boundary_contacts"] = [side for side in contacts if side in transverse]
+        p["axis_to_epipolar_deg"] = math.degrees(math.atan2(abs(ay), abs(ax)))
         # A user crop can truncate both ends of a thick pipe. Retain its
         # image proposal; the unchanged metric length gate still applies.
         minimum_aspect = POLICY["clipped_minimum_aspect"] if clipped else POLICY["minimum_aspect"]
@@ -169,21 +182,22 @@ def propose_regions(image):
                 break
         if not duplicate:
             unique.append(p)
-    # Multiple independent strips vote for an axis. Keep ties visible instead
-    # of promoting a single very long clutter region to the common direction.
+    # Direction votes are diagnostics only. Numerous short carpet/stand
+    # fragments can outvote the real pipes differently in the two eyes.
+    # Preserve alternate directions under the existing score/budget cap;
+    # measured cylinder axes and stereo pairing decide geometric consistency.
     if len(unique) >= 2:
         axes = np.asarray([p["axis_image"] for p in unique])
         agreement = np.abs(axes @ axes.T) >= math.cos(math.radians(POLICY["axis_tolerance_deg"]))
         counts = agreement.sum(axis=1)
-        if max(counts) >= 2:
-            winners = np.flatnonzero(counts == max(counts))
-            keep = agreement[winners].any(axis=0)
-            unique = [p for p,k in zip(unique,keep) if k]
+        for p, count in zip(unique, counts):
+            p["axis_consensus_count"] = int(count)
     truncated = component_limit_hit or len(unique) > POLICY["maximum_regions"]
     unique = unique[:POLICY["maximum_regions"]]
     unique.sort(key=lambda p: (p["region_px"][1], p["region_px"][0]))
     return unique, {"revision":REVISION, "policy_sha256":POLICY_SHA256,
                     "scope":"IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+                    "global_axis_filter_applied": False,
                     "truncated":truncated, "candidate_count":len(unique)}
 
 

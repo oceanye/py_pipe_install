@@ -35,6 +35,48 @@ def test_image_proposals_split_parallel_paint_and_ignore_catalogue():
     assert all('pipe_id' not in r and 'diameter_mm' not in r for r in regions)
 
 
+def test_background_majority_direction_does_not_erase_visible_pipes():
+    """Carpet/stand fragments can outvote pipes differently in each eye."""
+    image = np.full((480, 800, 3), 60, np.uint8)
+    cv2.rectangle(image, (40, 40), (750, 90), (220, 110, 10), -1)
+    cv2.rectangle(image, (40, 130), (750, 175), (30, 30, 230), -1)
+    for x in range(20, 780, 60):
+        cv2.rectangle(image, (x, 230), (x+12, 440), (200, 200, 200), -1)
+    regions, audit = propose_regions(image)
+    paints = [r for r in regions if r['appearance'] != 'neutral']
+    assert len(paints) == 2
+    assert all(abs(r['axis_image'][0]) > .99 for r in paints)
+    assert len(regions) <= 24
+    assert not audit['truncated']
+
+
+def test_clipped_width_is_distinguished_from_clipped_pipe_ends():
+    image = np.full((320, 640, 3), 60, np.uint8)
+    cv2.rectangle(image, (40, 0), (590, 30), (30, 30, 230), -1)
+    cv2.rectangle(image, (0, 125), (639, 175), (220, 110, 10), -1)
+    regions, _ = propose_regions(image)
+    red = next(r for r in regions if r['appearance'] == 'hue-0')
+    blue = next(r for r in regions if r['appearance'] == 'hue-120')
+    assert red['transverse_boundary_contacts'] == ['top']
+    assert not red['axially_clipped']
+    assert blue['boundary_contacts'] == ['left', 'right']
+    assert blue['axially_clipped']
+    assert not blue['transverse_boundary_contacts']
+
+
+def test_gui_explains_missing_depth_and_clipped_candidate_without_claiming_measurement():
+    from pipe_twin.elevation_gui import recognition_diagnostic_lines
+    report = {'local_surface': {'image_candidates': [{
+        'candidate_id': 'IMG-left-001', 'role': 'left', 'region_px': [10, 0, 300, 30],
+        'axis_to_epipolar_deg': 2., 'valid_depth_fraction': 0.,
+        'correspondence_diagnostic': {'surface_texture': {'sample_count': 512, 'low_texture_fraction': .95},
+                                    'warning_codes': ['CANDIDATE_WIDTH_CLIPPED', 'LOW_SURFACE_HORIZONTAL_TEXTURE']}}]}}
+    text = '\n'.join(recognition_diagnostic_lines(report))
+    assert '95.0%' in text and '包含没有深度的区域' in text
+    assert '保留完整管宽' in text and '2.0°' in text
+    assert '图像唯一匹配：未计算' in text and '合格三维管段 0' in text
+
+
 def test_disparity_filter_removes_outliers_and_never_fills_holes():
     rng=np.random.default_rng(55)
     yy,xx=np.indices((80,300))

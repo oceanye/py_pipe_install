@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-20",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "opencv": "4.13.0",
+  "pytest": "9.1.1",
+  "pre_change_commit": "ef7f278e7276ab2e03e27a44881b4da4a1a5ea47",
+  "expected_old_code_regression": "test_background_majority_direction_does_not_erase_visible_pipes failed: expected 2, got 0",
+  "checks": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_image_regions.py tests/test_stereo_correspondence.py tests/test_local_surface.py tests/test_elevation_auto.py tests/test_elevation_zones.py tests/test_calibration_provisional.py tests/test_elevation_gui.py -q",
+      "passed": 147,
+      "subtests_passed": 18,
+      "seconds": 112.06,
+      "log": "outputs\\improvement-20261020\\tests-targeted.log",
+      "log_sha256": "670cdd740592f8aff426966381dbb6f82acb488ae0e0686998e59cb36a16322e"
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests -q",
+      "passed": 674,
+      "skipped": 1,
+      "subtests_passed": 264,
+      "seconds": 249.21,
+      "log": "outputs\\improvement-20261020\\tests-full.log",
+      "log_sha256": "ac53a322f4b002d352ae268c704bc44de88f9873ebd0a615bdf1f89a5973b2cf"
+    },
+    {
+      "command": "python -m compileall -q <changed production and replay modules>",
+      "status": "PASSED"
+    },
+    {
+      "command": "git diff --check",
+      "status": "PASSED"
+    }
+  ],
+  "dependencies_changed": false,
+  "field_metric_validation_passed": false,
+  "raw_images_committed": false,
+  "active_calibration_changed": false
+}
