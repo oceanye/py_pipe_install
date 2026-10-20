@@ -25,6 +25,8 @@ def main():
     parser.add_argument('--variants',nargs='+',choices=('single','burst'),default=['single','burst'])
     parser.add_argument('--num-disparities',type=int)
     parser.add_argument('--preprocessing',choices=('none','low_light'))
+    parser.add_argument('--roi',nargs=4,type=int,metavar=('X','Y','WIDTH','HEIGHT'),
+                        help='One left-image section-neighbourhood ROI in rectified pixels')
     args=parser.parse_args()
     mode=args.mode
     output_root=args.output_root.resolve()
@@ -99,6 +101,8 @@ def main():
             rectification_recipe=recipe,camera_capture_provenance=last['camera_capture_provenance'],
             timestamp_sources=last['timestamp_sources'],analysis_settings=analysis,
             registration_settings=loaded['registration_settings'],
+            scope_settings=({'scope':'zones','zones':[{'zone_id':'S01','label':'断面邻域',
+                'enabled':True,'coordinate_space':'rectified_left','roi_rect_px':args.roi}]} if args.roi else None),
             temporal_frames=records if variant=='burst' else None)
         print(mode,variant,'SAVED',path,flush=True)
         started=time.monotonic()

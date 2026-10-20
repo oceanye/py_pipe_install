@@ -65,7 +65,7 @@ REASON_TEXT = {
     "NO_DOMINANT_DISPARITY_SUPPORT": "管面深度不一致",
     "DISCONTINUOUS_AXIAL_DEPTH_SUPPORT": "沿管长的有效深度不连续",
     "CYLINDER_FIT_RESIDUAL_TOO_LARGE": "圆柱拟合误差过大",
-    "LOCAL_AXIS_SUPPORT_TOO_SHORT": "连续管段太短",
+    "LOCAL_AXIS_SUPPORT_TOO_SHORT": "断面附近采样范围不足以稳定估计管轴方向",
     "PROJECTED_AXIS_DISAGREEMENT": "三维轴与图像方向不一致",
     "LOW_HORIZONTAL_TEXTURE": "沿视差方向纹理不足",
     "LOW_SURFACE_HORIZONTAL_TEXTURE": "整个候选管面多数区域沿视差方向纹理不足",
@@ -102,7 +102,9 @@ def recognition_summary(report: dict) -> str:
 
 def recognition_diagnostic_lines(report: dict | None) -> list[str]:
     """Separate image similarity, measured depth support and cylinder gates."""
-    lines = ["图像候选不是实物管数；重叠分区会重复列出同一管面。",
+    lines = ["目标是共同断面的管径、轴心间距和净距，不测量整根管长。",
+             "断面附近保留小段采样带，用于估计管轴方向和验证圆弧；不是整根管道长度要求。",
+             "图像候选不是实物管数；重叠分区会重复列出同一管面。",
              "图像唯一匹配比例来自有限抽样，仅作诊断，不代表测量合格率。",
              "高光 H 只统计多通道近饱和像素，不能覆盖全部反光。"]
     if not report:
@@ -155,6 +157,9 @@ def recognition_diagnostic_lines(report: dict | None) -> list[str]:
                 fit = rejected.get("fit_diagnostics") or {}
                 if fit.get("fit_rms_mm") is not None:
                     text += f"；拟合误差 {fit['fit_rms_mm']:.2f} mm / 上限 {fit['maximum_fit_rms_mm']:.2f} mm"
+                if fit.get("minimum_axial_support_mm") is not None:
+                    text += (f"；局部轴向采样 {fit['axial_support_mm']:.1f} mm / "
+                             f"本方法需 {fit['minimum_axial_support_mm']:.1f} mm（非实物管长）")
                 lines.append(text)
         if not candidate.get("attempts"):
             lines.append("旧报告未记录局部分段诊断；重新评估可生成。")
@@ -166,7 +171,7 @@ def recognition_diagnostic_lines(report: dict | None) -> list[str]:
 
 
 def relative_layout_summary_lines(report: dict | None) -> list[str]:
-    lines = ["模型对比依据：管道之间的轴心间距、表面净距、直径及相对排列。",
+    lines = ["只比较共同断面：各管直径、轴心间距、表面净距及相对排列，不要求整根管长。",
              "相机到管道的距离只用于三维重建，不作为模型匹配目标。",
              "以下净距为共同管轴法向截面的轴心距减两半径；负值表示截面重叠。"]
     registration = (report or {}).get("registration") or {}
@@ -894,7 +899,7 @@ class ElevationCaptureDialog:
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role, assessment_regions=True)
-        ttk.Label(footer, text="点击“左图框选区域”后在左图拖框；滚轮缩放、右键平移；Esc 取消框选。", foreground="#355371").pack(anchor="w")
+        ttk.Label(footer, text="只看一个断面：用“左图框选区域”框住跨过各管的局部采样带，保留完整管宽；无需包含管端。", foreground="#355371").pack(anchor="w")
 
         table_frame = ttk.Frame(footer)
         table_frame.pack(fill="x", pady=6)
@@ -1053,7 +1058,7 @@ class ElevationCaptureDialog:
             self.message.set(f"评估区域最多 {MAX_ZONES} 个，请在“分区管理”中删除不需要的区域。")
             return
         self._set_region_selection(True)
-        self.message.set("在左侧照片按住左键拖出管道组范围，松开即可加入评估区域；Esc 取消。")
+        self.message.set("在左图拖框选断面附近的一小段，跨过待比较的各管并保留完整管宽；不必框整根管长。滚轮缩放、右键平移；Esc 取消。")
 
     def add_left_region(self, rect: list[int]) -> None:
         """Add a group ROI through the existing persisted zone contract."""
