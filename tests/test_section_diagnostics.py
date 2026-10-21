@@ -50,6 +50,19 @@ def test_noisy_circle_with_outliers_uses_original_denominator():
     assert fit['trial_diameter_mm'] == pytest.approx(40, abs=.3)
 
 
+def test_quarter_circle_with_noise_does_not_need_a_semicircle():
+    rng = np.random.default_rng(216)
+    angles = np.linspace(.15, .15+np.pi/2, 300)
+    points = 25.5*np.column_stack((np.cos(angles), np.sin(angles)))
+    points += [40, 1700]
+    points += rng.normal(0, .12, points.shape)
+    fit = circle_trial(points)
+    assert fit['geometry_passed']
+    assert 80 < fit['arc_degrees'] < 100
+    assert fit['trial_diameter_mm'] == pytest.approx(51, abs=1.)
+    assert fit['measured_diameter_mm'] is None
+
+
 @pytest.mark.parametrize('kind', ['flat', 'small_arc', 'two_circles', 'random', 'few'])
 def test_unsupported_sections_do_not_become_measurements(kind):
     theta = np.linspace(-1.1, 1.1, 200)
