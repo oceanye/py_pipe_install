@@ -1,0 +1,75 @@
+{
+  "tests": {
+    "command": ".venv/Scripts/python.exe -m pytest tests/test_section_diagnostics.py tests/test_metrology.py tests/test_temporal_cylinders.py -q",
+    "passed": 25,
+    "elapsed_seconds": 14.59
+  },
+  "field_windows": 672,
+  "geometry_passed": 0,
+  "axis_sensitivity": [
+    {
+      "axis_source": "left",
+      "axis": [
+        0.9890059614746431,
+        -0.06950383018981326,
+        0.1305236597577687
+      ],
+      "trials": 64,
+      "geometric_only_passes": 0
+    },
+    {
+      "axis_source": "right",
+      "axis": [
+        0.9925253604817937,
+        -0.06647221656887073,
+        0.10234673040652634
+      ],
+      "trials": 64,
+      "geometric_only_passes": 0
+    },
+    {
+      "axis_source": "zero_camera_z",
+      "axis": [
+        0.9907357324472652,
+        -0.06805936848119395,
+        0.0
+      ],
+      "trials": 64,
+      "geometric_only_passes": 0
+    }
+  ],
+  "source_hashes_verified": true,
+  "calibration_unchanged": true,
+  "production_files_unchanged_since_cfa403b": [
+    "pipe_twin/local_surface.py",
+    "pipe_twin/metrology.py",
+    "pipe_twin/temporal_stereo.py",
+    "pipe_twin/image_regions.py"
+  ],
+  "local_artifacts": {
+    "blue-sections.png": {
+      "sha256": "8540ffcd3551b914d91846bcace9fe54f98bb6ec35047a5e07690e33ede5c3ce",
+      "bytes": 271823
+    },
+    "evidence.json": {
+      "sha256": "637133c3549f3d225ea47c0924b2ccaa78420936f0eb11985300b2c42759f3f7",
+      "bytes": 1066908
+    },
+    "fused-disparities.npz": {
+      "sha256": "1faf6da0ff6f463bc912445f75b080b1954dece3b3a33204b6be9e03319bf00f",
+      "bytes": 1912750
+    },
+    "sampling.png": {
+      "sha256": "abdbec6093b0db8a9ad9b1431320c6c06e15b52a3816b0a252ef5dc51630536b",
+      "bytes": 2685144
+    },
+    "section-points.npz": {
+      "sha256": "cde0059ff7bb7e2e8bac9ac0cd7edfdb1c4c01bbd964cc0e0c0ece007c7a5f96",
+      "bytes": 2280641
+    },
+    "temporal-trials.png": {
+      "sha256": "81568acc3aa8ba248c729ac9de2c33a10b89740ef8fa445b0841c631c2c4d9c7",
+      "bytes": 274141
+    }
+  }
+}
