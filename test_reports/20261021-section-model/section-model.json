@@ -1,0 +1,479 @@
+{
+  "schema_version": "conditional-common-section-v1",
+  "units": "mm",
+  "scope": "CONDITIONAL_MODEL_NOT_ACCEPTED_MEASUREMENT",
+  "total_accuracy_known": false,
+  "section": {
+    "normal_camera": [
+      0.9907357324472648,
+      -0.06805936848119393,
+      0.11751864028367173
+    ],
+    "basis_camera_columns_uv": [
+      [
+        0.06853426454825022,
+        -0.11724232612419636
+      ],
+      [
+        0.9976487631340152,
+        0.008054053582551814
+      ],
+      [
+        -0.0,
+        0.9930706768331633
+      ]
+    ],
+    "station_mm_along_axis_from_left_origin": 379.5077965108211,
+    "origin_id": "blue",
+    "origin_camera_mm": [
+      121.0756977162956,
+      -77.73725444447341,
+      2163.597429255472
+    ],
+    "definition": "ONE_PLANE_NORMAL_TO_COMMON_PIPE_AXES",
+    "clearance_definition": "CENTRE_DISTANCE_MINUS_BOTH_OUTER_RADII"
+  },
+  "candidates": [
+    {
+      "id": "blue",
+      "label": "蓝管 B1",
+      "color": "#2274bc",
+      "reference_diameter_mm": 50.0,
+      "status": "CONDITIONAL_FIT",
+      "accepted_measurement": false,
+      "estimated_center_uv_mm": [
+        0.0,
+        0.0
+      ],
+      "diameter_mm": 49.69785498799169,
+      "radius_mm": 24.848927493995845,
+      "diameter_source": "IMAGE_FIT",
+      "pixel_error": {
+        "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumed_vertical_pixel_sigma_px": 0.5,
+        "point_counts_per_edge": [
+          320,
+          319,
+          320,
+          316
+        ],
+        "edge_order": [
+          [
+            "left",
+            "top"
+          ],
+          [
+            "left",
+            "bottom"
+          ],
+          [
+            "right",
+            "top"
+          ],
+          [
+            "right",
+            "bottom"
+          ]
+        ],
+        "diameter_and_z_jacobian_mm_per_px": [
+          [
+            -3.5702003710495234,
+            -3.1928274311353277,
+            3.0797883388812153,
+            3.682289905564744
+          ],
+          [
+            -144.96752139836644,
+            -149.85569987520648,
+            144.87497600666757,
+            149.89443314346317
+          ]
+        ],
+        "section_parameters_jacobian_mm_per_px": [
+          [
+            4.881255400107278,
+            5.042453591630789,
+            -4.6340582054584445,
+            -4.7992803972994125
+          ],
+          [
+            -142.96797883737327,
+            -147.7887618774639,
+            142.87868040281865,
+            147.82893457090267
+          ],
+          [
+            -1.7851001855247617,
+            -1.5964137155676639,
+            1.5398941694406076,
+            1.841144952782372
+          ]
+        ],
+        "scenarios": {
+          "IID_PIXELS_OPTIMISTIC": {
+            "assumed_effective_samples_per_edge": [
+              320,
+              319,
+              320,
+              316
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                0.07353910013307105,
+                -2.207754934494514,
+                -0.0256804626467424
+              ],
+              [
+                -2.20775493449475,
+                66.32237960752082,
+                0.7714642452465438
+              ],
+              [
+                -0.02568046264674846,
+                0.7714642452466438,
+                0.009020476615075334
+              ]
+            ],
+            "diameter_sigma_mm": 0.18995237945417093,
+            "radius_sigma_mm": 0.09497618972708546,
+            "center_z_sigma_mm": 8.257697934092121,
+            "normal_95_halfwidth_diameter_mm": 0.372306663730175,
+            "normal_95_halfwidth_radius_mm": 0.1861533318650875,
+            "normal_95_halfwidth_center_z_mm": 16.185087950820556
+          },
+          "COHERENT_EDGE_OFFSETS": {
+            "assumed_effective_samples_per_edge": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                23.440145072076458,
+                -703.6654552548957,
+                -8.183875521506778
+              ],
+              [
+                -703.6654552548957,
+                21137.26808003409,
+                245.83417891618086
+              ],
+              [
+                -8.183875521506778,
+                245.83417891618086,
+                2.874052053461569
+              ]
+            ],
+            "diameter_sigma_mm": 3.3906058771031287,
+            "radius_sigma_mm": 1.6953029385515643,
+            "center_z_sigma_mm": 147.41897164697497,
+            "normal_95_halfwidth_diameter_mm": 6.645587519122132,
+            "normal_95_halfwidth_radius_mm": 3.322793759561066,
+            "normal_95_halfwidth_center_z_mm": 288.9411844280709
+          }
+        },
+        "excluded": [
+          "CALIBRATION_SCALE_AND_RECTIFICATION",
+          "MISIDENTIFIED_SILHOUETTE",
+          "OCCLUSION_CLASSIFICATION",
+          "AXIS_ERROR",
+          "GENERAL_PIXEL_NOISE_CORRELATION"
+        ]
+      },
+      "section_parameters_camera_basis_mm": [
+        -69.25664184831055,
+        2133.7838670151987
+      ],
+      "reference_difference_mm": -0.30214501200831023,
+      "center_in_common_plane_camera_mm": [
+        121.0756977162956,
+        -77.73725444447341,
+        2163.597429255472
+      ]
+    },
+    {
+      "id": "red_front",
+      "label": "前方红管 R1",
+      "color": "#e04432",
+      "reference_diameter_mm": 40.0,
+      "status": "CONDITIONAL_FIT",
+      "accepted_measurement": false,
+      "estimated_center_uv_mm": [
+        -100.53277797080148,
+        189.2475539255529
+      ],
+      "diameter_mm": 43.11807156631763,
+      "radius_mm": 21.559035783158816,
+      "diameter_source": "IMAGE_FIT",
+      "pixel_error": {
+        "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumed_vertical_pixel_sigma_px": 0.5,
+        "point_counts_per_edge": [
+          320,
+          319,
+          320,
+          319
+        ],
+        "edge_order": [
+          [
+            "left",
+            "top"
+          ],
+          [
+            "left",
+            "bottom"
+          ],
+          [
+            "right",
+            "top"
+          ],
+          [
+            "right",
+            "bottom"
+          ]
+        ],
+        "diameter_and_z_jacobian_mm_per_px": [
+          [
+            -3.6675415668223366,
+            -3.2465493391094213,
+            3.1347316446028373,
+            3.777014525023432
+          ],
+          [
+            -185.95058200892254,
+            -191.96694825540817,
+            185.84551565736092,
+            191.9082794763881
+          ]
+        ],
+        "section_parameters_jacobian_mm_per_px": [
+          [
+            13.658431911352409,
+            14.096371951166589,
+            -13.384932942810508,
+            -13.825598116415847
+          ],
+          [
+            -183.32604050479404,
+            -189.25752270632074,
+            183.22460274403056,
+            189.20183316676685
+          ],
+          [
+            -1.8337707834111683,
+            -1.6232746695547107,
+            1.5673658223014186,
+            1.888507262511716
+          ]
+        ],
+        "scenarios": {
+          "IID_PIXELS_OPTIMISTIC": {
+            "assumed_effective_samples_per_edge": [
+              320,
+              319,
+              320,
+              319
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                0.5912238034642562,
+                -8.012788275455621,
+                -0.0743498890995803
+              ],
+              [
+                -8.01278827545976,
+                108.60659502062633,
+                1.0077526060171114
+              ],
+              [
+                -0.07434988909962405,
+                1.007752606017183,
+                0.009406062080667917
+              ]
+            ],
+            "diameter_sigma_mm": 0.19396970980715433,
+            "radius_sigma_mm": 0.09698485490357717,
+            "center_z_sigma_mm": 10.570582998616825,
+            "normal_95_halfwidth_diameter_mm": 0.3801806312220225,
+            "normal_95_halfwidth_radius_mm": 0.19009031561101125,
+            "normal_95_halfwidth_center_z_mm": 20.718342677288977
+          },
+          "COHERENT_EDGE_OFFSETS": {
+            "assumed_effective_samples_per_edge": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                188.89101440571528,
+                -2560.017051473009,
+                -23.75438644674405
+              ],
+              [
+                -2560.017051473009,
+                34698.85893811795,
+                321.9709739274268
+              ],
+              [
+                -23.75438644674405,
+                321.9709739274268,
+                3.0052078100971156
+              ]
+            ],
+            "diameter_sigma_mm": 3.467107041957093,
+            "radius_sigma_mm": 1.7335535209785464,
+            "center_z_sigma_mm": 188.9419696583381,
+            "normal_95_halfwidth_diameter_mm": 6.795529802235902,
+            "normal_95_halfwidth_radius_mm": 3.397764901117951,
+            "normal_95_halfwidth_center_z_mm": 370.32626053034267
+          }
+        },
+        "excluded": [
+          "CALIBRATION_SCALE_AND_RECTIFICATION",
+          "MISIDENTIFIED_SILHOUETTE",
+          "OCCLUSION_CLASSIFICATION",
+          "AXIS_ERROR",
+          "GENERAL_PIXEL_NOISE_CORRELATION"
+        ]
+      },
+      "section_parameters_camera_basis_mm": [
+        -169.78941981911203,
+        2323.0314209407516
+      ],
+      "reference_difference_mm": 3.1180715663176315,
+      "center_in_common_plane_camera_mm": [
+        91.99793427952807,
+        -176.50944610178678,
+        2351.533625721341
+      ]
+    },
+    {
+      "id": "red_rear",
+      "label": "后方红管 R2（遮挡）",
+      "color": "#ad3c78",
+      "reference_diameter_mm": 40.0,
+      "status": "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+      "accepted_measurement": false,
+      "estimated_center_uv_mm": null,
+      "diameter_mm": null,
+      "radius_mm": null,
+      "diameter_source": "IMAGE_FIT",
+      "pixel_error": {
+        "status": "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+        "total_accuracy_known": false
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "ids": [
+        "blue",
+        "red_front"
+      ],
+      "delta_uv_mm": [
+        -100.53277797080148,
+        189.2475539255529
+      ],
+      "center_distance_mm": 214.29296795119413,
+      "surface_clearance_mm": 167.8850046740395,
+      "status": "CONDITIONAL_ESTIMATE",
+      "accepted_measurement": false,
+      "pixel_error": {
+        "status": "CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumes_independent_candidate_edge_errors": true,
+        "excluded": [
+          "SHARED_CALIBRATION_AND_AXIS_ERRORS",
+          "EDGE_MISIDENTIFICATION",
+          "CROSS_CANDIDATE_CORRELATION",
+          "SUPPLIED_DIAMETER_TOLERANCE"
+        ],
+        "scenarios": {
+          "COHERENT_EDGE_OFFSETS": {
+            "center_distance_sigma_mm": 215.17025802227184,
+            "center_distance_normal_95_halfwidth_mm": 421.7337057236528,
+            "surface_clearance_sigma_mm": 214.83722470849526,
+            "surface_clearance_normal_95_halfwidth_mm": 421.0809604286507
+          },
+          "IID_PIXELS_OPTIMISTIC": {
+            "center_distance_sigma_mm": 12.043426242993851,
+            "center_distance_normal_95_halfwidth_mm": 23.605115436267948,
+            "surface_clearance_sigma_mm": 12.024954571948888,
+            "surface_clearance_normal_95_halfwidth_mm": 23.568910961019817
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "source": "outputs\\retry-20261020-131151\\active-retry\\rectified",
+    "frames": 20,
+    "capture_date": "2026-10-20",
+    "calibration_sha256": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+    "calibration_validated": false,
+    "active_baseline_mm": 55.49861605457772,
+    "reported_baseline_mm": 60.0,
+    "reference_catalog_mm": {
+      "blue": 50.0,
+      "red": 40.0,
+      "white": 25.0
+    },
+    "reference_sizes_used_in_fitting": false,
+    "white_pipe": "NOT_IDENTIFIED_IN_THIS_CAPTURE",
+    "automatic_instance_segmentation": false,
+    "aggregation": "MEAN_OF_20_FREE_FITS_IN_THE_SAME_SECTION_BASIS",
+    "pixel_error_evaluation": "REPRESENTATIVE_LAST_FRAME; NO_SQRT_20_REDUCTION",
+    "rear_red": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+    "repeatability_not_absolute_accuracy": {
+      "blue": {
+        "mean": 49.69785498799169,
+        "std": 0.494667094315499,
+        "min": 48.8419513156863,
+        "max": 50.54853608920429
+      },
+      "red_front": {
+        "mean": 43.11807156631763,
+        "std": 0.22844102645147643,
+        "min": 42.520481549037605,
+        "max": 43.423814481871595
+      },
+      "center_distance": {
+        "mean": 214.60626568536682,
+        "std": 24.013272597077815,
+        "min": 167.1505548281615,
+        "max": 258.10237632115854
+      },
+      "clearance": {
+        "mean": 168.19830240821216,
+        "std": 24.177167576010046,
+        "min": 120.47660225866629,
+        "max": 211.87176944161777
+      }
+    }
+  }
+}

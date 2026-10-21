@@ -131,3 +131,21 @@ def test_more_pixel_copies_do_not_reduce_coherent_edge_error():
     # it must remain labelled as an assumption, not an observed accuracy.
     assert b['scenarios']['IID_PIXELS_OPTIMISTIC']['diameter_sigma_mm'] == pytest.approx(
         a['scenarios']['IID_PIXELS_OPTIMISTIC']['diameter_sigma_mm']/2, rel=.01)
+
+
+def test_explicit_diameter_constraint_is_not_a_measurement_and_two_edges_can_locate():
+    axis = [1., -.4, .2]
+    center = np.array([100., 80., 1800.])
+    obs, k = independent_contours(axis, center, 20.)
+    obs = [o for o in obs if o['edge'] == 'top']
+    reference = k[0, 0]*center[0]/center[2]+k[0, 2]
+    result = fit_silhouettes(obs, k, 60., axis, reference, known_diameter_mm=40.)
+    assert result['status'] == 'CONDITIONAL_FIT'
+    assert result['diameter_source'] == 'USER_KNOWN_CONSTRAINT'
+    assert result['accepted_diameter_mm'] is None
+    np.testing.assert_allclose(result['center_at_reference_column_mm'], center, atol=.3)
+    uncertainty = pixel_error_scenarios(obs, k, 60., axis, reference, known_diameter_mm=40.)
+    assert 'SUPPLIED_DIAMETER_TOLERANCE' in uncertainty['excluded']
+    for scenario in uncertainty['scenarios'].values():
+        assert scenario['diameter_sigma_mm'] == 0.  # Fixed only inside this conditional calculation.
+        assert np.asarray(scenario['section_parameter_covariance_mm2'])[2].tolist() == [0., 0., 0.]

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="590" viewBox="0 0 1000 590">
+<rect width="1000" height="590" fill="white"/>
+<g font-family="Microsoft YaHei,Arial,sans-serif" fill="#182b40">
+<text x="30" y="32" font-size="22">共同法向断面 · 条件模型（mm）</text>
+<text x="30" y="58" font-size="14">管径来源见圆旁标注；位置为图像估计。坐标横向 V、纵向 U，等比例。</text>
+<line x1="160.73" y1="394.27" x2="547.11" y2="189.02" stroke="#8996a3" stroke-dasharray="5 5"/>
+<text x="363.30" y="309.30" font-size="13" text-anchor="middle" paint-order="stroke" stroke="white" stroke-width="4" stroke-linejoin="round">心距 214.3 / 净距 167.9</text>
+<circle cx="160.73" cy="394.27" r="50.73" fill="#2274bc" fill-opacity=".14" stroke="#2274bc" stroke-width="2" stroke-dasharray="6 3"/>
+<path d="M 155.73,394.27 h 10 M 160.73,389.27 v 10" stroke="#2274bc"/>
+<text x="160.73" y="319.53" font-size="15" text-anchor="middle">蓝管 B1</text>
+<text x="160.73" y="337.53" font-size="13" text-anchor="middle">估算 D 49.7 / R 24.8</text>
+<circle cx="547.11" cy="189.02" r="44.02" fill="#e04432" fill-opacity=".14" stroke="#e04432" stroke-width="2" stroke-dasharray="6 3"/>
+<path d="M 542.11,189.02 h 10 M 547.11,184.02 v 10" stroke="#e04432"/>
+<text x="547.11" y="121.00" font-size="15" text-anchor="middle">前方红管 R1</text>
+<text x="547.11" y="139.00" font-size="13" text-anchor="middle">估算 D 43.1 / R 21.6</text>
+<line x1="797.92" y1="490" x2="900" y2="490" stroke="#182b40" stroke-width="3"/>
+<text x="848.96" y="513" text-anchor="middle" font-size="14">50 mm</text>
+<text x="30" y="545" font-size="14">未定位：后方红管 R2（遮挡）</text>
+<text x="30" y="571" font-size="13">圆为完整圆柱假设的模型轮廓，并非已观测完整圆弧；标定、遮挡与边缘误差仍影响位置。</text>
+</g></svg>

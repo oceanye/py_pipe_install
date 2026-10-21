@@ -65,17 +65,24 @@ def projected_lines(section_center, radius, basis, intrinsic, camera_center, ref
     return np.array(sorted(lines, key=lambda line: -(line[0]*reference_u+line[2])/line[1]))
 
 
-def fit_silhouettes(observations, intrinsic, baseline_mm, axis, reference_u):
+def fit_silhouettes(observations, intrinsic, baseline_mm, axis, reference_u, *, known_diameter_mm=None):
     """Fit a conditional cylinder; preserve all coordinate offsets.
 
     Each observation provides role, edge ('top'/'bottom'), and Nx2 image points.
     A boundary explicitly labelled 'occlusion' is excluded. Three independent
     tangent planes across both eyes can suffice for the three unknowns; two
-    cannot. Hidden predicted contours never become observed evidence.
+    cannot. With an explicitly supplied known diameter, only two centre
+    parameters remain; two independent tangents may then suffice. The supplied
+    diameter is recorded as a constraint, never an independent measurement.
+    Hidden predicted contours never become observed evidence.
 This small diagnostic assumes equal rectified intrinsics and a +X baseline.
 It does not establish segmentation, calibration quality, or field accuracy.
 """
     k = np.asarray(intrinsic, float)
+    if known_diameter_mm is not None and (not np.isfinite(known_diameter_mm) or known_diameter_mm <= 0):
+        raise ValueError('INVALID_KNOWN_DIAMETER')
+    fixed_radius = None if known_diameter_mm is None else float(known_diameter_mm)/2
+    parameter_count = 3 if fixed_radius is None else 2
     a = np.array(axis, dtype=float, copy=True)
     if k.shape != (3, 3) or not np.isfinite(k).all() or baseline_mm <= 0:
         raise ValueError('INVALID_CAMERA_GEOMETRY')
@@ -84,7 +91,9 @@ It does not establish segmentation, calibration quality, or field accuracy.
     base = np.array([baseline_mm, 0., 0.])
     perpendicular = float(np.linalg.norm(np.cross(base, a)))
     result = {'scope': 'CONDITIONAL_PROJECTION_NOT_MEASUREMENT', 'accepted_diameter_mm': None,
-              'axis': a.tolist(), 'baseline_perpendicular_to_axis_mm': perpendicular}
+              'axis': a.tolist(), 'baseline_perpendicular_to_axis_mm': perpendicular,
+              'diameter_source': 'IMAGE_FIT' if fixed_radius is None else 'USER_KNOWN_CONSTRAINT',
+              'known_diameter_mm': known_diameter_mm}
     if perpendicular < 1e-6:
         return result | {'status': 'UNOBSERVABLE_PARALLEL_BASELINE'}
     allowed = {('left', 'top'), ('left', 'bottom'), ('right', 'top'), ('right', 'bottom')}
@@ -95,7 +104,7 @@ It does not establish segmentation, calibration quality, or field accuracy.
     observations = [o for o in observations if o.get('boundary_kind') != 'occlusion']
     result['ignored_occlusion_boundaries'] = [[o['role'], o['edge']] for o in ignored]
     result['observed_boundary_count'] = len(observations)
-    if len(observations) < 3 or len({o['role'] for o in observations}) < 2:
+    if len(observations) < parameter_count or len({o['role'] for o in observations}) < 2:
         return result | {'status': 'INSUFFICIENT_INDEPENDENT_SILHOUETTES'}
     matrices, rhs, normalized = [], [], []
     for obs in observations:
@@ -113,12 +122,16 @@ It does not establish segmentation, calibration quality, or field accuracy.
         matrices.append([*(normal@basis), -1.])
         rhs.append(normal@camera)
         normalized.append((obs['role'], 0 if obs['edge'] == 'top' else 1, points))
+    matrices, rhs = np.asarray(matrices), np.asarray(rhs)
+    if fixed_radius is not None:
+        matrices, rhs = matrices[:, :2], rhs+fixed_radius
     initial, _, rank, singular = np.linalg.lstsq(matrices, rhs, rcond=None)
-    if rank < 3:
+    if rank < parameter_count:
         return result | {'status': 'UNOBSERVABLE_TANGENT_PLANES'}
 
     def residual(p):
-        predicted = {role: projected_lines(p[:2], p[2], basis, k, camera, reference_u)
+        radius = p[2] if fixed_radius is None else fixed_radius
+        predicted = {role: projected_lines(p[:2], radius, basis, k, camera, reference_u)
                      for role, camera in [('left', np.zeros(3)), ('right', base)]}
         errors = []
         for role, index, points in normalized:
@@ -134,7 +147,8 @@ It does not establish segmentation, calibration quality, or field accuracy.
         return result | {'status': 'INVALID_INITIAL_GEOMETRY'}
     for _ in range(45):
         error = residual(p)
-        jac = np.column_stack([(residual(p+np.eye(3)[j]*.001)-error)/.001 for j in range(3)])
+        jac = np.column_stack([(residual(p+np.eye(parameter_count)[j]*.001)-error)/.001
+                               for j in range(parameter_count)])
         normal = jac.T@jac
         step = np.linalg.solve(normal+damping*np.diag(np.maximum(np.diag(normal), 1e-9)), -jac.T@error)
         candidate = p+step
@@ -157,17 +171,19 @@ It does not establish segmentation, calibration quality, or field accuracy.
     station = center+a*((ray_x*center[2]-center[0])/denominator)
     if station[2] <= 0:
         return result | {'status': 'CYLINDER_BEHIND_CAMERA'}
-    return result | {'status': 'CONDITIONAL_FIT', 'trial_diameter_mm': float(2*p[2]),
+    radius = p[2] if fixed_radius is None else fixed_radius
+    return result | {'status': 'CONDITIONAL_FIT', 'trial_diameter_mm': float(2*radius),
                      'section_center_parameters_mm': p[:2].tolist(),
                      'center_at_reference_column_mm': station.tolist(),
                      'reference_left_column_px': reference_u,
                      'reprojection_rms_px': float(np.sqrt(np.mean(residual(p)**2))),
                      'linear_condition': float(singular[0]/singular[-1]),
-                     'predicted_lines': {role: projected_lines(p[:2], p[2], basis, k, camera, reference_u).tolist()
+                     'predicted_lines': {role: projected_lines(p[:2], radius, basis, k, camera, reference_u).tolist()
                                          for role, camera in [('left', np.zeros(3)), ('right', base)]}}
 
 
-def pixel_error_scenarios(observations, intrinsic, baseline_mm, axis, reference_u, sigma_px=.5):
+def pixel_error_scenarios(observations, intrinsic, baseline_mm, axis, reference_u, sigma_px=.5,
+                          *, known_diameter_mm=None):
     """Propagate explicitly assumed pixel noise; never a total accuracy claim.
 
     The IID scenario assumes each observed pixel has independent vertical
@@ -179,17 +195,20 @@ def pixel_error_scenarios(observations, intrinsic, baseline_mm, axis, reference_
         raise ValueError('INVALID_PIXEL_SIGMA')
     intrinsic = np.asarray(intrinsic, dtype=float)
     observations = [o for o in observations if o.get('boundary_kind') != 'occlusion']
-    fitted = fit_silhouettes(observations, intrinsic, baseline_mm, axis, reference_u)
+    fitted = fit_silhouettes(observations, intrinsic, baseline_mm, axis, reference_u,
+                             known_diameter_mm=known_diameter_mm)
     if fitted['status'] != 'CONDITIONAL_FIT':
         return {'status': fitted['status'], 'total_accuracy_known': False}
 
     def shifted(index, offset):
         values = [{**o, 'points': np.array(o['points'], dtype=float, copy=True)} for o in observations]
         values[index]['points'][:, 1] += offset
-        fit = fit_silhouettes(values, intrinsic, baseline_mm, axis, reference_u)
+        fit = fit_silhouettes(values, intrinsic, baseline_mm, axis, reference_u,
+                              known_diameter_mm=known_diameter_mm)
         if fit['status'] != 'CONDITIONAL_FIT':
             raise ValueError('PIXEL_PERTURBATION_UNOBSERVABLE')
-        return np.array([fit['trial_diameter_mm'], fit['center_at_reference_column_mm'][2]])
+        return np.array([*fit['section_center_parameters_mm'], fit['trial_diameter_mm']/2,
+                         fit['trial_diameter_mm'], fit['center_at_reference_column_mm'][2]])
 
     jac = np.column_stack([(shifted(i, .05)-shifted(i, -.05))/.1 for i in range(len(observations))])
     counts = np.array([len(o['points']) for o in observations], dtype=int)
@@ -198,13 +217,19 @@ def pixel_error_scenarios(observations, intrinsic, baseline_mm, axis, reference_
     # treating edge-slope errors as a mean offset would be incomplete.
     basis = section_basis(axis)
     unit_axis = np.asarray(axis, float)/np.linalg.norm(axis)
-    params = np.r_[fitted['section_center_parameters_mm'], fitted['trial_diameter_mm']/2]
+    params = np.asarray(fitted['section_center_parameters_mm'])
+    if known_diameter_mm is None:
+        params = np.r_[params, fitted['trial_diameter_mm']/2]
+    parameter_count = len(params)
+
+    def radius(p):
+        return p[2] if known_diameter_mm is None else known_diameter_mm/2
 
     def point_residual(p):
         values, vertical_weights = [], []
         for obs in observations:
             camera = [0., 0., 0.] if obs['role'] == 'left' else [baseline_mm, 0., 0.]
-            lines = projected_lines(p[:2], p[2], basis, np.asarray(intrinsic), camera, reference_u)
+            lines = projected_lines(p[:2], radius(p), basis, np.asarray(intrinsic), camera, reference_u)
             line = lines[0 if obs['edge'] == 'top' else 1]
             points = np.asarray(obs['points'])
             values.extend(points@line[:2]+line[2])
@@ -212,8 +237,8 @@ def pixel_error_scenarios(observations, intrinsic, baseline_mm, axis, reference_
         return np.asarray(values), np.asarray(vertical_weights)
 
     residual, vertical = point_residual(params)
-    point_jac = np.column_stack([(point_residual(params+np.eye(3)[i]*.001)[0]-residual)/.001
-                                 for i in range(3)])
+    point_jac = np.column_stack([(point_residual(params+np.eye(parameter_count)[i]*.001)[0]-residual)/.001
+                                 for i in range(parameter_count)])
     inverse = np.linalg.inv(point_jac.T@point_jac)
     covariance_params = inverse@(point_jac.T@(vertical[:, None]**2*point_jac))@inverse*sigma_px**2
 
@@ -221,24 +246,28 @@ def pixel_error_scenarios(observations, intrinsic, baseline_mm, axis, reference_
         center = basis@p[:2]
         ray_x = (reference_u-intrinsic[0, 2])/intrinsic[0, 0]
         station = center+unit_axis*((ray_x*center[2]-center[0])/(unit_axis[0]-ray_x*unit_axis[2]))
-        return np.array([2*p[2], station[2]])
+        return np.array([*p[:2], radius(p), 2*radius(p), station[2]])
 
-    output_jac = np.column_stack([(output_values(params+np.eye(3)[i]*.001)-output_values(params))/.001
-                                  for i in range(3)])
+    output_jac = np.column_stack([(output_values(params+np.eye(parameter_count)[i]*.001)-output_values(params))/.001
+                                  for i in range(parameter_count)])
     iid_covariance = output_jac@covariance_params@output_jac.T
     scenarios = {}
     for label, effective_counts in [('IID_PIXELS_OPTIMISTIC', counts), ('COHERENT_EDGE_OFFSETS', np.ones(len(counts)))]:
         cov = iid_covariance if label == 'IID_PIXELS_OPTIMISTIC' else sigma_px**2*jac@jac.T
         std = np.sqrt(np.maximum(0, np.diag(cov)))
         scenarios[label] = {'assumed_effective_samples_per_edge': effective_counts.tolist(),
-                            'diameter_sigma_mm': float(std[0]), 'radius_sigma_mm': float(std[0]/2),
-                            'center_z_sigma_mm': float(std[1]),
-                            'normal_95_halfwidth_diameter_mm': float(1.96*std[0]),
-                            'normal_95_halfwidth_radius_mm': float(.98*std[0]),
-                            'normal_95_halfwidth_center_z_mm': float(1.96*std[1])}
+                            'section_parameter_order': ['u_mm', 'v_mm', 'radius_mm'],
+                            'section_parameter_covariance_mm2': cov[:3, :3].tolist(),
+                            'diameter_sigma_mm': float(std[3]), 'radius_sigma_mm': float(std[3]/2),
+                            'center_z_sigma_mm': float(std[4]),
+                            'normal_95_halfwidth_diameter_mm': float(1.96*std[3]),
+                            'normal_95_halfwidth_radius_mm': float(.98*std[3]),
+                            'normal_95_halfwidth_center_z_mm': float(1.96*std[4])}
     return {'status': 'ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION', 'total_accuracy_known': False,
             'assumed_vertical_pixel_sigma_px': float(sigma_px), 'point_counts_per_edge': counts.tolist(),
             'edge_order': [[o['role'], o['edge']] for o in observations],
-            'diameter_and_z_jacobian_mm_per_px': jac.tolist(), 'scenarios': scenarios,
+            'diameter_and_z_jacobian_mm_per_px': jac[3:].tolist(),
+            'section_parameters_jacobian_mm_per_px': jac[:3].tolist(), 'scenarios': scenarios,
             'excluded': ['CALIBRATION_SCALE_AND_RECTIFICATION', 'MISIDENTIFIED_SILHOUETTE',
-                         'OCCLUSION_CLASSIFICATION', 'AXIS_ERROR', 'GENERAL_PIXEL_NOISE_CORRELATION']}
+                         'OCCLUSION_CLASSIFICATION', 'AXIS_ERROR', 'GENERAL_PIXEL_NOISE_CORRELATION']
+                        + (['SUPPLIED_DIAMETER_TOLERANCE'] if known_diameter_mm is not None else [])}
