@@ -1,7 +1,8 @@
 """Bounded image strip proposals and measured-disparity outlier rejection.
 
 Image proposals are diagnostics, never identities or measurements. No CAD
-colour, diameter, pipe count, or manually supplied image direction is used.
+colour, diameter or pipe count is used. An optional image direction and mask
+constrain proposal extraction, without supplying metric or 3-D information.
 Only original stereo samples survive the disparity filter; holes stay holes.
 """
 from __future__ import annotations
@@ -39,10 +40,19 @@ def _axis(mask):
     return np.asarray([math.cos(angle), math.sin(angle)]), max(w, h), min(w, h)
 
 
-def propose_regions(image):
+def propose_regions(image, *, sampling_mask=None, axis_hint_image=None):
     """Separate elongated paint/neutral regions, independently of the model."""
     if not isinstance(image, np.ndarray) or image.dtype != np.uint8 or image.ndim != 3 or image.shape[2] != 3:
         raise ValueError("image must be uint8 BGR")
+    if sampling_mask is not None:
+        sampling_mask = np.asarray(sampling_mask, bool)
+        if sampling_mask.shape != image.shape[:2]:
+            raise ValueError('sampling mask must match image dimensions')
+    if axis_hint_image is not None:
+        axis_hint_image = np.asarray(axis_hint_image, float)
+        if axis_hint_image.shape != (2,) or not np.isfinite(axis_hint_image).all() or np.linalg.norm(axis_hint_image) < 1e-9:
+            raise ValueError('invalid image axis hint')
+        axis_hint_image = axis_hint_image/np.linalg.norm(axis_hint_image)
     # Median suppresses narrow highlights for proposal geometry only. The
     # original image and stereo depth are never blurred for measurement.
     hsv = cv2.cvtColor(cv2.medianBlur(image, 5), cv2.COLOR_BGR2HSV)
@@ -61,6 +71,8 @@ def propose_regions(image):
     proposals = []
     component_limit_hit = False
     for kind, raw in masks:
+        if sampling_mask is not None:
+            raw &= sampling_mask
         mask = cv2.morphologyEx(raw.astype(np.uint8), cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         # Long edge consensus finds a direction even if two pipes touch via a
         # short transverse connector. Weight by capped length, not one blob.
@@ -82,6 +94,8 @@ def propose_regions(image):
             error = np.abs(np.sin(angles-a))
             scores.append(float(weights[error < math.sin(math.radians(8))].sum()))
         angle = float(angles[int(np.argmax(scores))])
+        if axis_hint_image is not None:
+            angle = math.atan2(axis_hint_image[1], axis_hint_image[0])
         # A centred odd kernel avoids a one-pixel shift of the paint mask.
         # Such a shift leaves a false dark seam alongside a real highlight.
         length = max(21, min(81, int(max(image.shape[:2]) * 0.08))) | 1
@@ -92,6 +106,8 @@ def propose_regions(image):
                  (round(center+dx), round(center+dy)), 1, 1)
         opened = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel,
                                   borderType=cv2.BORDER_CONSTANT, borderValue=0)
+        if sampling_mask is not None:
+            opened &= sampling_mask.astype(np.uint8)
         count, labels, stats, _ = cv2.connectedComponentsWithStats(opened, 8)
         # Work on bounded largest components. Explicitly account for overflow.
         eligible = [i for i in range(1, count) if stats[i, cv2.CC_STAT_AREA] >= POLICY["minimum_pixels"]]

@@ -1,0 +1,1912 @@
+{
+  "source_manifest": "outputs\\elevation_workbench\\captures\\elevation-20261022-103057-545d1d88\\manifest.json",
+  "new_manifest": "outputs\\axial-selection-20261022\\captures\\elevation-20261022-111803-9cf8dd46\\manifest.json",
+  "new_camera_capture": false,
+  "band_source": "ASSISTANT_OFFLINE_REPLAY_EXAMPLE",
+  "band": {
+    "revision": "left-image-axial-band-v1",
+    "coordinate_space": "rectified_left",
+    "image_size": [
+      1920,
+      1080
+    ],
+    "axis_segment_px": [
+      [
+        900.0,
+        600.0
+      ],
+      [
+        1420.0,
+        558.0
+      ]
+    ]
+  },
+  "originals_unchanged": true,
+  "original_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261022-103057-545d1d88\\manifest.json": "fd8b6ba0dcea7e2c77aa9a891ed358eae7fa8f60bff302dde5e98d6563680502",
+    "outputs\\elevation_workbench\\captures\\elevation-20261022-103057-545d1d88\\report.json": "c005365dc546cb96f46d1eaaa4bd4471cc2ff0eda725ced94e5638c490ceebb8",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+    "outputs\\elevation_workbench\\captures\\elevation-20261022-103057-545d1d88\\history\\0000_left.png": "d239c15cc75f0079b58126683135c112b0262d0e08ccca72af66bc97426c8ac6",
+    "outputs\\elevation_workbench\\captures\\elevation-20261022-103057-545d1d88\\history\\0000_right.png": "4ed3a85853e4e9043afd2b38a2bf9439e5ad8265db963f78f587a67fef153b9f"
+  },
+  "production_seconds": 21.575720699998783,
+  "legacy_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "previous_automatic": {
+    "status": "ANALYZED",
+    "axis": {
+      "axis": [
+        0.9256385134609499,
+        -0.08248772416922019,
+        0.3693089732990322
+      ],
+      "singular_values": [
+        3.463680800793729,
+        0.04715939233371777,
+        0.026292621163059762
+      ],
+      "line_residual_degrees": [
+        0.019347083893216387,
+        0.11033982637588831,
+        0.04701684931022987,
+        0.17434599369649076,
+        0.4169564442728914,
+        0.5731461749886324,
+        0.2684326990540874,
+        0.5703372729472019,
+        0.8310558331700042,
+        0.30344406244969746,
+        0.7067402020923993,
+        0.20603527062168242
+      ],
+      "nullspace_ratio": 0.5575267165658792,
+      "status": "COMMON_AXIS_UNSTABLE"
+    },
+    "boundary_pair_count": 3,
+    "conditional_section_count": 0,
+    "candidates": [
+      {
+        "candidate_id": "POOL-L01-POOL-R01",
+        "left_candidate_id": "POOL-L01",
+        "right_candidate_id": "POOL-R01",
+        "left_region_px": [
+          627,
+          275,
+          1059,
+          141
+        ],
+        "right_region_px": [
+          526,
+          277,
+          1062,
+          140
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "COMMON_AXIS_UNSTABLE"
+        ],
+        "fit": {
+          "status": "COMMON_AXIS_UNSTABLE"
+        },
+        "pixel_error": {},
+        "window_sensitivity": {},
+        "dimension_status": "UNRESOLVED",
+        "included_in_section_model": true
+      },
+      {
+        "candidate_id": "POOL-L02-POOL-R04",
+        "left_candidate_id": "POOL-L02",
+        "right_candidate_id": "POOL-R04",
+        "left_region_px": [
+          559,
+          352,
+          1286,
+          168
+        ],
+        "right_region_px": [
+          438,
+          353,
+          1290,
+          166
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "COMMON_AXIS_UNSTABLE",
+          "POSSIBLE_SHARED_PIPE_INSTANCE"
+        ],
+        "fit": {
+          "status": "COMMON_AXIS_UNSTABLE"
+        },
+        "pixel_error": {},
+        "window_sensitivity": {},
+        "dimension_status": "UNRESOLVED",
+        "included_in_section_model": true
+      },
+      {
+        "candidate_id": "POOL-L04-POOL-R09",
+        "left_candidate_id": "POOL-L04",
+        "right_candidate_id": "POOL-R09",
+        "left_region_px": [
+          145,
+          447,
+          357,
+          110
+        ],
+        "right_region_px": [
+          24,
+          449,
+          351,
+          107
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "COMMON_AXIS_UNSTABLE",
+          "POSSIBLE_SHARED_PIPE_INSTANCE"
+        ],
+        "fit": {
+          "status": "COMMON_AXIS_UNSTABLE"
+        },
+        "pixel_error": {},
+        "window_sensitivity": {},
+        "dimension_status": "UNRESOLVED",
+        "included_in_section_model": false
+      }
+    ],
+    "position_assessment": {
+      "policy": {
+        "revision": "relative-section-position-v1",
+        "position_tolerance_mm": 5.0,
+        "clearance_tolerance_mm": 5.0,
+        "uncertainty_scenario": "COHERENT_EDGE_OFFSETS",
+        "confidence_multiplier": 1.96,
+        "scope": "RELATIVE_COMMON_SECTION_ONLY"
+      },
+      "policy_sha256": "59ba4df8ab524b91b23521abf831e1958614e0d8fd8c92ff8f225b29ce8c19a3",
+      "pipes": [
+        {
+          "pipe_id": "P001",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P002",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P003",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P004",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P005",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P006",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P007",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P008",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P009",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P010",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P011",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P012",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        }
+      ],
+      "pairwise": [],
+      "counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "absolute_installation_pose_assessed": false,
+      "absence_assessed": false,
+      "calibration_validated": false,
+      "capture_healthy": true,
+      "production_authority": false
+    },
+    "aggregation_band": null,
+    "views": {
+      "left": [
+        {
+          "candidate_id": "POOL-L01",
+          "appearance": "hue-0",
+          "region_px": [
+            627,
+            275,
+            1059,
+            141
+          ],
+          "width_px": 71.48948669433594,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L02",
+          "appearance": "hue-0",
+          "region_px": [
+            559,
+            352,
+            1286,
+            168
+          ],
+          "width_px": 86.06212615966797,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L03",
+          "appearance": "hue-0",
+          "region_px": [
+            248,
+            363,
+            258,
+            87
+          ],
+          "width_px": 68.08902740478516,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L04",
+          "appearance": "hue-0",
+          "region_px": [
+            145,
+            447,
+            357,
+            110
+          ],
+          "width_px": 81.93485260009766,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L05",
+          "appearance": "hue-105",
+          "region_px": [
+            552,
+            525,
+            1346,
+            191
+          ],
+          "width_px": 106.64556121826172,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L06",
+          "appearance": "hue-105",
+          "region_px": [
+            23,
+            625,
+            470,
+            141
+          ],
+          "width_px": 104.92430114746094,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L07",
+          "appearance": "neutral",
+          "region_px": [
+            440,
+            665,
+            112,
+            13
+          ],
+          "width_px": 5.110646724700928,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "VISIBLE_BAND_TOO_NARROW"
+          ]
+        },
+        {
+          "candidate_id": "POOL-L08",
+          "appearance": "neutral",
+          "region_px": [
+            836,
+            964,
+            82,
+            13
+          ],
+          "width_px": 7.0302557945251465,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "VISIBLE_BAND_TOO_NARROW"
+          ]
+        },
+        {
+          "candidate_id": "POOL-L09",
+          "appearance": "neutral",
+          "region_px": [
+            987,
+            964,
+            933,
+            116
+          ],
+          "width_px": 115.0,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        },
+        {
+          "candidate_id": "POOL-L10",
+          "appearance": "neutral",
+          "region_px": [
+            698,
+            995,
+            110,
+            50
+          ],
+          "width_px": 45.12327575683594,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        }
+      ],
+      "right": [
+        {
+          "candidate_id": "POOL-R01",
+          "appearance": "hue-0",
+          "region_px": [
+            526,
+            277,
+            1062,
+            140
+          ],
+          "width_px": 71.11776733398438,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R02",
+          "appearance": "hue-165",
+          "region_px": [
+            1799,
+            339,
+            121,
+            32
+          ],
+          "width_px": 22.288829803466797,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R03",
+          "appearance": "neutral",
+          "region_px": [
+            1715,
+            349,
+            84,
+            11
+          ],
+          "width_px": 5.185436725616455,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "VISIBLE_BAND_TOO_NARROW"
+          ]
+        },
+        {
+          "candidate_id": "POOL-R04",
+          "appearance": "hue-0",
+          "region_px": [
+            438,
+            353,
+            1290,
+            166
+          ],
+          "width_px": 95.50776672363281,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R05",
+          "appearance": "hue-165",
+          "region_px": [
+            1804,
+            364,
+            116,
+            22
+          ],
+          "width_px": 13.930519104003906,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R06",
+          "appearance": "hue-0",
+          "region_px": [
+            149,
+            366,
+            231,
+            83
+          ],
+          "width_px": 67.05740356445312,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R07",
+          "appearance": "hue-165",
+          "region_px": [
+            1810,
+            385,
+            110,
+            16
+          ],
+          "width_px": 5.174193382263184,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "VISIBLE_BAND_TOO_NARROW"
+          ]
+        },
+        {
+          "candidate_id": "POOL-R08",
+          "appearance": "hue-165",
+          "region_px": [
+            1812,
+            393,
+            108,
+            28
+          ],
+          "width_px": 18.20918083190918,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R09",
+          "appearance": "hue-0",
+          "region_px": [
+            24,
+            449,
+            351,
+            107
+          ],
+          "width_px": 81.15037536621094,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R10",
+          "appearance": "hue-105",
+          "region_px": [
+            426,
+            525,
+            1349,
+            190
+          ],
+          "width_px": 106.67674255371094,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R11",
+          "appearance": "hue-105",
+          "region_px": [
+            0,
+            625,
+            364,
+            133
+          ],
+          "width_px": 104.74984741210938,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R12",
+          "appearance": "neutral",
+          "region_px": [
+            722,
+            964,
+            82,
+            11
+          ],
+          "width_px": 4.886276721954346,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "VISIBLE_BAND_TOO_NARROW"
+          ]
+        },
+        {
+          "candidate_id": "POOL-R13",
+          "appearance": "neutral",
+          "region_px": [
+            886,
+            965,
+            1034,
+            115
+          ],
+          "width_px": 114.0,
+          "boundary_status": "STABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        },
+        {
+          "candidate_id": "POOL-R14",
+          "appearance": "neutral",
+          "region_px": [
+            567,
+            993,
+            115,
+            50
+          ],
+          "width_px": 45.12327575683594,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R15",
+          "appearance": "neutral",
+          "region_px": [
+            756,
+            1021,
+            137,
+            59
+          ],
+          "width_px": 52.153526306152344,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        }
+      ]
+    }
+  },
+  "selected_band": {
+    "status": "ANALYZED",
+    "axis": {
+      "axis": [
+        0.9952329811940642,
+        -0.07481952659959501,
+        0.06255678686591834
+      ],
+      "singular_values": [
+        3.463416405523835,
+        0.0685896889654233,
+        0.006500501210349942
+      ],
+      "line_residual_degrees": [
+        0.07559583510155395,
+        0.10326960444748522,
+        0.11346236630581727,
+        0.14089976186366499,
+        0.24779834646252272,
+        0.018923952389646396,
+        0.11812725813565575,
+        0.10415964980577262,
+        0.007091903237386446,
+        0.03422262457624274,
+        0.00011153573861068648,
+        0.04275206455205737
+      ],
+      "nullspace_ratio": 0.09477373798307942,
+      "status": "STABLE"
+    },
+    "boundary_pair_count": 3,
+    "conditional_section_count": 3,
+    "candidates": [
+      {
+        "candidate_id": "POOL-L01-POOL-R01",
+        "left_candidate_id": "POOL-L01",
+        "right_candidate_id": "POOL-R01",
+        "left_region_px": [
+          879,
+          292,
+          525,
+          106
+        ],
+        "right_region_px": [
+          625,
+          287,
+          779,
+          124
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE"
+        ],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9952329811940642,
+            -0.07481952659959501,
+            0.06255678686591834
+          ],
+          "baseline_perpendicular_to_axis_mm": 5.412555886119392,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 46.73486411055172,
+          "section_center_parameters_mm": [
+            -116.74620282047258,
+            2938.928114786191
+          ],
+          "center_at_reference_column_mm": [
+            85.52267292033915,
+            -123.50506127837913,
+            2950.621348611946
+          ],
+          "reference_left_column_px": 1141.0,
+          "reprojection_rms_px": 0.7018736687575678,
+          "linear_condition": 1561.5029060651411,
+          "predicted_lines": {
+            "left": [
+              [
+                0.07199146380915568,
+                0.997405248200858,
+                -390.4315574601281
+              ],
+              [
+                -0.07298443316917769,
+                -0.9973330800264141,
+                461.4684827726699
+              ]
+            ],
+            "right": [
+              [
+                0.07190670693881922,
+                0.9974113622258445,
+                -384.36827825448387
+              ],
+              [
+                -0.07289856833139587,
+                -0.9973393598646514,
+                455.3255348062889
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -4.1842185756516415,
+              -3.5692212809484403,
+              3.5128806957811776,
+              4.229864552322837
+            ],
+            [
+              -243.31301381500907,
+              -246.50589951645543,
+              242.96557311545257,
+              246.15278648564072
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              9.959361713273154,
+              10.08806998993748,
+              -9.612334192077014,
+              -9.740427677532466
+            ],
+            [
+              -242.34720814161847,
+              -245.52742934571597,
+              242.00271172093835,
+              245.17728490887748
+            ],
+            [
+              -2.0921092878258207,
+              -1.7846106404742201,
+              1.7564403478905888,
+              2.1149322761614187
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.7582416620343024,
+                  -18.75896517911599,
+                  -0.14906509004162571
+                ],
+                [
+                  -18.758965179111883,
+                  464.23127874684303,
+                  3.6889434509413164
+                ],
+                [
+                  -0.14906509004161272,
+                  3.6889434509418013,
+                  0.029530226716581048
+                ]
+              ],
+              "diameter_sigma_mm": 0.34368722243680255,
+              "radius_sigma_mm": 0.17184361121840128,
+              "center_z_sigma_mm": 21.63182266896522,
+              "normal_95_halfwidth_diameter_mm": 0.673626955976133,
+              "normal_95_halfwidth_radius_mm": 0.3368134779880665,
+              "normal_95_halfwidth_center_z_mm": 42.39837243117183
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  97.05773545477544,
+                  -2401.2159875131283,
+                  -19.080796669562126
+                ],
+                [
+                  -2401.2159875131283,
+                  59423.27534268224,
+                  472.196097092846
+                ],
+                [
+                  -19.080796669562126,
+                  472.196097092846,
+                  3.77994440968705
+                ]
+              ],
+              "diameter_sigma_mm": 3.8884158263678796,
+              "radius_sigma_mm": 1.9442079131839398,
+              "center_z_sigma_mm": 244.73957853304265,
+              "normal_95_halfwidth_diameter_mm": 7.621295019681044,
+              "normal_95_halfwidth_radius_mm": 3.810647509840522,
+              "normal_95_halfwidth_center_z_mm": 479.6895739247636
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 5.011345876471296,
+          "center_difference_mm": 315.5921146217741,
+          "stable": false,
+          "method": "DISJOINT_ALTERNATING_AXIAL_BLOCKS"
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      },
+      {
+        "candidate_id": "POOL-L02-POOL-R02",
+        "left_candidate_id": "POOL-L02",
+        "right_candidate_id": "POOL-R02",
+        "left_region_px": [
+          885,
+          375,
+          527,
+          121
+        ],
+        "right_region_px": [
+          631,
+          369,
+          781,
+          138
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE"
+        ],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9952329811940642,
+            -0.07481952659959501,
+            0.06255678686591834
+          ],
+          "baseline_perpendicular_to_axis_mm": 5.412555886119392,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 46.85457044554616,
+          "section_center_parameters_mm": [
+            -47.07188226320483,
+            2450.880199906378
+          ],
+          "center_at_reference_column_mm": [
+            108.50626157353406,
+            -55.361986318675,
+            2462.732022877879
+          ],
+          "reference_left_column_px": 1207.5,
+          "reprojection_rms_px": 0.743044044544358,
+          "linear_condition": 1382.639117004868,
+          "predicted_lines": {
+            "left": [
+              [
+                0.07317161781243484,
+                0.9973193642693954,
+                -474.86018133346425
+              ],
+              [
+                -0.07436455796502682,
+                -0.9972311229191888,
+                560.2103047912894
+              ]
+            ],
+            "right": [
+              [
+                0.07306836024498695,
+                0.9973269347265764,
+                -467.472833339407
+              ],
+              [
+                -0.07425966619549218,
+                -0.9972389392600622,
+                552.7054427124987
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -3.440227512171603,
+              -2.9349641602173904,
+              2.8779127108423808,
+              3.484579266381047
+            ],
+            [
+              -166.34637055002258,
+              -168.98474733278363,
+              166.00904820200867,
+              168.64406262835018
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              3.456663113888183,
+              3.509378870277118,
+              -3.1719826090206737,
+              -3.2244545680731562
+            ],
+            [
+              -165.54453019546145,
+              -168.17019911629814,
+              165.21013969975684,
+              167.83246328971927
+            ],
+            [
+              -1.7201137560858015,
+              -1.4674820801086952,
+              1.4389563554211904,
+              1.7422896331905235
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.08734765353238554,
+                  -4.350733658686389,
+                  -0.0415581222066821
+                ],
+                [
+                  -4.35073365868657,
+                  217.08272027361943,
+                  2.073573211045738
+                ],
+                [
+                  -0.04155812220668235,
+                  2.073573211045664,
+                  0.019957703423698563
+                ]
+              ],
+              "diameter_sigma_mm": 0.28254347222116855,
+              "radius_sigma_mm": 0.14127173611058427,
+              "center_z_sigma_mm": 14.805033979416415,
+              "normal_95_halfwidth_diameter_mm": 0.5537852055534903,
+              "normal_95_halfwidth_radius_mm": 0.27689260277674516,
+              "normal_95_halfwidth_center_z_mm": 29.017866599656173
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  11.180710217890024,
+                  -556.9041143771607,
+                  -5.319520669495172
+                ],
+                [
+                  -556.9041143771607,
+                  27787.083335489886,
+                  265.421279662237
+                ],
+                [
+                  -5.319520669495172,
+                  265.421279662237,
+                  2.554615887011488
+                ]
+              ],
+              "diameter_sigma_mm": 3.1966331581909664,
+              "radius_sigma_mm": 1.5983165790954832,
+              "center_z_sigma_mm": 167.5013311671148,
+              "normal_95_halfwidth_diameter_mm": 6.265400990054294,
+              "normal_95_halfwidth_radius_mm": 3.132700495027147,
+              "normal_95_halfwidth_center_z_mm": 328.302609087545
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 2.293934567687252,
+          "center_difference_mm": 103.92779896946885,
+          "stable": false,
+          "method": "DISJOINT_ALTERNATING_AXIAL_BLOCKS"
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      },
+      {
+        "candidate_id": "POOL-L03-POOL-R03",
+        "left_candidate_id": "POOL-L03",
+        "right_candidate_id": "POOL-R03",
+        "left_region_px": [
+          896,
+          502,
+          523,
+          76
+        ],
+        "right_region_px": [
+          642,
+          497,
+          776,
+          94
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE"
+        ],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9952329811940642,
+            -0.07481952659959501,
+            0.06255678686591834
+          ],
+          "baseline_perpendicular_to_axis_mm": 5.412555886119392,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 31.186503585484154,
+          "section_center_parameters_mm": [
+            16.488170091216645,
+            3401.0645863984105
+          ],
+          "center_at_reference_column_mm": [
+            111.35762334667757,
+            8.16306528658324,
+            3414.66081079795
+          ],
+          "reference_left_column_px": 1157.0,
+          "reprojection_rms_px": 0.4484303831421863,
+          "linear_condition": 1567.3789324584268,
+          "predicted_lines": {
+            "left": [
+              [
+                0.07498276939901044,
+                0.9971848295543082,
+                -604.4435540007548
+              ],
+              [
+                -0.07555477743565553,
+                -0.9971416527287628,
+                645.3725633453375
+              ]
+            ],
+            "right": [
+              [
+                0.07490651956004926,
+                0.9971905601876704,
+                -598.9877518337679
+              ],
+              [
+                -0.07547794627592311,
+                -0.9971474713531439,
+                639.8749564032811
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -3.2572918060731837,
+              -2.508031274046516,
+              2.483560545008139,
+              3.277179529166716
+            ],
+            [
+              -314.5851278605596,
+              -316.9927862402301,
+              314.3467468400195,
+              316.7320796013928
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              -1.1338071559507057,
+              -1.143983974247611,
+              1.5186105576538012,
+              1.5286480594337704
+            ],
+            [
+              -313.33072625276145,
+              -315.7287911960839,
+              313.0951094993452,
+              315.47093757053517
+            ],
+            [
+              -1.6286459030365918,
+              -1.254015637023258,
+              1.2417802725040694,
+              1.638589764583358
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.014134587360108511,
+                  3.2697272653676928,
+                  0.014983429308474083
+                ],
+                [
+                  3.269727265367698,
+                  772.2605595240657,
+                  3.5388680975799254
+                ],
+                [
+                  0.014983429308474025,
+                  3.5388680975799063,
+                  0.01650744218992598
+                ]
+              ],
+              "diameter_sigma_mm": 0.25696258241172765,
+              "radius_sigma_mm": 0.12848129120586382,
+              "center_z_sigma_mm": 27.900749688115045,
+              "normal_95_halfwidth_diameter_mm": 0.5036466615269862,
+              "normal_95_halfwidth_radius_mm": 0.2518233307634931,
+              "normal_95_halfwidth_center_z_mm": 54.685469388705485
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  1.8092902289121517,
+                  418.539718075483,
+                  1.9179379668831216
+                ],
+                [
+                  418.539718075483,
+                  98852.81841206568,
+                  452.9891061364408
+                ],
+                [
+                  1.9179379668831216,
+                  452.9891061364408,
+                  2.1130093392885874
+                ]
+              ],
+              "diameter_sigma_mm": 2.9072387857130604,
+              "radius_sigma_mm": 1.4536193928565302,
+              "center_z_sigma_mm": 315.6664840844349,
+              "normal_95_halfwidth_diameter_mm": 5.698188019997598,
+              "normal_95_halfwidth_radius_mm": 2.849094009998799,
+              "normal_95_halfwidth_center_z_mm": 618.7063088054924
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 1.08659499353897,
+          "center_difference_mm": 120.18071879033162,
+          "stable": false,
+          "method": "DISJOINT_ALTERNATING_AXIAL_BLOCKS"
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      }
+    ],
+    "position_assessment": {
+      "policy": {
+        "revision": "relative-section-position-v1",
+        "position_tolerance_mm": 5.0,
+        "clearance_tolerance_mm": 5.0,
+        "uncertainty_scenario": "COHERENT_EDGE_OFFSETS",
+        "confidence_multiplier": 1.96,
+        "scope": "RELATIVE_COMMON_SECTION_ONLY"
+      },
+      "policy_sha256": "59ba4df8ab524b91b23521abf831e1958614e0d8fd8c92ff8f225b29ce8c19a3",
+      "pipes": [
+        {
+          "pipe_id": "P001",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P002",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P003",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P004",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P005",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P006",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P007",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P008",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P009",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P010",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P011",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P012",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        }
+      ],
+      "pairwise": [],
+      "counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "absolute_installation_pose_assessed": false,
+      "absence_assessed": false,
+      "calibration_validated": false,
+      "capture_healthy": true,
+      "production_authority": false
+    },
+    "aggregation_band": {
+      "selection": {
+        "revision": "left-image-axial-band-v1",
+        "coordinate_space": "rectified_left",
+        "image_size": [
+          1920,
+          1080
+        ],
+        "axis_segment_px": [
+          [
+            900.0,
+            600.0
+          ],
+          [
+            1420.0,
+            558.0
+          ]
+        ]
+      },
+      "axis_image": [
+        0.9967540387562959,
+        -0.08050705697647005
+      ],
+      "span_px": 521.6933965462856,
+      "left_scope": "STRICT_USER_BAND",
+      "right_scope": "EPIPOLAR_SEARCH_ENVELOPE",
+      "disparity_range_px": [
+        0.0,
+        255.0
+      ],
+      "views": {
+        "left": {
+          "station_interval_px": [
+            0.0,
+            521.6933965462856
+          ],
+          "selected_pixels": 565269,
+          "image_origin_px": [
+            0,
+            0
+          ]
+        },
+        "right": {
+          "station_interval_px": [
+            -254.17227988285543,
+            521.6933965462856
+          ],
+          "selected_pixels": 840669,
+          "image_origin_px": [
+            0,
+            0
+          ]
+        }
+      },
+      "supplies_metric_length_or_3d_axis": false
+    },
+    "views": {
+      "left": [
+        {
+          "candidate_id": "POOL-L01",
+          "appearance": "hue-0",
+          "region_px": [
+            879,
+            292,
+            525,
+            106
+          ],
+          "width_px": 70.42149353027344,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L02",
+          "appearance": "hue-0",
+          "region_px": [
+            885,
+            375,
+            527,
+            121
+          ],
+          "width_px": 84.50202178955078,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L03",
+          "appearance": "neutral",
+          "region_px": [
+            896,
+            502,
+            523,
+            76
+          ],
+          "width_px": 38.156368255615234,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L04",
+          "appearance": "hue-120",
+          "region_px": [
+            900,
+            550,
+            528,
+            143
+          ],
+          "width_px": 106.3005599975586,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L05",
+          "appearance": "neutral",
+          "region_px": [
+            987,
+            986,
+            475,
+            94
+          ],
+          "width_px": 89.76762390136719,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        }
+      ],
+      "right": [
+        {
+          "candidate_id": "POOL-R01",
+          "appearance": "hue-0",
+          "region_px": [
+            625,
+            287,
+            779,
+            124
+          ],
+          "width_px": 70.78459167480469,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R02",
+          "appearance": "hue-0",
+          "region_px": [
+            631,
+            369,
+            781,
+            138
+          ],
+          "width_px": 84.22694396972656,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R03",
+          "appearance": "neutral",
+          "region_px": [
+            642,
+            497,
+            776,
+            94
+          ],
+          "width_px": 38.49787139892578,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R04",
+          "appearance": "hue-105",
+          "region_px": [
+            645,
+            543,
+            782,
+            159
+          ],
+          "width_px": 106.68225860595703,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R05",
+          "appearance": "neutral",
+          "region_px": [
+            722,
+            964,
+            82,
+            11
+          ],
+          "width_px": 4.886276721954346,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "VISIBLE_BAND_TOO_NARROW"
+          ]
+        },
+        {
+          "candidate_id": "POOL-R06",
+          "appearance": "neutral",
+          "region_px": [
+            886,
+            976,
+            576,
+            104
+          ],
+          "width_px": 98.84032440185547,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        },
+        {
+          "candidate_id": "POOL-R07",
+          "appearance": "neutral",
+          "region_px": [
+            756,
+            1021,
+            137,
+            59
+          ],
+          "width_px": 52.153526306152344,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        }
+      ]
+    }
+  },
+  "retained_left_samples_inside_band": [
+    {
+      "candidate_id": "POOL-L01",
+      "edge": "top",
+      "count": 503,
+      "station_range_px": [
+        10.973878599768833,
+        516.2361681840948
+      ]
+    },
+    {
+      "candidate_id": "POOL-L01",
+      "edge": "bottom",
+      "count": 502,
+      "station_range_px": [
+        5.338384611415931,
+        510.600674195742
+      ]
+    },
+    {
+      "candidate_id": "POOL-L02",
+      "edge": "top",
+      "count": 376,
+      "station_range_px": [
+        131.60411930555964,
+        515.5346066875857
+      ]
+    },
+    {
+      "candidate_id": "POOL-L02",
+      "edge": "bottom",
+      "count": 381,
+      "station_range_px": [
+        124.76101946255967,
+        508.77201390156216
+      ]
+    },
+    {
+      "candidate_id": "POOL-L03",
+      "edge": "top",
+      "count": 503,
+      "station_range_px": [
+        8.938200159078091,
+        512.287488722868
+      ]
+    },
+    {
+      "candidate_id": "POOL-L03",
+      "edge": "bottom",
+      "count": 503,
+      "station_range_px": [
+        9.785441092020942,
+        513.1347296558108
+      ]
+    },
+    {
+      "candidate_id": "POOL-L04",
+      "edge": "top",
+      "count": 380,
+      "station_range_px": [
+        130.4731868385092,
+        514.4036742205352
+      ]
+    },
+    {
+      "candidate_id": "POOL-L04",
+      "edge": "bottom",
+      "count": 383,
+      "station_range_px": [
+        121.85893174202691,
+        506.0309402949823
+      ]
+    }
+  ]
+}

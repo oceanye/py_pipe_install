@@ -279,10 +279,15 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         raise ValueError("至少需要一组双目照片")
     captures = []
     current_surface = None
+    matcher = groups[-1]['depth'].audit.get('matcher', {})
+    disparity_min = float(matcher.get('min_disparity', 0))
+    disparity_max = disparity_min+float(matcher.get('num_disparities', 256))-1
     # Current image evidence only: historical images cannot fill today's hidden
     # boundaries. This independent stage precedes dense-surface recognition.
     section = assess_pooled_sections(
-        analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration),
+        analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
+            aggregation_band=settings.get('aggregation_band'), image_offsets=groups[-1].get('image_offsets'),
+            disparity_range=(disparity_min, disparity_max)),
         pipe_specs, calibration, capture_healthy=bool(groups[-1].get('pair_healthy', False)),
         settings=settings if groups[-1].get('anchors_apply', True) else dict(settings, anchors={}), matching=matching)
     positions = {row['pipe_id']: row for row in section['position_assessment']['pipes']}
@@ -751,6 +756,7 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
         for group in groups:
             cropped, offsets = crop_stereo_group_for_zone(
                 group, calibration, zone, right_padding_px=settings["right_roi_padding_px"])
+            cropped['image_offsets'] = offsets
             cropped_groups.append(cropped)
         report = analyze_elevation_auto_groups(
             cropped_groups, calibration=crop_calibration_for_zone(

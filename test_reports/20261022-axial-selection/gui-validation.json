@@ -1,0 +1,45 @@
+{
+  "layout": [
+    {
+      "window_width": 1120,
+      "button": "④ 保存并评估",
+      "right": 198,
+      "visible": true
+    },
+    {
+      "window_width": 1120,
+      "button": "管长方向 / 汇聚范围",
+      "right": 727,
+      "visible": true
+    },
+    {
+      "window_width": 1120,
+      "button": "清除汇聚范围",
+      "right": 820,
+      "visible": true
+    },
+    {
+      "window_width": 940,
+      "button": "④ 保存并评估",
+      "right": 198,
+      "visible": true
+    },
+    {
+      "window_width": 940,
+      "button": "管长方向 / 汇聚范围",
+      "right": 727,
+      "visible": true
+    },
+    {
+      "window_width": 940,
+      "button": "清除汇聚范围",
+      "right": 820,
+      "visible": true
+    }
+  ],
+  "two_perpendicular_lines_restored": true,
+  "two_handles_restored": true,
+  "real_report_loaded": true,
+  "camera_opened": false,
+  "summary_mentions_band": true
+}

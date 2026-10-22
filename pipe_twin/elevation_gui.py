@@ -282,6 +282,8 @@ class RegionCanvas:
         self.pan = [0.0, 0.0]
         self.pan_start = None
         self.region_start: tuple[float, float] | None = None
+        from .axial_selection_gui import AxialBandController
+        self.band_controller = AxialBandController(self) if role == 'left' and assessment_regions else None
         self.canvas.bind("<Configure>", lambda _e: self.draw())
         self.canvas.bind("<MouseWheel>", self.wheel)
         self.canvas.bind("<ButtonPress-3>", self.start_pan)
@@ -295,6 +297,13 @@ class RegionCanvas:
         if self.assessment_regions and self.role == "left" and self.owner.region_selection_active:
             self.owner._set_region_selection(False)
         self.image = image
+        if self.band_controller:
+            self.owner._set_axial_selection(False)
+            band = self.owner.registration_settings.get('aggregation_band')
+            if image is not None and band and tuple(band['image_size']) != image.shape[1::-1]:
+                self.owner.registration_settings.pop('aggregation_band', None)
+                self.owner.invalidate()
+                self.owner.message.set('照片尺寸改变，已清除汇聚范围；请重新指定管长方向。')
         self.zoom, self.pan = 1.0, [0.0, 0.0]
         self.draw()
 
@@ -401,12 +410,18 @@ class RegionCanvas:
                 canvas.create_text(ox + x * scale + 4, oy + y * scale + 4,
                                    anchor="nw", text=f"{zone['zone_id']} · 评估区域", fill="#67E8A5",
                                    tags="assessment-zone")
+        if self.band_controller:
+            self.band_controller.draw()
 
     def cancel_region_drag(self) -> None:
         self.region_start = None
         self.canvas.delete("pending-zone")
+        if self.band_controller:
+            self.band_controller.cancel()
 
     def start_region(self, event: Any) -> None:
+        if self.band_controller and self.band_controller.start(event):
+            return
         if (self.role != "left" or self.image is None or self.owner.busy
                 or not self.owner.region_selection_active):
             return
@@ -418,6 +433,8 @@ class RegionCanvas:
         self.region_start = (event.x, event.y)
 
     def move_region(self, event: Any) -> None:
+        if self.band_controller and self.band_controller.move(event):
+            return
         self.canvas.delete("pending-zone")
         if self.region_start is None or self.image is None or self.owner.busy:
             return
@@ -431,6 +448,8 @@ class RegionCanvas:
                                          outline="#FFE07A", width=2, dash=(4, 2), tags="pending-zone")
 
     def finish_region(self, event: Any) -> None:
+        if self.band_controller and self.band_controller.finish(event):
+            return
         start = self.region_start
         self.cancel_region_drag()
         if (start is None or self.image is None or self.owner.busy
@@ -444,7 +463,7 @@ class RegionCanvas:
         self.owner.add_left_region(rect)
 
     def wheel(self, event: Any) -> None:
-        if self.region_start is not None:
+        if self.region_start is not None or (self.band_controller and self.band_controller.dragging):
             return
         old = self.zoom
         self.zoom = min(8.0, max(1.0, old * (1.2 if event.delta > 0 else 1 / 1.2)))
@@ -806,6 +825,7 @@ class ElevationCaptureDialog:
         self.analysis_settings: dict[str, Any] = {}
         self.zone_settings: dict[str, Any] = normalize_zone_settings()
         self.region_selection_active = False
+        self.axial_selection_active = False
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
         self.window.title("基础立面评估 · 双目管道状态")
@@ -870,7 +890,10 @@ class ElevationCaptureDialog:
         self.zone_button.pack(side="left", padx=3)
         self.region_button = ttk.Button(method_bar, text="左图框选区域", command=self.toggle_region_selection)
         self.region_button.pack(side="left", padx=3)
-        self.window.bind("<Escape>", lambda _e: self.toggle_region_selection() if self.region_selection_active else None)
+        self.axial_button = ttk.Button(method_bar, text='管长方向 / 汇聚范围', command=self.toggle_axial_selection)
+        self.axial_button.pack(side='left', padx=3)
+        ttk.Button(method_bar, text='清除汇聚范围', command=self.clear_axial_band).pack(side='left', padx=3)
+        self.window.bind("<Escape>", lambda _e: self.cancel_image_selections())
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
         photos = ttk.Frame(self.controls)
         photos.pack(fill="x", pady=6)
@@ -924,7 +947,7 @@ class ElevationCaptureDialog:
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role, assessment_regions=True)
-        ttk.Label(footer, text="断面评估：沿管轴汇聚 → 稳定边界 → 断面尺寸 → 相对就位。青色线为稳定边界；框选时保留管宽及足够轴向采样。", foreground="#355371").pack(anchor="w")
+        ttk.Label(footer, text="左图画管长方向：两条橙色垂线之间汇聚；拖动端点可调范围。青色线为稳定边界。方向与范围随现场保存。", foreground="#355371").pack(anchor="w")
 
         table_frame = ttk.Frame(footer)
         table_frame.pack(fill="x", pady=6)
@@ -1011,6 +1034,8 @@ class ElevationCaptureDialog:
         self.generation += 1
         if self.region_selection_active:
             self._set_region_selection(False)
+        if self.axial_selection_active or self.views['left'].band_controller.dragging:
+            self._set_axial_selection(False)
         if self.report is not None or self.results:
             self.report, self.results = None, {}
             self.refresh_table()
@@ -1024,6 +1049,7 @@ class ElevationCaptureDialog:
             self.quality_dialog.clear_inputs()
         if key == "calibration":
             self.calibration_override = None
+            self.registration_settings.pop('aggregation_band', None)
             self.zone_settings = normalize_zone_settings()
             self.scope_label.set("全幅自动")
             self._clear_registration_anchors()
@@ -1063,11 +1089,60 @@ class ElevationCaptureDialog:
         self.redraw()
 
     def _set_region_selection(self, active: bool) -> None:
+        if active:
+            self._set_axial_selection(False)
         self.region_selection_active = active
         self.region_button.configure(text="取消框选（Esc）" if active else "左图框选区域")
         view = self.views["left"]
         view.cancel_region_drag()
         view.canvas.configure(cursor="crosshair" if active else "")
+
+    def _set_axial_selection(self, active: bool) -> None:
+        self.axial_selection_active = active
+        self.axial_button.configure(text='取消方向绘制（Esc）' if active else '管长方向 / 汇聚范围')
+        view = self.views['left']
+        view.cancel_region_drag()
+        view.canvas.configure(cursor='crosshair' if active else '')
+
+    def cancel_image_selections(self) -> None:
+        self._set_region_selection(False)
+        self._set_axial_selection(False)
+        self.redraw()
+
+    def toggle_axial_selection(self) -> None:
+        if self.busy:
+            return
+        if self.axial_selection_active:
+            self.cancel_image_selections()
+            return
+        if self.views['left'].image is None:
+            self.message.set('请先抓拍或导入左目矫正图，再指定管长方向。')
+            return
+        self._set_region_selection(False)
+        self._set_axial_selection(True)
+        self.message.set('在左图沿管长拖一条线：两端生成垂线，两线之间汇聚。建议避开支架和管端、选择至少 384 px；完成后可拖动橙色端点调整范围。')
+
+    def set_axial_band(self, payload: dict) -> None:
+        if self.busy or self.views['left'].image is None:
+            return
+        from .axial_selection import normalize_axial_band, band_geometry
+        image = self.views['left'].image
+        band = normalize_axial_band(payload, image_size=image.shape[1::-1])
+        self.registration_settings['aggregation_band'] = band
+        self.invalidate()
+        self.redraw()
+        length = band_geometry(band)[2]
+        note = '；范围较短，可能不足以通过子段稳定性检查' if length < 384 else ''
+        self.message.set(f'已指定汇聚范围 {length:.0f} px{note}。点击④保存并评估；所画方向仅用于图像取样，三维方向仍由双目解算。')
+        log_event(LOGGER, 'elevation_axial_band_changed', aggregation_band=band)
+
+    def clear_axial_band(self) -> None:
+        if self.busy:
+            return
+        self.registration_settings.pop('aggregation_band', None)
+        self.invalidate()
+        self.redraw()
+        self.message.set('已清除手动汇聚范围，恢复自动管段汇聚。')
 
     def toggle_region_selection(self) -> None:
         if self.busy:

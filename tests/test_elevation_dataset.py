@@ -70,6 +70,34 @@ class ElevationDatasetTests(unittest.TestCase):
         self.assertEqual(loaded["pipe_specs"][0]["pipe_id"], "P001")
         self.assertEqual(loaded["left_path"].name, "left.png")
 
+    def test_pooling_band_persists_and_changed_band_breaks_history(self):
+        from pipe_twin.axial_selection import normalize_axial_band
+        band = normalize_axial_band({'image_size': [640, 480], 'axis_segment_px': [[100, 240], [500, 220]]})
+        settings = {'aggregation_band': band}
+        first = self._create(registration_settings=settings)
+        self.assertEqual(load_elevation_dataset(first)['registration_settings']['aggregation_band'], band)
+        self.assertTrue(elevation_history_compatible(first, _calibration(), self.specs,
+            model_path=MODEL_PATH, stl_unit='millimeter', registration_settings=settings))
+        second = self._create(previous_manifest=first, registration_settings=settings)
+        self.assertEqual(load_elevation_dataset(second)['registration_settings']['aggregation_band'], band)
+        changed = copy.deepcopy(settings)
+        changed['aggregation_band']['axis_segment_px'][0][0] += 50
+        self.assertFalse(elevation_history_compatible(first, _calibration(), self.specs,
+            model_path=MODEL_PATH, stl_unit='millimeter', registration_settings=changed))
+        self.assertFalse(elevation_history_compatible(first, _calibration(), self.specs,
+            model_path=MODEL_PATH, stl_unit='millimeter'))
+
+    def test_pooling_band_resolution_mismatch_rejected_on_save_and_load(self):
+        band = {'image_size': [1280, 960], 'axis_segment_px': [[100, 240], [500, 220]]}
+        with self.assertRaisesRegex(ValueError, '尺寸'):
+            self._create(registration_settings={'aggregation_band': band})
+        path = self._create()
+        manifest = json.loads(path.read_text(encoding='utf-8'))
+        manifest['analysis']['elevation_auto']['registration']['aggregation_band'] = band
+        path.write_text(json.dumps(manifest), encoding='utf-8')
+        with self.assertRaisesRegex(ValueError, '尺寸'):
+            load_elevation_dataset(path)
+
     def test_rectification_recipe_is_persisted_and_restored(self):
         calibration = _calibration(); recipe = _recipe(calibration)
         path = create_elevation_dataset(output_root=Path(self.tmp.name) / "recipe", calibration=calibration,

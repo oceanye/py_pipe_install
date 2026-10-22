@@ -124,15 +124,15 @@ def _specs(value: Any, width: int, height: int, *, mode: str = "elevation_auto")
     return result
 
 
-def normalize_registration_settings(payload: Mapping | None = None) -> dict:
-    """Small, portable UI contract; direction is expressed in model coordinates."""
+def normalize_registration_settings(payload: Mapping | None = None, *, image_size=None) -> dict:
+    """Portable model alignment settings and an optional left-image pooling band."""
     from .recognition import available_recognizers, is_recognizer_registered
 
     from .camera_view import normalize_camera_side
 
-    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode", "camera_side_world"}
+    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode", "camera_side_world", "aggregation_band"}
     if payload is not None and (not isinstance(payload, Mapping) or set(payload) - allowed):
-        raise ValueError("立面匹配配置只能包含axis_world、anchors、present_pipe_count、local_observation_mode和camera_side_world")
+        raise ValueError("立面匹配配置包含未知字段")
     payload = dict(payload or {})
     axis = payload.get("axis_world")
     if axis is not None:
@@ -156,6 +156,10 @@ def normalize_registration_settings(payload: Mapping | None = None) -> dict:
             f"（当前：{available}）"
         )
     result = {"axis_world": axis, "anchors": dict(anchors), "local_observation_mode": mode}
+    from .axial_selection import normalize_axial_band
+    band = normalize_axial_band(payload.get('aggregation_band'), image_size=image_size)
+    if band is not None:
+        result['aggregation_band'] = band
     side = normalize_camera_side(payload.get("camera_side_world"))
     if side is not None:
         result["camera_side_world"] = side
@@ -415,7 +419,7 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
     if _hash(source_left) == _hash(source_right):
         raise ValueError("左右照片内容相同")
     specs = _specs(pipe_specs, parsed.left.width, parsed.left.height, mode=mode)
-    registration = normalize_registration_settings(registration_settings)
+    registration = normalize_registration_settings(registration_settings, image_size=(parsed.left.width, parsed.left.height))
     if status_refresh is not None:
         if not isinstance(status_refresh, Mapping) or set(status_refresh) - {"action", "requested_at"}:
             raise ValueError("status_refresh只能包含action和requested_at")
@@ -607,7 +611,7 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
             raise ValueError("模型SHA-256不匹配")
     settings = manifest["analysis"].get(mode) or {}
     specs = _specs(settings.get("pipes"), calibration.left.width, calibration.left.height, mode=mode)
-    registration = normalize_registration_settings(settings.get("registration"))
+    registration = normalize_registration_settings(settings.get("registration"), image_size=(calibration.left.width, calibration.left.height))
     from .elevation_zones import normalize_zone_settings
     scope = normalize_zone_settings(
         {key: settings[key] for key in ("scope", "zone_schema_version", "right_roi_padding_px", "zones") if key in settings},

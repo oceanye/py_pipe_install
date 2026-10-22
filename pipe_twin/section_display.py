@@ -53,6 +53,10 @@ def section_summary_lines(report, *, detailed=False):
     lines += ['', pooling_summary(report)]
     for stage in stages:
         lines += ['', f"{stage.get('zone_id', '全幅')}：稳定双目边界 {stage.get('boundary_pair_count', 0)} 对"]
+        band = stage.get('aggregation_band')
+        if band:
+            lines += [f"手动汇聚范围：沿左图指定方向 {band['span_px']:.1f} px，两条垂线之间取样。",
+                      '右图使用对应视差搜索带；所画方向是二维取样方向，三维轴向和毫米尺寸仍需解算。']
         for candidate in stage.get('candidates', []):
             fit = candidate.get('fit', {})
             diameter = fit.get('trial_diameter_mm')

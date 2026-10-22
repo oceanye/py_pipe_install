@@ -16,7 +16,7 @@ from .section_diagnostics import axis_from_image_lines
 from .section_model import build_section_model
 
 
-def _observed_edges(image, proposal, role):
+def _observed_edges(image, proposal, role, sampling_mask=None):
     x, y, width, height = proposal['region_px']
     crop = image[y:y+height, x:x+width]
     hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
@@ -29,6 +29,14 @@ def _observed_edges(image, proposal, role):
     # Morphology only bounds the search; edges come from the original pixels.
     gate = cv2.dilate(proposal['mask'], np.ones((5, 5), np.uint8)).astype(bool)
     raw &= gate
+    interior = None
+    if sampling_mask is not None:
+        selected = sampling_mask[y:y+height, x:x+width]
+        raw &= selected
+        # The cut planes are axial ends, never observed cylinder silhouettes.
+        # Erode the selection to discard false top/bottom points on a cut.
+        interior = cv2.erode(sampling_mask.astype(np.uint8), np.ones((5, 5), np.uint8),
+                             borderType=cv2.BORDER_CONSTANT, borderValue=0)[y:y+height, x:x+width]
     points = {'top': [], 'bottom': []}
     profiles = []
     trim = max(8, int(proposal['width_px']*.15))
@@ -37,6 +45,8 @@ def _observed_edges(image, proposal, role):
         if len(rows) < max(3, .35*proposal['width_px']):
             continue
         low, high = rows[0], rows[-1]
+        if interior is not None and not (interior[low, column] and interior[high, column]):
+            continue
         points['top'].append([x+column, y+low-.5])
         points['bottom'].append([x+column, y+high+.5])
         if high-low >= 8 and appearance != 'neutral':
@@ -106,9 +116,9 @@ def _join_disjoint(items):
     return combined
 
 
-def aggregate_image(image, role):
-    proposals, audit = propose_regions(image)
-    items = _join_disjoint([_observed_edges(image, p, role) for p in proposals])
+def aggregate_image(image, role, *, sampling_mask=None, axis_hint_image=None):
+    proposals, audit = propose_regions(image, sampling_mask=sampling_mask, axis_hint_image=axis_hint_image)
+    items = _join_disjoint([_observed_edges(image, p, role, sampling_mask) for p in proposals])
     for index, item in enumerate(items):
         item['candidate_id'] = f'POOL-{role[0].upper()}{index+1:02d}'
         item['aggregation'], item['pooled_edges'] = aggregate_boundaries(item['edges'])
@@ -189,18 +199,29 @@ def _compatible(first, second, offset=(0., 0.)):
     return True
 
 
-def analyze_pooled_sections(left, right, calibration):
+def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, image_offsets=None, disparity_range=(0., 256.)):
     views, proposal_audit = {}, {}
+    masks, band_audit = {}, None
+    k = np.asarray(calibration.left.rectified_intrinsic, float)
+    kr = np.asarray(calibration.right.rectified_intrinsic, float)
+    if aggregation_band is not None:
+        from .axial_selection import normalize_axial_band, band_sampling_masks
+        aggregation_band = normalize_axial_band(aggregation_band,
+            image_size=None if image_offsets else (left.shape[1], left.shape[0]))
+        offsets = image_offsets or {}
+        full_vertical_offset = k[1, 2]-kr[1, 2]+offsets.get('left_y', 0)-offsets.get('right_y', 0)
+        masks, band_audit = band_sampling_masks(aggregation_band, left.shape, right.shape,
+            offsets=offsets, disparity_range=disparity_range, right_vertical_offset=full_vertical_offset)
     for role, image in [('left', left), ('right', right)]:
-        views[role], proposal_audit[role] = aggregate_image(image, role)
+        views[role], proposal_audit[role] = (aggregate_image(image, role, sampling_mask=masks[role],
+            axis_hint_image=band_audit['axis_image']) if band_audit else aggregate_image(image, role))
     result = {'revision': REVISION, 'policy_sha256': POLICY_SHA256, 'policy': dict(POLICY),
               'stages': ['BOUNDARY_AGGREGATION', 'SECTION_DIMENSIONS', 'MODEL_RELATIVE_POSITION'],
               'occlusion_recovered': False, 'nominal_dimensions_used_in_fitting': False,
               'views': {role: [_compact(i) for i in items] for role, items in views.items()},
               'proposal_audit': proposal_audit, 'candidates': [], 'model': None,
+              'aggregation_band': band_audit,
               'truncated': any(a['truncated'] for a in proposal_audit.values())}
-    k = np.asarray(calibration.left.rectified_intrinsic, float)
-    kr = np.asarray(calibration.right.rectified_intrinsic, float)
     # The projection fitter uses a shared rectified K. Translate right image
     # coordinates to that K after any asymmetric ROI crop; never recenter eyes.
     if not np.allclose(k[:2, :2], kr[:2, :2], atol=1e-7):

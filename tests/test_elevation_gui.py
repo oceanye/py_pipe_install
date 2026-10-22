@@ -94,6 +94,68 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(len(repeated["capture"]["capture_groups"]), 1)
         self.assertNotIn("已开始新历史", self.dialog.message.get())
 
+    def test_zoomed_direction_drag_handle_resize_save_and_reopen(self):
+        from pipe_twin.axial_selection import band_geometry
+        view = self.dialog.views['left']
+        self.dialog.toggle_axial_selection()
+        view.transform = (2, 10, 10)
+        view.start_region(SimpleNamespace(x=210, y=490))
+        view.move_region(SimpleNamespace(x=1010, y=450))
+        view.finish_region(SimpleNamespace(x=1010, y=450))
+        band = self.dialog.registration_settings['aggregation_band']
+        self.assertEqual(band['axis_segment_px'], [[100., 240.], [500., 220.]])
+        self.assertFalse(self.dialog.axial_selection_active)
+        self.assertEqual(len(view.canvas.find_withtag('axial-band-limit')), 2)
+        self.assertEqual(len(view.canvas.find_withtag('axial-band-handle')), 2)
+        self.assertFalse(self.dialog.views['right'].canvas.find_withtag('axial-band'))
+        self.dialog.report = {'old': True}
+        # Resize one boundary without changing the chosen common image direction.
+        view.transform = (2, 10, 10)
+        view.start_region(SimpleNamespace(x=1010, y=450))
+        view.move_region(SimpleNamespace(x=1190, y=400))
+        view.finish_region(SimpleNamespace(x=1190, y=400))
+        moved = self.dialog.registration_settings['aggregation_band']
+        np.testing.assert_allclose(band_geometry(moved)[1], band_geometry(band)[1])
+        self.assertGreater(band_geometry(moved)[2], band_geometry(band)[2])
+        self.assertIsNone(self.dialog.report)
+        self.dialog.submit(False)
+        self.finish_worker()
+        saved = self.dialog.last_manifest
+        self.dialog.clear_axial_band()
+        self.assertNotIn('aggregation_band', self.dialog.registration_settings)
+        self.dialog.load_session(saved)
+        self.assertEqual(self.dialog.registration_settings['aggregation_band'], moved)
+        self.assertEqual(len(view.canvas.find_withtag('axial-band-limit')), 2)
+        self.dialog.fields['calibration'].set('different-calibration.json')
+        self.assertNotIn('aggregation_band', self.dialog.registration_settings)
+
+    def test_pooling_selection_cancel_exclusive_modes_and_stale_drag(self):
+        view = self.dialog.views['left']
+        band = {'image_size': [640, 480], 'axis_segment_px': [[100, 240], [500, 240]]}
+        self.dialog.set_axial_band(band)
+        stored = copy.deepcopy(self.dialog.registration_settings['aggregation_band'])
+        self.dialog.toggle_axial_selection()
+        view.transform = (1, 0, 0)
+        view.start_region(SimpleNamespace(x=100, y=100))
+        view.move_region(SimpleNamespace(x=400, y=120))
+        self.dialog.cancel_image_selections()
+        self.assertFalse(view.band_controller.dragging)
+        self.assertEqual(self.dialog.registration_settings['aggregation_band'], stored)
+        self.dialog.toggle_axial_selection()
+        self.dialog.toggle_region_selection()
+        self.assertFalse(self.dialog.axial_selection_active)
+        self.assertTrue(self.dialog.region_selection_active)
+        self.dialog.cancel_image_selections()
+        view.transform = (1, 0, 0)
+        view.start_region(SimpleNamespace(x=100, y=240))
+        self.assertTrue(view.band_controller.dragging)
+        self.dialog.invalidate()
+        self.assertFalse(view.band_controller.dragging)
+        view.finish_region(SimpleNamespace(x=200, y=240))
+        self.assertEqual(self.dialog.registration_settings['aggregation_band'], stored)
+        view.set_image(np.zeros((240, 320, 3), np.uint8))
+        self.assertNotIn('aggregation_band', self.dialog.registration_settings)
+
     def test_auto_restore_uses_new_profile_calibration_and_clears_old_photos(self):
         from pipe_twin.workbench_profile import save_camera_calibration_bundle
         self.dialog.submit(False)
