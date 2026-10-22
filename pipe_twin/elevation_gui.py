@@ -97,6 +97,10 @@ def recognition_summary(report: dict) -> str:
     reasons = Counter(r.get("reason") for r in surface.get("rejected",[]))
     if reasons:
         text += "；" + "、".join(f"{REASON_TEXT.get(k,k)} {v} 次" for k,v in reasons.most_common(2))
+    from .section_display import pooling_summary
+    pooled = pooling_summary(report)
+    if pooled:
+        text += '；'+pooled
     return text
 
 
@@ -214,6 +218,9 @@ def relative_layout_summary_lines(report: dict | None) -> list[str]:
                   "图像候选框不等于实测管道，模型尺寸不会填入实测结果。"]
     if report:
         lines += ["", recognition_summary(report)]
+        from .section_display import section_summary_lines, section_evaluations
+        if section_evaluations(report):
+            lines += ['', *section_summary_lines(report)]
     return lines
 
 
@@ -376,6 +383,11 @@ class RegionCanvas:
                                             outline=color, width=2, dash=(3, 2))
                     canvas.create_text(ox + x * scale + 2, max(12, oy + y * scale - 3),
                                        anchor="sw", text=oid, fill=color)
+
+        from .section_display import boundary_overlay_segments
+        for x1, y1, x2, y2 in boundary_overlay_segments(report, self.role):
+            canvas.create_line(ox+x1*scale, oy+y1*scale, ox+x2*scale, oy+y2*scale,
+                               fill='#67E8EF', width=2, tags='pooled-boundary')
 
         # Group search bounds are independent from automatic pipe identities.
         if self.assessment_regions and self.role == "left" and self.owner.zone_settings.get("scope") == "zones":
@@ -912,15 +924,15 @@ class ElevationCaptureDialog:
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role, assessment_regions=True)
-        ttk.Label(footer, text="只看一个断面：用“左图框选区域”框住跨过各管的局部采样带，保留完整管宽；无需包含管端。", foreground="#355371").pack(anchor="w")
+        ttk.Label(footer, text="断面评估：沿管轴汇聚 → 稳定边界 → 断面尺寸 → 相对就位。青色线为稳定边界；框选时保留管宽及足够轴向采样。", foreground="#355371").pack(anchor="w")
 
         table_frame = ttk.Frame(footer)
         table_frame.pack(fill="x", pady=6)
-        columns = ("diameter", "color", "left", "right", "reference", "state", "reason")
+        columns = ("diameter", "color", "left", "right", "reference", "state", "position", "reason")
         self.tree = ttk.Treeview(table_frame, columns=columns, height=5, selectmode="browse")
         self.tree.heading("#0", text="管道编号")
         self.tree.column("#0", width=90, stretch=False)
-        for column, label, width in zip(columns, ("管径 mm", "颜色", "左证据", "右证据", "深度", "状态", "说明"), (80, 100, 70, 70, 90, 110, 350)):
+        for column, label, width in zip(columns, ("模型管径 mm", "颜色", "左证据", "右证据", "深度", "安装证据", "断面就位", "说明"), (90, 80, 60, 60, 60, 90, 135, 310)):
             self.tree.heading(column, text=label)
             self.tree.column(column, width=width, stretch=column == "reason")
         scroll = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
@@ -935,7 +947,7 @@ class ElevationCaptureDialog:
         row.pack(fill="x")
         actions = [("设置颜色", self.edit_pipe), ("同径统一颜色", self.apply_diameter_color),
                    ("管长与观察方向", self.open_model_viewer), ("查看模型管道编号", self.show_catalog),
-                   ("管间尺寸对比", self.show_measurement)]
+                   ("断面尺寸与就位", self.show_measurement), ("管段汇聚", self.show_section_aggregation)]
         for name, action in actions:
             ttk.Button(row, text=name, command=action).pack(side="left", padx=2)
         bottom = ttk.Frame(footer)
@@ -1215,7 +1227,8 @@ class ElevationCaptureDialog:
                 distance = evidence.get("observed_distance_to_left_camera_mm")
                 distance_text = f"；截面中心线距左目 {float(distance):.0f} mm" if isinstance(distance, (int, float)) else ""
                 explanation = f"{diameter_text}{distance_text}；{explanation}"
-            self.tree.insert("", "end", iid=spec["pipe_id"], text=spec["pipe_id"], tags=(row.get("installation_state", "UNKNOWN"),), values=(f"{spec['nominal_diameter_mm']:g}", spec["color_srgb"], "自动" if left_region else "待匹配", "自动" if right_region else "待匹配", "自动", row.get("installation_state_zh", "待评估"), explanation))
+            position = row.get('section_position') or {}
+            self.tree.insert("", "end", iid=spec["pipe_id"], text=spec["pipe_id"], tags=(row.get("installation_state", "UNKNOWN"),), values=(f"{spec['nominal_diameter_mm']:g}", spec["color_srgb"], "自动" if left_region else "待匹配", "自动" if right_region else "待匹配", "自动", row.get("installation_state_zh", "待评估"), position.get('state_zh', '待评估'), explanation))
         if self.pipes:
             self.tree.selection_set(selected if selected in self.tree.get_children() else self.pipes[0]["pipe_id"])
         self.redraw()
@@ -1226,7 +1239,7 @@ class ElevationCaptureDialog:
             return
         tk, ttk = self.app.tk, self.app.ttk
         dialog = tk.Toplevel(self.window)
-        dialog.title("管间尺寸对比 · 模型与实测")
+        dialog.title("断面尺寸与就位 · 模型与图像估计")
         dialog.geometry("850x660")
         text = tk.Text(dialog, wrap="word", padx=15, pady=15, font=("Microsoft YaHei", 10))
         text.pack(fill="both", expand=True)
@@ -1236,6 +1249,20 @@ class ElevationCaptureDialog:
         text.insert("1.0", "\n".join(lines))
         text.configure(state="disabled")
         ttk.Button(dialog, text="关闭", command=dialog.destroy).pack(pady=6)
+
+    def show_section_aggregation(self) -> None:
+        from .section_display import section_summary_lines
+        tk, ttk = self.app.tk, self.app.ttk
+        dialog = tk.Toplevel(self.window)
+        dialog.title('管段汇聚 · 边界、尺寸与相对就位')
+        dialog.geometry('980x700')
+        text = tk.Text(dialog, wrap='word', padx=15, pady=15, font=('Microsoft YaHei', 10))
+        scroll = ttk.Scrollbar(dialog, orient='vertical', command=text.yview)
+        text.configure(yscrollcommand=scroll.set)
+        scroll.pack(side='right', fill='y')
+        text.pack(fill='both', expand=True)
+        text.insert('1.0', '\n'.join(section_summary_lines(self.report, detailed=True)))
+        text.configure(state='disabled')
 
     def show_recognition_diagnostics(self) -> None:
         tk, ttk = self.app.tk, self.app.ttk

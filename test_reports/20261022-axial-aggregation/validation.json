@@ -1,0 +1,25 @@
+{
+  "command": ".venv/Scripts/python.exe -m pytest tests -q --disable-warnings --maxfail=1 --junitxml=outputs/axial-aggregation-20261022/pytest.xml",
+  "suites": [
+    {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "1",
+      "tests": "993",
+      "time": "640.286",
+      "timestamp": "2026-10-22T10:09:49.550901+08:00",
+      "hostname": "ZJLZ1026"
+    }
+  ],
+  "summary": "728 passed, 1 skipped, 264 subtests passed in 640.32s",
+  "additional_guard_tests": {
+    "command": "pytest tests/test_pooled_sections_guards.py -q",
+    "passed": 6,
+    "seconds": 1.79
+  },
+  "compileall": "PASS",
+  "git_diff_check": "PASS",
+  "tested_source_hashes_match_field_replay": true,
+  "junit_sha256": "77a2b534f850e23be5239bf2102beb4f00a44196a7ae69abb36ff2c7d3f068af"
+}

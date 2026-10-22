@@ -266,6 +266,8 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
     from .elevation_dataset import normalize_registration_settings
     from .matching_config import normalize_matching_settings
     from .recognition import recognize_local_pipes
+    from .pooled_sections import analyze_pooled_sections
+    from .section_position import assess_pooled_sections
     settings = normalize_registration_settings(registration_settings)
     # Preserve the pre-policy Python API behaviour for callers that invoke the
     # in-memory analyzer directly.  Persisted GUI/manifests pass an explicit
@@ -277,6 +279,13 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         raise ValueError("至少需要一组双目照片")
     captures = []
     current_surface = None
+    # Current image evidence only: historical images cannot fill today's hidden
+    # boundaries. This independent stage precedes dense-surface recognition.
+    section = assess_pooled_sections(
+        analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration),
+        pipe_specs, calibration, capture_healthy=bool(groups[-1].get('pair_healthy', False)),
+        settings=settings if groups[-1].get('anchors_apply', True) else dict(settings, anchors={}), matching=matching)
+    positions = {row['pipe_id']: row for row in section['position_assessment']['pipes']}
     for group in groups:
         observation_mode = settings.get("local_observation_mode", "auto")
         # The recognition package owns the detector choice and fallback
@@ -352,12 +361,14 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         state = "INSTALLED" if evidence["installed_candidate"] else "NOT_INSTALLED" if len(independent) >= 2 else "UNKNOWN"
         reasons = ["REPEATED_REGISTERED_FREE_SPACE"] if state == "NOT_INSTALLED" else evidence["reason_codes"]
         rows.append({"pipe_id": pipe_id, "installation_state": state, "installation_state_zh": STATE_ZH[state],
+                     "section_position": positions[pipe_id],
                      "measurement": evidence["measurement"],
                      "reason_codes": reasons, "state_basis": reasons[0], "current_evidence": evidence,
                      "independent_free_space_captures": list(reversed(independent)),
                      "assessment_scope": "LOCAL_COMMON_AXIAL_SECTION"})
     return {"mode": "elevation_auto", "counts": {s: sum(r["installation_state"] == s for r in rows) for s in STATE_ZH},
             "pipes": rows, "registration": current["registration"], "local_surface": current_surface,
+            "section_evaluation": section, "position_assessment": section['position_assessment'],
             "status_refresh": current.get("status_refresh"),
             "capture_audit": {"count": len(captures), "groups": captures},
             "registration_required": True, "qr_registration_required": False,
@@ -401,6 +412,9 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
 
     zone_id = str(zone["zone_id"])
     result = copy.deepcopy(dict(report))
+    if result.get('section_evaluation'):
+        result['section_evaluation'].update(zone_id=zone_id, zone_offsets=dict(offsets),
+                                             coordinate_space='ZONE_LOCAL_RECTIFIED')
     def qualify_rejection(raw):
         item = copy.deepcopy(raw)
         role = item.get("role")
@@ -669,6 +683,12 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
     latest_group_registrations = [group.get("registration", {}) for group in merged_groups]
     registration = _merge_zone_registrations(latest_group_registrations)
     rows = _merge_zone_rows(zone_reports, pipe_specs)
+    from .section_position import merge_position_assessments
+    section_evaluations = [r['section_evaluation'] for r in zone_reports if r.get('section_evaluation')]
+    position = merge_position_assessments([r['position_assessment'] for r in section_evaluations], pipe_specs)
+    by_pipe = {row['pipe_id']: row for row in position['pipes']}
+    for row in rows:
+        row['section_position'] = by_pipe[row['pipe_id']]
     current = zone_reports[0]
     audit = {"scope": "zones", "zone_count": len(zone_reports),
              "zones": [{"zone_id": report.get("zone_id"), "label": report.get("zone_label"),
@@ -691,6 +711,7 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
         "mode": "elevation_auto", "scope": "zones", "scope_settings": copy.deepcopy(dict(scope)),
         "counts": {state: sum(row["installation_state"] == state for row in rows) for state in STATE_ZH},
         "pipes": rows, "registration": registration,
+        "section_evaluations": section_evaluations, "position_assessment": position,
         "local_surface": {"observations": observations, "rejected": rejected, "point_cloud": point_cloud, "audit": audit,
                           "image_candidates":image_candidates},
         "status_refresh": current.get("status_refresh"),
@@ -814,7 +835,7 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
         raise ValueError("手工基准对应缺少匹配的照片哈希，请在当前照片上重新指定")
     scope_settings = loaded.get("scope_settings") or {"scope": "full_frame", "zones": []}
     if progress is not None:
-        progress("深度处理完成，正在拟合管段并比较管间尺寸……")
+        progress("正在汇聚可见边界、检查断面尺寸并比较模型相对就位……")
     if scope_settings.get("scope") == "zones":
         result = analyze_elevation_auto_zones(
             groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
@@ -867,6 +888,10 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                 cv2.rectangle(overlay,(x,y),(x+w,y+h),(102,209,255),1)
                 cv2.putText(overlay,str(candidate["candidate_id"])+" IMAGE ONLY",(x,max(15,y-3)),
                             cv2.FONT_HERSHEY_SIMPLEX,.45,(102,209,255),1)
+            if group is groups[-1]:
+                from .section_display import boundary_overlay_segments
+                for x1, y1, x2, y2 in boundary_overlay_segments(result, role):
+                    cv2.line(overlay, (round(x1), round(y1)), (round(x2), round(y2)), (239, 232, 103), 2)
             ok, encoded = cv2.imencode(".png", overlay)
             if not ok:
                 raise ValueError("无法保存匹配叠图")
