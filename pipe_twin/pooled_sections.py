@@ -14,6 +14,7 @@ from .image_regions import propose_regions
 from .projection_diagnostics import fit_silhouettes, pixel_error_scenarios
 from .section_diagnostics import axis_from_image_lines
 from .section_model import build_section_model
+from .axial_consistency import synchronize_axial_blocks
 
 
 def _observed_edges(image, proposal, role, sampling_mask=None):
@@ -179,7 +180,7 @@ def _possible_same_instance(first, second):
 def _compatible(first, second, offset=(0., 0.)):
     if not (first['boundary_stable'] and second['boundary_stable']):
         return False
-    if first['appearance'] != second['appearance']:
+    if not _compatible_appearance(first, second):
         return False
     if abs(first['width_px']-second['width_px']) > max(6, .25*max(first['width_px'], second['width_px'])):
         return False
@@ -199,6 +200,30 @@ def _compatible(first, second, offset=(0., 0.)):
     return True
 
 
+def _compatible_appearance(first, second):
+    """Overlapping hue bins are proposal labels, not different physical colours."""
+    a, b = first['appearance'], second['appearance']
+    if a == b:
+        return True
+    if not (a.startswith('hue-') and b.startswith('hue-')):
+        return False
+    delta = abs(int(a.split('-')[1])-int(b.split('-')[1]))
+    if min(delta, 180-delta) > 15:
+        return False
+    colours = []
+    for item in (first, second):
+        value = item.get('color_srgb', '')
+        if not isinstance(value, str) or len(value) != 7 or not value.startswith('#'):
+            return False
+        try:
+            colours.append([int(value[i:i+2], 16) for i in (5, 3, 1)])
+        except ValueError:
+            return False
+    hsv = cv2.cvtColor(np.array([colours], np.uint8), cv2.COLOR_BGR2HSV)[0].astype(int)
+    difference = abs(hsv[0, 0]-hsv[1, 0])
+    return bool(min(difference, 180-difference) <= 15 and hsv[:, 1].min() >= 80)
+
+
 def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, image_offsets=None, disparity_range=(0., 256.)):
     views, proposal_audit = {}, {}
     masks, band_audit = {}, None
@@ -216,6 +241,7 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
         views[role], proposal_audit[role] = (aggregate_image(image, role, sampling_mask=masks[role],
             axis_hint_image=band_audit['axis_image']) if band_audit else aggregate_image(image, role))
     result = {'revision': REVISION, 'policy_sha256': POLICY_SHA256, 'policy': dict(POLICY),
+              'section_revision': 'pooled-sections-common-station-v2',
               'stages': ['BOUNDARY_AGGREGATION', 'SECTION_DIMENSIONS', 'MODEL_RELATIVE_POSITION'],
               'occlusion_recovered': False, 'nominal_dimensions_used_in_fitting': False,
               'views': {role: [_compact(i) for i in items] for role, items in views.items()},
@@ -265,35 +291,37 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
         reference = a['aggregation']['boundaries'][0]['reference_u_px']
         fit = {'status': 'OUTLINE_IDENTITY_OR_OCCLUSION_UNRESOLVED'}
         error, sensitivity = {}, {}
+        common_support = None
         if axis is None:
             candidate['reason_codes'].append(axis_audit['status'])
             fit = {'status': axis_audit['status']}
         if not candidate['reason_codes'] and axis is not None:
             fit = fit_silhouettes(_bounded(observations), k, calibration.baseline_mm, axis, reference)
             if fit['status'] == 'CONDITIONAL_FIT':
-                error = pixel_error_scenarios(_bounded(observations), k, calibration.baseline_mm, axis, reference,
+                common, partitions, common_support = synchronize_axial_blocks(observations, k, calibration.baseline_mm, fit)
+                if common:
+                    fit = fit_silhouettes(_bounded(common), k, calibration.baseline_mm, axis, reference)
+            if fit['status'] == 'CONDITIONAL_FIT':
+                fitted_observations = common if common else observations
+                error = pixel_error_scenarios(_bounded(fitted_observations), k, calibration.baseline_mm, axis, reference,
                                                sigma_px=POLICY['assumed_coherent_edge_sigma_px'])
                 if fit['reprojection_rms_px'] > POLICY['maximum_reprojection_rms_px']:
                     candidate['reason_codes'].append('CYLINDER_PROJECTION_INCONSISTENT')
                 halves = []
-                for parity in (0, 1):
-                    divided = []
-                    for obs in observations:
-                        p = obs['points']; first = float(p[:, 0].min())
-                        keep = (np.floor((p[:, 0]-first)/POLICY['window_px']).astype(int) % 2) == parity
-                        divided.append({**obs, 'points': p[keep]})
+                for divided in partitions:
                     halves.append(fit_silhouettes(_bounded(divided), k, calibration.baseline_mm, axis, reference))
-                if all(f['status'] == 'CONDITIONAL_FIT' for f in halves):
+                if len(halves) == 2 and all(f['status'] == 'CONDITIONAL_FIT' for f in halves):
                     diameter_delta = abs(halves[0]['trial_diameter_mm']-halves[1]['trial_diameter_mm'])
                     center_delta = float(np.linalg.norm(np.array(halves[0]['section_center_parameters_mm'])-halves[1]['section_center_parameters_mm']))
                     stable = diameter_delta <= max(1., .05*fit['trial_diameter_mm']) and center_delta <= 5.
                     sensitivity = {'diameter_difference_mm': diameter_delta, 'center_difference_mm': center_delta,
-                                   'stable': bool(stable), 'method': 'DISJOINT_ALTERNATING_AXIAL_BLOCKS'}
+                                   'center_difference_components_mm': (np.array(halves[0]['section_center_parameters_mm'])-halves[1]['section_center_parameters_mm']).tolist(),
+                                   'stable': bool(stable), 'method': 'COMMON_STATION_ALTERNATING_BLOCKS'}
                 else:
-                    sensitivity = {'stable': False, 'reason': 'SUBSET_FIT_UNRESOLVED'}
+                    sensitivity = {'stable': False, 'reason': 'SUBSET_FIT_UNRESOLVED' if partitions else common_support['status']}
                 if not sensitivity['stable']:
                     candidate['reason_codes'].append('POOLED_DIMENSIONS_UNSTABLE')
-        candidate.update(fit=fit, pixel_error=error, window_sensitivity=sensitivity,
+        candidate.update(fit=fit, pixel_error=error, window_sensitivity=sensitivity, common_axial_support=common_support,
                          dimension_status='CONDITIONAL' if fit['status'] == 'CONDITIONAL_FIT' else 'UNRESOLVED')
         result['candidates'].append(candidate)
         model_items.append({'id': candidate['candidate_id'], 'label': candidate['candidate_id'],

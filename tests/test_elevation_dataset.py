@@ -98,6 +98,21 @@ class ElevationDatasetTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, '尺寸'):
             load_elevation_dataset(path)
 
+    def test_ground_roi_persists_breaks_history_and_rejects_wrong_resolution(self):
+        settings = {'ground_region': {'image_size': [640, 480], 'rect_px': [100, 300, 400, 160],
+                                     'coordinate_space': 'rectified_left'}}
+        path = self._create(registration_settings=settings)
+        self.assertEqual(load_elevation_dataset(path)['registration_settings']['ground_region'], settings['ground_region'])
+        self.assertTrue(elevation_history_compatible(path, _calibration(), self.specs,
+            model_path=MODEL_PATH, stl_unit='millimeter', registration_settings=settings))
+        changed = copy.deepcopy(settings)
+        changed['ground_region']['rect_px'][0] += 10
+        self.assertFalse(elevation_history_compatible(path, _calibration(), self.specs,
+            model_path=MODEL_PATH, stl_unit='millimeter', registration_settings=changed))
+        changed['ground_region']['image_size'] = [1280, 960]
+        with self.assertRaisesRegex(ValueError, '尺寸'):
+            self._create(registration_settings=changed)
+
     def test_rectification_recipe_is_persisted_and_restored(self):
         calibration = _calibration(); recipe = _recipe(calibration)
         path = create_elevation_dataset(output_root=Path(self.tmp.name) / "recipe", calibration=calibration,

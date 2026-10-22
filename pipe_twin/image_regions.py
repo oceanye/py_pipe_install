@@ -14,7 +14,7 @@ import math
 import cv2
 import numpy as np
 
-REVISION = "image-strips-overlapping-hue-v4"
+REVISION = "image-strips-soft-axis-v5"
 POLICY = {"maximum_regions": 24, "minimum_pixels": 120, "minimum_length_px": 48,
           "minimum_aspect": 2.0, "minimum_fill": 0.55,
           "axis_tolerance_deg": 12.0, "disparity_residual_px": 2.0,
@@ -25,7 +25,9 @@ POLICY = {"maximum_regions": 24, "minimum_pixels": 120, "minimum_length_px": 48,
           "local_window_min_length_px": 160, "local_window_width_multiple": 4.0,
           "direction_kernel_odd": True, "clipped_minimum_aspect": 1.3,
           "clipped_boundary_margin_px": 2, "global_axis_filter": False,
-          "hue_center_step": 15, "hue_half_width": 15}
+          "hue_center_step": 15, "hue_half_width": 15,
+          "manual_hint_tolerance_deg": 12., "minimum_highlight_bridge_length_px": 48,
+          "minimum_highlight_bridge_fraction": .5}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
 
 
@@ -69,6 +71,7 @@ def propose_regions(image, *, sampling_mask=None, axis_hint_image=None):
                   180-abs(hue_values-hue)) <= POLICY["hue_half_width"])) for hue in centers]
     masks.append(("neutral", (hsv[:, :, 1] < 65) & (gray >= max(100, threshold))))
     proposals = []
+    direction_estimates = []
     component_limit_hit = False
     for kind, raw in masks:
         if sampling_mask is not None:
@@ -93,9 +96,21 @@ def propose_regions(image, *, sampling_mask=None, axis_hint_image=None):
         for a in angles:
             error = np.abs(np.sin(angles-a))
             scores.append(float(weights[error < math.sin(math.radians(8))].sum()))
-        angle = float(angles[int(np.argmax(scores))])
+        eligible_angles = np.arange(len(angles))
+        hint = None
         if axis_hint_image is not None:
-            angle = math.atan2(axis_hint_image[1], axis_hint_image[0])
+            hint = math.atan2(axis_hint_image[1], axis_hint_image[0])
+            eligible_angles = np.flatnonzero(np.abs(np.sin(angles-hint)) <= math.sin(math.radians(POLICY['manual_hint_tolerance_deg'])))
+            # The mouse line bounds the search, not the measured direction.
+            # No compatible observed edge means no directional proposal.
+            if not len(eligible_angles):
+                continue
+        best = eligible_angles[int(np.argmax(np.asarray(scores)[eligible_angles]))]
+        angle = float(angles[best])
+        degrees = math.degrees(math.atan2(math.sin(2*angle), math.cos(2*angle)))/2
+        direction_estimates.append({'appearance': kind, 'observed_angle_deg': degrees,
+            'source': 'OBSERVED_NEAR_HINT' if hint is not None else 'OBSERVED',
+            'hint_difference_deg': math.degrees(math.asin(abs(math.sin(angle-hint)))) if hint is not None else None})
         # A centred odd kernel avoids a one-pixel shift of the paint mask.
         # Such a shift leaves a false dark seam alongside a real highlight.
         length = max(21, min(81, int(max(image.shape[:2]) * 0.08))) | 1
@@ -149,7 +164,36 @@ def propose_regions(image, *, sampling_mask=None, axis_hint_image=None):
         gap += 1 - gap % 2
         joined = cv2.morphologyEx(combined,cv2.MORPH_CLOSE,np.ones((gap,gap),np.uint8))
         bright = (hsv[:,:,1] < 100) & (hsv[:,:,2] >= 180)
-        joined = combined | ((joined > 0) & bright).astype(np.uint8)
+        bridge = ((joined > 0) & bright & (combined == 0)).astype(np.uint8)
+        if sampling_mask is not None:
+            bridge &= sampling_mask.astype(np.uint8)
+        # A few bright support pixels must not join two complete pipes.
+        # Accept only elongated bright connections along an observed pipe axis.
+        nbridge, blabels, bstats, _ = cv2.connectedComponentsWithStats(bridge, 8)
+        joined = combined.copy()
+        for index in range(1, nbridge):
+            bx, by, bw, bh, area = map(int, bstats[index])
+            if area < POLICY['minimum_highlight_bridge_length_px']:
+                continue
+            local_bridge = (blabels[by:by+bh, bx:bx+bw] == index).astype(np.uint8)
+            bridge_axis, major, minor = _axis(local_bridge)
+            if major < POLICY['minimum_highlight_bridge_length_px'] or major < 2*max(1., minor):
+                continue
+            if not any(abs(bridge_axis@p['axis_image']) >= math.cos(math.radians(POLICY['axis_tolerance_deg'])) for p in members):
+                continue
+            padded = np.pad(local_bridge, 1)
+            neighbour = cv2.dilate(padded, np.ones((3, 3), np.uint8))
+            touching = []
+            for p in members:
+                px, py, pw, ph = p['region_px']
+                x0, y0 = max(bx-1, px), max(by-1, py)
+                x1, y1 = min(bx+bw+1, px+pw), min(by+bh+1, py+ph)
+                if x1 > x0 and y1 > y0 and np.any(
+                    neighbour[y0-by+1:y1-by+1, x0-bx+1:x1-bx+1] & p['mask'][y0-py:y1-py, x0-px:x1-px]):
+                    touching.append(p)
+            if len(touching) < 2 or major < POLICY['minimum_highlight_bridge_fraction']*min(p['length_px'] for p in touching):
+                continue
+            joined[by:by+bh, bx:bx+bw] |= local_bridge
         count, labels, stats, _ = cv2.connectedComponentsWithStats(joined,8)
         merged = []
         for i in range(1,count):
@@ -219,7 +263,7 @@ def propose_regions(image, *, sampling_mask=None, axis_hint_image=None):
     unique.sort(key=lambda p: (p["region_px"][1], p["region_px"][0]))
     return unique, {"revision":REVISION, "policy_sha256":POLICY_SHA256,
                     "scope":"IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
-                    "global_axis_filter_applied": False,
+                    "global_axis_filter_applied": False, "direction_estimates": direction_estimates,
                     "truncated":truncated, "candidate_count":len(unique)}
 
 

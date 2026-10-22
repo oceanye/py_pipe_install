@@ -55,8 +55,14 @@ def section_summary_lines(report, *, detailed=False):
         lines += ['', f"{stage.get('zone_id', '全幅')}：稳定双目边界 {stage.get('boundary_pair_count', 0)} 对"]
         band = stage.get('aggregation_band')
         if band:
-            lines += [f"手动汇聚范围：沿左图指定方向 {band['span_px']:.1f} px，两条垂线之间取样。",
-                      '右图使用对应视差搜索带；所画方向是二维取样方向，三维轴向和毫米尺寸仍需解算。']
+            lines += [f"手动汇聚范围：沿左图指定方向 {band['span_px']:.1f} px，两条垂线之间取样。"]
+            if stage.get('section_revision') == 'pooled-sections-common-station-v2':
+                lines += ['右图使用对应视差搜索带；鼠标仅提供大致方向，实际边缘方向从图像重新估计。',
+                          '三维轴向和毫米尺寸仍需解算；图像内倾斜与纵深倾斜分别处理。']
+            else:
+                lines += ['右图使用对应视差搜索带；所画方向是二维取样方向，三维轴向和毫米尺寸仍需解算。']
+        if stage.get('section_revision') == 'pooled-sections-common-station-v2':
+            lines += ['子段按两眼共同轴向区间对齐；圆心差在同一法向断面上比较，不把沿管长的位移算作误差。']
         for candidate in stage.get('candidates', []):
             fit = candidate.get('fit', {})
             diameter = fit.get('trial_diameter_mm')
@@ -74,6 +80,11 @@ def section_summary_lines(report, *, detailed=False):
             sensitivity = candidate.get('window_sensitivity') or {}
             if 'center_difference_mm' in sensitivity:
                 lines.append(f"  子段间变化：直径 {sensitivity['diameter_difference_mm']:.2f} mm，断面圆心 {sensitivity['center_difference_mm']:.2f} mm")
+                components = sensitivity.get('center_difference_components_mm')
+                if components:
+                    lines.append(f'  圆心差分量：断面横向 {components[0]:.2f} mm，另一法向方向 {components[1]:.2f} mm；不表示实物移动。')
+            elif sensitivity.get('reason') in ('NO_COMMON_AXIAL_SUPPORT', 'AXIAL_STATION_MAPPING_UNRESOLVED'):
+                lines.append('  两眼共同轴向采样不足，无法比较子段尺寸。')
         for pair in (stage.get('model') or {}).get('pairs', []):
             lines.append(f"条件断面 {' / '.join(pair['ids'])}：轴心距 {pair['center_distance_mm']:.2f} / 净距 {pair['surface_clearance_mm']:.2f} mm（非已验收值）")
         if detailed:

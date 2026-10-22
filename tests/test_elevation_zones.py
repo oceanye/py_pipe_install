@@ -77,6 +77,25 @@ def test_full_width_zone_reuses_automatic_geometry_and_qualifies_observations():
     assert result["zone_registration_audit"]["registrations"][0]["camera_view"]["camera_side_world"] == [1, 0, 0]
 
 
+def test_ground_check_uses_full_image_once_even_when_ground_is_outside_pipe_zone(monkeypatch):
+    from pipe_twin import ground_check
+    calibration, specs, groups = _groups()
+    region = {'image_size': [640, 480], 'rect_px': [100, 340, 400, 130]}
+    calls = []
+    def check(group, cal, selection, *, section_stages):
+        calls.append((group, cal, selection, section_stages))
+        return {'status': 'TEST_FULL_FRAME'}
+    monkeypatch.setattr(ground_check, 'check_ground', check)
+    result = analyze_elevation_auto_zones(groups, calibration=calibration, pipe_specs=specs,
+        scope_settings={'scope': 'zones', 'zones': [_zone((100, 0, 440, 280))]},
+        registration_settings={'ground_region': region})
+    assert len(calls) == 1
+    assert calls[0][0] is groups[-1] and calls[0][1] is calibration
+    assert calls[0][2]['rect_px'] == region['rect_px']
+    assert calls[0][3] == result['section_evaluations']
+    assert result['ground_check']['status'] == 'TEST_FULL_FRAME'
+
+
 @pytest.mark.parametrize("backend", ["cylinder", "geometry_only", "parallel_strip", "image_guided", "auto"])
 def test_partial_zone_uses_real_backends_with_unequal_crop_widths(backend):
     calibration, specs, groups = _groups()

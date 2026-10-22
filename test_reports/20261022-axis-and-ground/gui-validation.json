@@ -1,0 +1,108 @@
+{
+  "layout": [
+    {
+      "window_size": [
+        1120,
+        860
+      ],
+      "controls": [
+        {
+          "button": "④ 保存并评估",
+          "right": 198,
+          "bottom": 73,
+          "visible": true
+        },
+        {
+          "button": "管长方向 / 汇聚范围",
+          "right": 727,
+          "bottom": 107,
+          "visible": true
+        },
+        {
+          "button": "左图框选地面",
+          "right": 102,
+          "bottom": 138,
+          "visible": true
+        },
+        {
+          "button": "地面距离 / 姿态检查",
+          "right": 227,
+          "bottom": 138,
+          "visible": true
+        },
+        {
+          "button": "清除地面区域",
+          "right": 320,
+          "bottom": 138,
+          "visible": true
+        },
+        {
+          "button": "展开拍摄 / 评估设置",
+          "right": 1105,
+          "bottom": 138,
+          "visible": true
+        }
+      ],
+      "photo_canvas_size": [
+        536,
+        319
+      ],
+      "photo_canvas_visible": true
+    },
+    {
+      "window_size": [
+        940,
+        660
+      ],
+      "controls": [
+        {
+          "button": "④ 保存并评估",
+          "right": 198,
+          "bottom": 73,
+          "visible": true
+        },
+        {
+          "button": "管长方向 / 汇聚范围",
+          "right": 727,
+          "bottom": 107,
+          "visible": true
+        },
+        {
+          "button": "左图框选地面",
+          "right": 102,
+          "bottom": 138,
+          "visible": true
+        },
+        {
+          "button": "地面距离 / 姿态检查",
+          "right": 227,
+          "bottom": 138,
+          "visible": true
+        },
+        {
+          "button": "清除地面区域",
+          "right": 320,
+          "bottom": 138,
+          "visible": true
+        },
+        {
+          "button": "展开拍摄 / 评估设置",
+          "right": 925,
+          "bottom": 138,
+          "visible": true
+        }
+      ],
+      "photo_canvas_size": [
+        446,
+        119
+      ],
+      "photo_canvas_visible": true
+    }
+  ],
+  "band_and_ground_restored": true,
+  "real_report_loaded": true,
+  "camera_opened": false,
+  "failed_ground_does_not_publish_distance": true,
+  "pending_ground_and_historical_algorithm_labels_correct": true,
+  "section_explains_common_station_and_mouse_hint": true
+}

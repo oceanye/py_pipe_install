@@ -130,7 +130,7 @@ def normalize_registration_settings(payload: Mapping | None = None, *, image_siz
 
     from .camera_view import normalize_camera_side
 
-    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode", "camera_side_world", "aggregation_band"}
+    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode", "camera_side_world", "aggregation_band", "ground_region"}
     if payload is not None and (not isinstance(payload, Mapping) or set(payload) - allowed):
         raise ValueError("立面匹配配置包含未知字段")
     payload = dict(payload or {})
@@ -160,6 +160,10 @@ def normalize_registration_settings(payload: Mapping | None = None, *, image_siz
     band = normalize_axial_band(payload.get('aggregation_band'), image_size=image_size)
     if band is not None:
         result['aggregation_band'] = band
+    from .ground_check import normalize_ground_region
+    ground = normalize_ground_region(payload.get('ground_region'), image_size=image_size)
+    if ground is not None:
+        result['ground_region'] = ground
     side = normalize_camera_side(payload.get("camera_side_world"))
     if side is not None:
         result["camera_side_world"] = side

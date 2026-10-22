@@ -156,6 +156,31 @@ class ElevationGuiTests(unittest.TestCase):
         view.set_image(np.zeros((240, 320, 3), np.uint8))
         self.assertNotIn('aggregation_band', self.dialog.registration_settings)
 
+    def test_ground_roi_is_separate_from_pooling_and_persists(self):
+        self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[100, 240], [500, 220]]})
+        band = copy.deepcopy(self.dialog.registration_settings['aggregation_band'])
+        self.dialog.toggle_ground_selection()
+        view = self.dialog.views['left']; view.transform = (2, 10, 10)
+        view.start_region(SimpleNamespace(x=210, y=610))
+        view.finish_region(SimpleNamespace(x=1010, y=910))
+        self.assertEqual(self.dialog.registration_settings['ground_region']['rect_px'], [100, 300, 400, 150])
+        self.assertEqual(self.dialog.registration_settings['aggregation_band'], band)
+        self.assertEqual(self.dialog.zone_settings['scope'], 'full_frame')
+        self.assertEqual(len(view.canvas.find_withtag('ground-region')), 2)
+        self.dialog.submit(True)
+        self.finish_worker()
+        self.assertNotEqual(self.dialog.report['ground_check']['status'], 'CONSISTENT_GROUND_PLANE')
+        saved = self.dialog.last_manifest
+        self.dialog.clear_ground_region()
+        self.dialog.load_session(saved)
+        self.assertEqual(self.dialog.registration_settings['ground_region']['rect_px'], [100, 300, 400, 150])
+        self.dialog.show_ground_check()
+        windows = [w for w in self.dialog.window.winfo_children() if isinstance(w, self.tk.Toplevel)]
+        self.assertTrue(windows)
+        windows[-1].destroy()
+        self.dialog.fields['calibration'].set('different-ground-calibration.json')
+        self.assertNotIn('ground_region', self.dialog.registration_settings)
+
     def test_auto_restore_uses_new_profile_calibration_and_clears_old_photos(self):
         from pipe_twin.workbench_profile import save_camera_calibration_bundle
         self.dialog.submit(False)

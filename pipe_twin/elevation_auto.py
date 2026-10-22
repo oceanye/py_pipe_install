@@ -371,7 +371,11 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                      "reason_codes": reasons, "state_basis": reasons[0], "current_evidence": evidence,
                      "independent_free_space_captures": list(reversed(independent)),
                      "assessment_scope": "LOCAL_COMMON_AXIAL_SECTION"})
+    from .ground_check import check_ground
+    ground = (check_ground(groups[-1], calibration, settings.get('ground_region'), section_stages=[section])
+              if not groups[-1].get('image_offsets') else None)
     return {"mode": "elevation_auto", "counts": {s: sum(r["installation_state"] == s for r in rows) for s in STATE_ZH},
+            "ground_check": ground,
             "pipes": rows, "registration": current["registration"], "local_surface": current_surface,
             "section_evaluation": section, "position_assessment": section['position_assessment'],
             "status_refresh": current.get("status_refresh"),
@@ -767,6 +771,9 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
         reports.append(_qualify_zone_report(report, zone, offsets or {}))
     result = _merge_zone_reports(reports, groups=groups, calibration=calibration,
                                  pipe_specs=pipe_specs, matching=matching, scope=settings)
+    from .ground_check import check_ground
+    result['ground_check'] = check_ground(groups[-1], calibration, global_registration.get('ground_region'),
+                                         section_stages=result.get('section_evaluations', []))
     if global_registration["anchors"]:
         result["zone_registration_audit"]["anchors_ignored"] = True
         result["zone_registration_audit"]["reason"] = "ZONE_MODE_DOES_NOT_USE_PER_PIPE_ANCHORS"

@@ -304,6 +304,10 @@ class RegionCanvas:
                 self.owner.registration_settings.pop('aggregation_band', None)
                 self.owner.invalidate()
                 self.owner.message.set('照片尺寸改变，已清除汇聚范围；请重新指定管长方向。')
+            ground = self.owner.registration_settings.get('ground_region')
+            if image is not None and ground and tuple(ground['image_size']) != image.shape[1::-1]:
+                self.owner.registration_settings.pop('ground_region', None)
+                self.owner.invalidate()
         self.zoom, self.pan = 1.0, [0.0, 0.0]
         self.draw()
 
@@ -412,6 +416,13 @@ class RegionCanvas:
                                    tags="assessment-zone")
         if self.band_controller:
             self.band_controller.draw()
+            ground = self.owner.registration_settings.get('ground_region')
+            if ground:
+                x, y, bw, bh = ground['rect_px']
+                canvas.create_rectangle(ox+x*scale, oy+y*scale, ox+(x+bw)*scale, oy+(y+bh)*scale,
+                                        outline='#E7A9FF', width=2, tags='ground-region')
+                canvas.create_text(ox+x*scale+4, oy+y*scale+4, anchor='nw', text='地面检查区域',
+                                   fill='#E7A9FF', tags='ground-region')
 
     def cancel_region_drag(self) -> None:
         self.region_start = None
@@ -460,7 +471,10 @@ class RegionCanvas:
         if rect is None:
             self.owner.message.set("框选区域太小，请在左图重新拖出至少 32×32 原图像素的区域。")
             return
-        self.owner.add_left_region(rect)
+        if self.owner.region_selection_target == 'ground':
+            self.owner.set_ground_region(rect)
+        else:
+            self.owner.add_left_region(rect)
 
     def wheel(self, event: Any) -> None:
         if self.region_start is not None or (self.band_controller and self.band_controller.dragging):
@@ -825,6 +839,7 @@ class ElevationCaptureDialog:
         self.analysis_settings: dict[str, Any] = {}
         self.zone_settings: dict[str, Any] = normalize_zone_settings()
         self.region_selection_active = False
+        self.region_selection_target = 'assessment'
         self.axial_selection_active = False
         tk, ttk = app.tk, app.ttk
         self.window = tk.Toplevel(app.root)
@@ -894,14 +909,27 @@ class ElevationCaptureDialog:
         self.axial_button.pack(side='left', padx=3)
         ttk.Button(method_bar, text='清除汇聚范围', command=self.clear_axial_band).pack(side='left', padx=3)
         self.window.bind("<Escape>", lambda _e: self.cancel_image_selections())
+        ground_bar = ttk.Frame(self.controls)
+        ground_bar.pack(fill='x', pady=(0, 3))
+        self.ground_button = ttk.Button(ground_bar, text='左图框选地面', command=self.toggle_ground_selection)
+        self.ground_button.pack(side='left', padx=3)
+        ttk.Button(ground_bar, text='地面距离 / 姿态检查', command=self.show_ground_check).pack(side='left', padx=3)
+        ttk.Button(ground_bar, text='清除地面区域', command=self.clear_ground_region).pack(side='left', padx=3)
+        ttk.Label(ground_bar, text='框选裸露地面；与管段汇聚范围独立。', foreground='#355371').pack(side='left', padx=6)
+        self.settings_button = ttk.Button(ground_bar, text='展开拍摄 / 评估设置', command=self.toggle_capture_settings)
+        self.settings_button.pack(side='right', padx=3)
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
-        photos = ttk.Frame(self.controls)
+        # Keep photo selection usable at the minimum window size. Infrequent
+        # controls remain available in one expandable area, with values intact.
+        self.capture_settings = ttk.Frame(self.controls)
+        self.capture_settings_expanded = False
+        photos = ttk.Frame(self.capture_settings)
         photos.pack(fill="x", pady=6)
         for role, name in (("left", "左"), ("right", "右")):
             ttk.Button(photos, text=f"导入{name}矫正图", command=lambda r=role: self.browse_photo(r)).pack(side="left", padx=3)
             ttk.Entry(photos, textvariable=self.fields[f"{role}_time"], width=29).pack(side="left")
-        ttk.Checkbutton(self.controls, text="左右图来自同一次同步拍摄；机位、镜头设置和区域位置正确", variable=self.confirmed).pack(anchor="w")
-        matching_bar = ttk.Frame(self.controls)
+        ttk.Checkbutton(self.capture_settings, text="左右图来自同一次同步拍摄；机位、镜头设置和区域位置正确", variable=self.confirmed).pack(anchor="w")
+        matching_bar = ttk.Frame(self.capture_settings)
         matching_bar.pack(fill="x", pady=3)
         ttk.Label(matching_bar, text="深度处理").pack(side="left")
         ttk.Combobox(matching_bar, textvariable=self.matching_preset, values=("原始灰度", "弱光降噪"),
@@ -909,7 +937,7 @@ class ElevationCaptureDialog:
         ttk.Label(matching_bar, text="视差搜索范围（像素，16 的倍数）").pack(side="left")
         ttk.Entry(matching_bar, textvariable=self.disparity_count, width=7).pack(side="left", padx=6)
         ttk.Label(matching_bar, text="近距离需扩大范围；弱光处理保留原始照片与颜色", foreground="#355371").pack(side="left")
-        policy_bar = ttk.Frame(self.controls)
+        policy_bar = ttk.Frame(self.capture_settings)
         policy_bar.pack(fill="x", pady=3)
         ttk.Label(policy_bar, text="直径容差 mm").pack(side="left")
         ttk.Entry(policy_bar, textvariable=self.diameter_tolerance_mm, width=7).pack(side="left", padx=(4, 10))
@@ -919,14 +947,14 @@ class ElevationCaptureDialog:
         ttk.Label(policy_bar, text="颜色容差 Lab").pack(side="left")
         ttk.Entry(policy_bar, textvariable=self.color_delta_lab, width=7).pack(side="left", padx=(4, 6))
         ttk.Label(policy_bar, text="直径始终为主筛选；STL 颜色需先按管径确认", foreground="#355371").pack(side="left")
-        scene_bar = ttk.Frame(self.controls)
+        scene_bar = ttk.Frame(self.capture_settings)
         scene_bar.pack(fill="x", pady=3)
         ttk.Label(scene_bar, text="现场实际管数（未知可留空）").pack(side="left")
         ttk.Entry(scene_bar, textvariable=self.present_pipe_count, width=5).pack(side="left", padx=6)
         ttk.Label(scene_bar, text="模型目录可多于现场实物；数量不代替管道身份确认", foreground="#355371").pack(side="left")
         ttk.Button(scene_bar, text="颜色与反光检查", command=self.open_quality_check).pack(side="right", padx=4)
 
-        view_bar = ttk.Frame(self.controls)
+        view_bar = ttk.Frame(self.capture_settings)
         view_bar.pack(fill="x", pady=3)
         ttk.Label(view_bar, text="相机从哪侧看（模型坐标）").pack(side="left")
         self.camera_side_box = ttk.Combobox(view_bar, textvariable=self.camera_side_label,
@@ -1050,6 +1078,7 @@ class ElevationCaptureDialog:
         if key == "calibration":
             self.calibration_override = None
             self.registration_settings.pop('aggregation_band', None)
+            self.registration_settings.pop('ground_region', None)
             self.zone_settings = normalize_zone_settings()
             self.scope_label.set("全幅自动")
             self._clear_registration_anchors()
@@ -1088,11 +1117,13 @@ class ElevationCaptureDialog:
         self.invalidate()
         self.redraw()
 
-    def _set_region_selection(self, active: bool) -> None:
+    def _set_region_selection(self, active: bool, *, target='assessment') -> None:
         if active:
             self._set_axial_selection(False)
         self.region_selection_active = active
-        self.region_button.configure(text="取消框选（Esc）" if active else "左图框选区域")
+        self.region_selection_target = target if active else 'assessment'
+        self.region_button.configure(text="取消框选（Esc）" if active and target == 'assessment' else "左图框选区域")
+        self.ground_button.configure(text='取消地面框选（Esc）' if active and target == 'ground' else '左图框选地面')
         view = self.views["left"]
         view.cancel_region_drag()
         view.canvas.configure(cursor="crosshair" if active else "")
@@ -1143,6 +1174,56 @@ class ElevationCaptureDialog:
         self.invalidate()
         self.redraw()
         self.message.set('已清除手动汇聚范围，恢复自动管段汇聚。')
+
+    def toggle_capture_settings(self) -> None:
+        self.capture_settings_expanded = not self.capture_settings_expanded
+        if self.capture_settings_expanded:
+            self.capture_settings.pack(fill='x')
+        else:
+            self.capture_settings.pack_forget()
+        self.settings_button.configure(text='收起拍摄 / 评估设置' if self.capture_settings_expanded else '展开拍摄 / 评估设置')
+
+    def toggle_ground_selection(self) -> None:
+        if self.busy:
+            return
+        if self.region_selection_active and self.region_selection_target == 'ground':
+            self.cancel_image_selections()
+            return
+        if self.views['left'].image is None:
+            self.message.set('请先抓拍或导入左目矫正图，再框选地面。')
+            return
+        self._set_region_selection(True, target='ground')
+        self.message.set('在左图框选一块裸露地面，避开支架、管道和杂物。应有足够宽度与高度；框选后点击④保存并评估。')
+
+    def set_ground_region(self, rect: list[int]) -> None:
+        if self.busy or self.views['left'].image is None:
+            return
+        from .ground_check import normalize_ground_region
+        ground = normalize_ground_region({'image_size': list(self.views['left'].image.shape[1::-1]), 'rect_px': rect})
+        self.registration_settings['ground_region'] = ground
+        self.invalidate()
+        self.redraw()
+        self.message.set('已保存地面区域。点击④保存并评估，再打开“地面距离 / 姿态检查”。')
+        log_event(LOGGER, 'elevation_ground_region_changed', ground_region=ground)
+
+    def clear_ground_region(self) -> None:
+        if not self.busy:
+            self.registration_settings.pop('ground_region', None)
+            self.invalidate()
+            self.redraw()
+
+    def show_ground_check(self) -> None:
+        from .ground_check import ground_summary_lines
+        window = self.app.tk.Toplevel(self.window)
+        window.title('地面距离与相机姿态检查')
+        window.geometry('840x450')
+        text = self.app.tk.Text(window, wrap='word', padx=12, pady=12)
+        text.pack(fill='both', expand=True)
+        check = (self.report or {}).get('ground_check')
+        if check is None and self.registration_settings.get('ground_region'):
+            check = {'status': 'PENDING_EVALUATION'}
+        text.insert('1.0', '\n'.join(ground_summary_lines(check)))
+        text.configure(state='disabled')
 
     def toggle_region_selection(self) -> None:
         if self.busy:
