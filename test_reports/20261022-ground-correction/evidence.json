@@ -1,0 +1,139 @@
+{
+  "source_manifest": "outputs\\axial-algorithm-audit-20261022\\captures\\elevation-20261022-134055-f2d29ec1\\manifest.json",
+  "new_manifest": "outputs\\ground-correction-20261022\\captures\\elevation-20261022-151148-94f6eacb\\manifest.json",
+  "new_camera_capture": false,
+  "originals_unchanged": true,
+  "original_sha256": {
+    "outputs\\axial-algorithm-audit-20261022\\captures\\elevation-20261022-134055-f2d29ec1\\manifest.json": "89066ce09e40666a08b16420ad551e4f351de4b26beaf834ee5be8f6c06f7fd1",
+    "outputs\\axial-algorithm-audit-20261022\\captures\\elevation-20261022-134055-f2d29ec1\\report.json": "70c9855d6a40eca92b9233d6e27a16747bc01b9a72b3469b5feac8642a7ff1dd",
+    "outputs\\axial-algorithm-audit-20261022\\captures\\elevation-20261022-134055-f2d29ec1\\photos\\left.png": "c750d6b75f9732e9c7be1d018b9dab8c6d8119709cede37d55187bb025293493",
+    "outputs\\axial-algorithm-audit-20261022\\captures\\elevation-20261022-134055-f2d29ec1\\photos\\right.png": "6ad1af63177f7d2fe9bec0b55f320c063ce0b08ff8957a52da821990f475436c",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  },
+  "production_seconds": 22.78631260000111,
+  "ground_check": {
+    "revision": "stereo-ground-plane-check-v1",
+    "policy": {
+      "maximum_points": 4096,
+      "ransac_trials": 96,
+      "plane_tolerance_mm": 5.0,
+      "minimum_points": 256,
+      "minimum_valid_fraction": 0.25,
+      "minimum_plane_fraction": 0.7,
+      "minimum_spatial_cells": 8,
+      "minimum_second_spread_mm": 20.0,
+      "maximum_holdout_rms_mm": 3.0,
+      "maximum_eye_angle_deg": 2.0,
+      "maximum_eye_offset_mm": 10.0,
+      "minimum_roll_normal_projection": 0.08715574274765817
+    },
+    "policy_sha256": "6cb4616ff1da7ca6aa0962246dfc965e193368f13a91bf1c32776982c2942095",
+    "status": "GROUND_PLANE_INCONSISTENT",
+    "accepted_measurement": false,
+    "total_accuracy_known": false,
+    "pipe_axis_constrained_by_ground": false,
+    "calibration_validated": false,
+    "selection": {
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "rect_px": [
+        1050,
+        730,
+        420,
+        240
+      ],
+      "selection_source": "ASSISTANT_DIAGNOSTIC"
+    },
+    "surface_identity_source": "ASSISTANT_SUGGESTED_GROUND_NOT_CONFIRMED",
+    "valid_depth_fraction": 0.9565079365079365,
+    "left_plane": {
+      "status": "GROUND_PLANE_INCONSISTENT",
+      "sample_count": 4096,
+      "inlier_fraction": 0.337646484375,
+      "holdout_inlier_fraction": 0.33511413307430793,
+      "holdout_rms_mm": 2.811159861611885,
+      "occupied_cells": 16
+    },
+    "correction_revision": "ground-constrained-pipe-axis-v1",
+    "corrections": [
+      {
+        "zone_id": null,
+        "revision": "ground-constrained-pipe-axis-v1",
+        "policy": {
+          "maximum_nullspace_ratio": 0.25,
+          "maximum_boundary_p95_px": 2.0,
+          "minimum_boundaries": 3,
+          "minimum_direction_strength": 1e-06
+        },
+        "policy_sha256": "f8ba3fa18c6239f79510846a7e2b463c822df89c696080befc44e73e3f00ae90",
+        "status": "GROUND_CHECK_FAILED",
+        "applied": false,
+        "assumption": "PIPE_AXES_PARALLEL_TO_GROUND",
+        "calibration_modified": false,
+        "nominal_dimensions_used": false,
+        "ground_status": "GROUND_PLANE_INCONSISTENT"
+      }
+    ],
+    "pipe_axis_checks": [],
+    "correction_status": "NOT_APPLIED"
+  },
+  "legacy_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "axis_and_all_fits_unchanged_when_ground_rejected": true,
+  "section_revision": "pooled-sections-ground-constrained-v3",
+  "candidates": [
+    {
+      "candidate_id": "POOL-L01-POOL-R01",
+      "diameter_mm": 43.69940242426326,
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.41789928780043084,
+        "center_difference_mm": 29.188391195060237,
+        "center_difference_components_mm": [
+          -1.026870877153243,
+          29.17032253434172
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    },
+    {
+      "candidate_id": "POOL-L02-POOL-R02",
+      "diameter_mm": 42.606790545141166,
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.13251430718560897,
+        "center_difference_mm": 0.644795825626115,
+        "center_difference_components_mm": [
+          0.06007130583318343,
+          0.6419915069222952
+        ],
+        "stable": true,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    },
+    {
+      "candidate_id": "POOL-L03-POOL-R03",
+      "diameter_mm": 28.703418603568892,
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.4339667918973298,
+        "center_difference_mm": 43.59744818494024,
+        "center_difference_components_mm": [
+          -0.06649954551497217,
+          -43.59739746875948
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    }
+  ]
+}

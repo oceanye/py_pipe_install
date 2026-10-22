@@ -92,7 +92,10 @@ def test_ground_check_uses_full_image_once_even_when_ground_is_outside_pipe_zone
     assert len(calls) == 1
     assert calls[0][0] is groups[-1] and calls[0][1] is calibration
     assert calls[0][2]['rect_px'] == region['rect_px']
-    assert calls[0][3] == result['section_evaluations']
+    # Plane is solved before pipe sections, so the same full-frame result can
+    # constrain each cropped section without refitting the ground.
+    assert calls[0][3] == ()
+    assert len(result['ground_check']['corrections']) == len(result['section_evaluations'])
     assert result['ground_check']['status'] == 'TEST_FULL_FRAME'
 
 

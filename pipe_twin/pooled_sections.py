@@ -15,6 +15,7 @@ from .projection_diagnostics import fit_silhouettes, pixel_error_scenarios
 from .section_diagnostics import axis_from_image_lines
 from .section_model import build_section_model
 from .axial_consistency import synchronize_axial_blocks
+from .ground_correction import correct_pipe_axis
 
 
 def _observed_edges(image, proposal, role, sampling_mask=None):
@@ -224,7 +225,8 @@ def _compatible_appearance(first, second):
     return bool(min(difference, 180-difference) <= 15 and hsv[:, 1].min() >= 80)
 
 
-def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, image_offsets=None, disparity_range=(0., 256.)):
+def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, image_offsets=None,
+                            disparity_range=(0., 256.), ground_result=None):
     views, proposal_audit = {}, {}
     masks, band_audit = {}, None
     k = np.asarray(calibration.left.rectified_intrinsic, float)
@@ -241,11 +243,12 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
         views[role], proposal_audit[role] = (aggregate_image(image, role, sampling_mask=masks[role],
             axis_hint_image=band_audit['axis_image']) if band_audit else aggregate_image(image, role))
     result = {'revision': REVISION, 'policy_sha256': POLICY_SHA256, 'policy': dict(POLICY),
-              'section_revision': 'pooled-sections-common-station-v2',
+              'section_revision': 'pooled-sections-ground-constrained-v3',
               'stages': ['BOUNDARY_AGGREGATION', 'SECTION_DIMENSIONS', 'MODEL_RELATIVE_POSITION'],
               'occlusion_recovered': False, 'nominal_dimensions_used_in_fitting': False,
               'views': {role: [_compact(i) for i in items] for role, items in views.items()},
               'proposal_audit': proposal_audit, 'candidates': [], 'model': None,
+              'ground_correction': correct_pipe_axis([], k, {}, ground_result)[1],
               'aggregation_band': band_audit,
               'truncated': any(a['truncated'] for a in proposal_audit.values())}
     # The projection fitter uses a shared rectified K. Translate right image
@@ -272,14 +275,17 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
         axis_audit = axis_from_image_lines(all_lines, k)
     except ValueError:
         axis_audit = {'status': 'COMMON_AXIS_UNRESOLVED'}
-    axis = None
     if 'axis' in axis_audit:
         singular = axis_audit['singular_values']
         ratio = float(singular[-1]/singular[-2])
         axis_audit['nullspace_ratio'] = ratio
         axis_audit['status'] = 'STABLE' if ratio <= POLICY['maximum_axis_nullspace_ratio'] else 'COMMON_AXIS_UNSTABLE'
-        if axis_audit['status'] == 'STABLE':
-            axis = np.asarray(axis_audit['axis'])
+    result['unconstrained_axis'] = axis_audit
+    trusted_observations = [obs for i, j, observations in paired_observations
+        if not (views['left'][i]['reason_codes'] or views['right'][j]['reason_codes']) for obs in observations]
+    axis_audit, correction = correct_pipe_axis(trusted_observations, k, axis_audit, ground_result)
+    result['ground_correction'] = correction
+    axis = np.asarray(axis_audit['axis']) if axis_audit.get('status') == 'STABLE' else None
     result['axis'] = axis_audit
     model_items = []
     for i, j, observations in paired_observations:
@@ -305,6 +311,8 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                 fitted_observations = common if common else observations
                 error = pixel_error_scenarios(_bounded(fitted_observations), k, calibration.baseline_mm, axis, reference,
                                                sigma_px=POLICY['assumed_coherent_edge_sigma_px'])
+                if correction['applied']:
+                    error['ground_normal_uncertainty_included'] = False
                 if fit['reprojection_rms_px'] > POLICY['maximum_reprojection_rms_px']:
                     candidate['reason_codes'].append('CYLINDER_PROJECTION_INCONSISTENT')
                 halves = []
@@ -323,6 +331,8 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                     candidate['reason_codes'].append('POOLED_DIMENSIONS_UNSTABLE')
         candidate.update(fit=fit, pixel_error=error, window_sensitivity=sensitivity, common_axial_support=common_support,
                          dimension_status='CONDITIONAL' if fit['status'] == 'CONDITIONAL_FIT' else 'UNRESOLVED')
+        if correction['status'] == 'GROUND_AXIS_CONFLICT':
+            candidate['reason_codes'].append('GROUND_AXIS_CONFLICT')
         result['candidates'].append(candidate)
         model_items.append({'id': candidate['candidate_id'], 'label': candidate['candidate_id'],
                             'color': a['color_srgb'], 'reference_diameter_mm': None, 'fit': fit, 'pixel_error': error})

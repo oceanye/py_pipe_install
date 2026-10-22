@@ -175,9 +175,13 @@ def ground_summary_lines(check):
     if not check or check.get('status') == 'NOT_CONFIGURED':
         return lines+['尚未设置地面区域。框选后点击④保存并评估。']
     if check.get('status') == 'PENDING_EVALUATION':
-        return lines+['已设置地面区域，尚无当前结果；请点击④保存并评估。']
+        return lines+['已设置地面区域；点击④保存并评估，通过检查后自动约束水平管轴并重新计算断面。']
     if check.get('surface_identity_source') == 'ASSISTANT_SUGGESTED_GROUND_NOT_CONFIRMED':
         lines.append('当前选区是离线分析建议，尚未经你确认是地面；请核对紫色框。')
+    if check.get('correction_revision'):
+        from .ground_correction import correction_summary
+        for item in check.get('corrections', []):
+            lines.append((item.get('zone_id') or '全幅')+'：'+correction_summary(item))
     labels = {'INSUFFICIENT_GROUND_DEPTH': '地面有效深度不足', 'CAPTURE_UNHEALTHY': '拍摄质量未通过',
         'INSUFFICIENT_GROUND_SUPPORT': '地面二维采样覆盖不足', 'GROUND_PLANE_INCONSISTENT': '地面样本不符合稳定平面',
         'GROUND_SUPPORT_TOO_NARROW': '地面区域过窄，法向不可靠', 'INSUFFICIENT_RIGHT_GROUND_SUPPORT': '右目对应地面支持不足',
@@ -193,7 +197,9 @@ def ground_summary_lines(check):
               roll_text,
               f"左右平面法向差：{check['left_right_normal_angle_deg']:.2f}°；距离差：{check['left_right_plane_offset_difference_mm']:.1f} mm"]
     for row in check.get('pipe_axis_checks', []):
-        lines.append(f"{row.get('zone_id') or '全幅'}管轴与地面夹角：{row['angle_to_ground_deg']:.2f}°（水平管应接近 0°）")
+        suffix = '约束后的角度，不是独立核验' if row.get('scope') == 'CONSTRAINED_AXIS' else '水平管应接近 0°'
+        lines.append(f"{row.get('zone_id') or '全幅'}管轴与地面夹角：{row['angle_to_ground_deg']:.2f}°（{suffix}）")
     if not check.get('calibration_validated'):
         lines.append('当前为暂用标定，绝对距离与角度精度尚未验证。')
-    return lines+['地面结果用于交叉检查，不强行修改管轴，也不表示安装就位已通过。']
+    return lines+(['地面修正用于管段汇聚与断面模型，不修改相机标定；应用修正不表示安装就位已通过。']
+                  if check.get('correction_revision') else ['此报告仅做地面检查；重新评估后可应用地面修正。'])

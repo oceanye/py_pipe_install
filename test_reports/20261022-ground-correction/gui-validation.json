@@ -1,0 +1,12 @@
+{
+  "real_report_loaded": true,
+  "button": "地面修正",
+  "window_title": "地面修正 · 水平管轴与断面重算",
+  "minimum_window": [
+    940,
+    660
+  ],
+  "photo_canvas_visible": true,
+  "failed_ground_correction_not_reported_as_applied": true,
+  "camera_opened": false
+}

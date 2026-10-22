@@ -421,7 +421,7 @@ class RegionCanvas:
                 x, y, bw, bh = ground['rect_px']
                 canvas.create_rectangle(ox+x*scale, oy+y*scale, ox+(x+bw)*scale, oy+(y+bh)*scale,
                                         outline='#E7A9FF', width=2, tags='ground-region')
-                canvas.create_text(ox+x*scale+4, oy+y*scale+4, anchor='nw', text='地面检查区域',
+                canvas.create_text(ox+x*scale+4, oy+y*scale+4, anchor='nw', text='地面修正区域',
                                    fill='#E7A9FF', tags='ground-region')
 
     def cancel_region_drag(self) -> None:
@@ -913,9 +913,9 @@ class ElevationCaptureDialog:
         ground_bar.pack(fill='x', pady=(0, 3))
         self.ground_button = ttk.Button(ground_bar, text='左图框选地面', command=self.toggle_ground_selection)
         self.ground_button.pack(side='left', padx=3)
-        ttk.Button(ground_bar, text='地面距离 / 姿态检查', command=self.show_ground_check).pack(side='left', padx=3)
+        ttk.Button(ground_bar, text='地面修正', command=self.show_ground_check).pack(side='left', padx=3)
         ttk.Button(ground_bar, text='清除地面区域', command=self.clear_ground_region).pack(side='left', padx=3)
-        ttk.Label(ground_bar, text='框选裸露地面；与管段汇聚范围独立。', foreground='#355371').pack(side='left', padx=6)
+        ttk.Label(ground_bar, text='框选地面后，按管道水平放置修正方向。', foreground='#355371').pack(side='left', padx=6)
         self.settings_button = ttk.Button(ground_bar, text='展开拍摄 / 评估设置', command=self.toggle_capture_settings)
         self.settings_button.pack(side='right', padx=3)
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
@@ -1203,7 +1203,7 @@ class ElevationCaptureDialog:
         self.registration_settings['ground_region'] = ground
         self.invalidate()
         self.redraw()
-        self.message.set('已保存地面区域。点击④保存并评估，再打开“地面距离 / 姿态检查”。')
+        self.message.set('已保存地面区域。点击④保存并评估，通过地面检查后自动修正管轴并重算断面；“地面修正”查看结果。')
         log_event(LOGGER, 'elevation_ground_region_changed', ground_region=ground)
 
     def clear_ground_region(self) -> None:
@@ -1215,7 +1215,7 @@ class ElevationCaptureDialog:
     def show_ground_check(self) -> None:
         from .ground_check import ground_summary_lines
         window = self.app.tk.Toplevel(self.window)
-        window.title('地面距离与相机姿态检查')
+        window.title('地面修正 · 水平管轴与断面重算')
         window.geometry('840x450')
         text = self.app.tk.Text(window, wrap='word', padx=12, pady=12)
         text.pack(fill='both', expand=True)

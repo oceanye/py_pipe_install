@@ -23,6 +23,7 @@ REASONS = {
     'TRANSVERSE_BOUNDARY_CLIPPED': '管宽边界超出画面',
     'VISIBLE_BAND_TOO_NARROW': '可见条带过窄',
     'AXIAL_IMAGE_PARAMETERIZATION_UNSUPPORTED': '当前轴向投影不适用此汇聚方式',
+    'GROUND_AXIS_CONFLICT': '水平管假设与图像边界不一致',
 }
 
 
@@ -56,13 +57,16 @@ def section_summary_lines(report, *, detailed=False):
         band = stage.get('aggregation_band')
         if band:
             lines += [f"手动汇聚范围：沿左图指定方向 {band['span_px']:.1f} px，两条垂线之间取样。"]
-            if stage.get('section_revision') == 'pooled-sections-common-station-v2':
+            if stage.get('section_revision') in ('pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3'):
                 lines += ['右图使用对应视差搜索带；鼠标仅提供大致方向，实际边缘方向从图像重新估计。',
                           '三维轴向和毫米尺寸仍需解算；图像内倾斜与纵深倾斜分别处理。']
             else:
                 lines += ['右图使用对应视差搜索带；所画方向是二维取样方向，三维轴向和毫米尺寸仍需解算。']
-        if stage.get('section_revision') == 'pooled-sections-common-station-v2':
+        if stage.get('section_revision') in ('pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3'):
             lines += ['子段按两眼共同轴向区间对齐；圆心差在同一法向断面上比较，不把沿管长的位移算作误差。']
+        if stage.get('ground_correction'):
+            from .ground_correction import correction_summary
+            lines.append(correction_summary(stage['ground_correction']))
         for candidate in stage.get('candidates', []):
             fit = candidate.get('fit', {})
             diameter = fit.get('trial_diameter_mm')

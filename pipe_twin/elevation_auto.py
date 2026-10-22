@@ -260,7 +260,7 @@ def _same_alignment(first: Mapping, second: Mapping, specs: list[dict]) -> bool:
 
 def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pipe_specs: list[dict],
                                    registration_settings: Mapping | None = None,
-                                   matching_settings: Mapping | None = None) -> dict:
+                                   matching_settings: Mapping | None = None, ground_result: Mapping | None = None) -> dict:
     """Pure in-memory entry point; every capture estimates its own alignment."""
     from .elevation_registration import register_elevation
     from .elevation_dataset import normalize_registration_settings
@@ -282,12 +282,17 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
     matcher = groups[-1]['depth'].audit.get('matcher', {})
     disparity_min = float(matcher.get('min_disparity', 0))
     disparity_max = disparity_min+float(matcher.get('num_disparities', 256))-1
+    from .ground_check import check_ground
+    from .ground_correction import finish_ground_correction
+    ground = ground_result
+    if ground is None and not groups[-1].get('image_offsets'):
+        ground = check_ground(groups[-1], calibration, settings.get('ground_region'), section_stages=())
     # Current image evidence only: historical images cannot fill today's hidden
     # boundaries. This independent stage precedes dense-surface recognition.
     section = assess_pooled_sections(
         analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
             aggregation_band=settings.get('aggregation_band'), image_offsets=groups[-1].get('image_offsets'),
-            disparity_range=(disparity_min, disparity_max)),
+            disparity_range=(disparity_min, disparity_max), ground_result=ground),
         pipe_specs, calibration, capture_healthy=bool(groups[-1].get('pair_healthy', False)),
         settings=settings if groups[-1].get('anchors_apply', True) else dict(settings, anchors={}), matching=matching)
     positions = {row['pipe_id']: row for row in section['position_assessment']['pipes']}
@@ -371,9 +376,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                      "reason_codes": reasons, "state_basis": reasons[0], "current_evidence": evidence,
                      "independent_free_space_captures": list(reversed(independent)),
                      "assessment_scope": "LOCAL_COMMON_AXIAL_SECTION"})
-    from .ground_check import check_ground
-    ground = (check_ground(groups[-1], calibration, settings.get('ground_region'), section_stages=[section])
-              if not groups[-1].get('image_offsets') else None)
+    ground = finish_ground_correction(ground, [section])
     return {"mode": "elevation_auto", "counts": {s: sum(r["installation_state"] == s for r in rows) for s in STATE_ZH},
             "ground_check": ground,
             "pipes": rows, "registration": current["registration"], "local_surface": current_surface,
@@ -748,6 +751,9 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
         raise ValueError("分区模式至少需要一个启用分区")
     from .elevation_dataset import normalize_registration_settings
     global_registration = normalize_registration_settings(registration_settings)
+    from .ground_check import check_ground
+    from .ground_correction import finish_ground_correction
+    ground = check_ground(groups[-1], calibration, global_registration.get('ground_region'), section_stages=())
     zone_registration = dict(global_registration, anchors={})
     matching_payload = {"color_filter_enabled": True} if matching_settings is None else matching_settings
     from .matching_config import normalize_matching_settings
@@ -766,14 +772,12 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
             cropped_groups, calibration=crop_calibration_for_zone(
                 calibration, zone, right_padding_px=settings["right_roi_padding_px"]),
             pipe_specs=zone_specs, registration_settings=zone_registration,
-            matching_settings=matching,
+            matching_settings=matching, ground_result=ground,
         )
         reports.append(_qualify_zone_report(report, zone, offsets or {}))
     result = _merge_zone_reports(reports, groups=groups, calibration=calibration,
                                  pipe_specs=pipe_specs, matching=matching, scope=settings)
-    from .ground_check import check_ground
-    result['ground_check'] = check_ground(groups[-1], calibration, global_registration.get('ground_region'),
-                                         section_stages=result.get('section_evaluations', []))
+    result['ground_check'] = finish_ground_correction(ground, result.get('section_evaluations', []))
     if global_registration["anchors"]:
         result["zone_registration_audit"]["anchors_ignored"] = True
         result["zone_registration_audit"]["reason"] = "ZONE_MODE_DOES_NOT_USE_PER_PIPE_ANCHORS"
