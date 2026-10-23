@@ -1,0 +1,108 @@
+{
+  "source_manifest": "outputs\\ground-correction-20261022\\captures\\elevation-20261022-151148-94f6eacb\\manifest.json",
+  "new_manifest": "outputs\\tilt-inspection-20261023\\captures\\elevation-20261023-084738-cbfc8998\\manifest.json",
+  "inspection_path": "outputs\\tilt-inspection-20261023\\ground_inspections\\tilt-20261023-084738-414d8d01\\inspection.json",
+  "new_camera_capture": false,
+  "originals_unchanged": true,
+  "original_sha256": {
+    "outputs\\ground-correction-20261022\\captures\\elevation-20261022-151148-94f6eacb\\manifest.json": "d5254527be969b8962f84738460535c19f4da04a63d9578ffac2e451d92a2621",
+    "outputs\\ground-correction-20261022\\captures\\elevation-20261022-151148-94f6eacb\\report.json": "ad115a8609f22634911bfeb11f544020ca5aea0243adc2e6f7b332056a0d789e",
+    "outputs\\ground-correction-20261022\\captures\\elevation-20261022-151148-94f6eacb\\photos\\left.png": "c750d6b75f9732e9c7be1d018b9dab8c6d8119709cede37d55187bb025293493",
+    "outputs\\ground-correction-20261022\\captures\\elevation-20261022-151148-94f6eacb\\photos\\right.png": "6ad1af63177f7d2fe9bec0b55f320c063ce0b08ff8957a52da821990f475436c",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  },
+  "standalone_seconds": 5.2215762000123505,
+  "full_evaluation_seconds": 23.043272100010654,
+  "ground_check_without_mask": {
+    "revision": "stereo-ground-plane-check-v2",
+    "policy": {
+      "maximum_points": 4096,
+      "ransac_trials": 96,
+      "plane_tolerance_mm": 5.0,
+      "minimum_points": 256,
+      "minimum_valid_fraction": 0.25,
+      "minimum_plane_fraction": 0.7,
+      "minimum_spatial_cells": 8,
+      "minimum_second_spread_mm": 20.0,
+      "maximum_holdout_rms_mm": 3.0,
+      "maximum_eye_angle_deg": 2.0,
+      "maximum_eye_offset_mm": 10.0,
+      "minimum_roll_normal_projection": 0.08715574274765817
+    },
+    "policy_sha256": "6cb4616ff1da7ca6aa0962246dfc965e193368f13a91bf1c32776982c2942095",
+    "status": "GROUND_PLANE_INCONSISTENT",
+    "accepted_measurement": false,
+    "total_accuracy_known": false,
+    "pipe_axis_constrained_by_ground": false,
+    "calibration_validated": false,
+    "selection": {
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "rect_px": [
+        1050,
+        730,
+        420,
+        240
+      ],
+      "selection_source": "ASSISTANT_DIAGNOSTIC"
+    },
+    "surface_identity_source": "ASSISTANT_SUGGESTED_GROUND_NOT_CONFIRMED",
+    "valid_depth_fraction": 0.9565079365079365,
+    "left_plane": {
+      "status": "GROUND_PLANE_INCONSISTENT",
+      "sample_count": 4096,
+      "inlier_fraction": 0.337646484375,
+      "holdout_inlier_fraction": 0.33511413307430793,
+      "holdout_rms_mm": 2.811159861611885,
+      "occupied_cells": 16,
+      "candidate_plane": {
+        "normal_camera": [
+          0.14764937963763913,
+          -0.5536335125155649,
+          -0.8195667114471514
+        ],
+        "offset_mm": 2404.214689432719
+      }
+    },
+    "observed_support": {
+      "encoding": "packbits-zlib-base64-v1",
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "rect_px": [
+        1050,
+        730,
+        420,
+        240
+      ],
+      "pixel_count": 32573,
+      "valid_pixel_count": 96416,
+      "plane_tolerance_mm": 5.0,
+      "inferred_pixels": 0
+    }
+  },
+  "candidate_angles_deg": [
+    55.041443400548665,
+    14.932748232039838
+  ],
+  "mask_roi_pixels": 100800,
+  "mask_support_fraction_of_roi": 0.3231448412698413,
+  "legacy_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "axis_and_all_fits_unchanged_when_ground_rejected": true,
+  "standalone_and_full_support_identical": true,
+  "ground_correction_status": "NOT_APPLIED"
+}

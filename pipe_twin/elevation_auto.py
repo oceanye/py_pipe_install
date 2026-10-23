@@ -883,6 +883,9 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
             if target is None:
                 continue
             overlay = group[role].copy()
+            if role == 'left' and group is groups[-1]:
+                from .ground_visualization import ground_evidence_image
+                overlay = ground_evidence_image(overlay, result.get('ground_check'))
             for pipe_id, evidence in audit["pipes"].items():
                 box = evidence.get(role, {}).get("region_xywh")
                 if box:

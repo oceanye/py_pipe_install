@@ -181,6 +181,43 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.fields['calibration'].set('different-ground-calibration.json')
         self.assertNotIn('ground_region', self.dialog.registration_settings)
 
+    def test_standalone_tilt_draws_angles_without_cad_and_clears_on_input_change(self):
+        from test_ground_check import scene
+        group, _, region, _ = scene()
+        group['depth'].audit = {'status': 'VALID'}
+        self.dialog.pipes = []
+        self.dialog.fields['model'].set('')
+        self.dialog.set_ground_region(region['rect_px'])
+        original = self.dialog.views['left'].image.copy()
+        with mock.patch('pipe_twin.ground_inspection._compute_stereo_depth', return_value=group['depth']), \
+                mock.patch('pipe_twin.ground_inspection._quality', return_value={'passed': True}):
+            self.dialog.inspect_ground()
+            self.finish_worker()
+        self.assertEqual(self.dialog.ground_inspection['status'], 'CONSISTENT_GROUND_PLANE')
+        canvas = self.dialog.views['left'].canvas
+        labels = canvas.find_withtag('ground-angle')
+        self.assertEqual(len(labels), 1)
+        self.assertIn('光轴与地面夹角', canvas.itemcget(labels[0], 'text'))
+        self.assertIn('地面检查通过', canvas.itemcget(labels[0], 'text'))
+        self.assertFalse(self.dialog.views['right'].canvas.find_withtag('ground-angle'))
+        np.testing.assert_array_equal(original, self.dialog.views['left'].image)
+        self.assertTrue(list((self.output/'ground_inspections').glob('*/inspection.json')))
+        self.assertIsNone(self.dialog.report)
+        self.assertIsNotNone(self.dialog.ground_inspection_window)
+        self.dialog.set_ground_region([100, 300, 400, 150])
+        self.assertIsNone(self.dialog.ground_inspection)
+        self.assertIsNone(self.dialog.ground_inspection_window)
+        self.assertFalse(canvas.find_withtag('ground-angle'))
+
+    def test_stale_tilt_worker_cannot_publish_previous_photo_angles(self):
+        self.dialog.set_ground_region([100, 300, 400, 150])
+        old_generation = self.dialog.generation
+        self.dialog.fields['left_time'].set('2026-10-23T10:00:00+08:00')
+        self.dialog.messages.put((old_generation, 'ground_ok', (Path('stale.json'), {'status': 'CONSISTENT_GROUND_PLANE'})))
+        self.dialog.poll()
+        self.assertIsNone(self.dialog.ground_inspection)
+        self.assertFalse(self.dialog.views['left'].canvas.find_withtag('ground-angle'))
+
     def test_auto_restore_uses_new_profile_calibration_and_clears_old_photos(self):
         from pipe_twin.workbench_profile import save_camera_calibration_bundle
         self.dialog.submit(False)

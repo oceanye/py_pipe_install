@@ -326,6 +326,10 @@ class RegionCanvas:
         self.transform = (scale, ox, oy)
         # Render only the viewport, so zooming does not allocate giant bitmaps.
         rendered = cv2.warpAffine(self.image, np.array([[scale, 0, ox], [0, scale, oy]], dtype=float), (cw, ch), borderValue=(53, 34, 21))
+        ground_check = self.owner.current_ground_check() if self.band_controller else None
+        if ground_check:
+            from .ground_visualization import paint_support
+            rendered = paint_support(rendered, ground_check, transform=self.transform, image_size=(w, h))
         ok, payload = cv2.imencode(".png", rendered)
         if ok:
             self.photo = self.owner.app.tk.PhotoImage(data=base64.b64encode(payload).decode("ascii"), format="png")
@@ -421,8 +425,17 @@ class RegionCanvas:
                 x, y, bw, bh = ground['rect_px']
                 canvas.create_rectangle(ox+x*scale, oy+y*scale, ox+(x+bw)*scale, oy+(y+bh)*scale,
                                         outline='#E7A9FF', width=2, tags='ground-region')
-                canvas.create_text(ox+x*scale+4, oy+y*scale+4, anchor='nw', text='地面修正区域',
+                canvas.create_text(ox+x*scale+4, oy+y*scale+4, anchor='nw', text='地面搜索范围（紫框）',
                                    fill='#E7A9FF', tags='ground-region')
+            if ground_check:
+                from .ground_visualization import tilt_label_lines, checked_ground
+                item = canvas.create_text(10, 10, anchor='nw', text='\n'.join(tilt_label_lines(ground_check, compact=True)),
+                    fill='#73D246' if checked_ground(ground_check) else '#FFAA28',
+                    width=max(80, cw-24), tags='ground-angle')
+                bounds = canvas.bbox(item)
+                background = canvas.create_rectangle(bounds[0]-4, bounds[1]-3, bounds[2]+4, bounds[3]+3,
+                    fill='#152235', outline='', tags='ground-angle-background')
+                canvas.tag_lower(background, item)
 
     def cancel_region_drag(self) -> None:
         self.region_start = None
@@ -913,9 +926,10 @@ class ElevationCaptureDialog:
         ground_bar.pack(fill='x', pady=(0, 3))
         self.ground_button = ttk.Button(ground_bar, text='左图框选地面', command=self.toggle_ground_selection)
         self.ground_button.pack(side='left', padx=3)
+        ttk.Button(ground_bar, text='倾角检查', command=self.inspect_ground).pack(side='left', padx=3)
         ttk.Button(ground_bar, text='地面修正', command=self.show_ground_check).pack(side='left', padx=3)
         ttk.Button(ground_bar, text='清除地面区域', command=self.clear_ground_region).pack(side='left', padx=3)
-        ttk.Label(ground_bar, text='框选地面后，按管道水平放置修正方向。', foreground='#355371').pack(side='left', padx=6)
+        ttk.Label(ground_bar, text='紫框：搜索范围；涂色：平面支持', foreground='#355371').pack(side='left', padx=6)
         self.settings_button = ttk.Button(ground_bar, text='展开拍摄 / 评估设置', command=self.toggle_capture_settings)
         self.settings_button.pack(side='right', padx=3)
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
@@ -1060,6 +1074,12 @@ class ElevationCaptureDialog:
 
     def invalidate(self) -> None:
         self.generation += 1
+        had_inspection = getattr(self, 'ground_inspection', None) is not None
+        self.ground_inspection = None
+        inspection_window = getattr(self, 'ground_inspection_window', None)
+        if inspection_window is not None and inspection_window.winfo_exists():
+            inspection_window.destroy()
+        self.ground_inspection_window = None
         if self.region_selection_active:
             self._set_region_selection(False)
         if self.axial_selection_active or self.views['left'].band_controller.dragging:
@@ -1068,6 +1088,8 @@ class ElevationCaptureDialog:
             self.report, self.results = None, {}
             self.refresh_table()
             self.summary.set("输入已改变，请重新评估")
+        elif had_inspection:
+            self.redraw()
 
     def _field_changed(self, key: str) -> None:
         self.invalidate()
@@ -1193,7 +1215,7 @@ class ElevationCaptureDialog:
             self.message.set('请先抓拍或导入左目矫正图，再框选地面。')
             return
         self._set_region_selection(True, target='ground')
-        self.message.set('在左图框选一块裸露地面，避开支架、管道和杂物。应有足够宽度与高度；框选后点击④保存并评估。')
+        self.message.set('在左图框选一块裸露地面，避开支架、管道和杂物。应有足够宽度与高度；框选后点击“倾角检查”。')
 
     def set_ground_region(self, rect: list[int]) -> None:
         if self.busy or self.views['left'].image is None:
@@ -1203,7 +1225,7 @@ class ElevationCaptureDialog:
         self.registration_settings['ground_region'] = ground
         self.invalidate()
         self.redraw()
-        self.message.set('已保存地面区域。点击④保存并评估，通过地面检查后自动修正管轴并重算断面；“地面修正”查看结果。')
+        self.message.set('已保存地面区域。点击“倾角检查”查看角度和地面涂色；点击④保存并评估，通过检查后修正管轴并重算断面。')
         log_event(LOGGER, 'elevation_ground_region_changed', ground_region=ground)
 
     def clear_ground_region(self) -> None:
@@ -1212,17 +1234,104 @@ class ElevationCaptureDialog:
             self.invalidate()
             self.redraw()
 
-    def show_ground_check(self) -> None:
+    def current_ground_check(self):
+        check = getattr(self, 'ground_inspection', None) or (self.report or {}).get('ground_check')
+        return check if check and check.get('selection') else None
+
+    def inspect_ground(self) -> None:
+        """Run a ground-only job without requiring CAD or recomputing pipe fits."""
+        if self.busy:
+            return
+        try:
+            calibration = copy.deepcopy(self.current_calibration())
+            if not self.confirmed.get():
+                raise ValueError('请确认左右图来自同一次同步拍摄，且机位未改变')
+            region = copy.deepcopy(self.registration_settings.get('ground_region'))
+            if not region:
+                self.toggle_ground_selection()
+                return
+            for role in ('left', 'right'):
+                if (self.views[role].image is None or self.image_paths.get(role)
+                        != str(Path(self.fields[role].get()).resolve())):
+                    raise ValueError('请先载入完整的左右目照片')
+            settings = copy.deepcopy(self.analysis_settings)
+            settings['stereo_matching'] = {**settings.get('stereo_matching', {}),
+                'num_disparities': int(self.disparity_count.get()),
+                'preprocessing': 'low_light' if self.matching_preset.get() == '弱光降噪' else 'none'}
+            arguments = dict(paths={r: self.image_paths[r] for r in ('left', 'right')},
+                expected_hashes=copy.deepcopy(self.image_hashes),
+                capture_times={r: self.fields[r+'_time'].get() for r in ('left', 'right')},
+                calibration=calibration, region=region, analysis_settings=settings,
+                pair_confirmed=True, output_root=self.output_root/'ground_inspections')
+            self.cancel_image_selections()
+            self.busy = True
+            self._set_controls(False)
+            self.message.set('正在检查当前双目照片的地面倾角……完成后在左图标角度并涂色。')
+            threading.Thread(target=self._ground_worker, args=(arguments, self.generation), daemon=True).start()
+        except (OSError, ValueError) as error:
+            self.show_error(error)
+
+    def _ground_worker(self, arguments, generation):
+        try:
+            from .ground_inspection import inspect_ground_pair
+            self.messages.put((generation, 'ground_ok', inspect_ground_pair(**arguments)))
+        except Exception as error:
+            self.messages.put((generation, 'error', error))
+
+    def show_ground_check(self, *, inspection=False) -> None:
         from .ground_check import ground_summary_lines
         window = self.app.tk.Toplevel(self.window)
-        window.title('地面修正 · 水平管轴与断面重算')
-        window.geometry('840x450')
-        text = self.app.tk.Text(window, wrap='word', padx=12, pady=12)
-        text.pack(fill='both', expand=True)
-        check = (self.report or {}).get('ground_check')
+        if inspection:
+            previous = getattr(self, 'ground_inspection_window', None)
+            if previous is not None and previous.winfo_exists():
+                previous.destroy()
+            self.ground_inspection_window = window
+        window.title('倾角检查 · 地面支持与相机姿态' if inspection else '地面修正 · 水平管轴与断面重算')
+        check = self.current_ground_check() if inspection else (self.report or {}).get('ground_check')
         if check is None and self.registration_settings.get('ground_region'):
             check = {'status': 'PENDING_EVALUATION'}
+        window.geometry('1000x760' if inspection else '840x450')
+        if inspection and self.views['left'].image is not None:
+            # A clean ground-only view remains readable when pipe overlays are dense.
+            from .ground_visualization import paint_support, tilt_label_lines, checked_ground
+            original = self.views['left'].image.copy()
+            preview = self.app.tk.Canvas(window, background='#152235', highlightthickness=0)
+            preview.pack(fill='both', expand=True)
+
+            def draw_preview(_event=None):
+                cw, ch = max(100, preview.winfo_width()), max(100, preview.winfo_height())
+                h, w = original.shape[:2]
+                scale = min(cw/w, ch/h); ox, oy = (cw-w*scale)/2, (ch-h*scale)/2
+                rendered = cv2.warpAffine(original, np.array([[scale, 0, ox], [0, scale, oy]]), (cw, ch), borderValue=(53, 34, 21))
+                rendered = paint_support(rendered, check, transform=(scale, ox, oy), image_size=(w, h))
+                ok, data = cv2.imencode('.png', rendered)
+                if not ok:
+                    return
+                preview.delete('all')
+                preview.photo = self.app.tk.PhotoImage(data=base64.b64encode(data).decode('ascii'), format='png')
+                preview.create_image(0, 0, image=preview.photo, anchor='nw', tags='ground-preview')
+                if check and check.get('selection'):
+                    x, y, bw, bh = check['selection']['rect_px']
+                    preview.create_rectangle(ox+x*scale, oy+y*scale, ox+(x+bw)*scale, oy+(y+bh)*scale,
+                                             outline='#E7A9FF', width=2, tags='ground-preview-roi')
+                label = preview.create_text(10, 10, anchor='nw', width=cw-24, text='\n'.join(tilt_label_lines(check, compact=True)),
+                    fill='#73D246' if checked_ground(check) else '#FFAA28', tags='ground-preview-angle')
+                bounds = preview.bbox(label)
+                if bounds:
+                    bg = preview.create_rectangle(bounds, fill='#152235', outline='')
+                    preview.tag_lower(bg, label)
+
+            preview.bind('<Configure>', draw_preview)
+        details = self.app.ttk.Frame(window)
+        details.pack(fill='x' if inspection else 'both', expand=not inspection)
+        text = self.app.tk.Text(details, wrap='word', padx=12, pady=12, height=12)
+        scroll = self.app.ttk.Scrollbar(details, orient='vertical', command=text.yview)
+        text.configure(yscrollcommand=scroll.set)
+        scroll.pack(side='right', fill='y')
+        text.pack(side='left', fill='both', expand=True)
         text.insert('1.0', '\n'.join(ground_summary_lines(check)))
+        if inspection:
+            text.insert('end', '\n本次检查当前一对照片；角度以所选区域确实为地面为前提。\n绿色：通过检查的地面支持；橙色：未通过或未确认的候选。紫框只限定搜索范围。\n机位固定时可保留选区；更换照片、标定或选区后重新检查。\n检查不重算管径；点击④保存并评估应用地面修正。')
         text.configure(state='disabled')
 
     def toggle_region_selection(self) -> None:
@@ -2002,6 +2111,13 @@ class ElevationCaptureDialog:
         elif kind == "error":
             self.invalidate()
             self.show_error(payload)
+        elif kind == 'ground_ok':
+            path, check = payload
+            self.ground_inspection = check
+            self.redraw()
+            self.message.set(f'倾角检查完成，角度与地面涂色已显示在左图。报告与叠图：{path.parent}')
+            self.show_ground_check(inspection=True)
+            log_event(LOGGER, 'elevation_ground_inspection_finished', report=str(path), status=check['status'])
         else:
             path, report, reset_history = payload
             refresh_metadata = copy.deepcopy(self.status_refresh_metadata)
