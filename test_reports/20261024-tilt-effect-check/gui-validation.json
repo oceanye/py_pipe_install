@@ -1,0 +1,11 @@
+{
+  "new_camera_pair_used": true,
+  "capture_time": "2026-10-24T08:33:59.660+08:00",
+  "production_gui_worker_passed": true,
+  "ground_only_preview_created": true,
+  "candidate_label": "候选 / 不用于修正 · 橙色支持 23.0%\n光轴与地面夹角 42.81° · 横滚 +8.89° · 暂用标定",
+  "saved_inspection": "outputs\\tilt-effect-check-20261024\\gui\\ground_inspections\\tilt-20261024-085741-4e99917c\\inspection.json",
+  "ground_status": "GROUND_PLANE_INCONSISTENT",
+  "pipe_axis_constrained_by_ground": false,
+  "standalone_matches_five_frame_audit": true
+}

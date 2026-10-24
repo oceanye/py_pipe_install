@@ -1,0 +1,1338 @@
+{
+  "capture_manifest": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\capture.json",
+  "new_physical_capture": true,
+  "algorithm_commit": "882941447382d3545256ea90113133c38cfd2729",
+  "calibration_id": "field-chess-provisional-20261014-5c62d5b4c50a",
+  "calibration_validated": false,
+  "baseline_mm": 55.49861605457772,
+  "raw_pair_count": 5,
+  "raw_usable_pair_count": 5,
+  "active_inputs_unchanged": true,
+  "source_sha256": {
+    "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\capture.json": "9eda6ab88c391c1b8ff54d91b0f1a279e92fc6fd2ab28a8fcd843da5020f5a72",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+    "outputs\\tilt-inspection-20261023\\captures\\elevation-20261023-084738-cbfc8998\\manifest.json": "0ed3c718a1bb270365604eab7e06a9ff12aad55523bad7af024e4123b5a4441c"
+  },
+  "photo_identities": [
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0001_left.png",
+      "raw_sha256": "69d3a78c57d1c8487c5656f0b014270835b7b6aca9e967bfed8239383772242e",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0001_left.png",
+      "rectified_sha256": "652ad5a640be603a04b7d67103a24bb00c705f6bb08d8e7b3327b1aefc098366"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0001_right.png",
+      "raw_sha256": "a9e84c291e279ff10d91e49a4315f57b8aa5c834de770da31512be441c4389b3",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0001_right.png",
+      "rectified_sha256": "3562a2572d3c32e543f0c4691ba613f0c6acf5b7aa93eaa432bc37809034ecc2"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0002_left.png",
+      "raw_sha256": "c097c339ff608c4e335675fe99e79dc6631849e621be6c82aef9cb68c7bef637",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0002_left.png",
+      "rectified_sha256": "bab4114f8500048c66595e193d6bea21979ec7644bb3a447d85146b78dd6f135"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0002_right.png",
+      "raw_sha256": "fdd3c2875462478594de1e22489107dfa7243cb65f72cc8c7bdb542b3a2bc7cc",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0002_right.png",
+      "rectified_sha256": "1a9a4a513da6dfd7fcc68089b387c4a07c992dacd855c4004a9f1b85316b2594"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0003_left.png",
+      "raw_sha256": "9b729d1c0b5c21b0d8fce946d1348c87c1b2967e9cd70d44d8b69edb195d7e11",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0003_left.png",
+      "rectified_sha256": "59b8cc789dac1e9d8e74913abf240da1e0b4435f5fcca669b93a645db3d89f84"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0003_right.png",
+      "raw_sha256": "88367ddf88a63486204793a0e3b0534a753b7935b181b9afce900396894a9946",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0003_right.png",
+      "rectified_sha256": "578878b0c49771f8f3fa6eb0550f89577512323ac7e81afdfe1ae6a6e9744037"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0004_left.png",
+      "raw_sha256": "009a8a4e4915c1799ff2d5022d5f0ac7b358782fcea00e6d346b5844c8184dda",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0004_left.png",
+      "rectified_sha256": "dd55736f9d983c5d52f01d22ba6228edad58f216eb6ef249d4a50cda5277d2b0"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0004_right.png",
+      "raw_sha256": "cf6c3a9e7da0e62559ba55dacc138371cbd91310d655c98e316da57a6041e011",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0004_right.png",
+      "rectified_sha256": "69e13d6042bfcdbd6e15230a222396c26dadf773cbb4dd9d434d2603a37bc913"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0005_left.png",
+      "raw_sha256": "124a8dc3eb1c65b31cbca80dcf319035a5a453437a84ddcf0865a89cfad53d5f",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0005_left.png",
+      "rectified_sha256": "a66b2b58c6fcd91abf8f49c9fe3913af99bc3ac37f4ae35fbe66fec222420461"
+    },
+    {
+      "raw_path": "outputs\\tilt-effect-check-20261024\\raw-20261024-083322\\pair_0005_right.png",
+      "raw_sha256": "1404c328a9ffad4625b7787874eb80b064b3c45aa149fa838383b4341b77f202",
+      "rectified_path": "outputs\\tilt-effect-check-20261024\\rectified\\pair_0005_right.png",
+      "rectified_sha256": "cff66b0c0bc74d17ca58e8e0b794b3b328be1f7c6a9751aafec2a6d810a3847d"
+    }
+  ],
+  "rectified_left_gray_mean": {
+    "previous_capture": 138.19464650848766,
+    "new_last_capture": 65.84192901234567
+  },
+  "processing_seconds": 23.031329799996456,
+  "regions": {
+    "previous": [
+      1050,
+      730,
+      420,
+      240
+    ],
+    "lower_clear": [
+      1050,
+      820,
+      420,
+      180
+    ],
+    "rear_large": [
+      700,
+      40,
+      850,
+      200
+    ],
+    "left_clear": [
+      80,
+      80,
+      350,
+      300
+    ]
+  },
+  "frames": [
+    {
+      "index": 1,
+      "capture_id": "remote-20261024-083322-c8f4bf45-0001",
+      "captured_at": "2026-10-24T08:33:49.377+08:00",
+      "pair_healthy": true,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 80.86769191875462,
+          "luminance_p05": 15.0,
+          "luminance_p50": 47.0,
+          "luminance_p95": 154.0,
+          "dark_pixel_fraction": 0.05960648148148148,
+          "saturated_pixel_fraction": 0.00024546682098765434,
+          "high_frequency_noise_estimate": 1.209396243095398,
+          "textured_fraction": 0.6859201388888889,
+          "warning_codes": []
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 100.457829838472,
+          "luminance_p05": 18.0,
+          "luminance_p50": 51.0,
+          "luminance_p95": 173.0,
+          "dark_pixel_fraction": 0.04259114583333334,
+          "saturated_pixel_fraction": 0.002265625,
+          "high_frequency_noise_estimate": 1.2102078199386597,
+          "textured_fraction": 0.683260513117284,
+          "warning_codes": []
+        }
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.31396749614197533,
+        "valid_right_fraction": 0.3138122106481481,
+        "searchable_depth_min_mm": 960.0983097077306,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "image_health": {
+        "left": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 64.643,
+          "p05": 12.0,
+          "p50": 47.0,
+          "p95": 154.0,
+          "max": 254,
+          "dark_fraction": 0.000686,
+          "saturated_fraction": 8e-06,
+          "usable": true,
+          "reason_codes": []
+        },
+        "right": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 76.228,
+          "p05": 16.0,
+          "p50": 52.0,
+          "p95": 175.0,
+          "max": 254,
+          "dark_fraction": 0.000305,
+          "saturated_fraction": 0.000265,
+          "usable": true,
+          "reason_codes": []
+        },
+        "left_right_identical": false,
+        "pair_usable": true,
+        "reason_codes": []
+      },
+      "regions": {
+        "previous": {
+          "rect_px": [
+            1050,
+            730,
+            420,
+            240
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.48470238095238094,
+          "sample_inlier_fraction": 0.15673828125,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.15673828125,
+            "holdout_inlier_fraction": 0.13490035769034237,
+            "holdout_rms_mm": 2.9355093686588027,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.20160210274596713,
+                -0.601138770495866,
+                -0.7732973365886651
+              ],
+              "offset_mm": 2271.3659700169133
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            50.65091725070608,
+            18.539752947397698
+          ],
+          "support_pixels": 7847,
+          "valid_pixels": 48858,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.16060829342175284
+        },
+        "lower_clear": {
+          "rect_px": [
+            1050,
+            820,
+            420,
+            180
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.5321693121693122,
+          "sample_inlier_fraction": 0.22802734375,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.22802734375,
+            "holdout_inlier_fraction": 0.22097560975609756,
+            "holdout_rms_mm": 2.8531526677376076,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.13817654415397654,
+                -0.7857443674837669,
+                -0.6029204189718566
+              ],
+              "offset_mm": 1868.2868311921006
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            37.07934483006271,
+            9.973733213129677
+          ],
+          "support_pixels": 8969,
+          "valid_pixels": 40232,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.2229319944322927
+        },
+        "rear_large": {
+          "rect_px": [
+            700,
+            40,
+            850,
+            200
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.6593058823529412,
+          "sample_inlier_fraction": 0.26220703125,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.26220703125,
+            "holdout_inlier_fraction": 0.27191679049034173,
+            "holdout_rms_mm": 2.9113421090313842,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.1069408706100869,
+                -0.7245684500341915,
+                -0.6808554996533444
+              ],
+              "offset_mm": 1975.5450177461253
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            42.9105310275294,
+            8.395814081271338
+          ],
+          "support_pixels": 28748,
+          "valid_pixels": 112082,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.2564907835334844
+        },
+        "left_clear": {
+          "rect_px": [
+            80,
+            80,
+            350,
+            300
+          ],
+          "status": "INSUFFICIENT_GROUND_DEPTH",
+          "valid_depth_fraction": 0.18932380952380953,
+          "sample_inlier_fraction": null,
+          "left_plane": null,
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": null,
+          "support_pixels": null,
+          "valid_pixels": null,
+          "inferred_pixels": null,
+          "pipe_axis_constrained_by_ground": false
+        }
+      }
+    },
+    {
+      "index": 2,
+      "capture_id": "remote-20261024-083322-c8f4bf45-0002",
+      "captured_at": "2026-10-24T08:33:51.917+08:00",
+      "pair_healthy": true,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 80.4808250430174,
+          "luminance_p05": 15.0,
+          "luminance_p50": 48.0,
+          "luminance_p95": 154.0,
+          "dark_pixel_fraction": 0.05677469135802469,
+          "saturated_pixel_fraction": 0.0003351658950617284,
+          "high_frequency_noise_estimate": 1.2077504396438599,
+          "textured_fraction": 0.6836728395061729,
+          "warning_codes": []
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 100.2487649497227,
+          "luminance_p05": 18.0,
+          "luminance_p50": 51.0,
+          "luminance_p95": 173.0,
+          "dark_pixel_fraction": 0.042483121141975305,
+          "saturated_pixel_fraction": 0.002476851851851852,
+          "high_frequency_noise_estimate": 1.2075920104980469,
+          "textured_fraction": 0.682764274691358,
+          "warning_codes": []
+        }
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.31497395833333336,
+        "valid_right_fraction": 0.315093074845679,
+        "searchable_depth_min_mm": 960.0983097077306,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "image_health": {
+        "left": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 65.178,
+          "p05": 13.0,
+          "p50": 47.0,
+          "p95": 154.0,
+          "max": 254,
+          "dark_fraction": 0.000683,
+          "saturated_fraction": 1e-05,
+          "usable": true,
+          "reason_codes": []
+        },
+        "right": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 76.307,
+          "p05": 16.0,
+          "p50": 52.0,
+          "p95": 175.0,
+          "max": 254,
+          "dark_fraction": 0.000294,
+          "saturated_fraction": 0.000285,
+          "usable": true,
+          "reason_codes": []
+        },
+        "left_right_identical": false,
+        "pair_usable": true,
+        "reason_codes": []
+      },
+      "regions": {
+        "previous": {
+          "rect_px": [
+            1050,
+            730,
+            420,
+            240
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.5010813492063492,
+          "sample_inlier_fraction": 0.204833984375,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.204833984375,
+            "holdout_inlier_fraction": 0.18880753138075315,
+            "holdout_rms_mm": 2.902143452641588,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.12188908273418206,
+                -0.5481911192566316,
+                -0.827423439526813
+              ],
+              "offset_mm": 2432.712595335493
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            55.83496555511877,
+            12.535663353090722
+          ],
+          "support_pixels": 10417,
+          "valid_pixels": 50509,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.20624047199509
+        },
+        "lower_clear": {
+          "rect_px": [
+            1050,
+            820,
+            420,
+            180
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.5523280423280423,
+          "sample_inlier_fraction": 0.22314453125,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.22314453125,
+            "holdout_inlier_fraction": 0.22822384428223844,
+            "holdout_rms_mm": 2.8913773071580104,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.07793693784289273,
+                -0.43620127796947816,
+                -0.896467667469088
+              ],
+              "offset_mm": 2603.1148417549957
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            63.697573776463244,
+            10.130253656950906
+          ],
+          "support_pixels": 8976,
+          "valid_pixels": 41756,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.21496311907270813
+        },
+        "rear_large": {
+          "rect_px": [
+            700,
+            40,
+            850,
+            200
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.6428823529411765,
+          "sample_inlier_fraction": 0.252685546875,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.252685546875,
+            "holdout_inlier_fraction": 0.2525,
+            "holdout_rms_mm": 2.7570100824787698,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.14993161382969444,
+                -0.6907854080818692,
+                -0.7073443511865977
+              ],
+              "offset_mm": 2064.6614962804456
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            45.019253168449495,
+            12.245833495758813
+          ],
+          "support_pixels": 28091,
+          "valid_pixels": 109290,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.25703175038887366
+        },
+        "left_clear": {
+          "rect_px": [
+            80,
+            80,
+            350,
+            300
+          ],
+          "status": "INSUFFICIENT_GROUND_DEPTH",
+          "valid_depth_fraction": 0.1908857142857143,
+          "sample_inlier_fraction": null,
+          "left_plane": null,
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": null,
+          "support_pixels": null,
+          "valid_pixels": null,
+          "inferred_pixels": null,
+          "pipe_axis_constrained_by_ground": false
+        }
+      }
+    },
+    {
+      "index": 3,
+      "capture_id": "remote-20261024-083322-c8f4bf45-0003",
+      "captured_at": "2026-10-24T08:33:54.501+08:00",
+      "pair_healthy": true,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 81.49318807230699,
+          "luminance_p05": 15.0,
+          "luminance_p50": 47.0,
+          "luminance_p95": 154.0,
+          "dark_pixel_fraction": 0.059284336419753086,
+          "saturated_pixel_fraction": 0.0005290316358024692,
+          "high_frequency_noise_estimate": 1.2054767608642578,
+          "textured_fraction": 0.6846050347222222,
+          "warning_codes": []
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 100.44645301370124,
+          "luminance_p05": 18.0,
+          "luminance_p50": 51.0,
+          "luminance_p95": 174.0,
+          "dark_pixel_fraction": 0.042151813271604936,
+          "saturated_pixel_fraction": 0.002894483024691358,
+          "high_frequency_noise_estimate": 1.2060593366622925,
+          "textured_fraction": 0.6845785108024691,
+          "warning_codes": []
+        }
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.31811342592592595,
+        "valid_right_fraction": 0.31806568287037035,
+        "searchable_depth_min_mm": 960.0983097077306,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "image_health": {
+        "left": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 64.817,
+          "p05": 12.0,
+          "p50": 47.0,
+          "p95": 154.0,
+          "max": 254,
+          "dark_fraction": 0.000768,
+          "saturated_fraction": 1.7e-05,
+          "usable": true,
+          "reason_codes": []
+        },
+        "right": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 76.472,
+          "p05": 16.0,
+          "p50": 52.0,
+          "p95": 176.0,
+          "max": 254,
+          "dark_fraction": 0.000297,
+          "saturated_fraction": 0.000374,
+          "usable": true,
+          "reason_codes": []
+        },
+        "left_right_identical": false,
+        "pair_usable": true,
+        "reason_codes": []
+      },
+      "regions": {
+        "previous": {
+          "rect_px": [
+            1050,
+            730,
+            420,
+            240
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.4940873015873016,
+          "sample_inlier_fraction": 0.21875,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.21875,
+            "holdout_inlier_fraction": 0.2105527638190955,
+            "holdout_rms_mm": 2.9490667185073174,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.16845913729870074,
+                -0.6314976658895354,
+                -0.7568568008789018
+              ],
+              "offset_mm": 2247.014603945741
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            49.187878489961186,
+            14.936479091860585
+          ],
+          "support_pixels": 10579,
+          "valid_pixels": 49804,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.21241265761786202
+        },
+        "lower_clear": {
+          "rect_px": [
+            1050,
+            820,
+            420,
+            180
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.5758597883597883,
+          "sample_inlier_fraction": 0.260009765625,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.260009765625,
+            "holdout_inlier_fraction": 0.264948954788527,
+            "holdout_rms_mm": 2.7955935100111593,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.14962217986100995,
+                -0.6938171677810013,
+                -0.7044366124684248
+              ],
+              "offset_mm": 2124.643303043973
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            44.784046780535526,
+            12.1695122640687
+          ],
+          "support_pixels": 11033,
+          "valid_pixels": 43535,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.25342827609968993
+        },
+        "rear_large": {
+          "rect_px": [
+            700,
+            40,
+            850,
+            200
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.6308117647058824,
+          "sample_inlier_fraction": 0.271240234375,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.271240234375,
+            "holdout_inlier_fraction": 0.26683046683046685,
+            "holdout_rms_mm": 2.8866485747889765,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.16041423487256662,
+                -0.6680650111209553,
+                -0.7266060928496311
+              ],
+              "offset_mm": 2129.58109800616
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            46.602620313334455,
+            13.502109618469515
+          ],
+          "support_pixels": 28281,
+          "valid_pixels": 107238,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.2637218150282549
+        },
+        "left_clear": {
+          "rect_px": [
+            80,
+            80,
+            350,
+            300
+          ],
+          "status": "INSUFFICIENT_GROUND_DEPTH",
+          "valid_depth_fraction": 0.1755142857142857,
+          "sample_inlier_fraction": null,
+          "left_plane": null,
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": null,
+          "support_pixels": null,
+          "valid_pixels": null,
+          "inferred_pixels": null,
+          "pipe_axis_constrained_by_ground": false
+        }
+      }
+    },
+    {
+      "index": 4,
+      "capture_id": "remote-20261024-083322-c8f4bf45-0004",
+      "captured_at": "2026-10-24T08:33:57.083+08:00",
+      "pair_healthy": true,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 81.89124517058886,
+          "luminance_p05": 15.0,
+          "luminance_p50": 47.0,
+          "luminance_p95": 154.0,
+          "dark_pixel_fraction": 0.058949170524691355,
+          "saturated_pixel_fraction": 0.0007378472222222222,
+          "high_frequency_noise_estimate": 1.209305763244629,
+          "textured_fraction": 0.6851142939814815,
+          "warning_codes": []
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 101.1536997580018,
+          "luminance_p05": 18.0,
+          "luminance_p50": 51.0,
+          "luminance_p95": 174.0,
+          "dark_pixel_fraction": 0.041733217592592596,
+          "saturated_pixel_fraction": 0.0031505594135802467,
+          "high_frequency_noise_estimate": 1.2130950689315796,
+          "textured_fraction": 0.6816121720679013,
+          "warning_codes": []
+        }
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.3205010609567901,
+        "valid_right_fraction": 0.3203115354938272,
+        "searchable_depth_min_mm": 960.0983097077306,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "image_health": {
+        "left": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 64.905,
+          "p05": 12.0,
+          "p50": 47.0,
+          "p95": 154.0,
+          "max": 254,
+          "dark_fraction": 0.000693,
+          "saturated_fraction": 3.9e-05,
+          "usable": true,
+          "reason_codes": []
+        },
+        "right": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 76.62,
+          "p05": 16.0,
+          "p50": 52.0,
+          "p95": 176.0,
+          "max": 254,
+          "dark_fraction": 0.000275,
+          "saturated_fraction": 0.00042,
+          "usable": true,
+          "reason_codes": []
+        },
+        "left_right_identical": false,
+        "pair_usable": true,
+        "reason_codes": []
+      },
+      "regions": {
+        "previous": {
+          "rect_px": [
+            1050,
+            730,
+            420,
+            240
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.4826587301587302,
+          "sample_inlier_fraction": 0.201416015625,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.201416015625,
+            "holdout_inlier_fraction": 0.17299794661190965,
+            "holdout_rms_mm": 2.8331486195608497,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.18269764539667854,
+                -0.5709431425045364,
+                -0.8004033348216102
+              ],
+              "offset_mm": 2351.5515420149395
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            53.16863527167468,
+            17.744292915562465
+          ],
+          "support_pixels": 9823,
+          "valid_pixels": 48652,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.20190331332730413
+        },
+        "lower_clear": {
+          "rect_px": [
+            1050,
+            820,
+            420,
+            180
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.5478835978835979,
+          "sample_inlier_fraction": 0.228515625,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.228515625,
+            "holdout_inlier_fraction": 0.20028887818969668,
+            "holdout_rms_mm": 2.566961613019149,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.012293967651766569,
+                -0.07425450404921677,
+                -0.9971635407433337
+              ],
+              "offset_mm": 2791.5818963897054
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            85.68353112780062,
+            null
+          ],
+          "support_pixels": 9691,
+          "valid_pixels": 41420,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.233969097054563
+        },
+        "rear_large": {
+          "rect_px": [
+            700,
+            40,
+            850,
+            200
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.655464705882353,
+          "sample_inlier_fraction": 0.251220703125,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.251220703125,
+            "holdout_inlier_fraction": 0.2573419611747138,
+            "holdout_rms_mm": 2.841549000662463,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.12637821775724303,
+                -0.6358604098721394,
+                -0.7613869484261846
+              ],
+              "offset_mm": 2256.6540433145183
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            49.58662122738358,
+            11.241134157765613
+          ],
+          "support_pixels": 27729,
+          "valid_pixels": 111429,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.2488490428882966
+        },
+        "left_clear": {
+          "rect_px": [
+            80,
+            80,
+            350,
+            300
+          ],
+          "status": "INSUFFICIENT_GROUND_DEPTH",
+          "valid_depth_fraction": 0.17764761904761905,
+          "sample_inlier_fraction": null,
+          "left_plane": null,
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": null,
+          "support_pixels": null,
+          "valid_pixels": null,
+          "inferred_pixels": null,
+          "pipe_axis_constrained_by_ground": false
+        }
+      }
+    },
+    {
+      "index": 5,
+      "capture_id": "remote-20261024-083322-c8f4bf45-0005",
+      "captured_at": "2026-10-24T08:33:59.660+08:00",
+      "pair_healthy": true,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 82.32685641306924,
+          "luminance_p05": 15.0,
+          "luminance_p50": 47.0,
+          "luminance_p95": 154.0,
+          "dark_pixel_fraction": 0.059302179783950616,
+          "saturated_pixel_fraction": 0.0009350887345679012,
+          "high_frequency_noise_estimate": 1.2090257406234741,
+          "textured_fraction": 0.6833159722222222,
+          "warning_codes": []
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 101.42474870837076,
+          "luminance_p05": 18.0,
+          "luminance_p50": 51.0,
+          "luminance_p95": 174.0,
+          "dark_pixel_fraction": 0.04149980709876543,
+          "saturated_pixel_fraction": 0.003384934413580247,
+          "high_frequency_noise_estimate": 1.2118196487426758,
+          "textured_fraction": 0.6813411458333334,
+          "warning_codes": []
+        }
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.3235595100308642,
+        "valid_right_fraction": 0.3233391203703704,
+        "searchable_depth_min_mm": 960.0983097077306,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "image_health": {
+        "left": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 65.04,
+          "p05": 12.0,
+          "p50": 47.0,
+          "p95": 154.0,
+          "max": 254,
+          "dark_fraction": 0.000681,
+          "saturated_fraction": 6.7e-05,
+          "usable": true,
+          "reason_codes": []
+        },
+        "right": {
+          "width": 1920,
+          "height": 1080,
+          "mean": 76.807,
+          "p05": 16.0,
+          "p50": 53.0,
+          "p95": 176.0,
+          "max": 254,
+          "dark_fraction": 0.000282,
+          "saturated_fraction": 0.000535,
+          "usable": true,
+          "reason_codes": []
+        },
+        "left_right_identical": false,
+        "pair_usable": true,
+        "reason_codes": []
+      },
+      "regions": {
+        "previous": {
+          "rect_px": [
+            1050,
+            730,
+            420,
+            240
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.5041468253968254,
+          "sample_inlier_fraction": 0.198974609375,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.198974609375,
+            "holdout_inlier_fraction": 0.18722139673105498,
+            "holdout_rms_mm": 2.7818916098797017,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.04932685870649755,
+                -0.5850518448541879,
+                -0.8094944100133494
+              ],
+              "offset_mm": 2403.8060383802585
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            54.04656328333185,
+            4.819320765074754
+          ],
+          "support_pixels": 10339,
+          "valid_pixels": 50818,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.2034515329214058
+        },
+        "lower_clear": {
+          "rect_px": [
+            1050,
+            820,
+            420,
+            180
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.5878571428571429,
+          "sample_inlier_fraction": 0.2373046875,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.2373046875,
+            "holdout_inlier_fraction": 0.22654350996596986,
+            "holdout_rms_mm": 2.818434127087772,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.06533798664435064,
+                -0.5945682146140032,
+                -0.8013860403525748
+              ],
+              "offset_mm": 2384.253961480525
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            53.262664042893185,
+            6.27115554559453
+          ],
+          "support_pixels": 10675,
+          "valid_pixels": 44442,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.24020071103910715
+        },
+        "rear_large": {
+          "rect_px": [
+            700,
+            40,
+            850,
+            200
+          ],
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "valid_depth_fraction": 0.6512235294117648,
+          "sample_inlier_fraction": 0.230224609375,
+          "left_plane": {
+            "status": "GROUND_PLANE_INCONSISTENT",
+            "sample_count": 4096,
+            "inlier_fraction": 0.230224609375,
+            "holdout_inlier_fraction": 0.22480237154150198,
+            "holdout_rms_mm": 2.9059519955398634,
+            "occupied_cells": 16,
+            "candidate_plane": {
+              "normal_camera": [
+                0.11336832768234734,
+                -0.7247626201236878,
+                -0.679607803626441
+              ],
+              "offset_mm": 1977.5262474875158
+            }
+          },
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": [
+            42.81300303279866,
+            8.890241028923825
+          ],
+          "support_pixels": 25480,
+          "valid_pixels": 110708,
+          "inferred_pixels": 0,
+          "pipe_axis_constrained_by_ground": false,
+          "support_fraction_of_valid": 0.23015500234852043
+        },
+        "left_clear": {
+          "rect_px": [
+            80,
+            80,
+            350,
+            300
+          ],
+          "status": "INSUFFICIENT_GROUND_DEPTH",
+          "valid_depth_fraction": 0.2085904761904762,
+          "sample_inlier_fraction": null,
+          "left_plane": null,
+          "right_plane": null,
+          "left_right_normal_angle_deg": null,
+          "left_right_plane_offset_difference_mm": null,
+          "candidate_angles_deg": null,
+          "support_pixels": null,
+          "valid_pixels": null,
+          "inferred_pixels": null,
+          "pipe_axis_constrained_by_ground": false
+        }
+      }
+    }
+  ],
+  "candidate_variability": {
+    "previous": {
+      "statuses": [
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT"
+      ],
+      "candidate_angle_scope": "DIAGNOSTIC_NOT_ACCEPTED_CAMERA_POSE",
+      "observable_angle_counts": [
+        5,
+        5
+      ],
+      "angle_min_deg": [
+        49.187878489961186,
+        4.819320765074754
+      ],
+      "angle_max_deg": [
+        55.83496555511877,
+        18.539752947397698
+      ],
+      "angle_std_deg": [
+        2.3799127852759123,
+        4.930099339775409
+      ]
+    },
+    "lower_clear": {
+      "statuses": [
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT"
+      ],
+      "candidate_angle_scope": "DIAGNOSTIC_NOT_ACCEPTED_CAMERA_POSE",
+      "observable_angle_counts": [
+        5,
+        4
+      ],
+      "angle_min_deg": [
+        37.07934483006271,
+        6.27115554559453
+      ],
+      "angle_max_deg": [
+        85.68353112780062,
+        12.1695122640687
+      ],
+      "angle_std_deg": [
+        16.897239832727035,
+        2.127158485400101
+      ]
+    },
+    "rear_large": {
+      "statuses": [
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT",
+        "GROUND_PLANE_INCONSISTENT"
+      ],
+      "candidate_angle_scope": "DIAGNOSTIC_NOT_ACCEPTED_CAMERA_POSE",
+      "observable_angle_counts": [
+        5,
+        5
+      ],
+      "angle_min_deg": [
+        42.81300303279866,
+        8.395814081271338
+      ],
+      "angle_max_deg": [
+        49.58662122738358,
+        13.502109618469515
+      ],
+      "angle_std_deg": [
+        2.530144111505378,
+        1.9492860193775818
+      ]
+    },
+    "left_clear": {
+      "statuses": [
+        "INSUFFICIENT_GROUND_DEPTH",
+        "INSUFFICIENT_GROUND_DEPTH",
+        "INSUFFICIENT_GROUND_DEPTH",
+        "INSUFFICIENT_GROUND_DEPTH",
+        "INSUFFICIENT_GROUND_DEPTH"
+      ],
+      "candidate_angle_scope": "DIAGNOSTIC_NOT_ACCEPTED_CAMERA_POSE"
+    }
+  },
+  "full_pipe_evaluation_run": false,
+  "all_ground_checks_rejected": true
+}
