@@ -14,7 +14,7 @@ from pipe_twin.recognition import (
 
 def test_builtin_recognizers_are_explicit_and_stable():
     names = available_recognizers()
-    assert names == ("auto", "cylinder", "geometry_only", "parallel_strip")
+    assert names == ("auto", "cylinder", "geometry_only", "image_guided", "parallel_strip")
 
 
 def test_custom_recognizer_can_be_selected_without_changing_elevation_flow():

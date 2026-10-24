@@ -30,7 +30,7 @@ from .elevation_zones import (
 from .model_zones import zone_model_specs
 
 LOGGER = get_logger("elevation_auto")
-STATE_ZH = {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "遮蔽不确定"}
+STATE_ZH = {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "不确定"}
 STATE_BGR = {"INSTALLED": (60, 180, 60), "NOT_INSTALLED": (50, 50, 220), "UNKNOWN": (0, 190, 240)}
 
 
@@ -260,12 +260,14 @@ def _same_alignment(first: Mapping, second: Mapping, specs: list[dict]) -> bool:
 
 def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pipe_specs: list[dict],
                                    registration_settings: Mapping | None = None,
-                                   matching_settings: Mapping | None = None) -> dict:
+                                   matching_settings: Mapping | None = None, ground_result: Mapping | None = None) -> dict:
     """Pure in-memory entry point; every capture estimates its own alignment."""
     from .elevation_registration import register_elevation
     from .elevation_dataset import normalize_registration_settings
     from .matching_config import normalize_matching_settings
     from .recognition import recognize_local_pipes
+    from .pooled_sections import analyze_pooled_sections
+    from .section_position import assess_pooled_sections
     settings = normalize_registration_settings(registration_settings)
     # Preserve the pre-policy Python API behaviour for callers that invoke the
     # in-memory analyzer directly.  Persisted GUI/manifests pass an explicit
@@ -277,6 +279,23 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         raise ValueError("至少需要一组双目照片")
     captures = []
     current_surface = None
+    matcher = groups[-1]['depth'].audit.get('matcher', {})
+    disparity_min = float(matcher.get('min_disparity', 0))
+    disparity_max = disparity_min+float(matcher.get('num_disparities', 256))-1
+    from .ground_check import check_ground
+    from .ground_correction import finish_ground_correction
+    ground = ground_result
+    if ground is None and not groups[-1].get('image_offsets'):
+        ground = check_ground(groups[-1], calibration, settings.get('ground_region'), section_stages=())
+    # Current image evidence only: historical images cannot fill today's hidden
+    # boundaries. This independent stage precedes dense-surface recognition.
+    section = assess_pooled_sections(
+        analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
+            aggregation_band=settings.get('aggregation_band'), image_offsets=groups[-1].get('image_offsets'),
+            disparity_range=(disparity_min, disparity_max), ground_result=ground),
+        pipe_specs, calibration, capture_healthy=bool(groups[-1].get('pair_healthy', False)),
+        settings=settings if groups[-1].get('anchors_apply', True) else dict(settings, anchors={}), matching=matching)
+    positions = {row['pipe_id']: row for row in section['position_assessment']['pipes']}
     for group in groups:
         observation_mode = settings.get("local_observation_mode", "auto")
         # The recognition package owns the detector choice and fallback
@@ -290,6 +309,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             "local_observation_mode": observation_mode,
             "fixed_camera_relative_layout": True,
             "model_axis_world": settings.get("axis_world"),
+            "camera_side_world": settings.get("camera_side_world"),
             "diameter_filter_enabled": matching["diameter_filter_enabled"],
             "diameter_tolerance_mm": matching["diameter_tolerance_mm"],
             "diameter_tolerance_ratio": matching["diameter_tolerance_ratio"],
@@ -299,6 +319,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         anchors = settings["anchors"] if group.get("anchors_apply", group is groups[-1]) else {}
         registration = register_elevation(
             pipe_specs, surface["observations"], settings["axis_world"], anchors=anchors,
+            camera_side_world=settings.get("camera_side_world"),
             config={
                 "diameter_tolerance_mm": matching["diameter_tolerance_mm"],
                 "diameter_tolerance_ratio": matching["diameter_tolerance_ratio"],
@@ -323,6 +344,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                    "pair_healthy": sensor_healthy, "analysis_healthy": healthy, "pair_signature": digest.hexdigest(), "registration": registration,
                    "surface_audit": surface.get("audit", {}), "pipes": evidence,
                    "local_observations": surface["observations"],
+                   "image_candidates": surface.get("image_candidates", []),
                    "quality": group.get("quality"), "depth_audit": group["depth"].audit,
                    "photos": group.get("photos")}
         captures.append(capture)
@@ -349,12 +371,16 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         state = "INSTALLED" if evidence["installed_candidate"] else "NOT_INSTALLED" if len(independent) >= 2 else "UNKNOWN"
         reasons = ["REPEATED_REGISTERED_FREE_SPACE"] if state == "NOT_INSTALLED" else evidence["reason_codes"]
         rows.append({"pipe_id": pipe_id, "installation_state": state, "installation_state_zh": STATE_ZH[state],
+                     "section_position": positions[pipe_id],
                      "measurement": evidence["measurement"],
                      "reason_codes": reasons, "state_basis": reasons[0], "current_evidence": evidence,
                      "independent_free_space_captures": list(reversed(independent)),
                      "assessment_scope": "LOCAL_COMMON_AXIAL_SECTION"})
+    ground = finish_ground_correction(ground, [section])
     return {"mode": "elevation_auto", "counts": {s: sum(r["installation_state"] == s for r in rows) for s in STATE_ZH},
+            "ground_check": ground,
             "pipes": rows, "registration": current["registration"], "local_surface": current_surface,
+            "section_evaluation": section, "position_assessment": section['position_assessment'],
             "status_refresh": current.get("status_refresh"),
             "capture_audit": {"count": len(captures), "groups": captures},
             "registration_required": True, "qr_registration_required": False,
@@ -398,6 +424,39 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
 
     zone_id = str(zone["zone_id"])
     result = copy.deepcopy(dict(report))
+    if result.get('section_evaluation'):
+        result['section_evaluation'].update(zone_id=zone_id, zone_offsets=dict(offsets),
+                                             coordinate_space='ZONE_LOCAL_RECTIFIED')
+    def qualify_rejection(raw):
+        item = copy.deepcopy(raw)
+        role = item.get("role")
+        if role in ("left","right") and item.get("region_px"):
+            x,y,w,h = item["region_px"]
+            item["region_px"] = [x+offsets[f"{role}_x"],y+offsets[f"{role}_y"],w,h]
+        if item.get("image_candidate_id"):
+            item["image_candidate_id"] = _zone_observation_id(zone_id,item["image_candidate_id"])
+        item["zone_id"] = zone_id
+        for role in ("left","right"):
+            key = f"{role}_region_px"
+            if isinstance(item.get(key),(list,tuple)) and len(item[key]) == 4:
+                x,y,w,h = item[key]
+                item[key] = [x+offsets[f"{role}_x"],y+offsets[f"{role}_y"],w,h]
+        return item
+
+    def qualify_image_candidates(items):
+        qualified = []
+        for raw in items:
+            item = copy.deepcopy(raw)
+            role = item.get("role")
+            if role in ("left","right") and item.get("region_px"):
+                x,y,w,h = item["region_px"]
+                item["region_px"] = [x+offsets[f"{role}_x"],y+offsets[f"{role}_y"],w,h]
+            item["candidate_id"] = _zone_observation_id(zone_id,item.get("candidate_id"))
+            item["zone_id"] = zone_id
+            for attempt in item.get("attempts",[]):
+                attempt["rejections"] = [qualify_rejection(e) for e in attempt.get("rejections",[])]
+            qualified.append(item)
+        return qualified
     surface = result.get("local_surface")
     if isinstance(surface, Mapping):
         surface = dict(surface)
@@ -407,17 +466,8 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
             item["observation_id"] = _zone_observation_id(zone_id, item.get("observation_id"))
             observations.append(item)
         surface["observations"] = observations
-        rejected = []
-        for raw in surface.get("rejected", []):
-            item = copy.deepcopy(raw)
-            for role, key in (("left", "left_x"), ("right", "right_x")):
-                box_key = f"{role}_region_px"
-                if isinstance(item.get(box_key), (list, tuple)) and len(item[box_key]) == 4:
-                    item[box_key] = [int(item[box_key][0]) + int(offsets[key]),
-                                     int(item[box_key][1]) + int(offsets[f"{role}_y"]),
-                                     int(item[box_key][2]), int(item[box_key][3])]
-            rejected.append(item)
-        surface["rejected"] = rejected
+        surface["image_candidates"] = qualify_image_candidates(surface.get("image_candidates",[]))
+        surface["rejected"] = [qualify_rejection(raw) for raw in surface.get("rejected",[])]
         surface.setdefault("audit", {})["zone_id"] = zone_id
         result["local_surface"] = surface
 
@@ -425,6 +475,7 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
         if not isinstance(registration, Mapping):
             return registration
         value = copy.deepcopy(dict(registration))
+        value["zone_id"] = zone_id
         for item in value.get("matches", []) if isinstance(value.get("matches"), list) else []:
             if isinstance(item, Mapping) and item.get("observation_id"):
                 item["observation_id"] = _zone_observation_id(zone_id, item["observation_id"])
@@ -435,6 +486,10 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
                 if isinstance(item, Mapping) and item.get("observation_id"):
                     item["observation_id"] = _zone_observation_id(zone_id, item["observation_id"])
             value["relative_layout"] = relative
+            for pair in relative.get("pairwise",[]):
+                for key in ("observation_id_a","observation_id_b"):
+                    if pair.get(key):
+                        pair[key] = _zone_observation_id(zone_id,pair[key])
         return value
 
     result["registration"] = qualify_registration(result.get("registration"))
@@ -459,6 +514,7 @@ def _qualify_zone_report(report: Mapping[str, Any], zone: Mapping[str, Any],
                 item["zone_roi_source"] = zone.get("roi_source", "unmapped")
             item["registration"] = qualify_registration(item.get("registration"))
             item["local_observations"] = []
+            item["image_candidates"] = qualify_image_candidates(group.get("image_candidates",[]))
             for raw in group.get("local_observations", []) if isinstance(group, Mapping) else []:
                 observation = offset_observation_pixels(raw, offsets)
                 observation["observation_id"] = _zone_observation_id(zone_id, observation.get("observation_id"))
@@ -591,6 +647,7 @@ def _merge_zone_capture_groups(zone_reports: list[Mapping[str, Any]], group_coun
         for item in entries:
             observations.extend(item.get("local_observations", []))
         base["local_observations"] = observations
+        base["image_candidates"] = [candidate for item in entries for candidate in item.get("image_candidates",[])]
         pipes = {}
         for spec in pipe_specs:
             candidates = [item.get("pipes", {}).get(spec["pipe_id"]) for item in entries
@@ -624,6 +681,7 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
         raise ValueError("至少需要一个启用分区")
     latest_surfaces = [report.get("local_surface", {}) for report in zone_reports]
     observations = [observation for surface in latest_surfaces for observation in surface.get("observations", [])]
+    image_candidates = [item for surface in latest_surfaces for item in surface.get("image_candidates", [])]
     rejected = [item for surface in latest_surfaces for item in surface.get("rejected", [])]
     point_cloud = {"points_camera_mm": [], "colors_srgb": []}
     for surface in latest_surfaces:
@@ -637,6 +695,12 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
     latest_group_registrations = [group.get("registration", {}) for group in merged_groups]
     registration = _merge_zone_registrations(latest_group_registrations)
     rows = _merge_zone_rows(zone_reports, pipe_specs)
+    from .section_position import merge_position_assessments
+    section_evaluations = [r['section_evaluation'] for r in zone_reports if r.get('section_evaluation')]
+    position = merge_position_assessments([r['position_assessment'] for r in section_evaluations], pipe_specs)
+    by_pipe = {row['pipe_id']: row for row in position['pipes']}
+    for row in rows:
+        row['section_position'] = by_pipe[row['pipe_id']]
     current = zone_reports[0]
     audit = {"scope": "zones", "zone_count": len(zone_reports),
              "zones": [{"zone_id": report.get("zone_id"), "label": report.get("zone_label"),
@@ -659,7 +723,9 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
         "mode": "elevation_auto", "scope": "zones", "scope_settings": copy.deepcopy(dict(scope)),
         "counts": {state: sum(row["installation_state"] == state for row in rows) for state in STATE_ZH},
         "pipes": rows, "registration": registration,
-        "local_surface": {"observations": observations, "rejected": rejected, "point_cloud": point_cloud, "audit": audit},
+        "section_evaluations": section_evaluations, "position_assessment": position,
+        "local_surface": {"observations": observations, "rejected": rejected, "point_cloud": point_cloud, "audit": audit,
+                          "image_candidates":image_candidates},
         "status_refresh": current.get("status_refresh"),
         "capture_audit": {"count": len(merged_groups), "groups": merged_groups},
         "registration_required": True, "qr_registration_required": False,
@@ -685,6 +751,9 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
         raise ValueError("分区模式至少需要一个启用分区")
     from .elevation_dataset import normalize_registration_settings
     global_registration = normalize_registration_settings(registration_settings)
+    from .ground_check import check_ground
+    from .ground_correction import finish_ground_correction
+    ground = check_ground(groups[-1], calibration, global_registration.get('ground_region'), section_stages=())
     zone_registration = dict(global_registration, anchors={})
     matching_payload = {"color_filter_enabled": True} if matching_settings is None else matching_settings
     from .matching_config import normalize_matching_settings
@@ -697,16 +766,18 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
         for group in groups:
             cropped, offsets = crop_stereo_group_for_zone(
                 group, calibration, zone, right_padding_px=settings["right_roi_padding_px"])
+            cropped['image_offsets'] = offsets
             cropped_groups.append(cropped)
         report = analyze_elevation_auto_groups(
             cropped_groups, calibration=crop_calibration_for_zone(
                 calibration, zone, right_padding_px=settings["right_roi_padding_px"]),
             pipe_specs=zone_specs, registration_settings=zone_registration,
-            matching_settings=matching,
+            matching_settings=matching, ground_result=ground,
         )
         reports.append(_qualify_zone_report(report, zone, offsets or {}))
     result = _merge_zone_reports(reports, groups=groups, calibration=calibration,
                                  pipe_specs=pipe_specs, matching=matching, scope=settings)
+    result['ground_check'] = finish_ground_correction(ground, result.get('section_evaluations', []))
     if global_registration["anchors"]:
         result["zone_registration_audit"]["anchors_ignored"] = True
         result["zone_registration_audit"]["reason"] = "ZONE_MODE_DOES_NOT_USE_PER_PIPE_ANCHORS"
@@ -714,7 +785,7 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
 
 
 def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_path: str | Path | None = None,
-                                    evidence_dir: str | Path | None = None) -> dict:
+                                    evidence_dir: str | Path | None = None, progress=None) -> dict:
     from .elevation_dataset import load_elevation_dataset
     from .stereo_analyzer import _analysis_config, _calibration_from_manifest, _capture_groups_from_manifest, _compute_stereo_depth, _quality
     from .photo_capture import load_photo_snapshot, resolve_photo_path
@@ -730,10 +801,16 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     _, _, captures = _capture_groups_from_manifest(path, manifest["capture"], calibration)
     config = _analysis_config(manifest["analysis"])
     settings = manifest["analysis"]["elevation_auto"]
+    from .temporal_stereo import validate_burst_records, fuse_stereo_burst
+    bursts = {group["capture_id"]: validate_burst_records(group, calibration, path)
+              for group in manifest["capture"]["capture_groups"]}
     inputs = {"manifest": path, "model": path.parent / manifest["model"]["path"]}
     for capture in captures:
         for role in ("left", "right"):
             inputs[f"{capture['capture_id']}_{role}"] = resolve_photo_path(path, capture["views"][role]["path"])
+        for index, frame in enumerate(bursts[capture["capture_id"]]):
+            for role in ("left", "right"):
+                inputs[f"{capture['capture_id']}_burst_{index}_{role}"] = resolve_photo_path(path, frame["views"][role]["path"])
     outputs = {}
     if report_output_path is not None:
         outputs["report"] = Path(report_output_path).resolve()
@@ -750,11 +827,21 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     hashes = {key: hashlib.sha256(p.read_bytes()).hexdigest() for key, p in inputs.items()}
     groups = []
     for capture in captures:
+        if progress is not None:
+            progress(f"正在处理拍摄组 {len(groups)+1}/{len(captures)} 的双目深度……")
         images, photos, quality = {}, {}, {}
         for role in ("left", "right"):
             images[role], photos[role] = load_photo_snapshot(path, capture["views"][role])
             quality[role] = _quality(images[role], config)
-        depth = _compute_stereo_depth(images["left"], images["right"], calibration, config)
+        if bursts[capture["capture_id"]]:
+            depth = fuse_stereo_burst(bursts[capture["capture_id"]],
+                load_images=lambda frame: {role: load_photo_snapshot(path, frame["views"][role])[0]
+                                            for role in ("left", "right")},
+                compute_depth=lambda left, right: _compute_stereo_depth(left, right, calibration, config),
+                quality_check=lambda image: _quality(image, config), calibration=calibration,
+                progress=(lambda index, total: progress(f"拍摄组 {len(groups)+1}/{len(captures)}：多帧深度 {index}/{total}……")) if progress else None)
+        else:
+            depth = _compute_stereo_depth(images["left"], images["right"], calibration, config)
         bound_anchors = settings.get("anchor_pair_sha256")
         anchors_apply = bool(bound_anchors and all(bound_anchors.get(r) == photos[r]["actual_sha256"] for r in ("left", "right")))
         groups.append(dict(images, depth=depth, capture_id=capture["capture_id"], captured_at=capture["captured_at"],
@@ -764,6 +851,8 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     if loaded["registration_settings"]["anchors"] and not any(g["anchors_apply"] for g in groups):
         raise ValueError("手工基准对应缺少匹配的照片哈希，请在当前照片上重新指定")
     scope_settings = loaded.get("scope_settings") or {"scope": "full_frame", "zones": []}
+    if progress is not None:
+        progress("正在汇聚可见边界、检查断面尺寸并比较模型相对就位……")
     if scope_settings.get("scope") == "zones":
         result = analyze_elevation_auto_zones(
             groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
@@ -779,7 +868,9 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     result.update(schema_version="2.0", report_type="stereo-auto-elevation-state", dataset_id=manifest["dataset_id"],
                   generated_at=datetime.now(timezone.utc).isoformat(), inputs=hashes,
                   calibration_audit={"calibration_id": calibration.calibration_id, "validated": calibration.validated,
+                                     "quality_audit": loaded["calibration"].get("quality_audit"),
                                      "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM"})
+    result["temporal_fusion"] = groups[-1]["depth"].audit.get("temporal_fusion")
     # All inference used immutable decoded images. Recheck bound snapshots
     # before publishing any output, including the optional STL reference.
     if path.read_bytes() != original or any(hashlib.sha256(p.read_bytes()).hexdigest() != hashes[key] for key, p in inputs.items()):
@@ -792,6 +883,9 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
             if target is None:
                 continue
             overlay = group[role].copy()
+            if role == 'left' and group is groups[-1]:
+                from .ground_visualization import ground_evidence_image
+                overlay = ground_evidence_image(overlay, result.get('ground_check'))
             for pipe_id, evidence in audit["pipes"].items():
                 box = evidence.get(role, {}).get("region_xywh")
                 if box:
@@ -807,6 +901,17 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                         x, y, w, h = box
                         cv2.rectangle(overlay, (x, y), (x+w, y+h), (230, 180, 80), 2)
                         cv2.putText(overlay, observation["observation_id"], (x, max(15, y-3)), cv2.FONT_HERSHEY_SIMPLEX, .5, (230, 180, 80), 1)
+            for candidate in audit.get("image_candidates",[]):
+                if candidate.get("role") != role:
+                    continue
+                x,y,w,h = candidate["region_px"]
+                cv2.rectangle(overlay,(x,y),(x+w,y+h),(102,209,255),1)
+                cv2.putText(overlay,str(candidate["candidate_id"])+" IMAGE ONLY",(x,max(15,y-3)),
+                            cv2.FONT_HERSHEY_SIMPLEX,.45,(102,209,255),1)
+            if group is groups[-1]:
+                from .section_display import boundary_overlay_segments
+                for x1, y1, x2, y2 in boundary_overlay_segments(result, role):
+                    cv2.line(overlay, (round(x1), round(y1)), (round(x2), round(y2)), (239, 232, 103), 2)
             ok, encoded = cv2.imencode(".png", overlay)
             if not ok:
                 raise ValueError("无法保存匹配叠图")

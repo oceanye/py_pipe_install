@@ -1,0 +1,120 @@
+{
+  "base_commit": "8f56970f43204f6f6c0cc2316b5bd920c3e2fbba",
+  "final_full_suite": {
+    "passed": 636,
+    "skipped": 1,
+    "subtests_passed": 264,
+    "elapsed_s": 206.68
+  },
+  "runs": [
+    {
+      "run": "pytest",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "1",
+        "skipped": "1",
+        "tests": "900",
+        "time": "219.314",
+        "timestamp": "2026-10-12T22:25:38.910027+08:00",
+        "hostname": "ZJLZ1026"
+      },
+      "summary": "1 failed, 634 passed, 1 skipped, 264 subtests passed in 219.37s (0:03:39)",
+      "failures": [
+        {
+          "test": "test_office_client_can_opt_into_bearer_token",
+          "message": "AssertionError: Regex pattern did not match.\n  Expected regex: '401'\n  Actual message: 'remote capture request failed: [WinError 10053] 你的主机中的软件中止了一个已建立的连接。'"
+        }
+      ],
+      "log_sha256": "4edf24bc9b1ce314a74f93301d504eee800d9ddbbbbd34972d74ff55b53290fd"
+    },
+    {
+      "run": "office-retry",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "5",
+        "time": "1.929",
+        "timestamp": "2026-10-12T22:34:22.874651+08:00",
+        "hostname": "ZJLZ1026"
+      },
+      "summary": "5 passed in 1.99s",
+      "failures": [],
+      "log_sha256": "be8392d33eeb65a1d801fc3ba6fa9cf1a7f7998ef847a492e4c7346c8c5bd021"
+    },
+    {
+      "run": "pytest-final",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "1",
+        "skipped": "1",
+        "tests": "901",
+        "time": "235.024",
+        "timestamp": "2026-10-12T22:35:07.496345+08:00",
+        "hostname": "ZJLZ1026"
+      },
+      "summary": "1 failed, 635 passed, 1 skipped, 264 subtests passed in 235.05s (0:03:55)",
+      "failures": [
+        {
+          "test": "test_second_request_is_rejected_while_camera_is_busy[None]",
+          "message": "AssertionError: capture job did not finish"
+        }
+      ],
+      "log_sha256": "b3600ce042e8a134c76f9ac76ca3bc02c59f3a517a5b028c8e05902061ec5c48"
+    },
+    {
+      "run": "final-focused",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "0",
+        "tests": "53",
+        "time": "20.733",
+        "timestamp": "2026-10-12T22:48:42.788416+08:00",
+        "hostname": "ZJLZ1026"
+      },
+      "summary": "53 passed in 20.91s",
+      "failures": [],
+      "log_sha256": "47cc3539e4b53943b9946b749c986caa930ab475df35bd3a6cd101479672b440"
+    },
+    {
+      "run": "pytest-serial",
+      "junit": {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "1",
+        "tests": "901",
+        "time": "206.647",
+        "timestamp": "2026-10-12T22:55:22.257593+08:00",
+        "hostname": "ZJLZ1026"
+      },
+      "summary": "636 passed, 1 skipped, 264 subtests passed in 206.68s (0:03:26)",
+      "failures": [],
+      "log_sha256": "909adb648a67c7c16b342bd7fc21e00dbc7576969a4cbd068efbb3d96f4e1138"
+    }
+  ],
+  "new_hardware_capture": false,
+  "live_gui_restarted": false,
+  "code_sha256": {
+    "pipe_twin/temporal_stereo.py": "d3d51944f7e7ef00cbc80ab90e6c3be35128cd37ecc905fe9c7cf570ec51b2c9",
+    "pipe_twin/calibration_quality.py": "d1b1c40bb790bdd13d5ff197986ed40c35e3f25443fc7aea08410e7cde0d779a",
+    "pipe_twin/calibration_wizard.py": "59a2e320e8a7450c074aa94679418f85bc08c7b40127a1d9868ee13b9786d466",
+    "pipe_twin/capture_gui.py": "166e4e05921383a2af2f5dce5190baf4a0e22e9f4a28b394b21b4c0d91f4f8c3",
+    "pipe_twin/elevation_auto.py": "e4757d5c350ab10a5586377a7193c4ad8b12409e54fc976bd6e3054bd6a54e42",
+    "pipe_twin/elevation_dataset.py": "5ae0e9ed6aef98c89469a0be82e3be0379750895dd974a8f9fb6e7712ba7f3d0",
+    "pipe_twin/elevation_gui.py": "e132a6da3aa60dd837646099b6b2a681d1a9df291be9eb0745f78fa5c2971a69",
+    "pipe_twin/stereo_analyzer.py": "505874e6408adbc1971c6e7d0d4ac4bef2a0a1c09ca6fd743aa95b5788a13584"
+  },
+  "gui_evidence": "gui.json",
+  "replay_evidence": "evidence.json",
+  "limitations": [
+    "Synthetic numerical controls are not field accuracy acceptance.",
+    "The legacy six-frame scene fails the current static-image gate.",
+    "New field calibration and dimensional cross-check remain for the next daytime session."
+  ]
+}

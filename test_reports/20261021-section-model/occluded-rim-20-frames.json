@@ -1,0 +1,5361 @@
+{
+  "frames": [
+    {
+      "frame": 0,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 48,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 39.624961423506385,
+            "rms_px": 0.7095787909078822,
+            "section_center_uv_mm": [
+              -231.27341400090782,
+              2616.2364082456347
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 159.62169916168216,
+                "foreground_top_bottom_v_px": [
+                  152.7217035091922,
+                  233.59047201388677
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 161.26247336188268,
+                "foreground_top_bottom_v_px": [
+                  153.4139030224362,
+                  234.78815857693002
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 37.50331351286905,
+            "rms_px": 0.6323681922843619,
+            "section_center_uv_mm": [
+              -229.53131814378892,
+              2587.1807755073937
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 156.8115315300942,
+                "foreground_top_bottom_v_px": [
+                  152.7217035091922,
+                  233.59047201388677
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 158.389034902357,
+                "foreground_top_bottom_v_px": [
+                  153.4139030224362,
+                  234.78815857693002
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 24,
+            "hypothesis_diameter_mm": 70.58447871578038,
+            "rms_px": 0.6567019093587152,
+            "section_center_uv_mm": [
+              -219.27643076033257,
+              2653.034706113833
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 209.65858884921323,
+                "foreground_top_bottom_v_px": [
+                  152.7217035091922,
+                  233.59047201388677
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 211.41539431169366,
+                "foreground_top_bottom_v_px": [
+                  153.4139030224362,
+                  234.78815857693002
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 70.5324956465493,
+            "rms_px": 0.6566977681555991,
+            "section_center_uv_mm": [
+              -219.28928692767494,
+              2652.8973906367605
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 209.57912352113644,
+                "foreground_top_bottom_v_px": [
+                  152.7217035091922,
+                  233.59047201388677
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 211.33558094277743,
+                "foreground_top_bottom_v_px": [
+                  153.4139030224362,
+                  234.78815857693002
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 25,
+            "hypothesis_diameter_mm": 70.60688570134312,
+            "rms_px": 0.6567324164036616,
+            "section_center_uv_mm": [
+              -219.26800207748343,
+              2653.063956829372
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 209.6941718580236,
+                "foreground_top_bottom_v_px": [
+                  152.7217035091922,
+                  233.59047201388677
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 211.45106643639835,
+                "foreground_top_bottom_v_px": [
+                  153.4139030224362,
+                  234.78815857693002
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 45,
+            "hypothesis_diameter_mm": 94.70947594427814,
+            "rms_px": 0.6609198386936387,
+            "section_center_uv_mm": [
+              -198.43205268370932,
+              2562.72266433759
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 254.96245043027884,
+                "foreground_top_bottom_v_px": [
+                  152.7217035091922,
+                  233.59047201388677
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 256.5579278740801,
+                "foreground_top_bottom_v_px": [
+                  153.4139030224362,
+                  234.78815857693002
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 177.02800295495106,
+            "rms_px": 0.619141234014767,
+            "section_center_uv_mm": [
+              -156.4162550805983,
+              2555.8315449615357
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 396.0382756999159,
+                "foreground_top_bottom_v_px": [
+                  152.7217035091922,
+                  233.59047201388677
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 397.7132605197128,
+                "foreground_top_bottom_v_px": [
+                  153.4139030224362,
+                  234.78815857693002
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 28,
+            "hypothesis_diameter_mm": 94.76174905811348,
+            "rms_px": 0.6610331751144841,
+            "section_center_uv_mm": [
+              -198.40263240701546,
+              2562.6900905340826
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 255.05363868862528,
+                "foreground_top_bottom_v_px": [
+                  152.7217035091922,
+                  233.59047201388677
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 256.6491065965994,
+                "foreground_top_bottom_v_px": [
+                  153.4139030224362,
+                  234.78815857693002
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        39.624961423506385,
+        37.50331351286905,
+        70.58447871578038,
+        70.5324956465493,
+        70.60688570134312
+      ]
+    },
+    {
+      "frame": 1,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 49,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 78,
+            "hypothesis_diameter_mm": 14.410052397804062,
+            "rms_px": 0.8329256080169415,
+            "section_center_uv_mm": [
+              -244.87034451112828,
+              2625.866153147772
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 117.38467132788736,
+                "foreground_top_bottom_v_px": [
+                  152.7417528293227,
+                  233.5999163199836
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 119.01179148251097,
+                "foreground_top_bottom_v_px": [
+                  153.45136318938253,
+                  234.89092813406387
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 17,
+            "hypothesis_diameter_mm": 14.018407620175218,
+            "rms_px": 0.8317360077533058,
+            "section_center_uv_mm": [
+              -245.19794476899392,
+              2627.2154969274247
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 116.71818162399012,
+                "foreground_top_bottom_v_px": [
+                  152.7417528293227,
+                  233.5999163199836
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 118.34750034154088,
+                "foreground_top_bottom_v_px": [
+                  153.45136318938253,
+                  234.89092813406387
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 19,
+            "hypothesis_diameter_mm": 22.879923878114635,
+            "rms_px": 1.110601306580359,
+            "section_center_uv_mm": [
+              -240.99886362916567,
+              2629.8617053015228
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 131.43312378612507,
+                "foreground_top_bottom_v_px": [
+                  152.7417528293227,
+                  233.5999163199836
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 133.07961315501467,
+                "foreground_top_bottom_v_px": [
+                  153.45136318938253,
+                  234.89092813406387
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 56.52462740669045,
+            "rms_px": 0.6504196849903571,
+            "section_center_uv_mm": [
+              -226.3657250781597,
+              2653.291538446238
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 186.49294981626824,
+                "foreground_top_bottom_v_px": [
+                  152.7417528293227,
+                  233.5999163199836
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 188.23161095029937,
+                "foreground_top_bottom_v_px": [
+                  153.45136318938253,
+                  234.89092813406387
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 43,
+            "hypothesis_diameter_mm": 260.9727254940078,
+            "rms_px": 0.5645966973741384,
+            "section_center_uv_mm": [
+              -116.54932583792744,
+              2579.618553508378
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 535.4184249676097,
+                "foreground_top_bottom_v_px": [
+                  152.7417528293227,
+                  233.5999163199836
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 537.2407259120932,
+                "foreground_top_bottom_v_px": [
+                  153.45136318938253,
+                  234.89092813406387
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 51,
+            "hypothesis_diameter_mm": 109.80309662342997,
+            "rms_px": 0.6332990474505427,
+            "section_center_uv_mm": [
+              -191.02577198090034,
+              2564.52504923533
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 280.5451696817765,
+                "foreground_top_bottom_v_px": [
+                  152.7417528293227,
+                  233.5999163199836
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 282.1626741955931,
+                "foreground_top_bottom_v_px": [
+                  153.45136318938253,
+                  234.89092813406387
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 35,
+            "hypothesis_diameter_mm": 109.86607201239013,
+            "rms_px": 0.6333527565403295,
+            "section_center_uv_mm": [
+              -190.99393561791277,
+              2564.523397580751
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 280.65258946588557,
+                "foreground_top_bottom_v_px": [
+                  152.7417528293227,
+                  233.5999163199836
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 282.27016515721454,
+                "foreground_top_bottom_v_px": [
+                  153.45136318938253,
+                  234.89092813406387
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 44,
+            "hypothesis_diameter_mm": 71.63549070221411,
+            "rms_px": 0.6824773260474615,
+            "section_center_uv_mm": [
+              -212.01723646002327,
+              2583.3484583821987
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 214.63875067685947,
+                "foreground_top_bottom_v_px": [
+                  152.7417528293227,
+                  233.5999163199836
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 216.25109483985318,
+                "foreground_top_bottom_v_px": [
+                  153.45136318938253,
+                  234.89092813406387
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        56.52462740669045,
+        71.63549070221411
+      ]
+    },
+    {
+      "frame": 2,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 48,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 45.30341752111708,
+            "rms_px": 0.5819353598741266,
+            "section_center_uv_mm": [
+              -226.52418316086684,
+              2596.996131923934
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 169.75173344546883,
+                "foreground_top_bottom_v_px": [
+                  152.80134074118828,
+                  233.42821444789496
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.3598859702507,
+                "foreground_top_bottom_v_px": [
+                  153.43836072088246,
+                  234.80299388479963
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 23,
+            "hypothesis_diameter_mm": 45.35459295387076,
+            "rms_px": 0.5819659418920519,
+            "section_center_uv_mm": [
+              -226.5033437315597,
+              2597.046554235463
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 169.83632531525484,
+                "foreground_top_bottom_v_px": [
+                  152.80134074118828,
+                  233.42821444789496
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.44464919995855,
+                "foreground_top_bottom_v_px": [
+                  153.43836072088246,
+                  234.80299388479963
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 45.316151371948415,
+            "rms_px": 0.5819448009206337,
+            "section_center_uv_mm": [
+              -226.51884838967823,
+              2597.0071323318707
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 169.77282952392693,
+                "foreground_top_bottom_v_px": [
+                  152.80134074118828,
+                  233.42821444789496
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.38102144310616,
+                "foreground_top_bottom_v_px": [
+                  153.43836072088246,
+                  234.80299388479963
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 23,
+            "hypothesis_diameter_mm": 45.35382580015426,
+            "rms_px": 0.5819666026490861,
+            "section_center_uv_mm": [
+              -226.50360104303545,
+              2597.0452291236174
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 169.83507472548834,
+                "foreground_top_bottom_v_px": [
+                  152.80134074118828,
+                  233.42821444789496
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.4433948468397,
+                "foreground_top_bottom_v_px": [
+                  153.43836072088246,
+                  234.80299388479963
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 38,
+            "hypothesis_diameter_mm": 109.80069087414358,
+            "rms_px": 0.7567964433280522,
+            "section_center_uv_mm": [
+              -192.73443057690972,
+              2582.6052803625844
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 279.2797420048239,
+                "foreground_top_bottom_v_px": [
+                  152.80134074118828,
+                  233.42821444789496
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 280.9373619531444,
+                "foreground_top_bottom_v_px": [
+                  153.43836072088246,
+                  234.80299388479963
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 42,
+            "hypothesis_diameter_mm": 109.80276123164248,
+            "rms_px": 0.7568107026692826,
+            "section_center_uv_mm": [
+              -192.73333424922566,
+              2582.6047006450285
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 279.28328527873936,
+                "foreground_top_bottom_v_px": [
+                  152.80134074118828,
+                  233.42821444789496
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 280.9409064585131,
+                "foreground_top_bottom_v_px": [
+                  153.43836072088246,
+                  234.80299388479963
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 34,
+            "hypothesis_diameter_mm": 55.725199269458166,
+            "rms_px": 0.8642041160060461,
+            "section_center_uv_mm": [
+              -221.99645185686921,
+              2604.319968950554
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 187.01701807530893,
+                "foreground_top_bottom_v_px": [
+                  152.80134074118828,
+                  233.42821444789496
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 188.65388660660957,
+                "foreground_top_bottom_v_px": [
+                  153.43836072088246,
+                  234.80299388479963
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 109.89565329809945,
+            "rms_px": 0.7570023179207511,
+            "section_center_uv_mm": [
+              -192.68503082248108,
+              2582.5878526938477
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 279.4415946415554,
+                "foreground_top_bottom_v_px": [
+                  152.80134074118828,
+                  233.42821444789496
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 281.09929122118393,
+                "foreground_top_bottom_v_px": [
+                  153.43836072088246,
+                  234.80299388479963
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        45.30341752111708,
+        45.35459295387076,
+        45.316151371948415,
+        45.35382580015426,
+        55.725199269458166
+      ]
+    },
+    {
+      "frame": 3,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 48,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 35,
+            "hypothesis_diameter_mm": 46.46403801857686,
+            "rms_px": 0.6013996447280746,
+            "section_center_uv_mm": [
+              -225.39245790975158,
+              2591.560670138532
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 171.91414466399857,
+                "foreground_top_bottom_v_px": [
+                  152.76772817023294,
+                  233.4998013286262
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 173.5123716392265,
+                "foreground_top_bottom_v_px": [
+                  153.41286012585104,
+                  234.83717645650776
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 26,
+            "hypothesis_diameter_mm": 46.48796269692559,
+            "rms_px": 0.6014073800907961,
+            "section_center_uv_mm": [
+              -225.3828264464146,
+              2591.585386590009
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 171.9537176040424,
+                "foreground_top_bottom_v_px": [
+                  152.76772817023294,
+                  233.4998013286262
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 173.55202718011648,
+                "foreground_top_bottom_v_px": [
+                  153.41286012585104,
+                  234.83717645650776
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 36,
+            "hypothesis_diameter_mm": 46.502288128936264,
+            "rms_px": 0.6014235970917443,
+            "section_center_uv_mm": [
+              -225.3775505737179,
+              2591.605260544639
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 171.97725190302629,
+                "foreground_top_bottom_v_px": [
+                  152.76772817023294,
+                  233.4998013286262
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 173.5756216396565,
+                "foreground_top_bottom_v_px": [
+                  153.41286012585104,
+                  234.83717645650776
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 46.50520558471423,
+            "rms_px": 0.6014156740115323,
+            "section_center_uv_mm": [
+              -225.37592776219336,
+              2591.6036429433634
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 171.98222395318416,
+                "foreground_top_bottom_v_px": [
+                  152.76772817023294,
+                  233.4998013286262
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 173.58059399477386,
+                "foreground_top_bottom_v_px": [
+                  153.41286012585104,
+                  234.83717645650776
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 71.62847918792939,
+            "rms_px": 0.7030394438514612,
+            "section_center_uv_mm": [
+              -218.08333504915916,
+              2646.7673757528505
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 211.76692240870014,
+                "foreground_top_bottom_v_px": [
+                  152.76772817023294,
+                  233.4998013286262
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 213.51239951289384,
+                "foreground_top_bottom_v_px": [
+                  153.41286012585104,
+                  234.83717645650776
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 42,
+            "hypothesis_diameter_mm": 181.08172531522519,
+            "rms_px": 0.6185643730679429,
+            "section_center_uv_mm": [
+              -154.55610275779236,
+              2558.279827617438
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 402.76893475365216,
+                "foreground_top_bottom_v_px": [
+                  152.76772817023294,
+                  233.4998013286262
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 404.4542153775272,
+                "foreground_top_bottom_v_px": [
+                  153.41286012585104,
+                  234.83717645650776
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 36,
+            "hypothesis_diameter_mm": 181.08545965095635,
+            "rms_px": 0.6185635917636363,
+            "section_center_uv_mm": [
+              -154.5543311479555,
+              2558.280905927582
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 402.775177962636,
+                "foreground_top_bottom_v_px": [
+                  152.76772817023294,
+                  233.4998013286262
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 404.4604652563521,
+                "foreground_top_bottom_v_px": [
+                  153.41286012585104,
+                  234.83717645650776
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 181.08190174197514,
+            "rms_px": 0.6185643176792098,
+            "section_center_uv_mm": [
+              -154.55602008947622,
+              2558.279889195493
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 402.76922840910015,
+                "foreground_top_bottom_v_px": [
+                  152.76772817023294,
+                  233.4998013286262
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 404.45450937296295,
+                "foreground_top_bottom_v_px": [
+                  153.41286012585104,
+                  234.83717645650776
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        46.46403801857686,
+        46.48796269692559,
+        46.502288128936264,
+        46.50520558471423,
+        71.62847918792939
+      ]
+    },
+    {
+      "frame": 4,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 49,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 40.153122594422136,
+            "rms_px": 0.5876897578051875,
+            "section_center_uv_mm": [
+              -227.73137842062425,
+              2582.8330033046814
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 161.48920417501859,
+                "foreground_top_bottom_v_px": [
+                  152.7695766448332,
+                  233.50997629169433
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 163.06095554498293,
+                "foreground_top_bottom_v_px": [
+                  153.41891006302305,
+                  234.79163286467315
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 46,
+            "hypothesis_diameter_mm": 17.623906199600935,
+            "rms_px": 0.9803927094722837,
+            "section_center_uv_mm": [
+              -238.15209159660617,
+              2573.571339737212
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 123.47424706071558,
+                "foreground_top_bottom_v_px": [
+                  152.7695766448332,
+                  233.50997629169433
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 124.99779815037233,
+                "foreground_top_bottom_v_px": [
+                  153.41891006302305,
+                  234.79163286467315
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 40.00235286999931,
+            "rms_px": 0.5875225920692982,
+            "section_center_uv_mm": [
+              -227.80970703304092,
+              2582.859961134905
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 161.2333498657091,
+                "foreground_top_bottom_v_px": [
+                  152.7695766448332,
+                  233.50997629169433
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 162.80496706382874,
+                "foreground_top_bottom_v_px": [
+                  153.41891006302305,
+                  234.79163286467315
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 24,
+            "hypothesis_diameter_mm": 35.858606963514525,
+            "rms_px": 1.058906795678438,
+            "section_center_uv_mm": [
+              -229.2601869559802,
+              2576.327589646068
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 154.38160516972863,
+                "foreground_top_bottom_v_px": [
+                  152.7695766448332,
+                  233.50997629169433
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 155.93412952551432,
+                "foreground_top_bottom_v_px": [
+                  153.41891006302305,
+                  234.79163286467315
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 90.76628144221266,
+            "rms_px": 0.6796423604472231,
+            "section_center_uv_mm": [
+              -200.18561272045915,
+              2560.8783101056515
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 248.4395913687488,
+                "foreground_top_bottom_v_px": [
+                  152.7695766448332,
+                  233.50997629169433
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 250.02630394186522,
+                "foreground_top_bottom_v_px": [
+                  153.41891006302305,
+                  234.79163286467315
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 37,
+            "hypothesis_diameter_mm": 138.1360158238863,
+            "rms_px": 0.6322272938769654,
+            "section_center_uv_mm": [
+              -175.50967273181985,
+              2551.7560722922963
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 330.05942969109583,
+                "foreground_top_bottom_v_px": [
+                  152.7695766448332,
+                  233.50997629169433
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 331.6811402191979,
+                "foreground_top_bottom_v_px": [
+                  153.41891006302305,
+                  234.79163286467315
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 91.08373744378389,
+            "rms_px": 0.6801038047194072,
+            "section_center_uv_mm": [
+              -200.02133055378133,
+              2560.829327682408
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 248.98412727312518,
+                "foreground_top_bottom_v_px": [
+                  152.7695766448332,
+                  233.50997629169433
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 250.57111239822967,
+                "foreground_top_bottom_v_px": [
+                  153.41891006302305,
+                  234.79163286467315
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 24,
+            "hypothesis_diameter_mm": 90.83927867300478,
+            "rms_px": 0.679794317472108,
+            "section_center_uv_mm": [
+              -200.14628032322065,
+              2560.8512387563487
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 248.56582600172757,
+                "foreground_top_bottom_v_px": [
+                  152.7695766448332,
+                  233.50997629169433
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 250.1525662546577,
+                "foreground_top_bottom_v_px": [
+                  153.41891006302305,
+                  234.79163286467315
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        40.153122594422136,
+        40.00235286999931,
+        35.858606963514525
+      ]
+    },
+    {
+      "frame": 5,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 47,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 4,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 45.586041468467215,
+            "rms_px": 0.6326221997274196,
+            "section_center_uv_mm": [
+              -226.91976064192593,
+              2602.2383960055377
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 170.01533210031755,
+                "foreground_top_bottom_v_px": [
+                  152.75518236250798,
+                  233.52717050586756
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.63478993737385,
+                "foreground_top_bottom_v_px": [
+                  153.41263134915596,
+                  234.8418743837886
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 35.517989404363405,
+            "rms_px": 0.662529685675787,
+            "section_center_uv_mm": [
+              -230.32106032152083,
+              2585.0955443924763
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 153.5180583692781,
+                "foreground_top_bottom_v_px": [
+                  152.75518236250798,
+                  233.52717050586756
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 155.08864452142842,
+                "foreground_top_bottom_v_px": [
+                  153.41263134915596,
+                  234.8418743837886
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 35.723177337475335,
+            "rms_px": 0.7422474370010402,
+            "section_center_uv_mm": [
+              -233.04307173776817,
+              2614.3370408405253
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 153.15944817086992,
+                "foreground_top_bottom_v_px": [
+                  152.75518236250798,
+                  233.52717050586756
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 154.7912198682834,
+                "foreground_top_bottom_v_px": [
+                  153.41263134915596,
+                  234.8418743837886
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 31,
+            "hypothesis_diameter_mm": 67.62513150546934,
+            "rms_px": 0.6980289161205866,
+            "section_center_uv_mm": [
+              -220.18791797200467,
+              2647.1543309577632
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 205.05023094144022,
+                "foreground_top_bottom_v_px": [
+                  152.75518236250798,
+                  233.52717050586756
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 206.79115904879959,
+                "foreground_top_bottom_v_px": [
+                  153.41263134915596,
+                  234.8418743837886
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 23,
+            "hypothesis_diameter_mm": 68.05338777405808,
+            "rms_px": 0.6984086222732183,
+            "section_center_uv_mm": [
+              -220.00209243530912,
+              2647.45789866092
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 205.74385689094962,
+                "foreground_top_bottom_v_px": [
+                  152.75518236250798,
+                  233.52717050586756
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 207.4859689126554,
+                "foreground_top_bottom_v_px": [
+                  153.41263134915596,
+                  234.8418743837886
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 159.63709177979524,
+            "rms_px": 0.6825167920155512,
+            "section_center_uv_mm": [
+              -183.82921915413579,
+              2749.215013596805
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 346.96206494744615,
+                "foreground_top_bottom_v_px": [
+                  152.75518236250798,
+                  233.52717050586756
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 349.0303275957853,
+                "foreground_top_bottom_v_px": [
+                  153.41263134915596,
+                  234.8418743837886
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 90.81333429909971,
+            "rms_px": 0.7467580210373768,
+            "section_center_uv_mm": [
+              -200.4645425630805,
+              2563.580056537426
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 248.28315035877674,
+                "foreground_top_bottom_v_px": [
+                  152.75518236250798,
+                  233.52717050586756
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 249.87585357958352,
+                "foreground_top_bottom_v_px": [
+                  153.41263134915596,
+                  234.8418743837886
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 44,
+            "hypothesis_diameter_mm": 250.05096776263798,
+            "rms_px": 0.6493081844890354,
+            "section_center_uv_mm": [
+              -120.93171103737852,
+              2568.2823399696167
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 518.8007157095916,
+                "foreground_top_bottom_v_px": [
+                  152.75518236250798,
+                  233.52717050586756
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 520.5842269649987,
+                "foreground_top_bottom_v_px": [
+                  153.41263134915596,
+                  234.8418743837886
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        45.586041468467215,
+        35.517989404363405,
+        35.723177337475335,
+        67.62513150546934,
+        68.05338777405808
+      ]
+    },
+    {
+      "frame": 6,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 49,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 31,
+            "hypothesis_diameter_mm": 34.297660092619466,
+            "rms_px": 0.6346657286177942,
+            "section_center_uv_mm": [
+              -231.18090778446455,
+              2588.0767474592353
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 151.45391718041057,
+                "foreground_top_bottom_v_px": [
+                  152.70466191252382,
+                  233.6575529061323
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 153.02926738802495,
+                "foreground_top_bottom_v_px": [
+                  153.45076732262496,
+                  234.88625106640393
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 30,
+            "hypothesis_diameter_mm": 41.85453116899367,
+            "rms_px": 0.6187770154392042,
+            "section_center_uv_mm": [
+              -229.0330867479413,
+              2605.140229434905
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 163.73628172422607,
+                "foreground_top_bottom_v_px": [
+                  152.70466191252382,
+                  233.6575529061323
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 165.35703098523484,
+                "foreground_top_bottom_v_px": [
+                  153.45076732262496,
+                  234.88625106640393
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 30,
+            "hypothesis_diameter_mm": 42.01665376693527,
+            "rms_px": 0.6188097943781063,
+            "section_center_uv_mm": [
+              -228.953546735882,
+              2605.160277029398
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 164.007774638574,
+                "foreground_top_bottom_v_px": [
+                  152.70466191252382,
+                  233.6575529061323
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 165.62877517507656,
+                "foreground_top_bottom_v_px": [
+                  153.45076732262496,
+                  234.88625106640393
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 20,
+            "hypothesis_diameter_mm": 34.283126494876264,
+            "rms_px": 0.6346515537727976,
+            "section_center_uv_mm": [
+              -231.16993983944184,
+              2587.888195517468
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 151.43387594562566,
+                "foreground_top_bottom_v_px": [
+                  152.70466191252382,
+                  233.6575529061323
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 153.00881143338526,
+                "foreground_top_bottom_v_px": [
+                  153.45076732262496,
+                  234.88625106640393
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 51,
+            "hypothesis_diameter_mm": 55.52579808081551,
+            "rms_px": 0.7906374094135108,
+            "section_center_uv_mm": [
+              -219.88607424492514,
+              2581.5448129238025
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 187.54541673366006,
+                "foreground_top_bottom_v_px": [
+                  152.70466191252382,
+                  233.6575529061323
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 189.1338220096692,
+                "foreground_top_bottom_v_px": [
+                  153.45076732262496,
+                  234.88625106640393
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 47,
+            "hypothesis_diameter_mm": 240.2876654194676,
+            "rms_px": 0.6136260122676543,
+            "section_center_uv_mm": [
+              -125.76667450946495,
+              2567.982272374107
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 502.2971595542731,
+                "foreground_top_bottom_v_px": [
+                  152.70466191252382,
+                  233.6575529061323
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 504.0696959127694,
+                "foreground_top_bottom_v_px": [
+                  153.45076732262496,
+                  234.88625106640393
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 101.25021980000461,
+            "rms_px": 0.7158570823417739,
+            "section_center_uv_mm": [
+              -195.03688385874997,
+              2562.083353060582
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 266.2328363759764,
+                "foreground_top_bottom_v_px": [
+                  152.70466191252382,
+                  233.6575529061323
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 267.8347694998856,
+                "foreground_top_bottom_v_px": [
+                  153.45076732262496,
+                  234.88625106640393
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 34,
+            "hypothesis_diameter_mm": 101.35177559775394,
+            "rms_px": 0.7161281771273817,
+            "section_center_uv_mm": [
+              -194.98165697499053,
+              2562.039967201005
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 266.4089337502571,
+                "foreground_top_bottom_v_px": [
+                  152.70466191252382,
+                  233.6575529061323
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 268.01089138013026,
+                "foreground_top_bottom_v_px": [
+                  153.45076732262496,
+                  234.88625106640393
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        41.85453116899367,
+        42.01665376693527,
+        55.52579808081551
+      ]
+    },
+    {
+      "frame": 7,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 48,
+          "right": 51
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 1
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 39,
+            "hypothesis_diameter_mm": 37.336119451445825,
+            "rms_px": 0.6156006426756264,
+            "section_center_uv_mm": [
+              -231.1232147267441,
+              2603.294296313805
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 156.20382726837985,
+                "foreground_top_bottom_v_px": [
+                  152.80997854867633,
+                  233.64396185509628
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 157.81489568589367,
+                "foreground_top_bottom_v_px": [
+                  153.46533585805645,
+                  234.82090755985882
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 34.87798339489202,
+            "rms_px": 0.6274045430259196,
+            "section_center_uv_mm": [
+              -233.056972460188,
+              2610.528133302561
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 151.9063724923457,
+                "foreground_top_bottom_v_px": [
+                  152.80997854867633,
+                  233.64396185509628
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 153.52923809544382,
+                "foreground_top_bottom_v_px": [
+                  153.46533585805645,
+                  234.82090755985882
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 33,
+            "hypothesis_diameter_mm": 36.41217097017907,
+            "rms_px": 0.6268719225809869,
+            "section_center_uv_mm": [
+              -232.5833605832552,
+              2613.603431605757
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 154.4004749345041,
+                "foreground_top_bottom_v_px": [
+                  152.80997854867633,
+                  233.64396185509628
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 156.03168696133525,
+                "foreground_top_bottom_v_px": [
+                  153.46533585805645,
+                  234.82090755985882
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 25,
+            "hypothesis_diameter_mm": 36.825591028445864,
+            "rms_px": 0.7102693294331479,
+            "section_center_uv_mm": [
+              -235.30927457511245,
+              2643.9758498418805
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 154.35442787881806,
+                "foreground_top_bottom_v_px": [
+                  152.80997854867633,
+                  233.64396185509628
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 156.04806985633675,
+                "foreground_top_bottom_v_px": [
+                  153.46533585805645,
+                  234.82090755985882
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 26,
+            "hypothesis_diameter_mm": 37.759452900284295,
+            "rms_px": 0.6997473707369959,
+            "section_center_uv_mm": [
+              -233.80363871351992,
+              2633.2447981081305
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 156.16331399761188,
+                "foreground_top_bottom_v_px": [
+                  152.80997854867633,
+                  233.64396185509628
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 157.8364949387388,
+                "foreground_top_bottom_v_px": [
+                  153.46533585805645,
+                  234.82090755985882
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 46,
+            "hypothesis_diameter_mm": 325.91192151951867,
+            "rms_px": 0.5823208513392584,
+            "section_center_uv_mm": [
+              -84.82877219816349,
+              2589.465713123043
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 643.6107962140853,
+                "foreground_top_bottom_v_px": [
+                  152.80997854867633,
+                  233.64396185509628
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 645.5235184524769,
+                "foreground_top_bottom_v_px": [
+                  153.46533585805645,
+                  234.82090755985882
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 117.49525508266134,
+            "rms_px": 0.7002157105647168,
+            "section_center_uv_mm": [
+              -187.6007599334313,
+              2569.601208178529
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 293.3286716350925,
+                "foreground_top_bottom_v_px": [
+                  152.80997854867633,
+                  233.64396185509628
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 294.9667079596668,
+                "foreground_top_bottom_v_px": [
+                  153.46533585805645,
+                  234.82090755985882
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 55.78403327075402,
+            "rms_px": 0.7917778078143034,
+            "section_center_uv_mm": [
+              -220.78485805169473,
+              2592.2108780399903
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 187.5859922845161,
+                "foreground_top_bottom_v_px": [
+                  152.80997854867633,
+                  233.64396185509628
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 189.19741937386613,
+                "foreground_top_bottom_v_px": [
+                  153.46533585805645,
+                  234.82090755985882
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        37.336119451445825,
+        34.87798339489202,
+        36.41217097017907,
+        36.825591028445864,
+        37.759452900284295,
+        55.78403327075402
+      ]
+    },
+    {
+      "frame": 8,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 49,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 42,
+            "hypothesis_diameter_mm": 37.996782545155774,
+            "rms_px": 0.6287526394542025,
+            "section_center_uv_mm": [
+              -229.49338640489668,
+              2589.6530730296818
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 157.63000287972477,
+                "foreground_top_bottom_v_px": [
+                  152.77580455262245,
+                  233.64685824568596
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 159.21337327662218,
+                "foreground_top_bottom_v_px": [
+                  153.50182217377875,
+                  234.8538151867118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 46,
+            "hypothesis_diameter_mm": 38.09657794794585,
+            "rms_px": 0.6287606388992035,
+            "section_center_uv_mm": [
+              -229.44432825525905,
+              2589.664866188403
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 157.79825226300736,
+                "foreground_top_bottom_v_px": [
+                  152.77580455262245,
+                  233.64685824568596
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 159.3817750562035,
+                "foreground_top_bottom_v_px": [
+                  153.50182217377875,
+                  234.8538151867118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 37,
+            "hypothesis_diameter_mm": 53.97012556172953,
+            "rms_px": 0.6221426132744471,
+            "section_center_uv_mm": [
+              -224.43593480931017,
+              2620.3622085822767
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 183.48814096851075,
+                "foreground_top_bottom_v_px": [
+                  152.77580455262245,
+                  233.64685824568596
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 185.15616417757929,
+                "foreground_top_bottom_v_px": [
+                  153.50182217377875,
+                  234.8538151867118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 25,
+            "hypothesis_diameter_mm": 74.01363616716445,
+            "rms_px": 0.6689291448516369,
+            "section_center_uv_mm": [
+              -217.78033255940684,
+              2655.693357034502
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 215.23007904013275,
+                "foreground_top_bottom_v_px": [
+                  152.77580455262245,
+                  233.64685824568596
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 216.99686264191533,
+                "foreground_top_bottom_v_px": [
+                  153.50182217377875,
+                  234.8538151867118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 74.05068424436703,
+            "rms_px": 0.668977926053707,
+            "section_center_uv_mm": [
+              -217.76367582926682,
+              2655.713609046283
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 215.29007386339026,
+                "foreground_top_bottom_v_px": [
+                  152.77580455262245,
+                  233.64685824568596
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 217.05694762908496,
+                "foreground_top_bottom_v_px": [
+                  153.50182217377875,
+                  234.8538151867118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 36,
+            "hypothesis_diameter_mm": 59.99421435006344,
+            "rms_px": 0.7995106931731858,
+            "section_center_uv_mm": [
+              -217.74635317356353,
+              2582.441166057017
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 195.04115152166767,
+                "foreground_top_bottom_v_px": [
+                  152.77580455262245,
+                  233.64685824568596
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 196.63705390505814,
+                "foreground_top_bottom_v_px": [
+                  153.50182217377875,
+                  234.8538151867118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 35,
+            "hypothesis_diameter_mm": 89.93731951564239,
+            "rms_px": 0.7514271462808358,
+            "section_center_uv_mm": [
+              -201.0242536484542,
+              2565.053673542775
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 246.73976966880264,
+                "foreground_top_bottom_v_px": [
+                  152.77580455262245,
+                  233.64685824568596
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 248.3346987281003,
+                "foreground_top_bottom_v_px": [
+                  153.50182217377875,
+                  234.8538151867118
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 47,
+            "hypothesis_diameter_mm": 249.29428508432937,
+            "rms_px": 0.6065935290642626,
+            "section_center_uv_mm": [
+              -121.1954948662322,
+              2567.3109576615752
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 517.7122415467376,
+                "foreground_top_bottom_v_px": [
+                  152.77580455262245,
+                  233.64685824568596
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 519.4926364987768,
+                "foreground_top_bottom_v_px": [
+                  153.50182217377875,
+                  234.8538151867118
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        37.996782545155774,
+        38.09657794794585,
+        53.97012556172953,
+        74.01363616716445,
+        74.05068424436703,
+        59.99421435006344
+      ]
+    },
+    {
+      "frame": 9,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 50,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 30,
+            "hypothesis_diameter_mm": 42.33250967609362,
+            "rms_px": 0.6459589061566451,
+            "section_center_uv_mm": [
+              -229.4878799535241,
+              2612.036391894926
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 164.29574500962207,
+                "foreground_top_bottom_v_px": [
+                  152.81002142109924,
+                  233.61909175142577
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 165.9313950246627,
+                "foreground_top_bottom_v_px": [
+                  153.43398591178382,
+                  234.8624645873914
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 20.35336902123395,
+            "rms_px": 1.4728456048484262,
+            "section_center_uv_mm": [
+              -243.6276554958211,
+              2644.153435497312
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 127.06982737044484,
+                "foreground_top_bottom_v_px": [
+                  152.81002142109924,
+                  233.61909175142577
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 128.74166518735797,
+                "foreground_top_bottom_v_px": [
+                  153.43398591178382,
+                  234.8624645873914
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 35,
+            "hypothesis_diameter_mm": 47.62813898195149,
+            "rms_px": 0.7183132136528141,
+            "section_center_uv_mm": [
+              -229.99615344787443,
+              2644.8310578545484
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 172.13495353055694,
+                "foreground_top_bottom_v_px": [
+                  152.81002142109924,
+                  233.61909175142577
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 173.84469359236806,
+                "foreground_top_bottom_v_px": [
+                  153.43398591178382,
+                  234.8624645873914
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 39,
+            "hypothesis_diameter_mm": 47.88267892877694,
+            "rms_px": 0.7183178277310023,
+            "section_center_uv_mm": [
+              -229.88069283743584,
+              2644.9591445393226
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 172.55153770203245,
+                "foreground_top_bottom_v_px": [
+                  152.81002142109924,
+                  233.61909175142577
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 174.26187556093805,
+                "foreground_top_bottom_v_px": [
+                  153.43398591178382,
+                  234.8624645873914
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 24,
+            "hypothesis_diameter_mm": 34.980384180250006,
+            "rms_px": 0.7402939781174184,
+            "section_center_uv_mm": [
+              -235.10984795820508,
+              2631.997544354172
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 151.52804369033743,
+                "foreground_top_bottom_v_px": [
+                  152.81002142109924,
+                  233.61909175142577
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 153.19496856454407,
+                "foreground_top_bottom_v_px": [
+                  153.43398591178382,
+                  234.8624645873914
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 21,
+            "hypothesis_diameter_mm": 41.83755493137844,
+            "rms_px": 0.81030661580297,
+            "section_center_uv_mm": [
+              -232.9341408453282,
+              2645.130943271156
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 162.5577832371461,
+                "foreground_top_bottom_v_px": [
+                  152.81002142109924,
+                  233.61909175142577
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 164.26041141272216,
+                "foreground_top_bottom_v_px": [
+                  153.43398591178382,
+                  234.8624645873914
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 41,
+            "hypothesis_diameter_mm": 205.8344622258118,
+            "rms_px": 0.6288457527048958,
+            "section_center_uv_mm": [
+              -143.36179580273867,
+              2570.676434521187
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 443.25053869238405,
+                "foreground_top_bottom_v_px": [
+                  152.81002142109924,
+                  233.61909175142577
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 444.99220370016116,
+                "foreground_top_bottom_v_px": [
+                  153.43398591178382,
+                  234.8624645873914
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 38,
+            "hypothesis_diameter_mm": 205.8345199229443,
+            "rms_px": 0.6288457521627382,
+            "section_center_uv_mm": [
+              -143.36176746775914,
+              2570.6764412286993
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 443.2506358219353,
+                "foreground_top_bottom_v_px": [
+                  152.81002142109924,
+                  233.61909175142577
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 444.99230090901017,
+                "foreground_top_bottom_v_px": [
+                  153.43398591178382,
+                  234.8624645873914
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        42.33250967609362,
+        47.62813898195149,
+        47.88267892877694,
+        41.83755493137844
+      ]
+    },
+    {
+      "frame": 10,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 48,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 3,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 34.37935237469006,
+            "rms_px": 0.6631019537852934,
+            "section_center_uv_mm": [
+              -230.95278308450935,
+              2585.6689264068928
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 151.5718506756531,
+                "foreground_top_bottom_v_px": [
+                  152.7452552914378,
+                  233.6001962909794
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 153.14218730903912,
+                "foreground_top_bottom_v_px": [
+                  153.43581096287465,
+                  234.87971751835437
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 34.99843382235722,
+            "rms_px": 0.6634083256333744,
+            "section_center_uv_mm": [
+              -230.61035703812328,
+              2585.344313437536
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 152.6263673790786,
+                "foreground_top_bottom_v_px": [
+                  152.7452552914378,
+                  233.6001962909794
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 154.19681025429804,
+                "foreground_top_bottom_v_px": [
+                  153.43581096287465,
+                  234.87971751835437
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 24,
+            "hypothesis_diameter_mm": 31.170608276491535,
+            "rms_px": 0.7484959861330888,
+            "section_center_uv_mm": [
+              -236.4488813845055,
+              2625.8665564231387
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 145.29819775087728,
+                "foreground_top_bottom_v_px": [
+                  152.7452552914378,
+                  233.6001962909794
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 146.94758838429703,
+                "foreground_top_bottom_v_px": [
+                  153.43581096287465,
+                  234.87971751835437
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 66.32799003144278,
+            "rms_px": 0.7145526014997499,
+            "section_center_uv_mm": [
+              -222.04733800753388,
+              2659.6076265938477
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 202.377045242599,
+                "foreground_top_bottom_v_px": [
+                  152.7452552914378,
+                  233.6001962909794
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 204.14152557977624,
+                "foreground_top_bottom_v_px": [
+                  153.43581096287465,
+                  234.87971751835437
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 32.07716352919309,
+            "rms_px": 0.8442315644999036,
+            "section_center_uv_mm": [
+              -239.22744525609085,
+              2659.339671699697
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 146.10216302561946,
+                "foreground_top_bottom_v_px": [
+                  152.7452552914378,
+                  233.6001962909794
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 147.82006527327627,
+                "foreground_top_bottom_v_px": [
+                  153.43581096287465,
+                  234.87971751835437
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 35.49450915543421,
+            "rms_px": 0.829824998651871,
+            "section_center_uv_mm": [
+              -236.02538104939552,
+              2643.9672859334137
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 152.074445915153,
+                "foreground_top_bottom_v_px": [
+                  152.7452552914378,
+                  233.6001962909794
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 153.76622953479793,
+                "foreground_top_bottom_v_px": [
+                  153.43581096287465,
+                  234.87971751835437
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 41,
+            "hypothesis_diameter_mm": 330.425688744072,
+            "rms_px": 0.6703867977205956,
+            "section_center_uv_mm": [
+              -82.13658578659937,
+              2584.580128092918
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 652.2355797843173,
+                "foreground_top_bottom_v_px": [
+                  152.7452552914378,
+                  233.6001962909794
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 654.1405355815363,
+                "foreground_top_bottom_v_px": [
+                  153.43581096287465,
+                  234.87971751835437
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 39,
+            "hypothesis_diameter_mm": 150.51385654258488,
+            "rms_px": 0.7086560022292552,
+            "section_center_uv_mm": [
+              -170.0506429009382,
+              2559.1325536412455
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 350.40993341944596,
+                "foreground_top_bottom_v_px": [
+                  152.7452552914378,
+                  233.6001962909794
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 352.0626857424152,
+                "foreground_top_bottom_v_px": [
+                  153.43581096287465,
+                  234.87971751835437
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        34.99843382235722,
+        66.32799003144278,
+        35.49450915543421
+      ]
+    },
+    {
+      "frame": 11,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 50,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 1,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 25,
+            "hypothesis_diameter_mm": 13.17107127270395,
+            "rms_px": 0.892316374279925,
+            "section_center_uv_mm": [
+              -245.57514566273426,
+              2626.8265566100495
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 115.32921750849336,
+                "foreground_top_bottom_v_px": [
+                  152.78970085421818,
+                  233.60045248124408
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 116.95663339880144,
+                "foreground_top_bottom_v_px": [
+                  153.4551695201195,
+                  234.82800636111085
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 23,
+            "hypothesis_diameter_mm": 30.92111225585175,
+            "rms_px": 0.760109280232618,
+            "section_center_uv_mm": [
+              -236.46561594683396,
+              2624.819179129822
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 144.91669150574828,
+                "foreground_top_bottom_v_px": [
+                  152.78970085421818,
+                  233.60045248124408
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 146.5636279506795,
+                "foreground_top_bottom_v_px": [
+                  153.4551695201195,
+                  234.82800636111085
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 31,
+            "hypothesis_diameter_mm": 65.83829228044046,
+            "rms_px": 0.7234410931937174,
+            "section_center_uv_mm": [
+              -221.57789386984257,
+              2652.2832459469264
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 201.89128537818465,
+                "foreground_top_bottom_v_px": [
+                  152.78970085421818,
+                  233.60045248124408
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 203.640295360331,
+                "foreground_top_bottom_v_px": [
+                  153.4551695201195,
+                  234.82800636111085
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 28,
+            "hypothesis_diameter_mm": 30.774132452652047,
+            "rms_px": 0.7601231541665238,
+            "section_center_uv_mm": [
+              -236.52288678509473,
+              2624.649941423604
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 144.6757151335372,
+                "foreground_top_bottom_v_px": [
+                  152.78970085421818,
+                  233.60045248124408
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 146.32211273209927,
+                "foreground_top_bottom_v_px": [
+                  153.4551695201195,
+                  234.82800636111085
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 41.000708223792486,
+            "rms_px": 0.7244255888674731,
+            "section_center_uv_mm": [
+              -230.76653929367768,
+              2618.2449897710735
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 161.88190053224906,
+                "foreground_top_bottom_v_px": [
+                  152.78970085421818,
+                  233.60045248124408
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 163.52862177285346,
+                "foreground_top_bottom_v_px": [
+                  153.4551695201195,
+                  234.82800636111085
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 43,
+            "hypothesis_diameter_mm": 92.68157918035327,
+            "rms_px": 0.6976535119928784,
+            "section_center_uv_mm": [
+              -200.07554207521696,
+              2569.2875424094536
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 251.11232567002727,
+                "foreground_top_bottom_v_px": [
+                  152.78970085421818,
+                  233.60045248124408
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 252.71988259140673,
+                "foreground_top_bottom_v_px": [
+                  153.4551695201195,
+                  234.82800636111085
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 36.5920753965635,
+            "rms_px": 0.8169510883550393,
+            "section_center_uv_mm": [
+              -230.1824427243139,
+              2589.273182398077
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 155.23461235410983,
+                "foreground_top_bottom_v_px": [
+                  152.78970085421818,
+                  233.60045248124408
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 156.8153648334042,
+                "foreground_top_bottom_v_px": [
+                  153.4551695201195,
+                  234.82800636111085
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 28,
+            "hypothesis_diameter_mm": 92.86668806437106,
+            "rms_px": 0.6977266443595784,
+            "section_center_uv_mm": [
+              -199.98131877913605,
+              2569.274937730688
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 251.42778322898982,
+                "foreground_top_bottom_v_px": [
+                  152.78970085421818,
+                  233.60045248124408
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 253.0355362248839,
+                "foreground_top_bottom_v_px": [
+                  153.4551695201195,
+                  234.82800636111085
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        65.83829228044046,
+        41.000708223792486,
+        36.5920753965635
+      ]
+    },
+    {
+      "frame": 12,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 49,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 25,
+            "hypothesis_diameter_mm": 34.76030678424424,
+            "rms_px": 0.6433573857427444,
+            "section_center_uv_mm": [
+              -231.04845701085182,
+              2588.5031122197647
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 152.12638872084412,
+                "foreground_top_bottom_v_px": [
+                  152.76603362762344,
+                  233.56897485571153
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 153.70315669298694,
+                "foreground_top_bottom_v_px": [
+                  153.43797389057193,
+                  234.8490229225118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 34.714737738446935,
+            "rms_px": 0.6433171239562644,
+            "section_center_uv_mm": [
+              -231.08523041745502,
+              2588.645696153365
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 152.045879097273,
+                "foreground_top_bottom_v_px": [
+                  152.76603362762344,
+                  233.56897485571153
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 153.62288818358633,
+                "foreground_top_bottom_v_px": [
+                  153.43797389057193,
+                  234.8490229225118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 22,
+            "hypothesis_diameter_mm": 29.94601022316608,
+            "rms_px": 0.7395257519343186,
+            "section_center_uv_mm": [
+              -236.3200628883724,
+              2618.0299425887674
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 143.39461734177348,
+                "foreground_top_bottom_v_px": [
+                  152.76603362762344,
+                  233.56897485571153
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 145.02637596328574,
+                "foreground_top_bottom_v_px": [
+                  153.43797389057193,
+                  234.8490229225118
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 68.31112106083775,
+            "rms_px": 0.6731069188644706,
+            "section_center_uv_mm": [
+              -220.12335091448494,
+              2649.8656356669744
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 206.03460224229227,
+                "foreground_top_bottom_v_px": [
+                  152.76603362762344,
+                  233.56897485571153
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 207.7819401055968,
+                "foreground_top_bottom_v_px": [
+                  153.43797389057193,
+                  234.8490229225118
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 155.9108393486947,
+            "rms_px": 0.6749816429635255,
+            "section_center_uv_mm": [
+              -185.82291707980016,
+              2750.285323870875
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 340.91753139671835,
+                "foreground_top_bottom_v_px": [
+                  152.76603362762344,
+                  233.56897485571153
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 342.9828434792549,
+                "foreground_top_bottom_v_px": [
+                  153.43797389057193,
+                  234.8490229225118
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 44,
+            "hypothesis_diameter_mm": 80.47245341794321,
+            "rms_px": 0.8905715708191432,
+            "section_center_uv_mm": [
+              -195.47140479296698,
+              2457.9511230218577
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 236.64308686453134,
+                "foreground_top_bottom_v_px": [
+                  152.76603362762344,
+                  233.56897485571153
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 237.9804483027841,
+                "foreground_top_bottom_v_px": [
+                  153.43797389057193,
+                  234.8490229225118
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 48,
+            "hypothesis_diameter_mm": 148.10106101110577,
+            "rms_px": 0.6576769674135533,
+            "section_center_uv_mm": [
+              -171.08770479126323,
+              2557.180428605784
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 346.46507114622364,
+                "foreground_top_bottom_v_px": [
+                  152.76603362762344,
+                  233.56897485571153
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 348.1105680137212,
+                "foreground_top_bottom_v_px": [
+                  153.43797389057193,
+                  234.8490229225118
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 35,
+            "hypothesis_diameter_mm": 211.0670213285378,
+            "rms_px": 0.6912416352137433,
+            "section_center_uv_mm": [
+              -139.7301672599788,
+              2559.993582780018
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 453.6019933484803,
+                "foreground_top_bottom_v_px": [
+                  152.76603362762344,
+                  233.56897485571153
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 455.3241011001966,
+                "foreground_top_bottom_v_px": [
+                  153.43797389057193,
+                  234.8490229225118
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        34.76030678424424,
+        34.714737738446935,
+        68.31112106083775
+      ]
+    },
+    {
+      "frame": 13,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 46,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 4,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 35,
+            "hypothesis_diameter_mm": 45.933786591644704,
+            "rms_px": 0.6417430942371757,
+            "section_center_uv_mm": [
+              -228.24156285501948,
+              2617.9896376557135
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 170.16125459989712,
+                "foreground_top_bottom_v_px": [
+                  152.8405495454043,
+                  233.59919362726941
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.8139156742895,
+                "foreground_top_bottom_v_px": [
+                  153.48336886748854,
+                  234.93724772396757
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 56,
+            "hypothesis_diameter_mm": 42.924964813565886,
+            "rms_px": 0.7914946850185269,
+            "section_center_uv_mm": [
+              -232.4740842888635,
+              2646.151771636065
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 164.34664992122032,
+                "foreground_top_bottom_v_px": [
+                  152.8405495454043,
+                  233.59919362726941
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 166.05280417922413,
+                "foreground_top_bottom_v_px": [
+                  153.48336886748854,
+                  234.93724772396757
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 51,
+            "hypothesis_diameter_mm": 42.954936863981175,
+            "rms_px": 0.7915617755863622,
+            "section_center_uv_mm": [
+              -232.46010114939588,
+              2646.1630887758224
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 164.39587355908196,
+                "foreground_top_bottom_v_px": [
+                  152.8405495454043,
+                  233.59919362726941
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 166.10209068396165,
+                "foreground_top_bottom_v_px": [
+                  153.48336886748854,
+                  234.93724772396757
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 37,
+            "hypothesis_diameter_mm": 152.4600425622685,
+            "rms_px": 0.662151298262163,
+            "section_center_uv_mm": [
+              -187.44351643551326,
+              2749.5860000921784
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 335.57313814372674,
+                "foreground_top_bottom_v_px": [
+                  152.8405495454043,
+                  233.59919362726941
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 337.63246999700897,
+                "foreground_top_bottom_v_px": [
+                  153.48336886748854,
+                  234.93724772396757
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 21,
+            "hypothesis_diameter_mm": 75.62537084158089,
+            "rms_px": 0.682312369613671,
+            "section_center_uv_mm": [
+              -218.10354489281187,
+              2667.44043838177
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 217.32507548958372,
+                "foreground_top_bottom_v_px": [
+                  152.8405495454043,
+                  233.59919362726941
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 219.11778536060928,
+                "foreground_top_bottom_v_px": [
+                  153.48336886748854,
+                  234.93724772396757
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 152.5043376320805,
+            "rms_px": 0.6621492721508728,
+            "section_center_uv_mm": [
+              -187.42472778329662,
+              2749.6218397534353
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 335.6402870316686,
+                "foreground_top_bottom_v_px": [
+                  152.8405495454043,
+                  233.59919362726941
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 337.69974910074666,
+                "foreground_top_bottom_v_px": [
+                  153.48336886748854,
+                  234.93724772396757
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 27,
+            "hypothesis_diameter_mm": 43.012425538450024,
+            "rms_px": 0.7916690227910494,
+            "section_center_uv_mm": [
+              -232.42596508982055,
+              2646.108604599085
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 164.49233385464916,
+                "foreground_top_bottom_v_px": [
+                  152.8405495454043,
+                  233.59919362726941
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 166.19851786011577,
+                "foreground_top_bottom_v_px": [
+                  153.48336886748854,
+                  234.93724772396757
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 37,
+            "hypothesis_diameter_mm": 210.67240508201138,
+            "rms_px": 0.6764882376539854,
+            "section_center_uv_mm": [
+              -139.65151547781002,
+              2557.557241809814
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 453.34429867567235,
+                "foreground_top_bottom_v_px": [
+                  152.8405495454043,
+                  233.59919362726941
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 455.0602265510694,
+                "foreground_top_bottom_v_px": [
+                  153.48336886748854,
+                  234.93724772396757
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        45.933786591644704,
+        42.924964813565886,
+        42.954936863981175,
+        75.62537084158089,
+        43.012425538450024
+      ]
+    },
+    {
+      "frame": 14,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 48,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 3,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 46,
+            "hypothesis_diameter_mm": 40.2716136022708,
+            "rms_px": 0.5972318680818146,
+            "section_center_uv_mm": [
+              -228.15025063344868,
+              2587.8282013113217
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 161.55993568350567,
+                "foreground_top_bottom_v_px": [
+                  152.8367392756485,
+                  233.6002960844344
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 163.14239488673093,
+                "foreground_top_bottom_v_px": [
+                  153.46628234690223,
+                  234.8354995384509
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 44.66984411996758,
+            "rms_px": 0.6841589525735691,
+            "section_center_uv_mm": [
+              -229.26327421388132,
+              2622.22654033031
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 167.9638813615025,
+                "foreground_top_bottom_v_px": [
+                  152.8367392756485,
+                  233.6002960844344
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 169.62364973037086,
+                "foreground_top_bottom_v_px": [
+                  153.46628234690223,
+                  234.8354995384509
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 26,
+            "hypothesis_diameter_mm": 43.21037352966955,
+            "rms_px": 0.6840026713210978,
+            "section_center_uv_mm": [
+              -229.9538321546201,
+              2621.7847767271264
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 165.54379349484074,
+                "foreground_top_bottom_v_px": [
+                  152.8367392756485,
+                  233.6002960844344
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 167.20074277797266,
+                "foreground_top_bottom_v_px": [
+                  153.46628234690223,
+                  234.8354995384509
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 34,
+            "hypothesis_diameter_mm": 79.12891462781576,
+            "rms_px": 0.6732592141245181,
+            "section_center_uv_mm": [
+              -215.9763417447911,
+              2663.879209908511
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 223.27697709928614,
+                "foreground_top_bottom_v_px": [
+                  152.8367392756485,
+                  233.6002960844344
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 225.06717882395463,
+                "foreground_top_bottom_v_px": [
+                  153.46628234690223,
+                  234.8354995384509
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 26,
+            "hypothesis_diameter_mm": 44.8328721725968,
+            "rms_px": 0.6843371180085926,
+            "section_center_uv_mm": [
+              -229.17504173212498,
+              2622.1605350745513
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 168.2374827297291,
+                "foreground_top_bottom_v_px": [
+                  152.8367392756485,
+                  233.6002960844344
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 169.89732866425126,
+                "foreground_top_bottom_v_px": [
+                  153.46628234690223,
+                  234.8354995384509
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 27,
+            "hypothesis_diameter_mm": 50.34525325178294,
+            "rms_px": 0.7728879626654086,
+            "section_center_uv_mm": [
+              -228.9981551390846,
+              2648.993304683056
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 176.54752553243813,
+                "foreground_top_bottom_v_px": [
+                  152.8367392756485,
+                  233.6002960844344
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 178.2693418251462,
+                "foreground_top_bottom_v_px": [
+                  153.46628234690223,
+                  234.8354995384509
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 92.70445603159585,
+            "rms_px": 0.6669823493348185,
+            "section_center_uv_mm": [
+              -198.9553518517519,
+              2558.263173364535
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 251.91607349130464,
+                "foreground_top_bottom_v_px": [
+                  152.8367392756485,
+                  233.6002960844344
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 253.49930704960005,
+                "foreground_top_bottom_v_px": [
+                  153.46628234690223,
+                  234.8354995384509
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 139.40892040852418,
+            "rms_px": 0.6556889608141065,
+            "section_center_uv_mm": [
+              -174.42529549794733,
+              2547.192202401041
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 332.676702295788,
+                "foreground_top_bottom_v_px": [
+                  152.8367392756485,
+                  233.6002960844344
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 334.2893720435445,
+                "foreground_top_bottom_v_px": [
+                  153.46628234690223,
+                  234.8354995384509
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        40.2716136022708,
+        44.66984411996758,
+        43.21037352966955,
+        79.12891462781576,
+        44.8328721725968,
+        50.34525325178294
+      ]
+    },
+    {
+      "frame": 15,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 50,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 41,
+            "hypothesis_diameter_mm": 45.15310619323123,
+            "rms_px": 0.6056891540038025,
+            "section_center_uv_mm": [
+              -228.58735432222272,
+              2617.5054128153097
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 168.87177887096522,
+                "foreground_top_bottom_v_px": [
+                  152.80384859212984,
+                  233.61599533442708
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 170.52242214901153,
+                "foreground_top_bottom_v_px": [
+                  153.47036900432175,
+                  234.82933149603656
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 33,
+            "hypothesis_diameter_mm": 45.129919465314416,
+            "rms_px": 0.6056707188883366,
+            "section_center_uv_mm": [
+              -228.5992712422755,
+              2617.50836491217
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 168.83300273619773,
+                "foreground_top_bottom_v_px": [
+                  152.80384859212984,
+                  233.61599533442708
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 170.4836219067657,
+                "foreground_top_bottom_v_px": [
+                  153.47036900432175,
+                  234.82933149603656
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 32,
+            "hypothesis_diameter_mm": 31.55073228615776,
+            "rms_px": 0.6313294319248776,
+            "section_center_uv_mm": [
+              -233.7142003369635,
+              2599.8412894174216
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 146.53235029436382,
+                "foreground_top_bottom_v_px": [
+                  152.80384859212984,
+                  233.61599533442708
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 148.12873225499996,
+                "foreground_top_bottom_v_px": [
+                  153.47036900432175,
+                  234.82933149603656
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 30,
+            "hypothesis_diameter_mm": 32.051040166446896,
+            "rms_px": 0.6297733647929001,
+            "section_center_uv_mm": [
+              -233.6603619769979,
+              2601.8859489583897
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 147.32923921941358,
+                "foreground_top_bottom_v_px": [
+                  152.80384859212984,
+                  233.61599533442708
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 148.93051634074632,
+                "foreground_top_bottom_v_px": [
+                  153.47036900432175,
+                  234.82933149603656
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 42,
+            "hypothesis_diameter_mm": 113.82600834355836,
+            "rms_px": 0.7033926873142731,
+            "section_center_uv_mm": [
+              -189.42006758515603,
+              2569.1628052592137
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 287.09586574288255,
+                "foreground_top_bottom_v_px": [
+                  152.80384859212984,
+                  233.61599533442708
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 288.7285405754706,
+                "foreground_top_bottom_v_px": [
+                  153.47036900432175,
+                  234.82933149603656
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 40,
+            "hypothesis_diameter_mm": 252.05489456162383,
+            "rms_px": 0.62879209630059,
+            "section_center_uv_mm": [
+              -121.05919134523218,
+              2580.2721084316477
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 520.2468983324675,
+                "foreground_top_bottom_v_px": [
+                  152.80384859212984,
+                  233.61599533442708
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 522.0613633273667,
+                "foreground_top_bottom_v_px": [
+                  153.47036900432175,
+                  234.82933149603656
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 80.08519244536501,
+            "rms_px": 0.7184162703391637,
+            "section_center_uv_mm": [
+              -207.88943908260597,
+              2584.8989037182832
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 228.89863975412646,
+                "foreground_top_bottom_v_px": [
+                  152.80384859212984,
+                  233.61599533442708
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 230.52485494296388,
+                "foreground_top_bottom_v_px": [
+                  153.47036900432175,
+                  234.82933149603656
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 34,
+            "hypothesis_diameter_mm": 113.8398276627396,
+            "rms_px": 0.7034063840649188,
+            "section_center_uv_mm": [
+              -189.4131058324772,
+              2569.162605517992
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 287.11936863988615,
+                "foreground_top_bottom_v_px": [
+                  152.80384859212984,
+                  233.61599533442708
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 288.7520594765591,
+                "foreground_top_bottom_v_px": [
+                  153.47036900432175,
+                  234.82933149603656
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        45.15310619323123,
+        45.129919465314416,
+        80.08519244536501
+      ]
+    },
+    {
+      "frame": 16,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 48,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 3,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 30.781486379647117,
+            "rms_px": 0.6404579019204879,
+            "section_center_uv_mm": [
+              -233.66560374810348,
+              2595.5590311334217
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 145.36441738677487,
+                "foreground_top_bottom_v_px": [
+                  152.84041759680505,
+                  233.613551734397
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 146.95091669300163,
+                "foreground_top_bottom_v_px": [
+                  153.4712396262145,
+                  234.8820299763695
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 37,
+            "hypothesis_diameter_mm": 32.22441518254654,
+            "rms_px": 0.7342631106370954,
+            "section_center_uv_mm": [
+              -236.5613292585953,
+              2633.0418127691087
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 146.98428549992306,
+                "foreground_top_bottom_v_px": [
+                  152.84041759680505,
+                  233.613551734397
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 148.64971085039508,
+                "foreground_top_bottom_v_px": [
+                  153.4712396262145,
+                  234.8820299763695
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 30.053046199939892,
+            "rms_px": 0.7373361391798842,
+            "section_center_uv_mm": [
+              -236.83322371401783,
+              2624.565582036315
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 143.54887111748837,
+                "foreground_top_bottom_v_px": [
+                  152.84041759680505,
+                  233.613551734397
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 145.19419749993514,
+                "foreground_top_bottom_v_px": [
+                  153.4712396262145,
+                  234.8820299763695
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 28,
+            "hypothesis_diameter_mm": 85.8724434012858,
+            "rms_px": 0.6906896984743875,
+            "section_center_uv_mm": [
+              -214.0309554579838,
+              2678.7968229307567
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 233.53349609511815,
+                "foreground_top_bottom_v_px": [
+                  152.84041759680505,
+                  233.613551734397
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 235.36276341960763,
+                "foreground_top_bottom_v_px": [
+                  153.4712396262145,
+                  234.8820299763695
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 33,
+            "hypothesis_diameter_mm": 86.4456529012435,
+            "rms_px": 0.6914130463949605,
+            "section_center_uv_mm": [
+              -213.80261842123724,
+              2679.414050401139
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 234.43504221781583,
+                "foreground_top_bottom_v_px": [
+                  152.84041759680505,
+                  233.613551734397
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 236.2663152672483,
+                "foreground_top_bottom_v_px": [
+                  153.4712396262145,
+                  234.8820299763695
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 53.561999453712794,
+            "rms_px": 0.7313354322842757,
+            "section_center_uv_mm": [
+              -218.44687624243628,
+              2556.491666208975
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 185.14580615591444,
+                "foreground_top_bottom_v_px": [
+                  152.84041759680505,
+                  233.613551734397
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 186.67773344673085,
+                "foreground_top_bottom_v_px": [
+                  153.4712396262145,
+                  234.8820299763695
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 42,
+            "hypothesis_diameter_mm": 236.5060645226547,
+            "rms_px": 0.5773411294335805,
+            "section_center_uv_mm": [
+              -127.9253061404735,
+              2570.714561318473
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 495.4375059222498,
+                "foreground_top_bottom_v_px": [
+                  152.84041759680505,
+                  233.613551734397
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 497.2125704629955,
+                "foreground_top_bottom_v_px": [
+                  153.4712396262145,
+                  234.8820299763695
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 40,
+            "hypothesis_diameter_mm": 236.5060587705562,
+            "rms_px": 0.5773411295559076,
+            "section_center_uv_mm": [
+              -127.92530895229574,
+              2570.714560516885
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 495.4374962681905,
+                "foreground_top_bottom_v_px": [
+                  152.84041759680505,
+                  233.613551734397
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 497.2125608008779,
+                "foreground_top_bottom_v_px": [
+                  153.4712396262145,
+                  234.8820299763695
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        85.8724434012858,
+        53.561999453712794
+      ]
+    },
+    {
+      "frame": 17,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 49,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 29,
+            "hypothesis_diameter_mm": 13.419292096031732,
+            "rms_px": 0.864338048567475,
+            "section_center_uv_mm": [
+              -246.08892904189983,
+              2634.03277555785
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 115.76961202112052,
+                "foreground_top_bottom_v_px": [
+                  152.85537510675385,
+                  233.70566673274533
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 117.41191997138274,
+                "foreground_top_bottom_v_px": [
+                  153.51124317301458,
+                  234.80216437090917
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 40,
+            "hypothesis_diameter_mm": 34.20536919966239,
+            "rms_px": 0.7051573093906272,
+            "section_center_uv_mm": [
+              -235.12521473656767,
+              2628.6113069901635
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 150.39495397653928,
+                "foreground_top_bottom_v_px": [
+                  152.85537510675385,
+                  233.70566673274533
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 152.0540261938518,
+                "foreground_top_bottom_v_px": [
+                  153.51124317301458,
+                  234.80216437090917
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 31,
+            "hypothesis_diameter_mm": 34.3288468677119,
+            "rms_px": 0.7054366160913924,
+            "section_center_uv_mm": [
+              -235.04384515269743,
+              2628.412625115136
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 150.60506581802326,
+                "foreground_top_bottom_v_px": [
+                  152.85537510675385,
+                  233.70566673274533
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 152.26389720381226,
+                "foreground_top_bottom_v_px": [
+                  153.51124317301458,
+                  234.80216437090917
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 29.457095707922807,
+            "rms_px": 0.7135527745466608,
+            "section_center_uv_mm": [
+              -236.62382330258296,
+              2619.433632401619
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 142.67914945145975,
+                "foreground_top_bottom_v_px": [
+                  152.85537510675385,
+                  233.70566673274533
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 144.31323141150594,
+                "foreground_top_bottom_v_px": [
+                  153.51124317301458,
+                  234.80216437090917
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 27,
+            "hypothesis_diameter_mm": 33.042049315743796,
+            "rms_px": 0.8029049681977751,
+            "section_center_uv_mm": [
+              -237.2455055660212,
+              2644.5146167364555
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 148.11430982007073,
+                "foreground_top_bottom_v_px": [
+                  152.85537510675385,
+                  233.70566673274533
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 149.80398975739658,
+                "foreground_top_bottom_v_px": [
+                  153.51124317301458,
+                  234.80216437090917
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 40,
+            "hypothesis_diameter_mm": 143.80098394806262,
+            "rms_px": 0.6567412208118146,
+            "section_center_uv_mm": [
+              -172.88719463068585,
+              2554.2258843215973
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 339.53814040077225,
+                "foreground_top_bottom_v_px": [
+                  152.85537510675385,
+                  233.70566673274533
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 341.17201860920795,
+                "foreground_top_bottom_v_px": [
+                  153.51124317301458,
+                  234.80216437090917
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 30,
+            "hypothesis_diameter_mm": 48.500727705943454,
+            "rms_px": 0.7430170380440931,
+            "section_center_uv_mm": [
+              -224.05235001094533,
+              2588.3191037775337
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 175.460940676372,
+                "foreground_top_bottom_v_px": [
+                  152.85537510675385,
+                  233.70566673274533
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 177.05491096800608,
+                "foreground_top_bottom_v_px": [
+                  153.51124317301458,
+                  234.80216437090917
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 95.39713112044974,
+            "rms_px": 0.6957311831821088,
+            "section_center_uv_mm": [
+              -198.0556623418585,
+              2563.0685466277037
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 256.2212866298422,
+                "foreground_top_bottom_v_px": [
+                  152.85537510675385,
+                  233.70566673274533
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 257.8184284770965,
+                "foreground_top_bottom_v_px": [
+                  153.51124317301458,
+                  234.80216437090917
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        48.500727705943454
+      ]
+    },
+    {
+      "frame": 18,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 49,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 30,
+            "hypothesis_diameter_mm": 45.17362086283037,
+            "rms_px": 0.6064229351159011,
+            "section_center_uv_mm": [
+              -226.53805319029192,
+              2596.6521956102306
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 169.57408511154028,
+                "foreground_top_bottom_v_px": [
+                  152.7703837391054,
+                  233.72810513286268
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.18137112674677,
+                "foreground_top_bottom_v_px": [
+                  153.50184981308377,
+                  234.91558355662715
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 25,
+            "hypothesis_diameter_mm": 45.41612607410788,
+            "rms_px": 0.6065078220621825,
+            "section_center_uv_mm": [
+              -226.4336824440044,
+              2596.83287572377
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 169.97674192494117,
+                "foreground_top_bottom_v_px": [
+                  152.7703837391054,
+                  233.72810513286268
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.58471770082326,
+                "foreground_top_bottom_v_px": [
+                  153.50184981308377,
+                  234.91558355662715
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 27,
+            "hypothesis_diameter_mm": 36.59061258740137,
+            "rms_px": 0.6151903158642335,
+            "section_center_uv_mm": [
+              -229.66567632812226,
+              2584.393249747605
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 155.43139458782224,
+                "foreground_top_bottom_v_px": [
+                  152.7703837391054,
+                  233.72810513286268
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 157.00192360158601,
+                "foreground_top_bottom_v_px": [
+                  153.50184981308377,
+                  234.91558355662715
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 28,
+            "hypothesis_diameter_mm": 45.28969738948104,
+            "rms_px": 0.6064384108729725,
+            "section_center_uv_mm": [
+              -226.4889917504202,
+              2596.748234150845
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 169.76658089761284,
+                "foreground_top_bottom_v_px": [
+                  152.7703837391054,
+                  233.72810513286268
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 171.37421715993588,
+                "foreground_top_bottom_v_px": [
+                  153.50184981308377,
+                  234.91558355662715
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 38,
+            "hypothesis_diameter_mm": 64.2568803660084,
+            "rms_px": 0.7957747725126398,
+            "section_center_uv_mm": [
+              -215.29159485977402,
+              2579.468887423397
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 202.42548614537435,
+                "foreground_top_bottom_v_px": [
+                  152.7703837391054,
+                  233.72810513286268
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 204.0203659562851,
+                "foreground_top_bottom_v_px": [
+                  153.50184981308377,
+                  234.91558355662715
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 96.81795408469718,
+            "rms_px": 0.7168647301939728,
+            "section_center_uv_mm": [
+              -197.78058236189577,
+              2567.521403269317
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 258.33683887370245,
+                "foreground_top_bottom_v_px": [
+                  152.7703837391054,
+                  233.72810513286268
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 259.94553999356424,
+                "foreground_top_bottom_v_px": [
+                  153.50184981308377,
+                  234.91558355662715
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 64.80196368276032,
+            "rms_px": 0.7966137433554523,
+            "section_center_uv_mm": [
+              -215.02335727246353,
+              2579.5281302509475
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 203.34634089243983,
+                "foreground_top_bottom_v_px": [
+                  152.7703837391054,
+                  233.72810513286268
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 204.9420270458683,
+                "foreground_top_bottom_v_px": [
+                  153.50184981308377,
+                  234.91558355662715
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 30,
+            "hypothesis_diameter_mm": 96.78316742341984,
+            "rms_px": 0.7169263827132573,
+            "section_center_uv_mm": [
+              -197.79670874260927,
+              2567.507839881182
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 258.2786203590406,
+                "foreground_top_bottom_v_px": [
+                  152.7703837391054,
+                  233.72810513286268
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 259.88724966322116,
+                "foreground_top_bottom_v_px": [
+                  153.50184981308377,
+                  234.91558355662715
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        45.17362086283037,
+        45.41612607410788,
+        36.59061258740137,
+        45.28969738948104,
+        64.2568803660084,
+        64.80196368276032
+      ]
+    },
+    {
+      "frame": 19,
+      "trial": {
+        "status": "AMBIGUOUS_END_RIM_HYPOTHESES_NOT_USED",
+        "max_iterations_per_seed": 480,
+        "assumption": "VISIBLE_END_EDGE_IS_ONE_CIRCULAR_RIM_NORMAL_TO_PIPE_AXIS",
+        "observed_points": {
+          "left": 49,
+          "right": 52
+        },
+        "discarded_highlight_rows": {
+          "left": 2,
+          "right": 0
+        },
+        "trials": [
+          {
+            "initial_radius_mm": 5.0,
+            "iterations": 480,
+            "hypothesis_diameter_mm": 32.28880348293629,
+            "rms_px": 0.7637627976175219,
+            "section_center_uv_mm": [
+              -236.19680418259773,
+              2629.775606292313
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 147.18865552357678,
+                "foreground_top_bottom_v_px": [
+                  152.84388538779746,
+                  233.7803824286726
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 148.84756086269414,
+                "foreground_top_bottom_v_px": [
+                  153.52879229331486,
+                  235.00786983824065
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 8.0,
+            "iterations": 24,
+            "hypothesis_diameter_mm": 16.572918006624306,
+            "rms_px": 0.9382173568436487,
+            "section_center_uv_mm": [
+              -244.44216249799945,
+              2633.4236395682224
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 121.01905926056926,
+                "foreground_top_bottom_v_px": [
+                  152.84388538779746,
+                  233.7803824286726
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 122.66438182205808,
+                "foreground_top_bottom_v_px": [
+                  153.52879229331486,
+                  235.00786983824065
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 12.0,
+            "iterations": 23,
+            "hypothesis_diameter_mm": 31.668948009544728,
+            "rms_px": 0.7637955395456004,
+            "section_center_uv_mm": [
+              -236.30611585484212,
+              2627.684640555789
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 146.20237700029793,
+                "foreground_top_bottom_v_px": [
+                  152.84388538779746,
+                  233.7803824286726
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 147.8562109484656,
+                "foreground_top_bottom_v_px": [
+                  153.52879229331486,
+                  235.00786983824065
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 18.0,
+            "iterations": 33,
+            "hypothesis_diameter_mm": 31.93746731604317,
+            "rms_px": 0.7606560521764928,
+            "section_center_uv_mm": [
+              -235.48642150673118,
+              2620.595416270024
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 146.8000931674397,
+                "foreground_top_bottom_v_px": [
+                  152.84388538779746,
+                  233.7803824286726
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 148.43982148608478,
+                "foreground_top_bottom_v_px": [
+                  153.52879229331486,
+                  235.00786983824065
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 27.0,
+            "iterations": 30,
+            "hypothesis_diameter_mm": 38.44271766277235,
+            "rms_px": 0.8453425293528442,
+            "section_center_uv_mm": [
+              -234.63688272303853,
+              2645.6353655753246
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 157.0199177286044,
+                "foreground_top_bottom_v_px": [
+                  152.84388538779746,
+                  233.7803824286726
+                ],
+                "hidden_inside_foreground_envelope": true
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 158.71908926120867,
+                "foreground_top_bottom_v_px": [
+                  153.52879229331486,
+                  235.00786983824065
+                ],
+                "hidden_inside_foreground_envelope": true
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 40.0,
+            "iterations": 39,
+            "hypothesis_diameter_mm": 210.84128254926188,
+            "rms_px": 0.6547454299596408,
+            "section_center_uv_mm": [
+              -139.62598645914835,
+              2558.56236088126
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 453.5546145255908,
+                "foreground_top_bottom_v_px": [
+                  152.84388538779746,
+                  233.7803824286726
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 455.2731579372914,
+                "foreground_top_bottom_v_px": [
+                  153.52879229331486,
+                  235.00786983824065
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 60.0,
+            "iterations": 40,
+            "hypothesis_diameter_mm": 210.80999136369374,
+            "rms_px": 0.6547366687017849,
+            "section_center_uv_mm": [
+              -139.64162291430287,
+              2558.5615024042577
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 453.50130204599645,
+                "foreground_top_bottom_v_px": [
+                  152.84388538779746,
+                  233.7803824286726
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 455.2198096434432,
+                "foreground_top_bottom_v_px": [
+                  153.52879229331486,
+                  235.00786983824065
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          },
+          {
+            "initial_radius_mm": 90.0,
+            "iterations": 24,
+            "hypothesis_diameter_mm": 96.51755176719833,
+            "rms_px": 0.7326693706042595,
+            "section_center_uv_mm": [
+              -198.3506425318143,
+              2571.9953562129017
+            ],
+            "visibility_checks": [
+              {
+                "role": "left",
+                "predicted_rear_bottom_v_px": 257.5576488331514,
+                "foreground_top_bottom_v_px": [
+                  152.84388538779746,
+                  233.7803824286726
+                ],
+                "hidden_inside_foreground_envelope": false
+              },
+              {
+                "role": "right",
+                "predicted_rear_bottom_v_px": 259.17587746710524,
+                "foreground_top_bottom_v_px": [
+                  153.52879229331486,
+                  235.00786983824065
+                ],
+                "hidden_inside_foreground_envelope": false
+              }
+            ]
+          }
+        ],
+        "accepted_diameter_mm": null
+      },
+      "visibility_admissible_diameters_mm": [
+        38.44271766277235
+      ]
+    }
+  ],
+  "summary": {
+    "frame_count": 20,
+    "initialization_count": 160,
+    "visibility_admissible_hypotheses": 77,
+    "admissible_diameter_range_mm": [
+      34.714737738446935,
+      85.8724434012858
+    ],
+    "frames_with_admissible_diameter_span_over_5mm": 17
+  },
+  "reference_sizes_used": false,
+  "source_image_hashes": {
+    "left": {
+      "000_left.png": "df9cf2dd53499904993b6910dc6d948fa5b3d2d0ecaf955417e50e5b32c50a82",
+      "001_left.png": "73dcae7317804b16e63c9f91936bfeee7a3253dea779d9abf4b9676aa44422ad",
+      "002_left.png": "7742afdb7f6bdc39f147f412a486151e58e65bb71cda46b8da85ad854d2f4889",
+      "003_left.png": "6cf153cec752ffaf1094b20d912d171b9f627dd8e0cc2ebc57478b8132bdb863",
+      "004_left.png": "960fce2e2dd97e5f57a021baf61fc17da1cd73fe3e21d8b9ee8e841766cfdda0",
+      "005_left.png": "11b4e8484244585b79760be6f0d5ef5488d6361b7ea4c665ba0ec4041a127233",
+      "006_left.png": "63aeed931c16c05ed0de589353700ce1149bd419404043e3447b3471fc9e2b7f",
+      "007_left.png": "2f637543e27796d8f6d56c1b1559022b46c5071e70afd09ed40d938c935b3064",
+      "008_left.png": "98693717a6fdf2241dff7ad4e5c4180f4e96e228e0fa62025247255b42c921c6",
+      "009_left.png": "fa3b48c76bf1f182cab853fb826659e911243ab0d77b316c5fbdefad7ab20611",
+      "010_left.png": "cd0bed1e1247e9f99649a89e382f3016f46a6ab0f88fb28d1f8a1a88485f3f94",
+      "011_left.png": "886a295753c38f1f038d70278afea8fcb2ffc7f8eae7e86e7a9966b95221a459",
+      "012_left.png": "b248b19bcdf2fc72023f0b09e38235c874858c62e2955aa88e3b793e4332bcfe",
+      "013_left.png": "ac9c941eddc79be93e5bd52808a4544a3390493643e4c9ea935ba23aeac277ba",
+      "014_left.png": "cdb986f22351855169fe137e305718473e571f30f844e60914719a73f5f9d5b0",
+      "015_left.png": "8fabdf5711983a9ff2f0f4b1752042b1f4d5a1499020be98183c70c07608732b",
+      "016_left.png": "92bc3d06b083cd2f906c9729c4552827108b9bd0f29d0b9ddcad7c6db6c831a6",
+      "017_left.png": "396ee89cde6ae6ddb3b74851bf46e5e627f44521e8bbf65eb8b8662c7f0aa0ae",
+      "018_left.png": "dccb75706c9f7e13d52c412f99a032d2ba20de351d6c069548dd000bd860103f",
+      "019_left.png": "722b0cc9f4db8eb86ed37bd22a3602598019d2ebd40fcce685c27696883d23bc"
+    },
+    "right": {
+      "000_right.png": "54b2e1166c5a2213820b5a43b2df725e94a31c51f5fee41b28a30baae843e7a4",
+      "001_right.png": "9e2a80a514b621ea7b2167fa49215c54f40aeda909081551ac2fc81f66e292bc",
+      "002_right.png": "f8acc6d34c62ab2148cbbd8531b4349d11ff349f90995d60c6f6b57bbf8541f2",
+      "003_right.png": "f73ccdf6431ee7d2f88d076d18d5b206533e2c74945aae46dc7a88c585f39797",
+      "004_right.png": "a70858ba226e48e524155495987e7421a3c291f1370a46dd917b2fa49963850a",
+      "005_right.png": "10f226a970256131b5e6df70de7bfba3e28e59cec442e6ed72e731c87d9de537",
+      "006_right.png": "76b5b0c0508564db2fce7cc21345c75c445286e00b16a96fa6c2a314df2a6a90",
+      "007_right.png": "26da73691df2fc46c1138f28e23febab1ce5c8a93a91f6a1459bbef0d069f471",
+      "008_right.png": "b36efba775b07d67d2c287e831c3225346191a2aca6212ebe5a4c18672de69ff",
+      "009_right.png": "5cacabd9b03c358489b26711defbda7406ccf43e667e974a76d17017663df7f3",
+      "010_right.png": "d77728c3797bfa9eb938b31171391857fc66070ee1fffb2173ede49faf1dd341",
+      "011_right.png": "c7fe70048ad3d07372b8594d033fb08fe00a369f64cb78eddd1d2b9be8ee4ea1",
+      "012_right.png": "8a7dcff0bfbc1aa96163aaeb460b638f2034ffc47aea9883fd78c0d9ea3e0df3",
+      "013_right.png": "db42332ccb2eefbb78a7996e5061c390ef4d30419a6c8a8669542e973ae2da0a",
+      "014_right.png": "510fd1f2c3f0a2985cb32e9d7222c396726d842e7fb15249b0041060c80e8cd6",
+      "015_right.png": "bb53f07131944b0b87289819b165767686b1fe0c84e3293ee73c7a49033af056",
+      "016_right.png": "52df5a185fe3c0b7b69eeeafe2fcd8a58870479b7a2f9ae147eeae77b60a3e91",
+      "017_right.png": "fa54443e3ec1833e157042bceedf547e12115cbcabf37227e88682b4e41a8ba1",
+      "018_right.png": "a627e03a57b1d49fcfdcb41e2b22973abd1691a7fd54f5b1228f62dc183827e7",
+      "019_right.png": "7b99ae3e8dc4e70703b212729662e6e01813b67012a731b7f169816a15df81ea"
+    }
+  },
+  "code_hash": "fbe742993d1fa709f0da5bacbaf8b26e3802202ef8cae51211a23da13ccb7dcd",
+  "fit_code_hash": "f28443492446133f2b7d96e26b45fa69fa7f72b7fea102eb6f3c8e9f1471dbb7",
+  "accepted_diameter_mm": null
+}

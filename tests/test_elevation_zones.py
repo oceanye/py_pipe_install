@@ -68,11 +68,89 @@ def test_full_width_zone_reuses_automatic_geometry_and_qualifies_observations():
     result = analyze_elevation_auto_zones(
         groups, calibration=calibration, pipe_specs=specs,
         scope_settings={"scope": "zones", "zones": [{**_zone((0, 0, 640, 480)), "label": "全幅"}]},
+        registration_settings={"camera_side_world": [1, 0, 0]},
     )
     assert result["scope"] == "zones"
     assert result["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": 0, "UNKNOWN": 1}
     assert all(item["observation_id"].startswith("Z01:") for item in result["local_surface"]["observations"])
     assert result["capture_audit"]["groups"][0]["zone_ids"] == ["Z01"]
+    assert result["zone_registration_audit"]["registrations"][0]["camera_view"]["camera_side_world"] == [1, 0, 0]
+
+
+def test_ground_check_uses_full_image_once_even_when_ground_is_outside_pipe_zone(monkeypatch):
+    from pipe_twin import ground_check
+    calibration, specs, groups = _groups()
+    region = {'image_size': [640, 480], 'rect_px': [100, 340, 400, 130]}
+    calls = []
+    def check(group, cal, selection, *, section_stages):
+        calls.append((group, cal, selection, section_stages))
+        return {'status': 'TEST_FULL_FRAME'}
+    monkeypatch.setattr(ground_check, 'check_ground', check)
+    result = analyze_elevation_auto_zones(groups, calibration=calibration, pipe_specs=specs,
+        scope_settings={'scope': 'zones', 'zones': [_zone((100, 0, 440, 280))]},
+        registration_settings={'ground_region': region})
+    assert len(calls) == 1
+    assert calls[0][0] is groups[-1] and calls[0][1] is calibration
+    assert calls[0][2]['rect_px'] == region['rect_px']
+    # Plane is solved before pipe sections, so the same full-frame result can
+    # constrain each cropped section without refitting the ground.
+    assert calls[0][3] == ()
+    assert len(result['ground_check']['corrections']) == len(result['section_evaluations'])
+    assert result['ground_check']['status'] == 'TEST_FULL_FRAME'
+
+
+@pytest.mark.parametrize("backend", ["cylinder", "geometry_only", "parallel_strip", "image_guided", "auto"])
+def test_partial_zone_uses_real_backends_with_unequal_crop_widths(backend):
+    calibration, specs, groups = _groups()
+    result = analyze_elevation_auto_zones(
+        groups, calibration=calibration, pipe_specs=specs,
+        scope_settings={"scope": "zones", "right_roi_padding_px": 128,
+                        "zones": [_zone((120, 0, 440, 480))]},
+        registration_settings={"local_observation_mode": backend},
+    )
+    assert len(result["local_surface"]["observations"]) == 3
+    for observation in result["local_surface"]["observations"]:
+        # Published image bounds return to full-frame coordinates.
+        assert observation["left_region_px"][0] >= 120
+        assert 0 <= observation["right_region_px"][0] < 640
+
+
+def test_cropped_backprojection_preserves_metric_points_and_rejects_mismatched_arrays():
+    from pipe_twin.local_surface import _points, _to_left, _validate_arrays, LocalSurfaceError
+    from dataclasses import replace
+
+    calibration, _, groups = _groups()
+    zone = _zone((120, 40, 440, 350))
+    cropped, offsets = crop_stereo_group_for_zone(groups[0], calibration, zone, right_padding_px=128)
+    cropped_cal = crop_calibration_for_zone(calibration, zone, right_padding_px=128)
+    _validate_arrays(cropped["left"], cropped["right"], cropped["depth"], cropped_cal)
+    for role in ("left", "right"):
+        camera = getattr(calibration, role)
+        original_mask = np.zeros((camera.height, camera.width), bool)
+        x, y = offsets[f"{role}_x"], offsets[f"{role}_y"]
+        width = offsets["width" if role == "left" else "right_width"]
+        original_mask[y:y+350, x:x+width] = True
+        original_depth = groups[0]["depth"]
+        truth = _to_left(_points(getattr(original_depth, f"{role}_depth_mm"),
+                                getattr(original_depth, f"{role}_valid"), camera, original_mask), calibration, role)
+        cropped_depth = cropped["depth"]
+        actual = _to_left(_points(getattr(cropped_depth, f"{role}_depth_mm"),
+                                 getattr(cropped_depth, f"{role}_valid"), getattr(cropped_cal, role),
+                                 np.ones(cropped[role].shape[:2], bool)), cropped_cal, role)
+        np.testing.assert_allclose(actual, truth, atol=1e-8)
+    broken = copy.deepcopy(cropped["depth"])
+    broken.right_valid = broken.left_valid
+    with pytest.raises(LocalSurfaceError, match="dimensions"):
+        _validate_arrays(cropped["left"], cropped["right"], broken, cropped_cal)
+    for row, col, offset in [(0, 0, 5), (1, 2, 5)]:
+        intrinsic = cropped_cal.right.intrinsic.copy()
+        intrinsic[row, col] += offset
+        projection = cropped_cal.right.projection_matrix.copy()
+        projection[row, col] += offset
+        broken_cal = replace(cropped_cal, right=replace(cropped_cal.right, intrinsic=intrinsic,
+                                                       projection_matrix=projection))
+        with pytest.raises(LocalSurfaceError, match="rectified"):
+            _validate_arrays(cropped["left"], cropped["right"], cropped["depth"], broken_cal)
 
 
 def test_confirmed_model_zone_limits_registration_catalog(monkeypatch):

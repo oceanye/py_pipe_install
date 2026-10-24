@@ -124,13 +124,15 @@ def _specs(value: Any, width: int, height: int, *, mode: str = "elevation_auto")
     return result
 
 
-def normalize_registration_settings(payload: Mapping | None = None) -> dict:
-    """Small, portable UI contract; direction is expressed in model coordinates."""
+def normalize_registration_settings(payload: Mapping | None = None, *, image_size=None) -> dict:
+    """Portable model alignment settings and an optional left-image pooling band."""
     from .recognition import available_recognizers, is_recognizer_registered
 
-    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode"}
+    from .camera_view import normalize_camera_side
+
+    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode", "camera_side_world", "aggregation_band", "ground_region"}
     if payload is not None and (not isinstance(payload, Mapping) or set(payload) - allowed):
-        raise ValueError("立面匹配配置只能包含axis_world、anchors、present_pipe_count和local_observation_mode")
+        raise ValueError("立面匹配配置包含未知字段")
     payload = dict(payload or {})
     axis = payload.get("axis_world")
     if axis is not None:
@@ -154,6 +156,17 @@ def normalize_registration_settings(payload: Mapping | None = None) -> dict:
             f"（当前：{available}）"
         )
     result = {"axis_world": axis, "anchors": dict(anchors), "local_observation_mode": mode}
+    from .axial_selection import normalize_axial_band
+    band = normalize_axial_band(payload.get('aggregation_band'), image_size=image_size)
+    if band is not None:
+        result['aggregation_band'] = band
+    from .ground_check import normalize_ground_region
+    ground = normalize_ground_region(payload.get('ground_region'), image_size=image_size)
+    if ground is not None:
+        result['ground_region'] = ground
+    side = normalize_camera_side(payload.get("camera_side_world"))
+    if side is not None:
+        result["camera_side_world"] = side
     if "present_pipe_count" in payload:
         count = payload["present_pipe_count"]
         if type(count) is not int or not 1 <= count <= 128:
@@ -246,7 +259,8 @@ def _calibration_ok(calibration: Mapping[str, Any]) -> Any:
         parsed = _calibration_from_manifest(dict(calibration))
     except Exception as exc:
         raise ValueError(f"标定不可用：{exc}") from exc
-    if parsed.validated is not True:
+    from .calibration_quality import provisional_calibration_allowed
+    if parsed.validated is not True and not provisional_calibration_allowed(dict(calibration)):
         raise ValueError("基础模式需要validated=true的真实标定")
     return parsed
 
@@ -283,6 +297,13 @@ def _history(old_path: Path, old: Mapping[str, Any], root_name: str) -> tuple[li
             assets[name] = data
             copied["path"] = name
             views[role] = copied
+        for frame_index, frame in enumerate(record.get("temporal_frames", [])):
+            for role in ("left", "right"):
+                data, copied = _safe_old_view(old_path, frame["views"][role])
+                name = f"history/{index:04d}_burst_{frame_index:03d}_{role}.png"
+                assets[name] = data
+                copied["path"] = name
+                frame["views"][role] = copied
         records.append(record)
     return records, assets
 
@@ -362,7 +383,8 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
                              analysis_settings: Mapping | None = None,
                              registration_settings: Mapping | None = None,
                              status_refresh: Mapping | None = None,
-                             scope_settings: Mapping | None = None) -> Path:
+                             scope_settings: Mapping | None = None,
+                             temporal_frames: list[dict] | None = None) -> Path:
     """Validate and atomically create a portable basic elevation package."""
     if mode != "elevation_auto":
         raise ValueError("当前基础现场只支持 elevation_auto；逐管手工区域已移除")
@@ -401,7 +423,7 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
     if _hash(source_left) == _hash(source_right):
         raise ValueError("左右照片内容相同")
     specs = _specs(pipe_specs, parsed.left.width, parsed.left.height, mode=mode)
-    registration = normalize_registration_settings(registration_settings)
+    registration = normalize_registration_settings(registration_settings, image_size=(parsed.left.width, parsed.left.height))
     if status_refresh is not None:
         if not isinstance(status_refresh, Mapping) or set(status_refresh) - {"action", "requested_at"}:
             raise ValueError("status_refresh只能包含action和requested_at")
@@ -508,6 +530,28 @@ def create_elevation_dataset(*, output_root: Path, calibration: dict, left_path:
         if status_refresh is not None:
             group["status_refresh"] = copy.deepcopy(dict(status_refresh))
         manifest["capture"]["capture_groups"].append(group)
+    if temporal_frames:
+        from .temporal_stereo import POLICY, validate_burst_records
+        if not isinstance(temporal_frames, list) or not POLICY["min_frames"] <= len(temporal_frames) <= POLICY["max_frames"]:
+            raise ValueError("连续采集必须包含 3～24 对图像")
+        burst = []
+        for index, frame in enumerate(temporal_frames):
+            views = {}
+            for role in ("left", "right"):
+                data, view = _read_photo(Path(frame[f"{role}_path"]), role, getattr(parsed, role),
+                    frame[f"{role}_time"], frame.get("timestamp_sources", {}).get(role, "MANIFEST_OPERATOR_CONFIRMED"))
+                expected = frame.get("sha256", {}).get(role)
+                if expected is None or expected != view["sha256"]:
+                    raise ValueError("连续采集照片哈希不匹配，请重新抓拍")
+                from .capture_gui import _capture_provenance
+                view.update(_capture_provenance(frame.get("camera_capture_provenance", {}), role))
+                view["path"] = f"burst/{index:03d}_{role}.png"
+                assets[view["path"]] = data
+                views[role] = view
+            burst.append({"capture_id": f"{run_id}-F{index+1:03d}", "views": views})
+        latest_group = manifest["capture"]["capture_groups"][-1]
+        latest_group["temporal_frames"] = burst
+        validate_burst_records(latest_group, parsed, Path(output_root).resolve() / "manifest.json")
     output_parent = Path(output_root).resolve()
     output_parent.mkdir(parents=True, exist_ok=True)
     target = output_parent / run_id
@@ -571,7 +615,7 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
             raise ValueError("模型SHA-256不匹配")
     settings = manifest["analysis"].get(mode) or {}
     specs = _specs(settings.get("pipes"), calibration.left.width, calibration.left.height, mode=mode)
-    registration = normalize_registration_settings(settings.get("registration"))
+    registration = normalize_registration_settings(settings.get("registration"), image_size=(calibration.left.width, calibration.left.height))
     from .elevation_zones import normalize_zone_settings
     scope = normalize_zone_settings(
         {key: settings[key] for key in ("scope", "zone_schema_version", "right_roi_padding_px", "zones") if key in settings},
@@ -593,6 +637,10 @@ def load_elevation_dataset(path: Path) -> dict[str, Any]:
         gviews = group.get("views", {})
         for role in ("left", "right"):
             load_photo_snapshot(manifest_path, gviews[role])
+        from .temporal_stereo import validate_burst_records
+        for frame in validate_burst_records(group, calibration, manifest_path):
+            for role in ("left", "right"):
+                load_photo_snapshot(manifest_path, frame["views"][role])
     left = views["left"]; right = views["right"]
     return {"manifest": manifest, "calibration": manifest["stereo_calibration"], "pipe_specs": specs,
             "left_path": resolve_photo_path(manifest_path, left["path"]),

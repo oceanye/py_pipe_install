@@ -1,0 +1,59 @@
+{
+  "command": ".venv/Scripts/python.exe -m pytest tests -q",
+  "junit_path": "outputs\\static-algorithm-20261020\\pytest.xml",
+  "junit_sha256": "4b59630aebf9472293aa2ac32dfdb095b6da1c0ac3c2d305c71f7d72314eab45",
+  "suites": [
+    {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "1",
+      "tests": "946",
+      "time": "275.185",
+      "timestamp": "2026-10-20T15:17:18.216869+08:00",
+      "hostname": "ZJLZ1026"
+    }
+  ],
+  "pytest_summary": "681 passed, 1 skipped, 264 subtests passed in 276.35s (0:04:36)\r",
+  "compileall": "passed",
+  "git_diff_check": "passed",
+  "final_dead_calculation_cleanup": {
+    "before_sha256": "a1f05fa17e52239c44400f8df85649d47cae2213d845148dcf78763754fcdc0a",
+    "after_sha256": "142330eb965210e84e0d656e6de8dabc3c70387aa946d566817b25b9ad673638",
+    "comparisons": [
+      {
+        "role": "left",
+        "pairs": 20,
+        "shape": [
+          1080,
+          1920
+        ],
+        "depth_and_audit_equal": true,
+        "before_seconds": 15.5,
+        "after_seconds": 12.85999999998603
+      },
+      {
+        "role": "right",
+        "pairs": 20,
+        "shape": [
+          1080,
+          1920
+        ],
+        "depth_and_audit_equal": true,
+        "before_seconds": 15.10999999998603,
+        "after_seconds": 11.96799999999348
+      }
+    ]
+  },
+  "post_cleanup_regression": {
+    "command": "pytest tests/test_temporal_stereo.py tests/test_temporal_cylinders.py tests/test_temporal_dataset.py -q",
+    "passed": 24,
+    "seconds": 14.08
+  },
+  "known_truth_regressions": [
+    "Hue boundary regression failed before fix; full widths restored without bridging dark gaps.",
+    "One-sided disparity outlier regression failed before fix; measured majority recovered.",
+    "Competing depth modes, absent depth, motion, duplicates and cross-eye disagreement rejected."
+  ],
+  "field_results_are_not_metric_validation": true
+}

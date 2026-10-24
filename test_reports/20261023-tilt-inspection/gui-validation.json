@@ -1,0 +1,21 @@
+{
+  "real_report_loaded": true,
+  "real_standalone_button_exercised": true,
+  "minimum_window": [
+    940,
+    660
+  ],
+  "minimum_photo_canvas_height": 119,
+  "candidate_angles_visible_on_left_only": true,
+  "rejected_candidate_not_used_as_correction": true,
+  "prior_pipe_report_preserved": true,
+  "camera_opened": false,
+  "clean_ground_preview_visible": true,
+  "inspection_status": "GROUND_PLANE_INCONSISTENT",
+  "mask_pixels": 32573,
+  "screenshots": [
+    "outputs\\tilt-inspection-20261023\\gui-smoke\\gui-940x660.png",
+    "outputs\\tilt-inspection-20261023\\gui-smoke\\gui-1440x900.png",
+    "outputs\\tilt-inspection-20261023\\gui-smoke\\ground-only-preview.png"
+  ]
+}

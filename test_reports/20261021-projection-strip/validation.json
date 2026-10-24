@@ -1,0 +1,46 @@
+{
+  "tests": {
+    "passed": 37,
+    "elapsed_seconds": 11.31,
+    "command": ".venv/Scripts/python.exe -m pytest tests/test_projection_diagnostics.py tests/test_section_diagnostics.py tests/test_metrology.py tests/test_temporal_cylinders.py -q"
+  },
+  "image_hashes_verified": 40,
+  "calibration_unchanged": true,
+  "accepted_measurement_count": 0,
+  "width_statistics": {
+    "left": {
+      "mean_width_px": 100.46723991625538,
+      "width_std_px": 0.20408762784601936,
+      "width_min_max_px": [
+        100.12320080851549,
+        100.82165040012671
+      ]
+    },
+    "right": {
+      "mean_width_px": 102.34447115665711,
+      "width_std_px": 0.12018388789228583,
+      "width_min_max_px": [
+        102.10692032398435,
+        102.52316318490188
+      ]
+    }
+  },
+  "artifacts": {
+    "evidence.json": {
+      "sha256": "a7fd45f9a52aad31b8c00c62d0f58c7ae9981698920eeb468951edca97a51439",
+      "bytes": 352018
+    },
+    "last-edge-pixels.npz": {
+      "sha256": "fb6ef390ab7157db54134e63460290cc2f4d4a3acaf3b06cafd2d35cce263517",
+      "bytes": 3529
+    },
+    "pooled-profile.png": {
+      "sha256": "798cc8941f713bbe1dc3b4a513491b094e3db88adf4b67074512577d3183ef66",
+      "bytes": 866157
+    },
+    "repeatability.png": {
+      "sha256": "cfe2c2b1547d7b325f3985ccbec30d26caab1de2d5a2d46d7eadc4b6482909c8",
+      "bytes": 157890
+    }
+  }
+}

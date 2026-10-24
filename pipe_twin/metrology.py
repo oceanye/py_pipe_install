@@ -16,6 +16,14 @@ import cv2
 import numpy as np
 
 
+class CylinderFitError(ValueError):
+    """Rejected fit diagnostics, never an accepted diameter measurement."""
+
+    def __init__(self, reason: str, diagnostics: dict):
+        super().__init__(reason)
+        self.diagnostics = {"scope": "REJECTED_FIT_NOT_MEASUREMENT", **diagnostics}
+
+
 def measurement_settings(payload: Mapping[str, Any] | None = None) -> dict:
     result = {
         "tolerance_mm": 1.0,
@@ -131,21 +139,26 @@ def fit_local_cylinder(points_mm: np.ndarray, settings: Mapping | None = None) -
     errors = residual(params)
     inliers = np.abs(errors) <= max(0.1, 3 * float(np.median(np.abs(errors))))
     if np.mean(inliers) < 0.75:
-        raise ValueError("SURFACE_OUTLIERS")
+        raise CylinderFitError("SURFACE_OUTLIERS", {"inlier_fraction": float(np.mean(inliers))})
     rms = float(np.sqrt(np.mean(errors[inliers] ** 2)))
-    if rms > min(config["maximum_fit_rms_mm"], float(params[4]) * 0.05):
-        raise ValueError("CYLINDER_FIT_RESIDUAL_TOO_LARGE")
+    rms_limit = min(config["maximum_fit_rms_mm"], float(params[4]) * 0.05)
+    diagnostics = {"fit_rms_mm": rms, "maximum_fit_rms_mm": rms_limit,
+                   "inlier_fraction": float(np.mean(inliers))}
+    if rms > rms_limit:
+        raise CylinderFitError("CYLINDER_FIT_RESIDUAL_TOO_LARGE", diagnostics)
     diameter = float(2 * params[4])
     offsets = points[inliers] - center
     axial = offsets @ axis
     low, high = np.quantile(axial, [0.02, 0.98])
+    diagnostics.update(axial_support_mm=float(high-low), minimum_axial_support_mm=max(40.,2*diameter))
     if high - low < max(40.0, 2 * diameter):
-        raise ValueError("LOCAL_AXIS_SUPPORT_TOO_SHORT")
+        raise CylinderFitError("LOCAL_AXIS_SUPPORT_TOO_SHORT", diagnostics)
     b1, b2 = _basis(axis)
     angles = np.sort(np.mod(np.arctan2(offsets @ b2, offsets @ b1), 2 * math.pi))
     arc = float(np.degrees(2 * math.pi - np.max(np.diff(np.r_[angles, angles[0] + 2 * math.pi]))))
+    diagnostics.update(visible_arc_degrees=arc, minimum_arc_degrees=config["minimum_arc_degrees"])
     if arc < config["minimum_arc_degrees"]:
-        raise ValueError("INSUFFICIENT_VISIBLE_CYLINDER_ARC")
+        raise CylinderFitError("INSUFFICIENT_VISIBLE_CYLINDER_ARC", diagnostics)
     section_radii = []
     for indexes in np.array_split(np.argsort(axial), 3):
         section_uv = np.column_stack((offsets[indexes] @ b1, offsets[indexes] @ b2))
@@ -157,7 +170,9 @@ def fit_local_cylinder(points_mm: np.ndarray, settings: Mapping | None = None) -
         section_radii.append(math.sqrt(square))
     spread = float(2 * np.ptp(section_radii))
     if spread > min(config["maximum_view_difference_mm"], diameter * 0.1):
-        raise ValueError("DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS")
+        raise CylinderFitError("DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS", diagnostics | {
+            "diameter_section_spread_mm": spread,
+            "maximum_section_spread_mm": min(config["maximum_view_difference_mm"],diameter*.1)})
     return {
         "diameter_mm": diameter,
         "diameter_source": "ROBUST_OUTER_CYLINDER_FIT_VISIBLE_SURFACE",

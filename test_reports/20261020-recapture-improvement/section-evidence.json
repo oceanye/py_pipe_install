@@ -1,0 +1,516 @@
+{
+  "scope": "SINGLE_SECTION_NEIGHBOURHOOD_USING_EXISTING_ZONE_BACKEND",
+  "left_roi_xywh": [
+    1100,
+    80,
+    320,
+    420
+  ],
+  "raw_capture": "outputs/retry-20261020-131151/raw-burst",
+  "new_camera_capture": false,
+  "measured_quantities_requested": [
+    "diameter",
+    "transverse_axis_separation",
+    "surface_clearance",
+    "relative_layout"
+  ],
+  "whole_pipe_length_required": false,
+  "new_cross_section_fitter_implemented": false,
+  "existing_local_axis_fit_support_rule": "max(40 mm, 2 * independently fitted diameter)",
+  "geometry_sources_sha256": {
+    "pipe_twin\\local_surface.py": "1dfc3d2cf33ad547051a5ac454e44fc775537ea60ff546cd44584aaad1455c48",
+    "pipe_twin\\metrology.py": "626921def89e3cf6a0e95b90d237c6622f8f3d7a7c2b53346cda8eeb8b81e1bd",
+    "pipe_twin\\elevation_registration.py": "3f439829ae65a4eec5b643089770e6faaf62a2c37d8d623950f1d3e076064fd5"
+  },
+  "validation": {
+    "targeted_tests_passed": 72,
+    "seconds": 77.51,
+    "log": "outputs/retry-20261020-131151/section-tests.log",
+    "py_compile": "PASSED",
+    "git_diff_check": "PASSED"
+  },
+  "runs": [
+    {
+      "variant": "single",
+      "manifest": "outputs\\retry-20261020-131151\\active-section\\single\\elevation-20261020-144336-8ef0c92a\\manifest.json",
+      "report": "outputs\\retry-20261020-131151\\active-section\\single\\elevation-20261020-144336-8ef0c92a\\report.json",
+      "report_sha256": "24dfd7dd538142afc8a7fb0fde09624a3df8497445ac0541464f06990c584fea",
+      "counts": {
+        "INSTALLED": 0,
+        "NOT_INSTALLED": 0,
+        "UNKNOWN": 12
+      },
+      "observations": [],
+      "candidates": [
+        {
+          "candidate_id": "S01:IMG-left-001",
+          "role": "left",
+          "appearance": "hue-0",
+          "region_px": [
+            1100,
+            85,
+            320,
+            159
+          ],
+          "valid_depth_fraction": 0.1523712486105965,
+          "reason_codes": [
+            "NO_DOMINANT_DISPARITY_SUPPORT"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 6580,
+            "sample_count": 503,
+            "highlight_fraction": 0.0034503519822156356,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 0.9218184947967529,
+              "low_texture_fraction": 0.806640625,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_SURFACE_HORIZONTAL_TEXTURE",
+              "SMOOTH_AXIS_NEAR_EPIPOLAR",
+              "LOW_HORIZONTAL_TEXTURE",
+              "AMBIGUOUS_PATCH_CORRESPONDENCE"
+            ],
+            "status": "DIAGNOSTIC_ONLY",
+            "comparison_count": 503,
+            "horizontal_texture_median": 1.149041771888733,
+            "low_texture_fraction": 0.610337972166998,
+            "correlation_median": 0.9182080626487732,
+            "uniqueness_margin_median": -0.011535108089447021,
+            "sampled_unique_match_fraction": 0.0874751491053678
+          }
+        },
+        {
+          "candidate_id": "S01:IMG-left-002",
+          "role": "left",
+          "appearance": "hue-120",
+          "region_px": [
+            1100,
+            311,
+            320,
+            120
+          ],
+          "valid_depth_fraction": 0.10305142706826252,
+          "reason_codes": [
+            "NO_DOMINANT_DISPARITY_SUPPORT"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 3134,
+            "sample_count": 503,
+            "highlight_fraction": 0.0,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 1.3375749588012695,
+              "low_texture_fraction": 0.6015625,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_SURFACE_HORIZONTAL_TEXTURE",
+              "SMOOTH_AXIS_NEAR_EPIPOLAR",
+              "LOW_HORIZONTAL_TEXTURE",
+              "AMBIGUOUS_PATCH_CORRESPONDENCE"
+            ],
+            "status": "DIAGNOSTIC_ONLY",
+            "comparison_count": 503,
+            "horizontal_texture_median": 1.2159265279769897,
+            "low_texture_fraction": 0.6302186878727635,
+            "correlation_median": 0.8657360076904297,
+            "uniqueness_margin_median": -0.025691986083984375,
+            "sampled_unique_match_fraction": 0.019880715705765408
+          }
+        },
+        {
+          "candidate_id": "S01:IMG-right-001",
+          "role": "right",
+          "appearance": "hue-0",
+          "region_px": [
+            972,
+            80,
+            576,
+            164
+          ],
+          "valid_depth_fraction": 0.15844839783058665,
+          "reason_codes": [
+            "NO_DOMINANT_DISPARITY_SUPPORT"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 12095,
+            "sample_count": 269,
+            "highlight_fraction": 0.0,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 1.061091661453247,
+              "low_texture_fraction": 0.724609375,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_SURFACE_HORIZONTAL_TEXTURE",
+              "SMOOTH_AXIS_NEAR_EPIPOLAR",
+              "CANDIDATE_WIDTH_CLIPPED",
+              "LOW_HORIZONTAL_TEXTURE",
+              "AMBIGUOUS_PATCH_CORRESPONDENCE"
+            ],
+            "status": "DIAGNOSTIC_ONLY",
+            "comparison_count": 269,
+            "horizontal_texture_median": 1.167655110359192,
+            "low_texture_fraction": 0.587360594795539,
+            "correlation_median": 0.9147928953170776,
+            "uniqueness_margin_median": -0.007266044616699219,
+            "sampled_unique_match_fraction": 0.11895910780669144
+          }
+        },
+        {
+          "candidate_id": "S01:IMG-right-002",
+          "role": "right",
+          "appearance": "hue-120",
+          "region_px": [
+            1133,
+            297,
+            415,
+            33
+          ],
+          "valid_depth_fraction": 0.11251380779548682,
+          "reason_codes": [
+            "NO_DOMINANT_DISPARITY_SUPPORT",
+            "INSUFFICIENT_VALID_DEPTH"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 713,
+            "sample_count": 76,
+            "highlight_fraction": 0.0,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 2.383495569229126,
+              "low_texture_fraction": 0.134765625,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_HORIZONTAL_TEXTURE",
+              "AMBIGUOUS_PATCH_CORRESPONDENCE"
+            ],
+            "status": "DIAGNOSTIC_ONLY",
+            "comparison_count": 76,
+            "horizontal_texture_median": 1.0619301795959473,
+            "low_texture_fraction": 0.8947368421052632,
+            "correlation_median": 0.9291361570358276,
+            "uniqueness_margin_median": 0.01937040686607361,
+            "sampled_unique_match_fraction": 0.02631578947368421
+          }
+        },
+        {
+          "candidate_id": "S01:IMG-right-003",
+          "role": "right",
+          "appearance": "hue-90",
+          "region_px": [
+            972,
+            318,
+            576,
+            82
+          ],
+          "valid_depth_fraction": 0.1301699129714049,
+          "reason_codes": [
+            "NO_DOMINANT_DISPARITY_SUPPORT",
+            "INSUFFICIENT_VALID_DEPTH"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 3141,
+            "sample_count": 228,
+            "highlight_fraction": 0.0,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 1.2323395013809204,
+              "low_texture_fraction": 0.728515625,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_SURFACE_HORIZONTAL_TEXTURE",
+              "SMOOTH_AXIS_NEAR_EPIPOLAR",
+              "LOW_HORIZONTAL_TEXTURE",
+              "AMBIGUOUS_PATCH_CORRESPONDENCE"
+            ],
+            "status": "DIAGNOSTIC_ONLY",
+            "comparison_count": 228,
+            "horizontal_texture_median": 1.2742266654968262,
+            "low_texture_fraction": 0.6052631578947368,
+            "correlation_median": 0.8916769027709961,
+            "uniqueness_margin_median": -0.01886451244354248,
+            "sampled_unique_match_fraction": 0.017543859649122806
+          }
+        }
+      ],
+      "temporal_fusion": null
+    },
+    {
+      "variant": "burst",
+      "manifest": "outputs\\retry-20261020-131151\\active-section\\burst\\elevation-20261020-144346-4ab95c71\\manifest.json",
+      "report": "outputs\\retry-20261020-131151\\active-section\\burst\\elevation-20261020-144346-4ab95c71\\report.json",
+      "report_sha256": "b3d0087887354adf8f4501418d9e4fdabc8bbef388850b1e13e32914f531568d",
+      "counts": {
+        "INSTALLED": 0,
+        "NOT_INSTALLED": 0,
+        "UNKNOWN": 12
+      },
+      "observations": [],
+      "candidates": [
+        {
+          "candidate_id": "S01:IMG-left-001",
+          "role": "left",
+          "appearance": "hue-0",
+          "region_px": [
+            1100,
+            85,
+            320,
+            159
+          ],
+          "valid_depth_fraction": 0.03542978881067062,
+          "reason_codes": [
+            "INSUFFICIENT_VALID_DEPTH"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 1530,
+            "sample_count": 496,
+            "highlight_fraction": 0.0034503519822156356,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 0.9218184947967529,
+              "low_texture_fraction": 0.806640625,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_SURFACE_HORIZONTAL_TEXTURE",
+              "SMOOTH_AXIS_NEAR_EPIPOLAR",
+              "AMBIGUOUS_PATCH_CORRESPONDENCE"
+            ],
+            "status": "DIAGNOSTIC_ONLY",
+            "comparison_count": 496,
+            "horizontal_texture_median": 1.8422247171401978,
+            "low_texture_fraction": 0.3790322580645161,
+            "correlation_median": 0.84759920835495,
+            "uniqueness_margin_median": 0.021895170211791992,
+            "sampled_unique_match_fraction": 0.31451612903225806
+          }
+        },
+        {
+          "candidate_id": "S01:IMG-left-002",
+          "role": "left",
+          "appearance": "hue-120",
+          "region_px": [
+            1100,
+            311,
+            320,
+            120
+          ],
+          "valid_depth_fraction": 0.0004603446008154676,
+          "reason_codes": [
+            "INSUFFICIENT_VALID_DEPTH"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 14,
+            "sample_count": 14,
+            "highlight_fraction": 0.0,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 1.3375749588012695,
+              "low_texture_fraction": 0.6015625,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_SURFACE_HORIZONTAL_TEXTURE",
+              "SMOOTH_AXIS_NEAR_EPIPOLAR"
+            ],
+            "status": "INSUFFICIENT_SAMPLES"
+          }
+        },
+        {
+          "candidate_id": "S01:IMG-right-001",
+          "role": "right",
+          "appearance": "hue-0",
+          "region_px": [
+            972,
+            80,
+            576,
+            164
+          ],
+          "valid_depth_fraction": 0.03180758246652868,
+          "reason_codes": [
+            "INSUFFICIENT_VALID_DEPTH"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 2428,
+            "sample_count": 337,
+            "highlight_fraction": 0.0,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 1.061091661453247,
+              "low_texture_fraction": 0.724609375,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_SURFACE_HORIZONTAL_TEXTURE",
+              "SMOOTH_AXIS_NEAR_EPIPOLAR",
+              "CANDIDATE_WIDTH_CLIPPED",
+              "AMBIGUOUS_PATCH_CORRESPONDENCE"
+            ],
+            "status": "DIAGNOSTIC_ONLY",
+            "comparison_count": 337,
+            "horizontal_texture_median": 1.8915801048278809,
+            "low_texture_fraction": 0.37091988130563797,
+            "correlation_median": 0.8584383726119995,
+            "uniqueness_margin_median": 0.0367203950881958,
+            "sampled_unique_match_fraction": 0.3857566765578635
+          }
+        },
+        {
+          "candidate_id": "S01:IMG-right-002",
+          "role": "right",
+          "appearance": "hue-120",
+          "region_px": [
+            1133,
+            297,
+            415,
+            33
+          ],
+          "valid_depth_fraction": 0.0,
+          "reason_codes": [
+            "INSUFFICIENT_VALID_DEPTH"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 0,
+            "sample_count": 0,
+            "highlight_fraction": 0.0,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 2.383495569229126,
+              "low_texture_fraction": 0.134765625,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [],
+            "status": "INSUFFICIENT_SAMPLES"
+          }
+        },
+        {
+          "candidate_id": "S01:IMG-right-003",
+          "role": "right",
+          "appearance": "hue-90",
+          "region_px": [
+            972,
+            318,
+            576,
+            82
+          ],
+          "valid_depth_fraction": 0.0,
+          "reason_codes": [
+            "INSUFFICIENT_VALID_DEPTH"
+          ],
+          "correspondence_diagnostic": {
+            "revision": "sampled-stereo-patch-check-v2",
+            "policy_sha256": "6f0540a1b3a837b88b6d2551deae0e462628b8f73fe0306f27fe18b548599745",
+            "scope": "SAMPLED_IMAGE_DIAGNOSTIC_NOT_METRIC_AUTHORITY",
+            "measurement_authority": false,
+            "eligible_depth_points": 0,
+            "sample_count": 0,
+            "highlight_fraction": 0.0,
+            "surface_texture": {
+              "scope": "CANDIDATE_INTERIOR_INDEPENDENT_OF_DEPTH",
+              "sample_count": 512,
+              "horizontal_texture_median": 1.2323395013809204,
+              "low_texture_fraction": 0.728515625,
+              "status": "DIAGNOSTIC_ONLY"
+            },
+            "warning_codes": [
+              "LOW_SURFACE_HORIZONTAL_TEXTURE",
+              "SMOOTH_AXIS_NEAR_EPIPOLAR"
+            ],
+            "status": "INSUFFICIENT_SAMPLES"
+          }
+        }
+      ],
+      "temporal_fusion": {
+        "algorithm_revision": "static-burst-disparity-v1",
+        "policy": {
+          "max_frames": 24,
+          "min_frames": 3,
+          "max_duration_s": 30,
+          "min_support_fraction": 0.5,
+          "inlier_delta_px": 1.0,
+          "max_mad_px": 0.6,
+          "motion_median_px": 0.35,
+          "motion_p95_px": 0.9,
+          "min_tracks": 24,
+          "min_track_tiles": 6,
+          "max_brightness_shift": 12.0,
+          "max_changed_fraction": 0.02,
+          "max_tile_difference": 20.0
+        },
+        "policy_sha256": "d423de05593e7f690368f0eeed21bf962126bccd8fad2820e6343f2d64dafa27",
+        "validation_scope": "TEMPORAL_REPEATABILITY_NOT_ABSOLUTE_ACCURACY",
+        "requested_frames": 20,
+        "reference_capture_id": "elevation-20261020-144346-4ab95c71-F020",
+        "accepted_frames": 20,
+        "reason_codes": [],
+        "left": {
+          "required_support_frames": 10,
+          "median_support_frames": 18.0,
+          "median_disparity_mad_px": 0.1875,
+          "p95_disparity_mad_px": 0.4375,
+          "pre_consistency_valid_fraction": 0.4403076774691358
+        },
+        "right": {
+          "required_support_frames": 10,
+          "median_support_frames": 18.0,
+          "median_disparity_mad_px": 0.1875,
+          "p95_disparity_mad_px": 0.40625,
+          "pre_consistency_valid_fraction": 0.43985001929012346
+        },
+        "status": "VALID"
+      }
+    }
+  ],
+  "active_calibration_sha256_unchanged": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+}

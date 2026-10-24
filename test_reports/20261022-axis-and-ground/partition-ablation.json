@@ -1,0 +1,432 @@
+{
+  "same_pixels_axis_intrinsics_solver": true,
+  "nominal_diameters_used": false,
+  "hint_only_checks": [
+    {
+      "role": "left",
+      "hint_delta_deg": -2.0,
+      "same_sampling_mask": true,
+      "retained_edges_identical": true
+    },
+    {
+      "role": "right",
+      "hint_delta_deg": -2.0,
+      "same_sampling_mask": true,
+      "retained_edges_identical": true
+    },
+    {
+      "role": "left",
+      "hint_delta_deg": 2.0,
+      "same_sampling_mask": true,
+      "retained_edges_identical": true
+    },
+    {
+      "role": "right",
+      "hint_delta_deg": 2.0,
+      "same_sampling_mask": true,
+      "retained_edges_identical": true
+    }
+  ],
+  "scope": "PARTITION_CORRECTION_NOT_A_TOTAL_ACCURACY_CLAIM",
+  "candidates": [
+    {
+      "candidate_id": "POOL-L01-POOL-R01",
+      "independent_pixel_origin_test": {
+        "diameter_difference_mm": 0.21888980797461244,
+        "center_difference_mm": 9.222493399983424
+      },
+      "common_station_test": {
+        "diameter_difference_mm": 0.41789928780043084,
+        "center_difference_mm": 29.188391195060237
+      },
+      "legacy_boundary_station_starts": [
+        {
+          "role": "left",
+          "edge": "top",
+          "legacy_first_station_mm": 218.2222335502764
+        },
+        {
+          "role": "left",
+          "edge": "bottom",
+          "legacy_first_station_mm": 212.80645539721175
+        },
+        {
+          "role": "right",
+          "edge": "top",
+          "legacy_first_station_mm": 264.92267021341775
+        },
+        {
+          "role": "right",
+          "edge": "bottom",
+          "legacy_first_station_mm": 259.4242204769994
+        }
+      ],
+      "common_station_support": {
+        "revision": "common-axial-stations-v1",
+        "status": "COMMON_AXIAL_SUPPORT",
+        "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+        "supplies_measured_depth": false,
+        "windows": [
+          {
+            "index": 0,
+            "interval_mm": [
+              264.92267021341775,
+              333.8983144705352
+            ],
+            "point_counts": [
+              106,
+              109,
+              110,
+              108
+            ],
+            "accepted": true
+          },
+          {
+            "index": 1,
+            "interval_mm": [
+              333.8983144705352,
+              402.8739587276526
+            ],
+            "point_counts": [
+              107,
+              105,
+              107,
+              109
+            ],
+            "accepted": true
+          },
+          {
+            "index": 2,
+            "interval_mm": [
+              402.8739587276526,
+              471.84960298477006
+            ],
+            "point_counts": [
+              108,
+              107,
+              108,
+              108
+            ],
+            "accepted": true
+          },
+          {
+            "index": 3,
+            "interval_mm": [
+              471.84960298477006,
+              540.8252472418875
+            ],
+            "point_counts": [
+              107,
+              106,
+              108,
+              107
+            ],
+            "accepted": true
+          },
+          {
+            "index": 4,
+            "interval_mm": [
+              540.8252472418875,
+              609.8008914990049
+            ],
+            "point_counts": [
+              106,
+              107,
+              107,
+              107
+            ],
+            "accepted": true
+          }
+        ],
+        "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+        "axial_displacement_in_center_error": false,
+        "common_interval_mm": [
+          264.92267021341775,
+          609.8008914990049
+        ],
+        "total_windows": 5,
+        "accepted_windows": 5,
+        "window_edges_mm": [
+          264.92267021341775,
+          333.8983144705352,
+          402.8739587276526,
+          471.84960298477006,
+          540.8252472418875,
+          609.8008914990049
+        ],
+        "boundary_keys": [
+          "left:top",
+          "left:bottom",
+          "right:top",
+          "right:bottom"
+        ]
+      }
+    },
+    {
+      "candidate_id": "POOL-L02-POOL-R02",
+      "independent_pixel_origin_test": {
+        "diameter_difference_mm": 0.5691127441185486,
+        "center_difference_mm": 14.107304987886852
+      },
+      "common_station_test": {
+        "diameter_difference_mm": 0.13251430718560897,
+        "center_difference_mm": 0.644795825626115
+      },
+      "legacy_boundary_station_starts": [
+        {
+          "role": "left",
+          "edge": "top",
+          "legacy_first_station_mm": 178.7343580741108
+        },
+        {
+          "role": "left",
+          "edge": "bottom",
+          "legacy_first_station_mm": 173.20790792897398
+        },
+        {
+          "role": "right",
+          "edge": "top",
+          "legacy_first_station_mm": 225.47797842432564
+        },
+        {
+          "role": "right",
+          "edge": "bottom",
+          "legacy_first_station_mm": 219.9457663831574
+        }
+      ],
+      "common_station_support": {
+        "revision": "common-axial-stations-v1",
+        "status": "COMMON_AXIAL_SUPPORT",
+        "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+        "supplies_measured_depth": false,
+        "windows": [
+          {
+            "index": 0,
+            "interval_mm": [
+              225.47797842432564,
+              280.0928375486665
+            ],
+            "point_counts": [
+              106,
+              105,
+              106,
+              100
+            ],
+            "accepted": true
+          },
+          {
+            "index": 1,
+            "interval_mm": [
+              280.0928375486665,
+              334.70769667300743
+            ],
+            "point_counts": [
+              102,
+              102,
+              104,
+              102
+            ],
+            "accepted": true
+          },
+          {
+            "index": 2,
+            "interval_mm": [
+              334.70769667300743,
+              389.3225557973483
+            ],
+            "point_counts": [
+              103,
+              103,
+              104,
+              104
+            ],
+            "accepted": true
+          },
+          {
+            "index": 3,
+            "interval_mm": [
+              389.3225557973483,
+              443.9374149216892
+            ],
+            "point_counts": [
+              104,
+              104,
+              104,
+              99
+            ],
+            "accepted": true
+          },
+          {
+            "index": 4,
+            "interval_mm": [
+              443.9374149216892,
+              498.5522740460301
+            ],
+            "point_counts": [
+              102,
+              103,
+              100,
+              99
+            ],
+            "accepted": true
+          }
+        ],
+        "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+        "axial_displacement_in_center_error": false,
+        "common_interval_mm": [
+          225.47797842432564,
+          498.5522740460301
+        ],
+        "total_windows": 5,
+        "accepted_windows": 5,
+        "window_edges_mm": [
+          225.47797842432564,
+          280.0928375486665,
+          334.70769667300743,
+          389.3225557973483,
+          443.9374149216892,
+          498.5522740460301
+        ],
+        "boundary_keys": [
+          "left:top",
+          "left:bottom",
+          "right:top",
+          "right:bottom"
+        ]
+      }
+    },
+    {
+      "candidate_id": "POOL-L03-POOL-R03",
+      "independent_pixel_origin_test": {
+        "diameter_difference_mm": 0.05962801292939801,
+        "center_difference_mm": 8.32201705557229
+      },
+      "common_station_test": {
+        "diameter_difference_mm": 0.4339667918973298,
+        "center_difference_mm": 43.59744818494024
+      },
+      "legacy_boundary_station_starts": [
+        {
+          "role": "left",
+          "edge": "top",
+          "legacy_first_station_mm": 240.49123387669366
+        },
+        {
+          "role": "left",
+          "edge": "bottom",
+          "legacy_first_station_mm": 241.206472147908
+        },
+        {
+          "role": "right",
+          "edge": "top",
+          "legacy_first_station_mm": 118.03012886214448
+        },
+        {
+          "role": "right",
+          "edge": "bottom",
+          "legacy_first_station_mm": 115.12268866129935
+        }
+      ],
+      "common_station_support": {
+        "revision": "common-axial-stations-v1",
+        "status": "COMMON_AXIAL_SUPPORT",
+        "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+        "supplies_measured_depth": false,
+        "windows": [
+          {
+            "index": 0,
+            "interval_mm": [
+              241.206472147908,
+              330.8182342252513
+            ],
+            "point_counts": [
+              125,
+              126,
+              126,
+              126
+            ],
+            "accepted": true
+          },
+          {
+            "index": 1,
+            "interval_mm": [
+              330.8182342252513,
+              420.42999630259453
+            ],
+            "point_counts": [
+              125,
+              125,
+              125,
+              125
+            ],
+            "accepted": true
+          },
+          {
+            "index": 2,
+            "interval_mm": [
+              420.42999630259453,
+              510.04175837993785
+            ],
+            "point_counts": [
+              124,
+              124,
+              124,
+              124
+            ],
+            "accepted": true
+          },
+          {
+            "index": 3,
+            "interval_mm": [
+              510.04175837993785,
+              599.653520457281
+            ],
+            "point_counts": [
+              123,
+              123,
+              123,
+              123
+            ],
+            "accepted": true
+          },
+          {
+            "index": 4,
+            "interval_mm": [
+              599.653520457281,
+              689.2652825346244
+            ],
+            "point_counts": [
+              118,
+              123,
+              123,
+              123
+            ],
+            "accepted": true
+          }
+        ],
+        "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+        "axial_displacement_in_center_error": false,
+        "common_interval_mm": [
+          241.206472147908,
+          689.2652825346244
+        ],
+        "total_windows": 5,
+        "accepted_windows": 5,
+        "window_edges_mm": [
+          241.206472147908,
+          330.8182342252513,
+          420.42999630259453,
+          510.04175837993785,
+          599.653520457281,
+          689.2652825346244
+        ],
+        "boundary_keys": [
+          "left:top",
+          "left:bottom",
+          "right:top",
+          "right:bottom"
+        ]
+      }
+    }
+  ]
+}

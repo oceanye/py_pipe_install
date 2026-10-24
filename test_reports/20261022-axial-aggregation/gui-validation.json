@@ -1,0 +1,12 @@
+{
+  "real_report_loaded": true,
+  "model_rows": 12,
+  "all_relative_positions_pending": true,
+  "boundary_overlay_line_count": {
+    "left": 37,
+    "right": 43
+  },
+  "aggregation_dialog": "PASS",
+  "dimension_position_dialog": "PASS",
+  "camera_opened": false
+}

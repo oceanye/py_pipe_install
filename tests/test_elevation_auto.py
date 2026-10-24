@@ -261,6 +261,30 @@ def test_auto_package_needs_no_regions_and_restores_stl_axis_and_anchor_hashes(t
     assert not elevation_history_compatible(path,settings["calibration"],settings["pipe_specs"],registration_settings={"axis_world":[0,0,1]},**common)
 
 
+def test_camera_side_roundtrip_and_history_invalidation(tmp_path):
+    path, settings = _package(tmp_path, registration_settings={"camera_side_world": [0, -3, 0]})
+    loaded = load_elevation_dataset(path)
+    assert loaded["registration_settings"]["camera_side_world"] == [0, -1, 0]
+    common = dict(model_path=settings["model_path"], stl_unit="millimeter", mode="elevation_auto")
+    for side, compatible in [([0, -1, 0], True), ([0, 1, 0], False), (None, False)]:
+        assert elevation_history_compatible(path, settings["calibration"], settings["pipe_specs"],
+            registration_settings={"camera_side_world": side}, **common) == compatible
+
+
+def test_wrong_camera_side_keeps_all_installation_states_unknown():
+    calibration, specs, groups = _groups()
+    _, _, rotation, _ = _scene()
+    correct_side = (rotation.T @ [0., 0., -1.]).tolist()
+    correct = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=specs,
+        registration_settings={"camera_side_world": correct_side})
+    assert correct["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": 0, "UNKNOWN": 1}
+    wrong = analyze_elevation_auto_groups(groups, calibration=calibration, pipe_specs=specs,
+        registration_settings={"camera_side_world": (-np.asarray(correct_side)).tolist()})
+    assert wrong["counts"] == {"INSTALLED": 0, "NOT_INSTALLED": 0, "UNKNOWN": 4}
+    assert "CAMERA_SIDE_CONFLICT" in wrong["registration"]["reason_codes"]
+    assert all("CAMERA_SIDE_CONFLICT" in p["reason_codes"] for p in wrong["pipes"])
+
+
 def test_real_dxf_layout_is_an_automatic_model_without_stl_or_mesh(tmp_path):
     model = Path(__file__).resolve().parents[1] / "test_model" / "管道布置.dxf"
     specs, skipped = catalog_from_dxf(model)

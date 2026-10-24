@@ -1,0 +1,5534 @@
+{
+  "source_manifest": "outputs\\elevation_workbench\\captures\\elevation-20261022-113933-359f0666\\manifest.json",
+  "new_manifest": "outputs\\axial-algorithm-audit-20261022\\captures\\elevation-20261022-134055-f2d29ec1\\manifest.json",
+  "new_camera_capture": false,
+  "original_user_band_preserved": true,
+  "band": {
+    "revision": "left-image-axial-band-v1",
+    "coordinate_space": "rectified_left",
+    "image_size": [
+      1920,
+      1080
+    ],
+    "axis_segment_px": [
+      [
+        788.4793281959152,
+        705.1622802793654
+      ],
+      [
+        1430.9258698940998,
+        649.642208774584
+      ]
+    ]
+  },
+  "originals_unchanged": true,
+  "original_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261022-113933-359f0666\\manifest.json": "50db129a243004c022c2861c80abd2484ed8487fcd07081e680e4723cca929b7",
+    "outputs\\elevation_workbench\\captures\\elevation-20261022-113933-359f0666\\report.json": "896a836446579ae442ea072ddda383ecbb3e5889f547a75fa5f6f510ceac6969",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+    "outputs\\elevation_workbench\\captures\\elevation-20261022-113933-359f0666\\photos\\left.png": "c750d6b75f9732e9c7be1d018b9dab8c6d8119709cede37d55187bb025293493",
+    "outputs\\elevation_workbench\\captures\\elevation-20261022-113933-359f0666\\photos\\right.png": "6ad1af63177f7d2fe9bec0b55f320c063ce0b08ff8957a52da821990f475436c"
+  },
+  "production_seconds": 21.985899299994344,
+  "legacy_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "previous": {
+    "status": "ANALYZED",
+    "section_revision": null,
+    "axis": {
+      "axis": [
+        0.9813788818515445,
+        -0.12513008914563017,
+        0.14573246394067063
+      ],
+      "singular_values": [
+        3.463405881389695,
+        0.06926781180321202,
+        0.004655212483935256
+      ],
+      "line_residual_degrees": [
+        0.11825729224609847,
+        0.07460356972218944,
+        0.0315529909343578,
+        0.027632426821008367,
+        0.07509065850339747,
+        0.11675977421842774,
+        0.12618528621080707,
+        0.058592731277478785,
+        0.06551226480525407,
+        0.012511479004709506,
+        0.012646283016791283,
+        0.08121917696100732
+      ],
+      "nullspace_ratio": 0.06720599890120088,
+      "status": "STABLE"
+    },
+    "boundary_pair_count": 3,
+    "conditional_section_count": 3,
+    "candidates": [
+      {
+        "candidate_id": "POOL-L01-POOL-R01",
+        "left_candidate_id": "POOL-L01",
+        "right_candidate_id": "POOL-R01",
+        "left_region_px": [
+          759,
+          275,
+          645,
+          141
+        ],
+        "right_region_px": [
+          506,
+          265,
+          898,
+          171
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE"
+        ],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9813788818515445,
+            -0.12513008914563017,
+            0.14573246394067063
+          ],
+          "baseline_perpendicular_to_axis_mm": 10.660284523494399,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 43.99597844838459,
+          "section_center_parameters_mm": [
+            -109.6298406800569,
+            2737.144557572744
+          ],
+          "center_at_reference_column_mm": [
+            42.69022847206202,
+            -115.9605843246182,
+            2775.0800202267374
+          ],
+          "reference_left_column_px": 1081.0,
+          "reprojection_rms_px": 0.7246960584991484,
+          "linear_condition": 712.1642961160994,
+          "predicted_lines": {
+            "left": [
+              [
+                0.11952419490305932,
+                0.9928312882019661,
+                -436.19834943046055
+              ],
+              [
+                -0.12185138813299577,
+                -0.9925483561066747,
+                508.6113588519673
+              ]
+            ],
+            "right": [
+              [
+                0.11917443521749717,
+                0.9928733322990353,
+                -425.3167766165125
+              ],
+              [
+                -0.12149515014079099,
+                -0.9925920252008207,
+                497.52547788605204
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -2.349294082309541,
+              -1.7613600613316294,
+              1.7298271608183313,
+              2.388378592174618
+            ],
+            [
+              -128.67278039593202,
+              -131.04427686658255,
+              128.99110991274028,
+              131.13893432333953
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              5.394018555763438,
+              5.490702917554415,
+              -5.094743765249632,
+              -5.181702344997916
+            ],
+            [
+              -126.90804309810119,
+              -129.2470654006047,
+              127.22781569339986,
+              129.34624007247294
+            ],
+            [
+              -1.1746470411547705,
+              -0.8806800306658147,
+              0.8649135804091657,
+              1.194189296087309
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.2188521295048996,
+                  -5.298227129697271,
+                  -0.04251200735589387
+                ],
+                [
+                  -5.298227129697517,
+                  128.37774002883341,
+                  1.0300871980586033
+                ],
+                [
+                  -0.0425120073559029,
+                  1.0300871980587745,
+                  0.0084560403694387
+                ]
+              ],
+              "diameter_sigma_mm": 0.18391346192640384,
+              "radius_sigma_mm": 0.09195673096320192,
+              "center_z_sigma_mm": 11.487683465028091,
+              "normal_95_halfwidth_diameter_mm": 0.36047038537575155,
+              "normal_95_halfwidth_radius_mm": 0.18023519268787577,
+              "normal_95_halfwidth_center_z_mm": 22.515859591455058
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  28.012426983616937,
+                  -678.1571036744263,
+                  -5.441516724361626
+                ],
+                [
+                  -678.1571036744263,
+                  16431.955556164306,
+                  131.85060695677504
+                ],
+                [
+                  -5.441516724361626,
+                  131.85060695677504,
+                  1.0823891410432256
+                ]
+              ],
+              "diameter_sigma_mm": 2.080758651110912,
+              "radius_sigma_mm": 1.040379325555456,
+              "center_z_sigma_mm": 129.96673944348905,
+              "normal_95_halfwidth_diameter_mm": 4.078286956177388,
+              "normal_95_halfwidth_radius_mm": 2.039143478088694,
+              "normal_95_halfwidth_center_z_mm": 254.73480930923853
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 0.5673297918204554,
+          "center_difference_mm": 38.558099758803706,
+          "stable": false,
+          "method": "DISJOINT_ALTERNATING_AXIAL_BLOCKS"
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      },
+      {
+        "candidate_id": "POOL-L02-POOL-R02",
+        "left_candidate_id": "POOL-L02",
+        "right_candidate_id": "POOL-R02",
+        "left_region_px": [
+          766,
+          359,
+          647,
+          156
+        ],
+        "right_region_px": [
+          513,
+          346,
+          899,
+          187
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE"
+        ],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9813788818515445,
+            -0.12513008914563017,
+            0.14573246394067063
+          ],
+          "baseline_perpendicular_to_axis_mm": 10.660284523494399,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 43.03269676754693,
+          "section_center_parameters_mm": [
+            -42.64270381334083,
+            2231.506730615333
+          ],
+          "center_at_reference_column_mm": [
+            38.902265807142896,
+            -47.94814389962286,
+            2262.1651108885667
+          ],
+          "reference_left_column_px": 1089.0,
+          "reprojection_rms_px": 0.7588654708407051,
+          "linear_condition": 594.9210423168255,
+          "predicted_lines": {
+            "left": [
+              [
+                0.12232236903635488,
+                0.9924904221368254,
+                -523.268609447271
+              ],
+              [
+                -0.12511171901892498,
+                -0.9921426599860171,
+                610.0902669810479
+              ]
+            ],
+            "right": [
+              [
+                0.1218837906030501,
+                0.9925443776417414,
+                -509.6197223880102
+              ],
+              [
+                -0.12466346992079816,
+                -0.9921990824765493,
+                596.1362591264071
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -1.8367428477240821,
+              -1.361377646129256,
+              1.3283719120594384,
+              1.8762081542590892
+            ],
+            [
+              -83.28123937867986,
+              -85.1200984383604,
+              83.36541491938078,
+              85.39679251706275
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              1.8230463287067522,
+              1.860513850414307,
+              -1.5698116699654463,
+              -1.611385454101253
+            ],
+            [
+              -82.14785197352285,
+              -83.96173747247758,
+              82.2356216810067,
+              84.23940771016532
+            ],
+            [
+              -0.9183714238620411,
+              -0.680688823064628,
+              0.6641859560297192,
+              0.9381040771295446
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.023137093794220624,
+                  -1.1148893235607624,
+                  -0.010732443536132005
+                ],
+                [
+                  -1.1148893235607635,
+                  54.01872636198099,
+                  0.5200037005937481
+                ],
+                [
+                  -0.010732443536132064,
+                  0.5200037005937502,
+                  0.005132635162137031
+                ]
+              ],
+              "diameter_sigma_mm": 0.14328482351089428,
+              "radius_sigma_mm": 0.07164241175544714,
+              "center_z_sigma_mm": 7.450932140239897,
+              "normal_95_halfwidth_diameter_mm": 0.28083825408135277,
+              "normal_95_halfwidth_radius_mm": 0.14041912704067638,
+              "normal_95_halfwidth_center_z_mm": 14.603826994870198
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  2.9614703662608606,
+                  -142.70197756796105,
+                  -1.3737396912292696
+                ],
+                [
+                  -142.70197756796105,
+                  6914.204556970548,
+                  66.55978322012905
+                ],
+                [
+                  -1.3737396912292696,
+                  66.55978322012905,
+                  0.656981397431422
+                ]
+              ],
+              "diameter_sigma_mm": 1.6210877797718692,
+              "radius_sigma_mm": 0.8105438898859346,
+              "center_z_sigma_mm": 84.29650136199,
+              "normal_95_halfwidth_diameter_mm": 3.1773320483528638,
+              "normal_95_halfwidth_radius_mm": 1.5886660241764319,
+              "normal_95_halfwidth_center_z_mm": 165.22114266950038
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 0.5582187467171096,
+          "center_difference_mm": 16.8137777279218,
+          "stable": false,
+          "method": "DISJOINT_ALTERNATING_AXIAL_BLOCKS"
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      },
+      {
+        "candidate_id": "POOL-L03-POOL-R03",
+        "left_candidate_id": "POOL-L03",
+        "right_candidate_id": "POOL-R03",
+        "left_region_px": [
+          777,
+          485,
+          643,
+          111
+        ],
+        "right_region_px": [
+          523,
+          475,
+          896,
+          143
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE"
+        ],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9813788818515445,
+            -0.12513008914563017,
+            0.14573246394067063
+          ],
+          "baseline_perpendicular_to_axis_mm": 10.660284523494399,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 28.40847784626459,
+          "section_center_parameters_mm": [
+            15.006420157088757,
+            3057.2858596361366
+          ],
+          "center_at_reference_column_mm": [
+            59.965091491086355,
+            7.482099985303414,
+            3098.9003746925778
+          ],
+          "reference_left_column_px": 1098.5,
+          "reprojection_rms_px": 0.5295995311961001,
+          "linear_condition": 801.8811466637218,
+          "predicted_lines": {
+            "left": [
+              [
+                0.1265183197680807,
+                0.9919642709105311,
+                -653.882144107828
+              ],
+              [
+                -0.12786150604257424,
+                -0.9917920322691268,
+                695.705896244676
+              ]
+            ],
+            "right": [
+              [
+                0.1261871698362788,
+                0.9920064506689007,
+                -643.5718174507614
+              ],
+              [
+                -0.12752688692210304,
+                -0.9918351138732472,
+                685.2860576914591
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -1.742759558394802,
+              -1.0649825174601446,
+              1.0408769051189992,
+              1.7522167382744414
+            ],
+            [
+              -152.50323820953327,
+              -154.18371378308166,
+              151.75868511531917,
+              153.35221415853084
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              -0.39099925740186947,
+              -0.3973250360737701,
+              0.735843894321544,
+              0.741665729147325
+            ],
+            [
+              -150.44884560816172,
+              -152.10672074212653,
+              149.72076570381432,
+              151.29286035455607
+            ],
+            [
+              -0.871379779197401,
+              -0.5324912587300723,
+              0.5204384525594996,
+              0.8761083691372207
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.0027388807973305184,
+                  0.6672781463972294,
+                  0.0030959265856681096
+                ],
+                [
+                  0.6672781463972305,
+                  177.88737822718358,
+                  0.8253642299787382
+                ],
+                [
+                  0.0030959265856681157,
+                  0.8253642299787382,
+                  0.004065362979068885
+                ]
+              ],
+              "diameter_sigma_mm": 0.12752039803998239,
+              "radius_sigma_mm": 0.06376019901999119,
+              "center_z_sigma_mm": 13.519277231275545,
+              "normal_95_halfwidth_diameter_mm": 0.24993998015836547,
+              "normal_95_halfwidth_radius_mm": 0.12496999007918273,
+              "normal_95_halfwidth_center_z_mm": 26.497783373300067
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.35057047354544124,
+                  85.41025902540812,
+                  0.3962554913148432
+                ],
+                [
+                  85.41025902540812,
+                  22769.286729237854,
+                  105.64074145551857
+                ],
+                [
+                  0.3962554913148432,
+                  105.64074145551857,
+                  0.5203179293982138
+                ]
+              ],
+              "diameter_sigma_mm": 1.4426613315649848,
+              "radius_sigma_mm": 0.7213306657824924,
+              "center_z_sigma_mm": 152.95216192946685,
+              "normal_95_halfwidth_diameter_mm": 2.82761620986737,
+              "normal_95_halfwidth_radius_mm": 1.413808104933685,
+              "normal_95_halfwidth_center_z_mm": 299.78623738175503
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 0.027337487695334062,
+          "center_difference_mm": 5.183913436028489,
+          "stable": false,
+          "method": "DISJOINT_ALTERNATING_AXIAL_BLOCKS"
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      }
+    ],
+    "position_assessment": {
+      "policy": {
+        "revision": "relative-section-position-v1",
+        "position_tolerance_mm": 5.0,
+        "clearance_tolerance_mm": 5.0,
+        "uncertainty_scenario": "COHERENT_EDGE_OFFSETS",
+        "confidence_multiplier": 1.96,
+        "scope": "RELATIVE_COMMON_SECTION_ONLY"
+      },
+      "policy_sha256": "59ba4df8ab524b91b23521abf831e1958614e0d8fd8c92ff8f225b29ce8c19a3",
+      "pipes": [
+        {
+          "pipe_id": "P001",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P002",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P003",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P004",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P005",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P006",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P007",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P008",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P009",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P010",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P011",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P012",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        }
+      ],
+      "pairwise": [],
+      "counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "absolute_installation_pose_assessed": false,
+      "absence_assessed": false,
+      "calibration_validated": false,
+      "capture_healthy": true,
+      "production_authority": false
+    },
+    "aggregation_band": {
+      "selection": {
+        "revision": "left-image-axial-band-v1",
+        "coordinate_space": "rectified_left",
+        "image_size": [
+          1920,
+          1080
+        ],
+        "axis_segment_px": [
+          [
+            788.4793281959152,
+            705.1622802793654
+          ],
+          [
+            1430.9258698940998,
+            649.642208774584
+          ]
+        ]
+      },
+      "axis_image": [
+        0.9962866000353438,
+        -0.08609884197836308
+      ],
+      "span_px": 644.8410945960666,
+      "left_scope": "STRICT_USER_BAND",
+      "right_scope": "EPIPOLAR_SEARCH_ENVELOPE",
+      "disparity_range_px": [
+        0.0,
+        255.0
+      ],
+      "views": {
+        "left": {
+          "station_interval_px": [
+            0.0,
+            644.8410945960666
+          ],
+          "selected_pixels": 699026,
+          "image_origin_px": [
+            0,
+            0
+          ]
+        },
+        "right": {
+          "station_interval_px": [
+            -254.05308300901265,
+            644.8410945960666
+          ],
+          "selected_pixels": 974426,
+          "image_origin_px": [
+            0,
+            0
+          ]
+        }
+      },
+      "supplies_metric_length_or_3d_axis": false
+    },
+    "proposal_audit": {
+      "left": {
+        "revision": "image-strips-overlapping-hue-v4",
+        "policy_sha256": "7b064110c993e058ef7b7db85c21cf5d65a4f63a01a0448c5a861e2b2ed000b2",
+        "scope": "IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+        "global_axis_filter_applied": false,
+        "truncated": false,
+        "candidate_count": 5
+      },
+      "right": {
+        "revision": "image-strips-overlapping-hue-v4",
+        "policy_sha256": "7b064110c993e058ef7b7db85c21cf5d65a4f63a01a0448c5a861e2b2ed000b2",
+        "scope": "IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+        "global_axis_filter_applied": false,
+        "truncated": false,
+        "candidate_count": 7
+      }
+    },
+    "views": {
+      "left": [
+        {
+          "candidate_id": "POOL-L01",
+          "appearance": "hue-0",
+          "region_px": [
+            759,
+            275,
+            645,
+            141
+          ],
+          "width_px": 71.71449279785156,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L02",
+          "appearance": "hue-0",
+          "region_px": [
+            766,
+            359,
+            647,
+            156
+          ],
+          "width_px": 86.42428588867188,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L03",
+          "appearance": "neutral",
+          "region_px": [
+            777,
+            485,
+            643,
+            111
+          ],
+          "width_px": 38.94187545776367,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L04",
+          "appearance": "hue-120",
+          "region_px": [
+            781,
+            534,
+            649,
+            178
+          ],
+          "width_px": 106.52558898925781,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L05",
+          "appearance": "neutral",
+          "region_px": [
+            995,
+            988,
+            473,
+            92
+          ],
+          "width_px": 87.44745635986328,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        }
+      ],
+      "right": [
+        {
+          "candidate_id": "POOL-R01",
+          "appearance": "hue-0",
+          "region_px": [
+            506,
+            265,
+            898,
+            171
+          ],
+          "width_px": 73.38601684570312,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R02",
+          "appearance": "hue-0",
+          "region_px": [
+            513,
+            346,
+            899,
+            187
+          ],
+          "width_px": 97.18566131591797,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R03",
+          "appearance": "neutral",
+          "region_px": [
+            523,
+            475,
+            896,
+            143
+          ],
+          "width_px": 39.939178466796875,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R04",
+          "appearance": "hue-105",
+          "region_px": [
+            528,
+            520,
+            901,
+            209
+          ],
+          "width_px": 108.94670867919922,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R05",
+          "appearance": "neutral",
+          "region_px": [
+            889,
+            980,
+            579,
+            100
+          ],
+          "width_px": 95.8539047241211,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        },
+        {
+          "candidate_id": "POOL-R06",
+          "appearance": "neutral",
+          "region_px": [
+            568,
+            1008,
+            116,
+            53
+          ],
+          "width_px": 46.519351959228516,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R07",
+          "appearance": "neutral",
+          "region_px": [
+            781,
+            1032,
+            113,
+            48
+          ],
+          "width_px": 41.33391571044922,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        }
+      ]
+    }
+  },
+  "current": {
+    "status": "ANALYZED",
+    "section_revision": "pooled-sections-common-station-v2",
+    "axis": {
+      "axis": [
+        0.9836763559723172,
+        -0.12512505446780536,
+        0.12932342187497287
+      ],
+      "singular_values": [
+        3.4634071562128987,
+        0.06912705416089314,
+        0.005685127642705683
+      ],
+      "line_residual_degrees": [
+        0.0833820261881563,
+        0.18216090645871175,
+        0.07604663157458444,
+        0.04471179461102315,
+        0.0629538418717648,
+        0.16198745328343617,
+        0.11653421867400263,
+        0.05872961725944585,
+        0.053155756979711775,
+        0.002884120789901204,
+        0.036443086497856186,
+        0.08240680605062264
+      ],
+      "nullspace_ratio": 0.08224171725115835,
+      "status": "STABLE"
+    },
+    "boundary_pair_count": 3,
+    "conditional_section_count": 3,
+    "candidates": [
+      {
+        "candidate_id": "POOL-L01-POOL-R01",
+        "left_candidate_id": "POOL-L01",
+        "right_candidate_id": "POOL-R01",
+        "left_region_px": [
+          759,
+          273,
+          645,
+          147
+        ],
+        "right_region_px": [
+          506,
+          263,
+          898,
+          177
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE"
+        ],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9836763559723172,
+            -0.12512505446780536,
+            0.12932342187497287
+          ],
+          "baseline_perpendicular_to_axis_mm": 9.98679464252133,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 43.69940242426326,
+          "section_center_parameters_mm": [
+            -108.68223827770817,
+            2719.7090441944893
+          ],
+          "center_at_reference_column_mm": [
+            42.306046196419345,
+            -114.93935097974251,
+            2750.106235934179
+          ],
+          "reference_left_column_px": 1081.0,
+          "reprojection_rms_px": 0.6074681399756011,
+          "linear_condition": 765.852450827544,
+          "predicted_lines": {
+            "left": [
+              [
+                0.1200239537316746,
+                0.9927709960160083,
+                -436.60245342479567
+              ],
+              [
+                -0.12208825544186237,
+                -0.9925192481172154,
+                508.90154443220416
+              ]
+            ],
+            "right": [
+              [
+                0.11971020018836948,
+                0.992808877866662,
+                -425.6151291635763
+              ],
+              [
+                -0.12176939310905534,
+                -0.9925584188861893,
+                497.73280244838855
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -2.310430984676657,
+              -1.7238812033652096,
+              1.6914265779868032,
+              2.343236029066489
+            ],
+            [
+              -126.09866083297675,
+              -128.1380632145192,
+              126.08322131044133,
+              128.15028406166675
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              5.291540045628267,
+              5.374784445541252,
+              -4.981529840973735,
+              -5.065577537223049
+            ],
+            [
+              -124.69980996132563,
+              -126.71662705898598,
+              124.68963076313685,
+              126.73380726532287
+            ],
+            [
+              -1.1552154923383284,
+              -0.8619406016826048,
+              0.8457132889934016,
+              1.1716180145332444
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.20969850681784927,
+                  -5.08610178144744,
+                  -0.04080765268567531
+                ],
+                [
+                  -5.086101781445978,
+                  123.47045225997846,
+                  0.9906517944995823
+                ],
+                [
+                  -0.0408076526856705,
+                  0.9906517944997499,
+                  0.00813545568826718
+                ]
+              ],
+              "diameter_sigma_mm": 0.18039352192656122,
+              "radius_sigma_mm": 0.09019676096328061,
+              "center_z_sigma_mm": 11.236145123737005,
+              "normal_95_halfwidth_diameter_mm": 0.35357130297606,
+              "normal_95_halfwidth_radius_mm": 0.17678565148803,
+              "normal_95_halfwidth_center_z_mm": 22.02284444252453
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  26.84110480816258,
+                  -651.0134094993041,
+                  -5.22337046514918
+                ],
+                [
+                  -651.0134094993041,
+                  15804.027025352067,
+                  126.80316187697079
+                ],
+                [
+                  -5.22337046514918,
+                  126.80316187697079,
+                  1.0413460434315789
+                ]
+              ],
+              "diameter_sigma_mm": 2.0409272828119858,
+              "radius_sigma_mm": 1.0204636414059929,
+              "center_z_sigma_mm": 127.12170301461296,
+              "normal_95_halfwidth_diameter_mm": 4.000217474311492,
+              "normal_95_halfwidth_radius_mm": 2.000108737155746,
+              "normal_95_halfwidth_center_z_mm": 249.1585379086414
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 0.41789928780043084,
+          "center_difference_mm": 29.188391195060237,
+          "center_difference_components_mm": [
+            -1.026870877153243,
+            29.17032253434172
+          ],
+          "stable": false,
+          "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+        },
+        "common_axial_support": {
+          "revision": "common-axial-stations-v1",
+          "status": "COMMON_AXIAL_SUPPORT",
+          "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+          "supplies_measured_depth": false,
+          "windows": [
+            {
+              "index": 0,
+              "interval_mm": [
+                264.92267021341775,
+                333.8983144705352
+              ],
+              "point_counts": [
+                106,
+                109,
+                110,
+                108
+              ],
+              "accepted": true
+            },
+            {
+              "index": 1,
+              "interval_mm": [
+                333.8983144705352,
+                402.8739587276526
+              ],
+              "point_counts": [
+                107,
+                105,
+                107,
+                109
+              ],
+              "accepted": true
+            },
+            {
+              "index": 2,
+              "interval_mm": [
+                402.8739587276526,
+                471.84960298477006
+              ],
+              "point_counts": [
+                108,
+                107,
+                108,
+                108
+              ],
+              "accepted": true
+            },
+            {
+              "index": 3,
+              "interval_mm": [
+                471.84960298477006,
+                540.8252472418875
+              ],
+              "point_counts": [
+                107,
+                106,
+                108,
+                107
+              ],
+              "accepted": true
+            },
+            {
+              "index": 4,
+              "interval_mm": [
+                540.8252472418875,
+                609.8008914990049
+              ],
+              "point_counts": [
+                106,
+                107,
+                107,
+                107
+              ],
+              "accepted": true
+            }
+          ],
+          "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+          "axial_displacement_in_center_error": false,
+          "common_interval_mm": [
+            264.92267021341775,
+            609.8008914990049
+          ],
+          "total_windows": 5,
+          "accepted_windows": 5,
+          "window_edges_mm": [
+            264.92267021341775,
+            333.8983144705352,
+            402.8739587276526,
+            471.84960298477006,
+            540.8252472418875,
+            609.8008914990049
+          ],
+          "boundary_keys": [
+            "left:top",
+            "left:bottom",
+            "right:top",
+            "right:bottom"
+          ]
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      },
+      {
+        "candidate_id": "POOL-L02-POOL-R02",
+        "left_candidate_id": "POOL-L02",
+        "right_candidate_id": "POOL-R02",
+        "left_region_px": [
+          766,
+          356,
+          647,
+          162
+        ],
+        "right_region_px": [
+          513,
+          343,
+          899,
+          192
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9836763559723172,
+            -0.12512505446780536,
+            0.12932342187497287
+          ],
+          "baseline_perpendicular_to_axis_mm": 9.98679464252133,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 42.606790545141166,
+          "section_center_parameters_mm": [
+            -42.30926580004538,
+            2216.999211776145
+          ],
+          "center_at_reference_column_mm": [
+            38.54764498764803,
+            -47.553494844963566,
+            2241.543925237504
+          ],
+          "reference_left_column_px": 1089.0,
+          "reprojection_rms_px": 0.6669149744482517,
+          "linear_condition": 621.5916113325367,
+          "predicted_lines": {
+            "left": [
+              [
+                0.12250230934961495,
+                0.9924682283096075,
+                -523.4051274174844
+              ],
+              [
+                -0.12496912252880586,
+                -0.9921606313568283,
+                609.8268666133096
+              ]
+            ],
+            "right": [
+              [
+                0.12210984987425919,
+                0.9925165915810606,
+                -509.6579433593419
+              ],
+              [
+                -0.12456903909390966,
+                -0.9922109425415646,
+                595.8088575163545
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -1.8060154877488799,
+              -1.3311267134342586,
+              1.301083741832727,
+              1.8362682542447573
+            ],
+            [
+              -81.8727899489295,
+              -83.44474900497971,
+              81.8574569152861,
+              83.4597647976716
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              1.7964614584413852,
+              1.8286013930525513,
+              -1.5438583826106367,
+              -1.576489360732083
+            ],
+            [
+              -80.97215917233825,
+              -82.52686479439035,
+              80.96114462570768,
+              82.54586810256114
+            ],
+            [
+              -0.9030077438744399,
+              -0.6655633567171293,
+              0.6505418709163635,
+              0.9181341271223786
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.022343851365619324,
+                  -1.0771605115271083,
+                  -0.010334051033325608
+                ],
+                [
+                  -1.0771605115270821,
+                  52.21903167895058,
+                  0.5009802581387954
+                ],
+                [
+                  -0.010334051033325449,
+                  0.5009802581388,
+                  0.0049307186817009055
+                ]
+              ],
+              "diameter_sigma_mm": 0.14043815267513177,
+              "radius_sigma_mm": 0.07021907633756588,
+              "center_z_sigma_mm": 7.30646229269339,
+              "normal_95_halfwidth_diameter_mm": 0.27525877924325826,
+              "normal_95_halfwidth_radius_mm": 0.13762938962162913,
+              "normal_95_halfwidth_center_z_mm": 14.320666093679044
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  2.859968559099416,
+                  -137.8743319298502,
+                  -1.3227604733972795
+                ],
+                [
+                  -137.8743319298502,
+                  6683.92531343306,
+                  64.12553424424812
+                ],
+                [
+                  -1.3227604733972795,
+                  64.12553424424812,
+                  0.6311431421259784
+                ]
+              ],
+              "diameter_sigma_mm": 1.588890357609333,
+              "radius_sigma_mm": 0.7944451788046665,
+              "center_z_sigma_mm": 82.66249975540023,
+              "normal_95_halfwidth_diameter_mm": 3.1142251009142927,
+              "normal_95_halfwidth_radius_mm": 1.5571125504571464,
+              "normal_95_halfwidth_center_z_mm": 162.01849952058444
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 0.13251430718560897,
+          "center_difference_mm": 0.644795825626115,
+          "center_difference_components_mm": [
+            0.06007130583318343,
+            0.6419915069222952
+          ],
+          "stable": true,
+          "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+        },
+        "common_axial_support": {
+          "revision": "common-axial-stations-v1",
+          "status": "COMMON_AXIAL_SUPPORT",
+          "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+          "supplies_measured_depth": false,
+          "windows": [
+            {
+              "index": 0,
+              "interval_mm": [
+                225.47797842432564,
+                280.0928375486665
+              ],
+              "point_counts": [
+                106,
+                105,
+                106,
+                100
+              ],
+              "accepted": true
+            },
+            {
+              "index": 1,
+              "interval_mm": [
+                280.0928375486665,
+                334.70769667300743
+              ],
+              "point_counts": [
+                102,
+                102,
+                104,
+                102
+              ],
+              "accepted": true
+            },
+            {
+              "index": 2,
+              "interval_mm": [
+                334.70769667300743,
+                389.3225557973483
+              ],
+              "point_counts": [
+                103,
+                103,
+                104,
+                104
+              ],
+              "accepted": true
+            },
+            {
+              "index": 3,
+              "interval_mm": [
+                389.3225557973483,
+                443.9374149216892
+              ],
+              "point_counts": [
+                104,
+                104,
+                104,
+                99
+              ],
+              "accepted": true
+            },
+            {
+              "index": 4,
+              "interval_mm": [
+                443.9374149216892,
+                498.5522740460301
+              ],
+              "point_counts": [
+                102,
+                103,
+                100,
+                99
+              ],
+              "accepted": true
+            }
+          ],
+          "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+          "axial_displacement_in_center_error": false,
+          "common_interval_mm": [
+            225.47797842432564,
+            498.5522740460301
+          ],
+          "total_windows": 5,
+          "accepted_windows": 5,
+          "window_edges_mm": [
+            225.47797842432564,
+            280.0928375486665,
+            334.70769667300743,
+            389.3225557973483,
+            443.9374149216892,
+            498.5522740460301
+          ],
+          "boundary_keys": [
+            "left:top",
+            "left:bottom",
+            "right:top",
+            "right:bottom"
+          ]
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      },
+      {
+        "candidate_id": "POOL-L03-POOL-R03",
+        "left_candidate_id": "POOL-L03",
+        "right_candidate_id": "POOL-R03",
+        "left_region_px": [
+          777,
+          481,
+          643,
+          118
+        ],
+        "right_region_px": [
+          524,
+          472,
+          895,
+          150
+        ],
+        "boundary_status": "STABLE",
+        "reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE"
+        ],
+        "fit": {
+          "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+          "accepted_diameter_mm": null,
+          "axis": [
+            0.9836763559723172,
+            -0.12512505446780536,
+            0.12932342187497287
+          ],
+          "baseline_perpendicular_to_axis_mm": 9.98679464252133,
+          "diameter_source": "IMAGE_FIT",
+          "known_diameter_mm": null,
+          "ignored_occlusion_boundaries": [],
+          "observed_boundary_count": 4,
+          "status": "CONDITIONAL_FIT",
+          "trial_diameter_mm": 28.703418603568892,
+          "section_center_parameters_mm": [
+            15.188039491931114,
+            3087.8895546731505
+          ],
+          "center_at_reference_column_mm": [
+            60.052120603385106,
+            7.671702711794616,
+            3121.682866948901
+          ],
+          "reference_left_column_px": 1098.0,
+          "reprojection_rms_px": 0.49249750165182626,
+          "linear_condition": 805.0314272160932,
+          "predicted_lines": {
+            "left": [
+              [
+                0.12621944074772198,
+                0.9920023451470932,
+                -653.6391099156192
+              ],
+              [
+                -0.1274118851751656,
+                -0.9918498936412256,
+                695.428983831309
+              ]
+            ],
+            "right": [
+              [
+                0.12592907451013075,
+                0.9920392473047738,
+                -643.4638893883689
+              ],
+              [
+                -0.1271188105167696,
+                -0.9918874976592867,
+                685.1575155060586
+              ]
+            ]
+          }
+        },
+        "pixel_error": {
+          "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+          "total_accuracy_known": false,
+          "assumed_vertical_pixel_sigma_px": 0.5,
+          "point_counts_per_edge": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "edge_order": [
+            [
+              "left",
+              "top"
+            ],
+            [
+              "left",
+              "bottom"
+            ],
+            [
+              "right",
+              "top"
+            ],
+            [
+              "right",
+              "bottom"
+            ]
+          ],
+          "diameter_and_z_jacobian_mm_per_px": [
+            [
+              -1.777120023421901,
+              -1.0886523331632603,
+              1.0754317284524717,
+              1.7904415626699333
+            ],
+            [
+              -155.28840204315657,
+              -156.75201788508275,
+              155.31262342930404,
+              156.73977664159793
+            ]
+          ],
+          "section_parameters_jacobian_mm_per_px": [
+            [
+              -0.405364112305584,
+              -0.4108762798422383,
+              0.7564714142783835,
+              0.761776701863468
+            ],
+            [
+              -153.601590328135,
+              -155.04933554982472,
+              153.63132333014164,
+              155.04300015805256
+            ],
+            [
+              -0.8885600117109504,
+              -0.5443261665816301,
+              0.5377158642262359,
+              0.8952207813349666
+            ]
+          ],
+          "scenarios": {
+            "IID_PIXELS_OPTIMISTIC": {
+              "assumed_effective_samples_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.002901791092525461,
+                  0.7037161868160753,
+                  0.0032668772021285145
+                ],
+                [
+                  0.703716186816074,
+                  186.0865689732746,
+                  0.8638854581152363
+                ],
+                [
+                  0.003266877202128519,
+                  0.8638854581152391,
+                  0.004251055315176366
+                ]
+              ],
+              "diameter_sigma_mm": 0.13040023489513147,
+              "radius_sigma_mm": 0.06520011744756574,
+              "center_z_sigma_mm": 13.790901595037155,
+              "normal_95_halfwidth_diameter_mm": 0.2555844603944577,
+              "normal_95_halfwidth_radius_mm": 0.12779223019722885,
+              "normal_95_halfwidth_center_z_mm": 27.030167126272826
+            },
+            "COHERENT_EDGE_OFFSETS": {
+              "assumed_effective_samples_per_edge": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "section_parameter_order": [
+                "u_mm",
+                "v_mm",
+                "radius_mm"
+              ],
+              "section_parameter_covariance_mm2": [
+                [
+                  0.37142303125115306,
+                  90.0741290598109,
+                  0.41814151631485674
+                ],
+                [
+                  90.0741290598109,
+                  23818.66510298869,
+                  110.57233922258744
+                ],
+                [
+                  0.41814151631485674,
+                  110.57233922258744,
+                  0.5440971170029432
+                ]
+              ],
+              "diameter_sigma_mm": 1.4752587800151447,
+              "radius_sigma_mm": 0.7376293900075723,
+              "center_z_sigma_mm": 156.0248790243988,
+              "normal_95_halfwidth_diameter_mm": 2.8915072088296836,
+              "normal_95_halfwidth_radius_mm": 1.4457536044148418,
+              "normal_95_halfwidth_center_z_mm": 305.8087628878217
+            }
+          },
+          "excluded": [
+            "CALIBRATION_SCALE_AND_RECTIFICATION",
+            "MISIDENTIFIED_SILHOUETTE",
+            "OCCLUSION_CLASSIFICATION",
+            "AXIS_ERROR",
+            "GENERAL_PIXEL_NOISE_CORRELATION"
+          ]
+        },
+        "window_sensitivity": {
+          "diameter_difference_mm": 0.4339667918973298,
+          "center_difference_mm": 43.59744818494024,
+          "center_difference_components_mm": [
+            -0.06649954551497217,
+            -43.59739746875948
+          ],
+          "stable": false,
+          "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+        },
+        "common_axial_support": {
+          "revision": "common-axial-stations-v1",
+          "status": "COMMON_AXIAL_SUPPORT",
+          "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+          "supplies_measured_depth": false,
+          "windows": [
+            {
+              "index": 0,
+              "interval_mm": [
+                241.206472147908,
+                330.8182342252513
+              ],
+              "point_counts": [
+                125,
+                126,
+                126,
+                126
+              ],
+              "accepted": true
+            },
+            {
+              "index": 1,
+              "interval_mm": [
+                330.8182342252513,
+                420.42999630259453
+              ],
+              "point_counts": [
+                125,
+                125,
+                125,
+                125
+              ],
+              "accepted": true
+            },
+            {
+              "index": 2,
+              "interval_mm": [
+                420.42999630259453,
+                510.04175837993785
+              ],
+              "point_counts": [
+                124,
+                124,
+                124,
+                124
+              ],
+              "accepted": true
+            },
+            {
+              "index": 3,
+              "interval_mm": [
+                510.04175837993785,
+                599.653520457281
+              ],
+              "point_counts": [
+                123,
+                123,
+                123,
+                123
+              ],
+              "accepted": true
+            },
+            {
+              "index": 4,
+              "interval_mm": [
+                599.653520457281,
+                689.2652825346244
+              ],
+              "point_counts": [
+                118,
+                123,
+                123,
+                123
+              ],
+              "accepted": true
+            }
+          ],
+          "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+          "axial_displacement_in_center_error": false,
+          "common_interval_mm": [
+            241.206472147908,
+            689.2652825346244
+          ],
+          "total_windows": 5,
+          "accepted_windows": 5,
+          "window_edges_mm": [
+            241.206472147908,
+            330.8182342252513,
+            420.42999630259453,
+            510.04175837993785,
+            599.653520457281,
+            689.2652825346244
+          ],
+          "boundary_keys": [
+            "left:top",
+            "left:bottom",
+            "right:top",
+            "right:bottom"
+          ]
+        },
+        "dimension_status": "CONDITIONAL",
+        "included_in_section_model": true
+      }
+    ],
+    "position_assessment": {
+      "policy": {
+        "revision": "relative-section-position-v1",
+        "position_tolerance_mm": 5.0,
+        "clearance_tolerance_mm": 5.0,
+        "uncertainty_scenario": "COHERENT_EDGE_OFFSETS",
+        "confidence_multiplier": 1.96,
+        "scope": "RELATIVE_COMMON_SECTION_ONLY"
+      },
+      "policy_sha256": "59ba4df8ab524b91b23521abf831e1958614e0d8fd8c92ff8f225b29ce8c19a3",
+      "pipes": [
+        {
+          "pipe_id": "P001",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P002",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P003",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P004",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P005",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P006",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P007",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P008",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P009",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P010",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 51.000073,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P011",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 41.000017,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        },
+        {
+          "pipe_id": "P012",
+          "observation_id": null,
+          "observed_diameter_mm": null,
+          "model_diameter_mm": 26.000124,
+          "diameter_error_mm": null,
+          "state": "UNKNOWN",
+          "state_zh": "就位待判定",
+          "reason_codes": [
+            "CALIBRATION_NOT_VALIDATED",
+            "NO_UNIQUE_VISIBLE_SECTION",
+            "SECTION_MODEL_CORRESPONDENCE_UNRESOLVED"
+          ]
+        }
+      ],
+      "pairwise": [],
+      "counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "absolute_installation_pose_assessed": false,
+      "absence_assessed": false,
+      "calibration_validated": false,
+      "capture_healthy": true,
+      "production_authority": false
+    },
+    "aggregation_band": {
+      "selection": {
+        "revision": "left-image-axial-band-v1",
+        "coordinate_space": "rectified_left",
+        "image_size": [
+          1920,
+          1080
+        ],
+        "axis_segment_px": [
+          [
+            788.4793281959152,
+            705.1622802793654
+          ],
+          [
+            1430.9258698940998,
+            649.642208774584
+          ]
+        ]
+      },
+      "axis_image": [
+        0.9962866000353438,
+        -0.08609884197836308
+      ],
+      "span_px": 644.8410945960666,
+      "left_scope": "STRICT_USER_BAND",
+      "right_scope": "EPIPOLAR_SEARCH_ENVELOPE",
+      "disparity_range_px": [
+        0.0,
+        255.0
+      ],
+      "views": {
+        "left": {
+          "station_interval_px": [
+            0.0,
+            644.8410945960666
+          ],
+          "selected_pixels": 699026,
+          "image_origin_px": [
+            0,
+            0
+          ]
+        },
+        "right": {
+          "station_interval_px": [
+            -254.05308300901265,
+            644.8410945960666
+          ],
+          "selected_pixels": 974426,
+          "image_origin_px": [
+            0,
+            0
+          ]
+        }
+      },
+      "supplies_metric_length_or_3d_axis": false
+    },
+    "proposal_audit": {
+      "left": {
+        "revision": "image-strips-soft-axis-v5",
+        "policy_sha256": "5430481a171d3f97020fcb5124ee5d913c2d9bd2e1eb301c00c0dda8d7bb4c99",
+        "scope": "IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+        "global_axis_filter_applied": false,
+        "direction_estimates": [
+          {
+            "appearance": "hue-0",
+            "observed_angle_deg": -6.923375262092077,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 1.9841597199658723
+          },
+          {
+            "appearance": "hue-120",
+            "observed_angle_deg": -7.2657180036714575,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.3265024615452514
+          },
+          {
+            "appearance": "hue-15",
+            "observed_angle_deg": -6.884443183823005,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 1.9452276416967995
+          },
+          {
+            "appearance": "hue-105",
+            "observed_angle_deg": -7.2657180036714575,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.3265024615452514
+          },
+          {
+            "appearance": "hue-165",
+            "observed_angle_deg": -7.422771373446729,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.4835558313205244
+          },
+          {
+            "appearance": "neutral",
+            "observed_angle_deg": -7.319895064167997,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.3806795220417922
+          }
+        ],
+        "truncated": false,
+        "candidate_count": 5
+      },
+      "right": {
+        "revision": "image-strips-soft-axis-v5",
+        "policy_sha256": "5430481a171d3f97020fcb5124ee5d913c2d9bd2e1eb301c00c0dda8d7bb4c99",
+        "scope": "IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+        "global_axis_filter_applied": false,
+        "direction_estimates": [
+          {
+            "appearance": "hue-0",
+            "observed_angle_deg": -7.374113105799558,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.4348975636733536
+          },
+          {
+            "appearance": "hue-90",
+            "observed_angle_deg": -7.910487861320661,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.971272319194455
+          },
+          {
+            "appearance": "hue-120",
+            "observed_angle_deg": -6.954247717140534,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.01503217501433
+          },
+          {
+            "appearance": "hue-15",
+            "observed_angle_deg": -8.003624320842954,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 3.0644087787167487
+          },
+          {
+            "appearance": "hue-105",
+            "observed_angle_deg": -7.068257234766388,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.1290416926401825
+          },
+          {
+            "appearance": "hue-165",
+            "observed_angle_deg": -6.649211468807766,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 1.70999592668156
+          },
+          {
+            "appearance": "neutral",
+            "observed_angle_deg": -7.214368641491301,
+            "source": "OBSERVED_NEAR_HINT",
+            "hint_difference_deg": 2.2751530993650952
+          }
+        ],
+        "truncated": false,
+        "candidate_count": 7
+      }
+    },
+    "views": {
+      "left": [
+        {
+          "candidate_id": "POOL-L01",
+          "appearance": "hue-0",
+          "region_px": [
+            759,
+            273,
+            645,
+            147
+          ],
+          "width_px": 70.25678253173828,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L02",
+          "appearance": "hue-0",
+          "region_px": [
+            766,
+            356,
+            647,
+            162
+          ],
+          "width_px": 84.61512756347656,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L03",
+          "appearance": "neutral",
+          "region_px": [
+            777,
+            481,
+            643,
+            118
+          ],
+          "width_px": 38.4173583984375,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L04",
+          "appearance": "hue-120",
+          "region_px": [
+            781,
+            530,
+            649,
+            184
+          ],
+          "width_px": 105.10414123535156,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-L05",
+          "appearance": "neutral",
+          "region_px": [
+            995,
+            987,
+            473,
+            93
+          ],
+          "width_px": 89.6640396118164,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        }
+      ],
+      "right": [
+        {
+          "candidate_id": "POOL-R01",
+          "appearance": "hue-0",
+          "region_px": [
+            506,
+            263,
+            898,
+            177
+          ],
+          "width_px": 71.78541564941406,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R02",
+          "appearance": "hue-0",
+          "region_px": [
+            513,
+            343,
+            899,
+            192
+          ],
+          "width_px": 86.57623291015625,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R03",
+          "appearance": "neutral",
+          "region_px": [
+            524,
+            472,
+            895,
+            150
+          ],
+          "width_px": 38.77638244628906,
+          "boundary_status": "STABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R04",
+          "appearance": "hue-105",
+          "region_px": [
+            528,
+            518,
+            901,
+            213
+          ],
+          "width_px": 107.55525970458984,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R05",
+          "appearance": "neutral",
+          "region_px": [
+            889,
+            980,
+            579,
+            100
+          ],
+          "width_px": 95.81305694580078,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        },
+        {
+          "candidate_id": "POOL-R06",
+          "appearance": "neutral",
+          "region_px": [
+            568,
+            1006,
+            115,
+            56
+          ],
+          "width_px": 45.14863967895508,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": []
+        },
+        {
+          "candidate_id": "POOL-R07",
+          "appearance": "neutral",
+          "region_px": [
+            781,
+            1024,
+            115,
+            56
+          ],
+          "width_px": 44.40443420410156,
+          "boundary_status": "UNSTABLE",
+          "reason_codes": [
+            "TRANSVERSE_BOUNDARY_CLIPPED"
+          ]
+        }
+      ]
+    }
+  },
+  "ground_check": {
+    "revision": "stereo-ground-plane-check-v1",
+    "policy": {
+      "maximum_points": 4096,
+      "ransac_trials": 96,
+      "plane_tolerance_mm": 5.0,
+      "minimum_points": 256,
+      "minimum_valid_fraction": 0.25,
+      "minimum_plane_fraction": 0.7,
+      "minimum_spatial_cells": 8,
+      "minimum_second_spread_mm": 20.0,
+      "maximum_holdout_rms_mm": 3.0,
+      "maximum_eye_angle_deg": 2.0,
+      "maximum_eye_offset_mm": 10.0,
+      "minimum_roll_normal_projection": 0.08715574274765817
+    },
+    "policy_sha256": "6cb4616ff1da7ca6aa0962246dfc965e193368f13a91bf1c32776982c2942095",
+    "status": "GROUND_PLANE_INCONSISTENT",
+    "accepted_measurement": false,
+    "total_accuracy_known": false,
+    "pipe_axis_constrained_by_ground": false,
+    "calibration_validated": false,
+    "selection": {
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "rect_px": [
+        1050,
+        730,
+        420,
+        240
+      ],
+      "selection_source": "ASSISTANT_DIAGNOSTIC"
+    },
+    "surface_identity_source": "ASSISTANT_SUGGESTED_GROUND_NOT_CONFIRMED",
+    "valid_depth_fraction": 0.9565079365079365,
+    "left_plane": {
+      "status": "GROUND_PLANE_INCONSISTENT",
+      "sample_count": 4096,
+      "inlier_fraction": 0.337646484375,
+      "holdout_inlier_fraction": 0.33511413307430793,
+      "holdout_rms_mm": 2.811159861611885,
+      "occupied_cells": 16
+    }
+  },
+  "mouse_sensitivity": [
+    {
+      "mouse_angle_change_deg": -2.0,
+      "band": {
+        "revision": "left-image-axial-band-v1",
+        "coordinate_space": "rectified_left",
+        "image_size": [
+          1920,
+          1080
+        ],
+        "axis_segment_px": [
+          [
+            789.643820009556,
+            716.3559000974006
+          ],
+          [
+            1429.761378080459,
+            638.4485889565489
+          ]
+        ]
+      },
+      "result": {
+        "status": "ANALYZED",
+        "section_revision": "pooled-sections-common-station-v2",
+        "axis": {
+          "axis": [
+            0.9841971110259473,
+            -0.1252440163730873,
+            0.12517980272758533
+          ],
+          "singular_values": [
+            3.463407686838857,
+            0.06907976886910117,
+            0.005931296529278188
+          ],
+          "line_residual_degrees": [
+            0.08912806660203591,
+            0.19336937798117612,
+            0.06916121458677191,
+            0.04003153659009906,
+            0.084660593879522,
+            0.15831526468306814,
+            0.1330302946576471,
+            0.050165990485082586,
+            0.05540428819389051,
+            0.0017115216552528788,
+            0.03872662466410102,
+            0.08216953699327659
+          ],
+          "nullspace_ratio": 0.08586155724575983,
+          "status": "STABLE"
+        },
+        "boundary_pair_count": 3,
+        "conditional_section_count": 3,
+        "candidates": [
+          {
+            "candidate_id": "POOL-L01-POOL-R01",
+            "left_candidate_id": "POOL-L01",
+            "right_candidate_id": "POOL-R01",
+            "left_region_px": [
+              746,
+              274,
+              648,
+              147
+            ],
+            "right_region_px": [
+              502,
+              264,
+              891,
+              176
+            ],
+            "boundary_status": "STABLE",
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ],
+            "fit": {
+              "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+              "accepted_diameter_mm": null,
+              "axis": [
+                0.9841971110259473,
+                -0.1252440163730873,
+                0.12517980272758533
+              ],
+              "baseline_perpendicular_to_axis_mm": 9.827494385486029,
+              "diameter_source": "IMAGE_FIT",
+              "known_diameter_mm": null,
+              "ignored_occlusion_boundaries": [],
+              "observed_boundary_count": 4,
+              "status": "CONDITIONAL_FIT",
+              "trial_diameter_mm": 43.43007150716193,
+              "section_center_parameters_mm": [
+                -107.94238704411868,
+                2703.88519600939
+              ],
+              "center_at_reference_column_mm": [
+                34.89900288773572,
+                -113.25395090967427,
+                2731.4943102509483
+              ],
+              "reference_left_column_px": 1069.5,
+              "reprojection_rms_px": 0.6342663571068998,
+              "linear_condition": 750.6309382368966,
+              "predicted_lines": {
+                "left": [
+                  [
+                    0.120279038632834,
+                    0.9927401235295978,
+                    -436.91804531098455
+                  ],
+                  [
+                    -0.12227645095294594,
+                    -0.992496080366241,
+                    509.16679872138405
+                  ]
+                ],
+                "right": [
+                  [
+                    0.11997289968194927,
+                    0.9927771670127717,
+                    -425.84603967676003
+                  ],
+                  [
+                    -0.12196550607085714,
+                    -0.9925343396220001,
+                    497.91851495406826
+                  ]
+                ]
+              }
+            },
+            "pixel_error": {
+              "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumed_vertical_pixel_sigma_px": 0.5,
+              "point_counts_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "edge_order": [
+                [
+                  "left",
+                  "top"
+                ],
+                [
+                  "left",
+                  "bottom"
+                ],
+                [
+                  "right",
+                  "top"
+                ],
+                [
+                  "right",
+                  "bottom"
+                ]
+              ],
+              "diameter_and_z_jacobian_mm_per_px": [
+                [
+                  -2.2793459567605368,
+                  -1.6954543888935092,
+                  1.6645744348726055,
+                  2.310492193959348
+                ],
+                [
+                  -124.193026472567,
+                  -126.1329421774326,
+                  124.17904561823889,
+                  126.13859162643166
+                ]
+              ],
+              "section_parameters_jacobian_mm_per_px": [
+                [
+                  5.213990697372566,
+                  5.2931959157859865,
+                  -4.906139579466355,
+                  -4.985821062116571
+                ],
+                [
+                  -122.93284393929753,
+                  -124.85311103734603,
+                  122.92389959177399,
+                  124.86360334666642
+                ],
+                [
+                  -1.1396729783802684,
+                  -0.8477271944467546,
+                  0.8322872174363027,
+                  1.155246096979674
+                ]
+              ],
+              "scenarios": {
+                "IID_PIXELS_OPTIMISTIC": {
+                  "assumed_effective_samples_per_edge": [
+                    128,
+                    128,
+                    128,
+                    128
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      0.20338535819209358,
+                      -4.936521184737931,
+                      -0.03959496298467611
+                    ],
+                    [
+                      -4.9365211847384085,
+                      119.92707282996976,
+                      0.9619170738211512
+                    ],
+                    [
+                      -0.03959496298468435,
+                      0.9619170738212585,
+                      0.007899923876246636
+                    ]
+                  ],
+                  "diameter_sigma_mm": 0.17776303188510975,
+                  "radius_sigma_mm": 0.08888151594255488,
+                  "center_z_sigma_mm": 11.063161501484583,
+                  "normal_95_halfwidth_diameter_mm": 0.3484155424948151,
+                  "normal_95_halfwidth_radius_mm": 0.17420777124740755,
+                  "normal_95_halfwidth_center_z_mm": 21.683796542909782
+                },
+                "COHERENT_EDGE_OFFSETS": {
+                  "assumed_effective_samples_per_edge": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      26.033059807958153,
+                      -631.8680186560584,
+                      -5.068149502966317
+                    ],
+                    [
+                      -631.8680186560584,
+                      15350.496996567428,
+                      123.1251996748515
+                    ],
+                    [
+                      -5.068149502966317,
+                      123.1251996748515,
+                      1.0111978626873377
+                    ]
+                  ],
+                  "diameter_sigma_mm": 2.011166688951801,
+                  "radius_sigma_mm": 1.0055833444759006,
+                  "center_z_sigma_mm": 125.16469809306021,
+                  "normal_95_halfwidth_diameter_mm": 3.94188671034553,
+                  "normal_95_halfwidth_radius_mm": 1.970943355172765,
+                  "normal_95_halfwidth_center_z_mm": 245.322808262398
+                }
+              },
+              "excluded": [
+                "CALIBRATION_SCALE_AND_RECTIFICATION",
+                "MISIDENTIFIED_SILHOUETTE",
+                "OCCLUSION_CLASSIFICATION",
+                "AXIS_ERROR",
+                "GENERAL_PIXEL_NOISE_CORRELATION"
+              ]
+            },
+            "window_sensitivity": {
+              "diameter_difference_mm": 0.1805454182464885,
+              "center_difference_mm": 11.36405198201591,
+              "center_difference_components_mm": [
+                -0.2577185033825913,
+                11.36112928466946
+              ],
+              "stable": false,
+              "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+            },
+            "common_axial_support": {
+              "revision": "common-axial-stations-v1",
+              "status": "COMMON_AXIAL_SUPPORT",
+              "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+              "supplies_measured_depth": false,
+              "windows": [
+                {
+                  "index": 0,
+                  "interval_mm": [
+                    244.6113873636195,
+                    313.1029042044389
+                  ],
+                  "point_counts": [
+                    110,
+                    107,
+                    111,
+                    108
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 1,
+                  "interval_mm": [
+                    313.1029042044389,
+                    381.59442104525834
+                  ],
+                  "point_counts": [
+                    103,
+                    105,
+                    106,
+                    110
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 2,
+                  "interval_mm": [
+                    381.59442104525834,
+                    450.0859378860778
+                  ],
+                  "point_counts": [
+                    108,
+                    107,
+                    109,
+                    108
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 3,
+                  "interval_mm": [
+                    450.0859378860778,
+                    518.5774547268971
+                  ],
+                  "point_counts": [
+                    108,
+                    105,
+                    108,
+                    107
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 4,
+                  "interval_mm": [
+                    518.5774547268971,
+                    587.0689715677166
+                  ],
+                  "point_counts": [
+                    106,
+                    108,
+                    108,
+                    106
+                  ],
+                  "accepted": true
+                }
+              ],
+              "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+              "axial_displacement_in_center_error": false,
+              "common_interval_mm": [
+                244.6113873636195,
+                587.0689715677166
+              ],
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "window_edges_mm": [
+                244.6113873636195,
+                313.1029042044389,
+                381.59442104525834,
+                450.0859378860778,
+                518.5774547268971,
+                587.0689715677166
+              ],
+              "boundary_keys": [
+                "left:top",
+                "left:bottom",
+                "right:top",
+                "right:bottom"
+              ]
+            },
+            "dimension_status": "CONDITIONAL",
+            "included_in_section_model": true
+          },
+          {
+            "candidate_id": "POOL-L02-POOL-R02",
+            "left_candidate_id": "POOL-L02",
+            "right_candidate_id": "POOL-R02",
+            "left_region_px": [
+              756,
+              357,
+              650,
+              162
+            ],
+            "right_region_px": [
+              504,
+              345,
+              900,
+              191
+            ],
+            "boundary_status": "STABLE",
+            "reason_codes": [],
+            "fit": {
+              "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+              "accepted_diameter_mm": null,
+              "axis": [
+                0.9841971110259473,
+                -0.1252440163730873,
+                0.12517980272758533
+              ],
+              "baseline_perpendicular_to_axis_mm": 9.827494385486029,
+              "diameter_source": "IMAGE_FIT",
+              "known_diameter_mm": null,
+              "ignored_occlusion_boundaries": [],
+              "observed_boundary_count": 4,
+              "status": "CONDITIONAL_FIT",
+              "trial_diameter_mm": 42.611662644053204,
+              "section_center_parameters_mm": [
+                -42.33180480103585,
+                2220.049511054205
+              ],
+              "center_at_reference_column_mm": [
+                34.245994652405614,
+                -47.03115999050703,
+                2242.6861320859607
+              ],
+              "reference_left_column_px": 1080.5,
+              "reprojection_rms_px": 0.67677315377306,
+              "linear_condition": 635.0502608649496,
+              "predicted_lines": {
+                "left": [
+                  [
+                    0.12267613921408299,
+                    0.992446756691525,
+                    -523.6258964967465
+                  ],
+                  [
+                    -0.12506086601139296,
+                    -0.9921490713559533,
+                    609.908823168887
+                  ]
+                ],
+                "right": [
+                  [
+                    0.12229620600193974,
+                    0.9924936463260262,
+                    -509.88144123706536
+                  ],
+                  [
+                    -0.12467381309897373,
+                    -0.9921977828675904,
+                    595.9031416378795
+                  ]
+                ]
+              }
+            },
+            "pixel_error": {
+              "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumed_vertical_pixel_sigma_px": 0.5,
+              "point_counts_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "edge_order": [
+                [
+                  "left",
+                  "top"
+                ],
+                [
+                  "left",
+                  "bottom"
+                ],
+                [
+                  "right",
+                  "top"
+                ],
+                [
+                  "right",
+                  "bottom"
+                ]
+              ],
+              "diameter_and_z_jacobian_mm_per_px": [
+                [
+                  -1.8058135536300313,
+                  -1.329656594220907,
+                  1.3007064087328502,
+                  1.8350327864430938
+                ],
+                [
+                  -81.88360569878114,
+                  -83.40237784758756,
+                  81.87200424769344,
+                  83.4170313112736
+                ]
+              ],
+              "section_parameters_jacobian_mm_per_px": [
+                [
+                  1.7968645541176187,
+                  1.8279210470772966,
+                  -1.544213007498243,
+                  -1.575676986160417
+                ],
+                [
+                  -81.05310833248495,
+                  -82.55651265325014,
+                  81.04564517050676,
+                  82.57504080449053
+                ],
+                [
+                  -0.9029067768150156,
+                  -0.6648282971104535,
+                  0.6503532043664251,
+                  0.9175163932215469
+                ]
+              ],
+              "scenarios": {
+                "IID_PIXELS_OPTIMISTIC": {
+                  "assumed_effective_samples_per_edge": [
+                    128,
+                    128,
+                    128,
+                    128
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      0.02233890599070191,
+                      -1.0777716350491464,
+                      -0.010327430517752033
+                    ],
+                    [
+                      -1.0777716350491744,
+                      52.29022192778671,
+                      0.5010575864141511
+                    ],
+                    [
+                      -0.010327430517752135,
+                      0.5010575864141433,
+                      0.004925777119473818
+                    ]
+                  ],
+                  "diameter_sigma_mm": 0.14036776153339225,
+                  "radius_sigma_mm": 0.07018388076669613,
+                  "center_z_sigma_mm": 7.305109906000986,
+                  "normal_95_halfwidth_diameter_mm": 0.2751208126054488,
+                  "normal_95_halfwidth_radius_mm": 0.1375604063027244,
+                  "normal_95_halfwidth_center_z_mm": 14.318015415761932
+                },
+                "COHERENT_EDGE_OFFSETS": {
+                  "assumed_effective_samples_per_edge": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      2.859342339358703,
+                      -137.95289382903837,
+                      -1.3219120406967864
+                    ],
+                    [
+                      -137.95289382903837,
+                      6693.054529197689,
+                      64.13538879090044
+                    ],
+                    [
+                      -1.3219120406967864,
+                      64.13538879090044,
+                      0.6305082336293049
+                    ]
+                  ],
+                  "diameter_sigma_mm": 1.5880909717384641,
+                  "radius_sigma_mm": 0.7940454858692321,
+                  "center_z_sigma_mm": 82.64730441034595,
+                  "normal_95_halfwidth_diameter_mm": 3.1126583046073897,
+                  "normal_95_halfwidth_radius_mm": 1.5563291523036948,
+                  "normal_95_halfwidth_center_z_mm": 161.98871664427807
+                }
+              },
+              "excluded": [
+                "CALIBRATION_SCALE_AND_RECTIFICATION",
+                "MISIDENTIFIED_SILHOUETTE",
+                "OCCLUSION_CLASSIFICATION",
+                "AXIS_ERROR",
+                "GENERAL_PIXEL_NOISE_CORRELATION"
+              ]
+            },
+            "window_sensitivity": {
+              "diameter_difference_mm": 0.10342524376849838,
+              "center_difference_mm": 1.2135739450357315,
+              "center_difference_components_mm": [
+                0.08020498422176559,
+                -1.21092067476593
+              ],
+              "stable": true,
+              "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+            },
+            "common_axial_support": {
+              "revision": "common-axial-stations-v1",
+              "status": "COMMON_AXIAL_SUPPORT",
+              "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+              "supplies_measured_depth": false,
+              "windows": [
+                {
+                  "index": 0,
+                  "interval_mm": [
+                    211.91639602704586,
+                    266.5161811259594
+                  ],
+                  "point_counts": [
+                    106,
+                    106,
+                    106,
+                    100
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 1,
+                  "interval_mm": [
+                    266.5161811259594,
+                    321.115966224873
+                  ],
+                  "point_counts": [
+                    102,
+                    102,
+                    104,
+                    102
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 2,
+                  "interval_mm": [
+                    321.115966224873,
+                    375.71575132378655
+                  ],
+                  "point_counts": [
+                    104,
+                    104,
+                    104,
+                    105
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 3,
+                  "interval_mm": [
+                    375.71575132378655,
+                    430.3155364227001
+                  ],
+                  "point_counts": [
+                    103,
+                    101,
+                    105,
+                    100
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 4,
+                  "interval_mm": [
+                    430.3155364227001,
+                    484.91532152161375
+                  ],
+                  "point_counts": [
+                    103,
+                    104,
+                    102,
+                    100
+                  ],
+                  "accepted": true
+                }
+              ],
+              "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+              "axial_displacement_in_center_error": false,
+              "common_interval_mm": [
+                211.91639602704586,
+                484.91532152161375
+              ],
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "window_edges_mm": [
+                211.91639602704586,
+                266.5161811259594,
+                321.115966224873,
+                375.71575132378655,
+                430.3155364227001,
+                484.91532152161375
+              ],
+              "boundary_keys": [
+                "left:top",
+                "left:bottom",
+                "right:top",
+                "right:bottom"
+              ]
+            },
+            "dimension_status": "CONDITIONAL",
+            "included_in_section_model": true
+          },
+          {
+            "candidate_id": "POOL-L03-POOL-R03",
+            "left_candidate_id": "POOL-L03",
+            "right_candidate_id": "POOL-R03",
+            "left_region_px": [
+              772,
+              482,
+              643,
+              118
+            ],
+            "right_region_px": [
+              519,
+              473,
+              895,
+              149
+            ],
+            "boundary_status": "STABLE",
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ],
+            "fit": {
+              "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+              "accepted_diameter_mm": null,
+              "axis": [
+                0.9841971110259473,
+                -0.1252440163730873,
+                0.12517980272758533
+              ],
+              "baseline_perpendicular_to_axis_mm": 9.827494385486029,
+              "diameter_source": "IMAGE_FIT",
+              "known_diameter_mm": null,
+              "ignored_occlusion_boundaries": [],
+              "observed_boundary_count": 4,
+              "status": "CONDITIONAL_FIT",
+              "trial_diameter_mm": 28.58333683922466,
+              "section_center_parameters_mm": [
+                15.160151362476926,
+                3081.7996854987214
+              ],
+              "center_at_reference_column_mm": [
+                56.359568192966435,
+                8.110371320635508,
+                3113.1580393202216
+              ],
+              "reference_left_column_px": 1093.0,
+              "reprojection_rms_px": 0.4933164880070528,
+              "linear_condition": 802.6065035076871,
+              "predicted_lines": {
+                "left": [
+                  [
+                    0.12627198206309453,
+                    0.9919956585317586,
+                    -653.7374454117161
+                  ],
+                  [
+                    -0.12742365742258774,
+                    -0.9918483813209814,
+                    695.4204054339266
+                  ]
+                ],
+                "right": [
+                  [
+                    0.1259902292797685,
+                    0.992031482426859,
+                    -643.5406792129243
+                  ],
+                  [
+                    -0.12713936716901902,
+                    -0.9918848629331236,
+                    685.1305052357828
+                  ]
+                ]
+              }
+            },
+            "pixel_error": {
+              "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumed_vertical_pixel_sigma_px": 0.5,
+              "point_counts_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "edge_order": [
+                [
+                  "left",
+                  "top"
+                ],
+                [
+                  "left",
+                  "bottom"
+                ],
+                [
+                  "right",
+                  "top"
+                ],
+                [
+                  "right",
+                  "bottom"
+                ]
+              ],
+              "diameter_and_z_jacobian_mm_per_px": [
+                [
+                  -1.7661304038952608,
+                  -1.079019940324386,
+                  1.0663380869513617,
+                  1.7789057610601233
+                ],
+                [
+                  -154.41568729173014,
+                  -155.8194954706687,
+                  154.43699417050993,
+                  155.80981625347704
+                ]
+              ],
+              "section_parameters_jacobian_mm_per_px": [
+                [
+                  -0.40272422535261754,
+                  -0.4080128979703801,
+                  0.7528573131511607,
+                  0.7579595763526825
+                ],
+                [
+                  -152.85471901975143,
+                  -154.24436220797816,
+                  152.8813871600005,
+                  154.24035580458622
+                ],
+                [
+                  -0.8830652019476304,
+                  -0.539509970162193,
+                  0.5331690434756808,
+                  0.8894528805300617
+                ]
+              ],
+              "scenarios": {
+                "IID_PIXELS_OPTIMISTIC": {
+                  "assumed_effective_samples_per_edge": [
+                    128,
+                    128,
+                    128,
+                    128
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      0.002871053465045698,
+                      0.6962949763901362,
+                      0.003225379277363732
+                    ],
+                    [
+                      0.6962949763901365,
+                      184.2189396545078,
+                      0.8533510684466896
+                    ],
+                    [
+                      0.003225379277363738,
+                      0.853351068446691,
+                      0.004192197312873804
+                    ]
+                  ],
+                  "diameter_sigma_mm": 0.12949435992156266,
+                  "radius_sigma_mm": 0.06474717996078133,
+                  "center_z_sigma_mm": 13.71108379164113,
+                  "normal_95_halfwidth_diameter_mm": 0.2538089454462628,
+                  "normal_95_halfwidth_radius_mm": 0.1269044727231314,
+                  "normal_95_halfwidth_center_z_mm": 26.873724231616613
+                },
+                "COHERENT_EDGE_OFFSETS": {
+                  "assumed_effective_samples_per_edge": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      0.3674895449864941,
+                      89.12445315975577,
+                      0.41283207945967904
+                    ],
+                    [
+                      89.12445315975577,
+                      23579.67357456111,
+                      109.22455157351035
+                    ],
+                    [
+                      0.41283207945967904,
+                      109.22455157351035,
+                      0.5365677035998041
+                    ]
+                  ],
+                  "diameter_sigma_mm": 1.4650156362302815,
+                  "radius_sigma_mm": 0.7325078181151408,
+                  "center_z_sigma_mm": 155.12205167212326,
+                  "normal_95_halfwidth_diameter_mm": 2.8714306470113518,
+                  "normal_95_halfwidth_radius_mm": 1.4357153235056759,
+                  "normal_95_halfwidth_center_z_mm": 304.0392212773616
+                }
+              },
+              "excluded": [
+                "CALIBRATION_SCALE_AND_RECTIFICATION",
+                "MISIDENTIFIED_SILHOUETTE",
+                "OCCLUSION_CLASSIFICATION",
+                "AXIS_ERROR",
+                "GENERAL_PIXEL_NOISE_CORRELATION"
+              ]
+            },
+            "window_sensitivity": {
+              "diameter_difference_mm": 0.3943174328539598,
+              "center_difference_mm": 37.12555491307471,
+              "center_difference_components_mm": [
+                -0.0541605909931242,
+                -37.125515406982686
+              ],
+              "stable": false,
+              "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+            },
+            "common_axial_support": {
+              "revision": "common-axial-stations-v1",
+              "status": "COMMON_AXIAL_SUPPORT",
+              "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+              "supplies_measured_depth": false,
+              "windows": [
+                {
+                  "index": 0,
+                  "interval_mm": [
+                    224.5404551949659,
+                    314.40955914212543
+                  ],
+                  "point_counts": [
+                    126,
+                    127,
+                    126,
+                    126
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 1,
+                  "interval_mm": [
+                    314.40955914212543,
+                    404.278663089285
+                  ],
+                  "point_counts": [
+                    124,
+                    125,
+                    125,
+                    125
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 2,
+                  "interval_mm": [
+                    404.278663089285,
+                    494.1477670364445
+                  ],
+                  "point_counts": [
+                    124,
+                    124,
+                    125,
+                    125
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 3,
+                  "interval_mm": [
+                    494.1477670364445,
+                    584.0168709836041
+                  ],
+                  "point_counts": [
+                    124,
+                    123,
+                    123,
+                    123
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 4,
+                  "interval_mm": [
+                    584.0168709836041,
+                    673.8859749307636
+                  ],
+                  "point_counts": [
+                    120,
+                    123,
+                    123,
+                    123
+                  ],
+                  "accepted": true
+                }
+              ],
+              "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+              "axial_displacement_in_center_error": false,
+              "common_interval_mm": [
+                224.5404551949659,
+                673.8859749307636
+              ],
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "window_edges_mm": [
+                224.5404551949659,
+                314.40955914212543,
+                404.278663089285,
+                494.1477670364445,
+                584.0168709836041,
+                673.8859749307636
+              ],
+              "boundary_keys": [
+                "left:top",
+                "left:bottom",
+                "right:top",
+                "right:bottom"
+              ]
+            },
+            "dimension_status": "CONDITIONAL",
+            "included_in_section_model": true
+          }
+        ],
+        "position_assessment": null,
+        "aggregation_band": {
+          "selection": {
+            "revision": "left-image-axial-band-v1",
+            "coordinate_space": "rectified_left",
+            "image_size": [
+              1920,
+              1080
+            ],
+            "axis_segment_px": [
+              [
+                789.643820009556,
+                716.3559000974006
+              ],
+              [
+                1429.761378080459,
+                638.4485889565489
+              ]
+            ]
+          },
+          "axis_image": [
+            0.9926748829056522,
+            -0.12081629380282209
+          ],
+          "span_px": 644.8410945960667,
+          "left_scope": "STRICT_USER_BAND",
+          "right_scope": "EPIPOLAR_SEARCH_ENVELOPE",
+          "disparity_range_px": [
+            0.0,
+            255.0
+          ],
+          "views": {
+            "left": {
+              "station_interval_px": [
+                0.0,
+                644.8410945960667
+              ],
+              "selected_pixels": 701570,
+              "image_origin_px": [
+                0,
+                0
+              ]
+            },
+            "right": {
+              "station_interval_px": [
+                -253.13209514094132,
+                644.8410945960667
+              ],
+              "selected_pixels": 976970,
+              "image_origin_px": [
+                0,
+                0
+              ]
+            }
+          },
+          "supplies_metric_length_or_3d_axis": false
+        },
+        "proposal_audit": {
+          "left": {
+            "revision": "image-strips-soft-axis-v5",
+            "policy_sha256": "5430481a171d3f97020fcb5124ee5d913c2d9bd2e1eb301c00c0dda8d7bb4c99",
+            "scope": "IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+            "global_axis_filter_applied": false,
+            "direction_estimates": [
+              {
+                "appearance": "hue-0",
+                "observed_angle_deg": -6.923375262092077,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.015840280034130787
+              },
+              {
+                "appearance": "hue-120",
+                "observed_angle_deg": -7.2657180036714575,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.3265024615452483
+              },
+              {
+                "appearance": "hue-15",
+                "observed_angle_deg": -6.884443183823005,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.05477235830320346
+              },
+              {
+                "appearance": "hue-105",
+                "observed_angle_deg": -7.2657180036714575,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.3265024615452483
+              },
+              {
+                "appearance": "hue-165",
+                "observed_angle_deg": -7.422771373446729,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.48355583132052155
+              },
+              {
+                "appearance": "neutral",
+                "observed_angle_deg": -7.323105253077903,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.38388971095169544
+              }
+            ],
+            "truncated": false,
+            "candidate_count": 5
+          },
+          "right": {
+            "revision": "image-strips-soft-axis-v5",
+            "policy_sha256": "5430481a171d3f97020fcb5124ee5d913c2d9bd2e1eb301c00c0dda8d7bb4c99",
+            "scope": "IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+            "global_axis_filter_applied": false,
+            "direction_estimates": [
+              {
+                "appearance": "hue-0",
+                "observed_angle_deg": -7.374113105799558,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.43489756367335064
+              },
+              {
+                "appearance": "hue-90",
+                "observed_angle_deg": -7.910487861320661,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.9712723191944521
+              },
+              {
+                "appearance": "hue-120",
+                "observed_angle_deg": -6.954247717140534,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.015032175014326847
+              },
+              {
+                "appearance": "hue-15",
+                "observed_angle_deg": -8.003624320842954,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 1.0644087787167458
+              },
+              {
+                "appearance": "hue-105",
+                "observed_angle_deg": -7.068257234766388,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.1290416926401797
+              },
+              {
+                "appearance": "hue-165",
+                "observed_angle_deg": -6.649211468807766,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.2900040733184426
+              },
+              {
+                "appearance": "neutral",
+                "observed_angle_deg": -7.2155024528935225,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 0.2762869107673146
+              }
+            ],
+            "truncated": false,
+            "candidate_count": 7
+          }
+        },
+        "views": {
+          "left": [
+            {
+              "candidate_id": "POOL-L01",
+              "appearance": "hue-0",
+              "region_px": [
+                746,
+                274,
+                648,
+                147
+              ],
+              "width_px": 70.25566101074219,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-L02",
+              "appearance": "hue-0",
+              "region_px": [
+                756,
+                357,
+                650,
+                162
+              ],
+              "width_px": 84.61512756347656,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-L03",
+              "appearance": "neutral",
+              "region_px": [
+                772,
+                482,
+                643,
+                118
+              ],
+              "width_px": 38.4173583984375,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-L04",
+              "appearance": "hue-120",
+              "region_px": [
+                778,
+                531,
+                651,
+                183
+              ],
+              "width_px": 105.10414123535156,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-L05",
+              "appearance": "neutral",
+              "region_px": [
+                995,
+                987,
+                488,
+                93
+              ],
+              "width_px": 90.27996063232422,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": [
+                "TRANSVERSE_BOUNDARY_CLIPPED"
+              ]
+            }
+          ],
+          "right": [
+            {
+              "candidate_id": "POOL-R01",
+              "appearance": "hue-0",
+              "region_px": [
+                502,
+                264,
+                891,
+                176
+              ],
+              "width_px": 71.78507995605469,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R02",
+              "appearance": "hue-0",
+              "region_px": [
+                504,
+                345,
+                900,
+                191
+              ],
+              "width_px": 86.57623291015625,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R03",
+              "appearance": "neutral",
+              "region_px": [
+                519,
+                473,
+                895,
+                149
+              ],
+              "width_px": 38.768341064453125,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R04",
+              "appearance": "hue-105",
+              "region_px": [
+                525,
+                518,
+                903,
+                212
+              ],
+              "width_px": 107.55525970458984,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R05",
+              "appearance": "neutral",
+              "region_px": [
+                889,
+                979,
+                594,
+                101
+              ],
+              "width_px": 96.74871826171875,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": [
+                "TRANSVERSE_BOUNDARY_CLIPPED"
+              ]
+            },
+            {
+              "candidate_id": "POOL-R06",
+              "appearance": "neutral",
+              "region_px": [
+                574,
+                1006,
+                109,
+                55
+              ],
+              "width_px": 45.14863967895508,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R07",
+              "appearance": "neutral",
+              "region_px": [
+                781,
+                1024,
+                115,
+                56
+              ],
+              "width_px": 44.40443420410156,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": [
+                "TRANSVERSE_BOUNDARY_CLIPPED"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "mouse_angle_change_deg": 2.0,
+      "band": {
+        "revision": "left-image-axial-band-v1",
+        "coordinate_space": "rectified_left",
+        "image_size": [
+          1920,
+          1080
+        ],
+        "axis_segment_px": [
+          [
+            787.7061974571523,
+            693.9348391338717
+          ],
+          [
+            1431.6990006328626,
+            660.8696499200778
+          ]
+        ]
+      },
+      "result": {
+        "status": "ANALYZED",
+        "section_revision": "pooled-sections-common-station-v2",
+        "axis": {
+          "axis": [
+            0.9831436758446872,
+            -0.1249397463584368,
+            0.13348622560581636
+          ],
+          "singular_values": [
+            3.463406639092318,
+            0.06917623945873456,
+            0.0053944587865939
+          ],
+          "line_residual_degrees": [
+            0.0853675843806617,
+            0.16407549835826438,
+            0.07585742497378141,
+            0.05982690139307783,
+            0.03958401063888429,
+            0.15782236413537584,
+            0.10357260406849017,
+            0.0642206793230367,
+            0.050916858047061635,
+            0.0001453060996525011,
+            0.030964526297009368,
+            0.08432507150738665
+          ],
+          "nullspace_ratio": 0.07798138246314813,
+          "status": "STABLE"
+        },
+        "boundary_pair_count": 3,
+        "conditional_section_count": 3,
+        "candidates": [
+          {
+            "candidate_id": "POOL-L01-POOL-R01",
+            "left_candidate_id": "POOL-L01",
+            "right_candidate_id": "POOL-R01",
+            "left_region_px": [
+              771,
+              271,
+              645,
+              147
+            ],
+            "right_region_px": [
+              517,
+              261,
+              898,
+              178
+            ],
+            "boundary_status": "STABLE",
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ],
+            "fit": {
+              "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+              "accepted_diameter_mm": null,
+              "axis": [
+                0.9831436758446868,
+                -0.12493974635843674,
+                0.1334862256058163
+              ],
+              "baseline_perpendicular_to_axis_mm": 10.147070558757083,
+              "diameter_source": "IMAGE_FIT",
+              "known_diameter_mm": null,
+              "ignored_occlusion_boundaries": [],
+              "observed_boundary_count": 4,
+              "status": "CONDITIONAL_FIT",
+              "trial_diameter_mm": 43.78108668792076,
+              "section_center_parameters_mm": [
+                -108.89379636200486,
+                2722.7274141549156
+              ],
+              "center_at_reference_column_mm": [
+                49.89283271641625,
+                -116.11005629348996,
+                2755.9521525034365
+              ],
+              "reference_left_column_px": 1093.0,
+              "reprojection_rms_px": 0.614399066404893,
+              "linear_condition": 784.2746383989198,
+              "predicted_lines": {
+                "left": [
+                  [
+                    0.1197035185457455,
+                    0.9928096834981861,
+                    -436.24262519630975
+                  ],
+                  [
+                    -0.12183595856363344,
+                    -0.992550250214507,
+                    508.6207773766657
+                  ]
+                ],
+                "right": [
+                  [
+                    0.11938090194646443,
+                    0.9928485283518573,
+                    -425.29400032301254
+                  ],
+                  [
+                    -0.12150789311627994,
+                    -0.9925904653533816,
+                    497.48466393497944
+                  ]
+                ]
+              }
+            },
+            "pixel_error": {
+              "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumed_vertical_pixel_sigma_px": 0.5,
+              "point_counts_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "edge_order": [
+                [
+                  "left",
+                  "top"
+                ],
+                [
+                  "left",
+                  "bottom"
+                ],
+                [
+                  "right",
+                  "top"
+                ],
+                [
+                  "right",
+                  "bottom"
+                ]
+              ],
+              "diameter_and_z_jacobian_mm_per_px": [
+                [
+                  -2.3234929552767625,
+                  -1.7369935393897862,
+                  1.7030721996457743,
+                  2.3577083602603466
+                ],
+                [
+                  -126.91672106435817,
+                  -129.0450367727226,
+                  126.89749248233056,
+                  129.05763913242936
+                ]
+              ],
+              "section_parameters_jacobian_mm_per_px": [
+                [
+                  5.323596704282778,
+                  5.410437015590617,
+                  -5.0127593920865365,
+                  -5.100575712119024
+                ],
+                [
+                  -125.38142110841363,
+                  -127.4840320516114,
+                  125.36768439549633,
+                  127.50174731709649
+                ],
+                [
+                  -1.1617464776383812,
+                  -0.8684967696948931,
+                  0.8515360998228871,
+                  1.1788541801301733
+                ]
+              ],
+              "scenarios": {
+                "IID_PIXELS_OPTIMISTIC": {
+                  "assumed_effective_samples_per_edge": [
+                    128,
+                    128,
+                    128,
+                    128
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      0.21241902532258616,
+                      -5.148495575656808,
+                      -0.041338019935204424
+                    ],
+                    [
+                      -5.148495575656318,
+                      124.89707470712011,
+                      1.002819982690945
+                    ],
+                    [
+                      -0.04133801993520088,
+                      1.0028199826909545,
+                      0.008239701888382077
+                    ]
+                  ],
+                  "diameter_sigma_mm": 0.1815456073650043,
+                  "radius_sigma_mm": 0.09077280368250215,
+                  "center_z_sigma_mm": 11.312345996405712,
+                  "normal_95_halfwidth_diameter_mm": 0.3558293904354084,
+                  "normal_95_halfwidth_radius_mm": 0.1779146952177042,
+                  "normal_95_halfwidth_center_z_mm": 22.172198152955197
+                },
+                "COHERENT_EDGE_OFFSETS": {
+                  "assumed_effective_samples_per_edge": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      27.18928497188346,
+                      -658.9986997839512,
+                      -5.291249342908951
+                    ],
+                    [
+                      -658.9986997839512,
+                      15986.607761725782,
+                      128.36049279278168
+                    ],
+                    [
+                      -5.291249342908951,
+                      128.36049279278168,
+                      1.0546881061469018
+                    ]
+                  ],
+                  "diameter_sigma_mm": 2.053960180867099,
+                  "radius_sigma_mm": 1.0269800904335495,
+                  "center_z_sigma_mm": 127.98371323936195,
+                  "normal_95_halfwidth_diameter_mm": 4.025761954499514,
+                  "normal_95_halfwidth_radius_mm": 2.012880977249757,
+                  "normal_95_halfwidth_center_z_mm": 250.8480779491494
+                }
+              },
+              "excluded": [
+                "CALIBRATION_SCALE_AND_RECTIFICATION",
+                "MISIDENTIFIED_SILHOUETTE",
+                "OCCLUSION_CLASSIFICATION",
+                "AXIS_ERROR",
+                "GENERAL_PIXEL_NOISE_CORRELATION"
+              ]
+            },
+            "window_sensitivity": {
+              "diameter_difference_mm": 0.5899787018448208,
+              "center_difference_mm": 39.1407423897484,
+              "center_difference_components_mm": [
+                -1.4194446333473394,
+                39.11499574016989
+              ],
+              "stable": false,
+              "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+            },
+            "common_axial_support": {
+              "revision": "common-axial-stations-v1",
+              "status": "COMMON_AXIAL_SUPPORT",
+              "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+              "supplies_measured_depth": false,
+              "windows": [
+                {
+                  "index": 0,
+                  "interval_mm": [
+                    282.4289007887486,
+                    351.34106091521534
+                  ],
+                  "point_counts": [
+                    105,
+                    110,
+                    111,
+                    107
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 1,
+                  "interval_mm": [
+                    351.34106091521534,
+                    420.2532210416821
+                  ],
+                  "point_counts": [
+                    107,
+                    105,
+                    106,
+                    109
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 2,
+                  "interval_mm": [
+                    420.2532210416821,
+                    489.16538116814877
+                  ],
+                  "point_counts": [
+                    109,
+                    106,
+                    109,
+                    108
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 3,
+                  "interval_mm": [
+                    489.16538116814877,
+                    558.0775412946155
+                  ],
+                  "point_counts": [
+                    107,
+                    106,
+                    108,
+                    108
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 4,
+                  "interval_mm": [
+                    558.0775412946155,
+                    626.9897014210823
+                  ],
+                  "point_counts": [
+                    107,
+                    107,
+                    107,
+                    107
+                  ],
+                  "accepted": true
+                }
+              ],
+              "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+              "axial_displacement_in_center_error": false,
+              "common_interval_mm": [
+                282.4289007887486,
+                626.9897014210823
+              ],
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "window_edges_mm": [
+                282.4289007887486,
+                351.34106091521534,
+                420.2532210416821,
+                489.16538116814877,
+                558.0775412946155,
+                626.9897014210823
+              ],
+              "boundary_keys": [
+                "left:top",
+                "left:bottom",
+                "right:top",
+                "right:bottom"
+              ]
+            },
+            "dimension_status": "CONDITIONAL",
+            "included_in_section_model": true
+          },
+          {
+            "candidate_id": "POOL-L02-POOL-R02",
+            "left_candidate_id": "POOL-L02",
+            "right_candidate_id": "POOL-R02",
+            "left_region_px": [
+              775,
+              355,
+              645,
+              163
+            ],
+            "right_region_px": [
+              521,
+              342,
+              899,
+              192
+            ],
+            "boundary_status": "STABLE",
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ],
+            "fit": {
+              "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+              "accepted_diameter_mm": null,
+              "axis": [
+                0.9831436758446868,
+                -0.12493974635843674,
+                0.1334862256058163
+              ],
+              "baseline_perpendicular_to_axis_mm": 10.147070558757083,
+              "diameter_source": "IMAGE_FIT",
+              "known_diameter_mm": null,
+              "ignored_occlusion_boundaries": [],
+              "observed_boundary_count": 4,
+              "status": "CONDITIONAL_FIT",
+              "trial_diameter_mm": 42.79762344654599,
+              "section_center_parameters_mm": [
+                -42.525681779000514,
+                2225.7575539975824
+              ],
+              "center_at_reference_column_mm": [
+                42.81901541970325,
+                -48.30921812255739,
+                2252.398121498333
+              ],
+              "reference_left_column_px": 1097.0,
+              "reprojection_rms_px": 0.6756005464597428,
+              "linear_condition": 623.4784785645846,
+              "predicted_lines": {
+                "left": [
+                  [
+                    0.12226336530494544,
+                    0.9924976924428135,
+                    -523.1296048226483
+                  ],
+                  [
+                    -0.12481098659233608,
+                    -0.992180536810639,
+                    609.6255817479959
+                  ]
+                ],
+                "right": [
+                  [
+                    0.12186067817608351,
+                    0.9925472155592725,
+                    -509.45989553815514
+                  ],
+                  [
+                    -0.12440019893246158,
+                    -0.9922321253142149,
+                    595.6770408359057
+                  ]
+                ]
+              }
+            },
+            "pixel_error": {
+              "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumed_vertical_pixel_sigma_px": 0.5,
+              "point_counts_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "edge_order": [
+                [
+                  "left",
+                  "top"
+                ],
+                [
+                  "left",
+                  "bottom"
+                ],
+                [
+                  "right",
+                  "top"
+                ],
+                [
+                  "right",
+                  "bottom"
+                ]
+              ],
+              "diameter_and_z_jacobian_mm_per_px": [
+                [
+                  -1.8238514048086074,
+                  -1.3480176154808987,
+                  1.316417587990344,
+                  1.8555086834803092
+                ],
+                [
+                  -82.78163453039724,
+                  -84.43377399399196,
+                  82.76485167256396,
+                  84.443183835956
+                ]
+              ],
+              "section_parameters_jacobian_mm_per_px": [
+                [
+                  1.8152262553849852,
+                  1.8489851627060716,
+                  -1.561357943630739,
+                  -1.595534649096848
+                ],
+                [
+                  -81.79824283017297,
+                  -83.43079784066504,
+                  81.78595963979205,
+                  83.444398853635
+                ],
+                [
+                  -0.9119257024043037,
+                  -0.6740088077404494,
+                  0.658208793995172,
+                  0.9277543417401546
+                ]
+              ],
+              "scenarios": {
+                "IID_PIXELS_OPTIMISTIC": {
+                  "assumed_effective_samples_per_edge": [
+                    128,
+                    128,
+                    128,
+                    128
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      0.022846731045276333,
+                      -1.100758535068663,
+                      -0.010565491475666936
+                    ],
+                    [
+                      -1.1007585350686564,
+                      53.32806310949353,
+                      0.5118642530428305
+                    ],
+                    [
+                      -0.010565491475667224,
+                      0.5118642530428477,
+                      0.005038699553362175
+                    ]
+                  ],
+                  "diameter_sigma_mm": 0.14196759564579764,
+                  "radius_sigma_mm": 0.07098379782289882,
+                  "center_z_sigma_mm": 7.390205439118258,
+                  "normal_95_halfwidth_diameter_mm": 0.27825648746576337,
+                  "normal_95_halfwidth_radius_mm": 0.13912824373288168,
+                  "normal_95_halfwidth_center_z_mm": 14.484802660671786
+                },
+                "COHERENT_EDGE_OFFSETS": {
+                  "assumed_effective_samples_per_edge": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      2.9243404836884013,
+                      -140.89505318872256,
+                      -1.3523868725446029
+                    ],
+                    [
+                      -140.89505318872256,
+                      6825.89036317002,
+                      65.51878845509168
+                    ],
+                    [
+                      -1.3523868725446029,
+                      65.51878845509168,
+                      0.6449658236818927
+                    ]
+                  ],
+                  "diameter_sigma_mm": 1.6061952853646317,
+                  "radius_sigma_mm": 0.8030976426823159,
+                  "center_z_sigma_mm": 83.61000713898927,
+                  "normal_95_halfwidth_diameter_mm": 3.1481427593146782,
+                  "normal_95_halfwidth_radius_mm": 1.5740713796573391,
+                  "normal_95_halfwidth_center_z_mm": 163.87561399241898
+                }
+              },
+              "excluded": [
+                "CALIBRATION_SCALE_AND_RECTIFICATION",
+                "MISIDENTIFIED_SILHOUETTE",
+                "OCCLUSION_CLASSIFICATION",
+                "AXIS_ERROR",
+                "GENERAL_PIXEL_NOISE_CORRELATION"
+              ]
+            },
+            "window_sensitivity": {
+              "diameter_difference_mm": 0.3392568174821946,
+              "center_difference_mm": 9.380312642127466,
+              "center_difference_components_mm": [
+                -0.11715574618101243,
+                9.379581003178828
+              ],
+              "stable": false,
+              "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+            },
+            "common_axial_support": {
+              "revision": "common-axial-stations-v1",
+              "status": "COMMON_AXIAL_SUPPORT",
+              "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+              "supplies_measured_depth": false,
+              "windows": [
+                {
+                  "index": 0,
+                  "interval_mm": [
+                    238.67094495442427,
+                    293.10259337643
+                  ],
+                  "point_counts": [
+                    105,
+                    105,
+                    106,
+                    104
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 1,
+                  "interval_mm": [
+                    293.10259337643,
+                    347.53424179843563
+                  ],
+                  "point_counts": [
+                    101,
+                    102,
+                    103,
+                    101
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 2,
+                  "interval_mm": [
+                    347.53424179843563,
+                    401.96589022044134
+                  ],
+                  "point_counts": [
+                    103,
+                    103,
+                    104,
+                    105
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 3,
+                  "interval_mm": [
+                    401.96589022044134,
+                    456.397538642447
+                  ],
+                  "point_counts": [
+                    104,
+                    103,
+                    104,
+                    99
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 4,
+                  "interval_mm": [
+                    456.397538642447,
+                    510.8291870644527
+                  ],
+                  "point_counts": [
+                    102,
+                    103,
+                    101,
+                    99
+                  ],
+                  "accepted": true
+                }
+              ],
+              "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+              "axial_displacement_in_center_error": false,
+              "common_interval_mm": [
+                238.67094495442427,
+                510.8291870644527
+              ],
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "window_edges_mm": [
+                238.67094495442427,
+                293.10259337643,
+                347.53424179843563,
+                401.96589022044134,
+                456.397538642447,
+                510.8291870644527
+              ],
+              "boundary_keys": [
+                "left:top",
+                "left:bottom",
+                "right:top",
+                "right:bottom"
+              ]
+            },
+            "dimension_status": "CONDITIONAL",
+            "included_in_section_model": true
+          },
+          {
+            "candidate_id": "POOL-L03-POOL-R03",
+            "left_candidate_id": "POOL-L03",
+            "right_candidate_id": "POOL-R03",
+            "left_region_px": [
+              782,
+              480,
+              643,
+              119
+            ],
+            "right_region_px": [
+              528,
+              471,
+              896,
+              150
+            ],
+            "boundary_status": "STABLE",
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ],
+            "fit": {
+              "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+              "accepted_diameter_mm": null,
+              "axis": [
+                0.9831436758446868,
+                -0.12493974635843674,
+                0.1334862256058163
+              ],
+              "baseline_perpendicular_to_axis_mm": 10.147070558757083,
+              "diameter_source": "IMAGE_FIT",
+              "known_diameter_mm": null,
+              "ignored_occlusion_boundaries": [],
+              "observed_boundary_count": 4,
+              "status": "CONDITIONAL_FIT",
+              "trial_diameter_mm": 28.621145126560144,
+              "section_center_parameters_mm": [
+                15.161672904759264,
+                3079.7981627878476
+              ],
+              "center_at_reference_column_mm": [
+                63.47392409755628,
+                7.217225991837189,
+                3115.967832347507
+              ],
+              "reference_left_column_px": 1103.0,
+              "reprojection_rms_px": 0.4855822638116789,
+              "linear_condition": 804.0234890810666,
+              "predicted_lines": {
+                "left": [
+                  [
+                    0.1261045648286734,
+                    0.9920169548598304,
+                    -653.5538688585817
+                  ],
+                  [
+                    -0.12733510458700084,
+                    -0.9918597537655299,
+                    695.3471757505639
+                  ]
+                ],
+                "right": [
+                  [
+                    0.1258043575532323,
+                    0.9920550708607957,
+                    -643.3586582573353
+                  ],
+                  [
+                    -0.12703200528284214,
+                    -0.9918986186268333,
+                    685.0523761332217
+                  ]
+                ]
+              }
+            },
+            "pixel_error": {
+              "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumed_vertical_pixel_sigma_px": 0.5,
+              "point_counts_per_edge": [
+                128,
+                128,
+                128,
+                128
+              ],
+              "edge_order": [
+                [
+                  "left",
+                  "top"
+                ],
+                [
+                  "left",
+                  "bottom"
+                ],
+                [
+                  "right",
+                  "top"
+                ],
+                [
+                  "right",
+                  "bottom"
+                ]
+              ],
+              "diameter_and_z_jacobian_mm_per_px": [
+                [
+                  -1.7706145191252887,
+                  -1.0838067035066956,
+                  1.0703769675537345,
+                  1.7843215283101443
+                ],
+                [
+                  -154.81859596984123,
+                  -156.32469076342204,
+                  154.8572979382061,
+                  156.31370443008564
+                ]
+              ],
+              "section_parameters_jacobian_mm_per_px": [
+                [
+                  -0.40383361113663696,
+                  -0.4095045318812751,
+                  0.7543374194309216,
+                  0.7597665125909714
+                ],
+                [
+                  -153.01555729698975,
+                  -154.50414146047024,
+                  153.05975265900088,
+                  154.49922529393916
+                ],
+                [
+                  -0.8853072595626443,
+                  -0.5419033517533478,
+                  0.5351884837768672,
+                  0.8921607641550722
+                ]
+              ],
+              "scenarios": {
+                "IID_PIXELS_OPTIMISTIC": {
+                  "assumed_effective_samples_per_edge": [
+                    128,
+                    128,
+                    128,
+                    128
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      0.0028849103773060172,
+                      0.6990470172308157,
+                      0.0032442445290710095
+                    ],
+                    [
+                      0.6990470172308176,
+                      184.7353362558707,
+                      0.8573570746702986
+                    ],
+                    [
+                      0.003244244529071021,
+                      0.8573570746702989,
+                      0.004218671317060105
+                    ]
+                  ],
+                  "diameter_sigma_mm": 0.1299025991589099,
+                  "radius_sigma_mm": 0.06495129957945495,
+                  "center_z_sigma_mm": 13.751627158017447,
+                  "normal_95_halfwidth_diameter_mm": 0.2546090943514634,
+                  "normal_95_halfwidth_radius_mm": 0.1273045471757317,
+                  "normal_95_halfwidth_center_z_mm": 26.953189229714194
+                },
+                "COHERENT_EDGE_OFFSETS": {
+                  "assumed_effective_samples_per_edge": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "section_parameter_order": [
+                    "u_mm",
+                    "v_mm",
+                    "radius_mm"
+                  ],
+                  "section_parameter_covariance_mm2": [
+                    [
+                      0.3692614107808269,
+                      89.47625190623134,
+                      0.41524381954832407
+                    ],
+                    [
+                      89.47625190623134,
+                      23645.647250951813,
+                      109.73651491767285
+                    ],
+                    [
+                      0.41524381954832407,
+                      109.73651491767285,
+                      0.5399514321852441
+                    ]
+                  ],
+                  "diameter_sigma_mm": 1.4696277517592597,
+                  "radius_sigma_mm": 0.7348138758796299,
+                  "center_z_sigma_mm": 155.58033577362127,
+                  "normal_95_halfwidth_diameter_mm": 2.880470393448149,
+                  "normal_95_halfwidth_radius_mm": 1.4402351967240745,
+                  "normal_95_halfwidth_center_z_mm": 304.9374581162977
+                }
+              },
+              "excluded": [
+                "CALIBRATION_SCALE_AND_RECTIFICATION",
+                "MISIDENTIFIED_SILHOUETTE",
+                "OCCLUSION_CLASSIFICATION",
+                "AXIS_ERROR",
+                "GENERAL_PIXEL_NOISE_CORRELATION"
+              ]
+            },
+            "window_sensitivity": {
+              "diameter_difference_mm": 0.4183013747431694,
+              "center_difference_mm": 42.0154879055724,
+              "center_difference_components_mm": [
+                -0.05466063370043983,
+                -42.01545234980131
+              ],
+              "stable": false,
+              "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+            },
+            "common_axial_support": {
+              "revision": "common-axial-stations-v1",
+              "status": "COMMON_AXIAL_SUPPORT",
+              "mapping_source": "CONDITIONAL_CYLINDER_FOR_PARTITION_ONLY",
+              "supplies_measured_depth": false,
+              "windows": [
+                {
+                  "index": 0,
+                  "interval_mm": [
+                    257.4109125367077,
+                    347.4484477797063
+                  ],
+                  "point_counts": [
+                    126,
+                    127,
+                    126,
+                    126
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 1,
+                  "interval_mm": [
+                    347.4484477797063,
+                    437.485983022705
+                  ],
+                  "point_counts": [
+                    125,
+                    125,
+                    125,
+                    126
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 2,
+                  "interval_mm": [
+                    437.485983022705,
+                    527.5235182657036
+                  ],
+                  "point_counts": [
+                    124,
+                    124,
+                    125,
+                    124
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 3,
+                  "interval_mm": [
+                    527.5235182657036,
+                    617.5610535087022
+                  ],
+                  "point_counts": [
+                    122,
+                    123,
+                    123,
+                    124
+                  ],
+                  "accepted": true
+                },
+                {
+                  "index": 4,
+                  "interval_mm": [
+                    617.5610535087022,
+                    707.5985887517008
+                  ],
+                  "point_counts": [
+                    113,
+                    123,
+                    123,
+                    122
+                  ],
+                  "accepted": true
+                }
+              ],
+              "centre_comparison": "COMMON_AXIS_NORMAL_PLANE",
+              "axial_displacement_in_center_error": false,
+              "common_interval_mm": [
+                257.4109125367077,
+                707.5985887517008
+              ],
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "window_edges_mm": [
+                257.4109125367077,
+                347.4484477797063,
+                437.485983022705,
+                527.5235182657036,
+                617.5610535087022,
+                707.5985887517008
+              ],
+              "boundary_keys": [
+                "left:top",
+                "left:bottom",
+                "right:top",
+                "right:bottom"
+              ]
+            },
+            "dimension_status": "CONDITIONAL",
+            "included_in_section_model": true
+          }
+        ],
+        "position_assessment": null,
+        "aggregation_band": {
+          "selection": {
+            "revision": "left-image-axial-band-v1",
+            "coordinate_space": "rectified_left",
+            "image_size": [
+              1920,
+              1080
+            ],
+            "axis_segment_px": [
+              [
+                787.7061974571523,
+                693.9348391338717
+              ],
+              [
+                1431.6990006328626,
+                660.8696499200778
+              ]
+            ]
+          },
+          "axis_image": [
+            0.9986844954090781,
+            -0.0512764919774634
+          ],
+          "span_px": 644.8410945960666,
+          "left_scope": "STRICT_USER_BAND",
+          "right_scope": "EPIPOLAR_SEARCH_ENVELOPE",
+          "disparity_range_px": [
+            0.0,
+            255.0
+          ],
+          "views": {
+            "left": {
+              "station_interval_px": [
+                0.0,
+                644.8410945960666
+              ],
+              "selected_pixels": 697342,
+              "image_origin_px": [
+                0,
+                0
+              ]
+            },
+            "right": {
+              "station_interval_px": [
+                -254.66454632931493,
+                644.8410945960666
+              ],
+              "selected_pixels": 972742,
+              "image_origin_px": [
+                0,
+                0
+              ]
+            }
+          },
+          "supplies_metric_length_or_3d_axis": false
+        },
+        "proposal_audit": {
+          "left": {
+            "revision": "image-strips-soft-axis-v5",
+            "policy_sha256": "5430481a171d3f97020fcb5124ee5d913c2d9bd2e1eb301c00c0dda8d7bb4c99",
+            "scope": "IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+            "global_axis_filter_applied": false,
+            "direction_estimates": [
+              {
+                "appearance": "hue-0",
+                "observed_angle_deg": -6.923375262092077,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 3.984159719965875
+              },
+              {
+                "appearance": "hue-120",
+                "observed_angle_deg": -7.2657180036714575,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.326502461545254
+              },
+              {
+                "appearance": "hue-15",
+                "observed_angle_deg": -6.884443183823005,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 3.9452276416968015
+              },
+              {
+                "appearance": "hue-105",
+                "observed_angle_deg": -7.2657180036714575,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.326502461545254
+              },
+              {
+                "appearance": "hue-165",
+                "observed_angle_deg": -7.422771373446729,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.483555831320527
+              },
+              {
+                "appearance": "neutral",
+                "observed_angle_deg": -7.319239366007676,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.380023823881474
+              }
+            ],
+            "truncated": false,
+            "candidate_count": 5
+          },
+          "right": {
+            "revision": "image-strips-soft-axis-v5",
+            "policy_sha256": "5430481a171d3f97020fcb5124ee5d913c2d9bd2e1eb301c00c0dda8d7bb4c99",
+            "scope": "IMAGE_CANDIDATES_NOT_PIPE_IDENTITY_OR_MEASUREMENT",
+            "global_axis_filter_applied": false,
+            "direction_estimates": [
+              {
+                "appearance": "hue-0",
+                "observed_angle_deg": -7.352393104238919,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.413177562112716
+              },
+              {
+                "appearance": "hue-90",
+                "observed_angle_deg": -7.910487861320661,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.9712723191944574
+              },
+              {
+                "appearance": "hue-120",
+                "observed_angle_deg": -6.9546028869773755,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.015387344851173
+              },
+              {
+                "appearance": "hue-15",
+                "observed_angle_deg": -8.003624320842954,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 5.064408778716752
+              },
+              {
+                "appearance": "hue-105",
+                "observed_angle_deg": -7.068257234766388,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.129041692640185
+              },
+              {
+                "appearance": "hue-165",
+                "observed_angle_deg": -6.649211468807766,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 3.709995926681563
+              },
+              {
+                "appearance": "neutral",
+                "observed_angle_deg": -7.213712943330979,
+                "source": "OBSERVED_NEAR_HINT",
+                "hint_difference_deg": 4.274497401204777
+              }
+            ],
+            "truncated": false,
+            "candidate_count": 7
+          }
+        },
+        "views": {
+          "left": [
+            {
+              "candidate_id": "POOL-L01",
+              "appearance": "hue-0",
+              "region_px": [
+                771,
+                271,
+                645,
+                147
+              ],
+              "width_px": 70.25787353515625,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-L02",
+              "appearance": "hue-0",
+              "region_px": [
+                775,
+                355,
+                645,
+                163
+              ],
+              "width_px": 84.61512756347656,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-L03",
+              "appearance": "neutral",
+              "region_px": [
+                782,
+                480,
+                643,
+                119
+              ],
+              "width_px": 38.427093505859375,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-L04",
+              "appearance": "hue-120",
+              "region_px": [
+                784,
+                530,
+                647,
+                185
+              ],
+              "width_px": 105.10414123535156,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-L05",
+              "appearance": "neutral",
+              "region_px": [
+                995,
+                988,
+                458,
+                92
+              ],
+              "width_px": 89.03683471679688,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": [
+                "TRANSVERSE_BOUNDARY_CLIPPED"
+              ]
+            }
+          ],
+          "right": [
+            {
+              "candidate_id": "POOL-R01",
+              "appearance": "hue-0",
+              "region_px": [
+                517,
+                261,
+                898,
+                178
+              ],
+              "width_px": 71.78610229492188,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R02",
+              "appearance": "hue-0",
+              "region_px": [
+                521,
+                342,
+                899,
+                192
+              ],
+              "width_px": 86.57623291015625,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R03",
+              "appearance": "neutral",
+              "region_px": [
+                528,
+                471,
+                896,
+                150
+              ],
+              "width_px": 38.77638244628906,
+              "boundary_status": "STABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R04",
+              "appearance": "hue-105",
+              "region_px": [
+                530,
+                517,
+                900,
+                214
+              ],
+              "width_px": 107.55525970458984,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R05",
+              "appearance": "neutral",
+              "region_px": [
+                889,
+                980,
+                564,
+                100
+              ],
+              "width_px": 94.87738037109375,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": [
+                "TRANSVERSE_BOUNDARY_CLIPPED"
+              ]
+            },
+            {
+              "candidate_id": "POOL-R06",
+              "appearance": "neutral",
+              "region_px": [
+                568,
+                1006,
+                115,
+                56
+              ],
+              "width_px": 45.14863967895508,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": []
+            },
+            {
+              "candidate_id": "POOL-R07",
+              "appearance": "neutral",
+              "region_px": [
+                781,
+                1024,
+                115,
+                56
+              ],
+              "width_px": 44.40443420410156,
+              "boundary_status": "UNSTABLE",
+              "reason_codes": [
+                "TRANSVERSE_BOUNDARY_CLIPPED"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

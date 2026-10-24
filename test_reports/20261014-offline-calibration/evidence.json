@@ -1,0 +1,654 @@
+{
+  "created_at": "2026-10-14T01:08:58.046301+00:00",
+  "source_commit": "86e62966a81da0578455a3057858835ceb6b19fa",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "opencv": "4.13.0",
+  "status": "OFFLINE_SOLVE_COMPLETED_NOT_VALIDATED",
+  "saved_as_active_calibration": false,
+  "production_code_changed": false,
+  "active_calibration_id": "field-chess-fb5dc0f71ee5",
+  "active_calibration_sha256": "fba55d8112ab463d219dbef9590c25ac541abef377a74043034cd28677fb3350",
+  "active_matches_before_session": true,
+  "input_checkpoint_sha256": "e229877293c91b459a7e500879918f0d4c912c129252ae59726a8a2cedfd43ba",
+  "square_mm": 17,
+  "pattern_inner_corners": [
+    8,
+    6
+  ],
+  "pair_count": 31,
+  "training_indices": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    17,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    27,
+    28,
+    29,
+    30,
+    31
+  ],
+  "holdout_indices": [
+    5,
+    9,
+    13,
+    18,
+    22,
+    26
+  ],
+  "redetection": {
+    "pairs": 31,
+    "max_corner_change_px": 0,
+    "audit_sha256": "a22a0eac8e3519ff0e4e5184b61d56d6cf59ec2b074a8f3a183c6eaaa7d8e34d"
+  },
+  "baseline": {
+    "stereo_rms_px": 2.6900463614030787,
+    "holdout": {
+      "algorithm_revision": "stereo-holdout-quality-v1",
+      "policy": {
+        "minimum_holdout_pairs": 3,
+        "holdout_fraction": 0.2,
+        "max_vertical_rms_px": 0.5,
+        "max_vertical_p95_px": 1.0,
+        "max_cross_reprojection_rms_px": 1.0,
+        "max_pair_cross_rms_px": 1.5
+      },
+      "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+      "status": "FAILED",
+      "pair_count": 6,
+      "pairs": [
+        {
+          "holdout_index": 1,
+          "passed": false,
+          "cross_reprojection_rms_px": 8.214216828788576,
+          "vertical_rms_px": 0.45263178896190714,
+          "vertical_p95_px": 0.8269893569741725,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 2,
+          "passed": false,
+          "cross_reprojection_rms_px": 1.6784712345336399,
+          "vertical_rms_px": 0.7304598092388432,
+          "vertical_p95_px": 1.247897802042037,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 3,
+          "passed": false,
+          "cross_reprojection_rms_px": 5.21003677206936,
+          "vertical_rms_px": 0.7255858945754284,
+          "vertical_p95_px": 1.2007970452152141,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 4,
+          "passed": false,
+          "cross_reprojection_rms_px": 2.8325948560074377,
+          "vertical_rms_px": 1.600700824758975,
+          "vertical_p95_px": 2.9138150784187586,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 5,
+          "passed": false,
+          "cross_reprojection_rms_px": 2.4098892709293867,
+          "vertical_rms_px": 1.0509453890552742,
+          "vertical_p95_px": 2.0028008027895545,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 6,
+          "passed": false,
+          "cross_reprojection_rms_px": 2.762637512993132,
+          "vertical_rms_px": 0.9607577993122846,
+          "vertical_p95_px": 1.5679158141596743,
+          "positive_disparity_fraction": 1.0
+        }
+      ],
+      "cross_reprojection_rms_px": 4.451562139789479,
+      "vertical_rms_px": 0.9878180373765637,
+      "vertical_p95_px": 2.0028008027895545,
+      "scale_verified_independently": false,
+      "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY",
+      "input_pair_indices": [
+        5,
+        9,
+        13,
+        18,
+        22,
+        26
+      ]
+    },
+    "rejection_reasons": [
+      "当前仅得到固定主点、零畸变的简化模型，不能作为尺寸标定保存；请补拍覆盖边缘、远近及双方向倾斜的棋盘姿态",
+      "棋盘格位置变化不足：质心散布 0.0988（要求 ≥ 0.1000），请覆盖画面四角和中心",
+      "重投影误差过大：左右目 2.079/2.074 px，双目 2.690 px，上限 1.5 px",
+      "未参与求解的照片验证失败：请检查格板平整、同步、清晰度和边缘/倾斜覆盖；不要通过放宽 RMS 跳过此检查"
+    ]
+  },
+  "joint": {
+    "selection": "training RMS and intrinsic plausibility only; original holdouts unchanged",
+    "converged": false,
+    "trace": [
+      {
+        "step": 1,
+        "rms": 1.7228060167734667,
+        "improvement_px": 0.052412348803374975,
+        "focal_px": 2956.628148232033,
+        "baseline_mm": 55.337504163753444,
+        "problems": [],
+        "elapsed_s": 6.282000000006519
+      },
+      {
+        "step": 2,
+        "rms": 1.6499796362048376,
+        "improvement_px": 0.07282638056862911,
+        "focal_px": 3211.532588826283,
+        "baseline_mm": 55.344926331588574,
+        "problems": [],
+        "elapsed_s": 6.375
+      },
+      {
+        "step": 3,
+        "rms": 1.6297084607277712,
+        "improvement_px": 0.02027117547706636,
+        "focal_px": 3413.8562259128503,
+        "baseline_mm": 55.39604032795882,
+        "problems": [],
+        "elapsed_s": 6.25
+      },
+      {
+        "step": 4,
+        "rms": 1.6162410329906187,
+        "improvement_px": 0.013467427737152482,
+        "focal_px": 3589.2060678210178,
+        "baseline_mm": 55.445061195261594,
+        "problems": [],
+        "elapsed_s": 6.26600000000326
+      },
+      {
+        "step": 5,
+        "rms": 1.6235223950201851,
+        "improvement_px": -0.007281362029566418,
+        "focal_px": 3765.2707084069993,
+        "baseline_mm": 55.36669199098155,
+        "problems": [],
+        "elapsed_s": 6.264999999955762
+      },
+      {
+        "step": 6,
+        "rms": 1.6151571861883012,
+        "improvement_px": 0.008365208831883963,
+        "focal_px": 3920.339633666474,
+        "baseline_mm": 55.41725741181019,
+        "problems": [],
+        "elapsed_s": 6.297000000020489
+      },
+      {
+        "step": 7,
+        "rms": 1.609130660765806,
+        "improvement_px": 0.006026525422495155,
+        "focal_px": 4056.6688418371436,
+        "baseline_mm": 55.45915347114201,
+        "problems": [],
+        "elapsed_s": 6.311999999976251
+      },
+      {
+        "step": 8,
+        "rms": 1.6040484271916082,
+        "improvement_px": 0.005082233574197792,
+        "focal_px": 4195.778023779589,
+        "baseline_mm": 55.49861605457772,
+        "problems": [],
+        "elapsed_s": 6.26600000000326
+      }
+    ],
+    "selected": {
+      "rms": 1.6040484271916082,
+      "baseline_mm": 55.49861605457772,
+      "problems": [],
+      "K1": [
+        [
+          4195.778023779589,
+          0.0,
+          966.6296280576084
+        ],
+        [
+          0.0,
+          4138.493473356298,
+          578.978084133113
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "D1": [
+        0.27303036765959043,
+        -3.148889847013648,
+        -0.04177912586600367,
+        -0.007328363794899307,
+        0.0
+      ],
+      "K2": [
+        [
+          4175.61276610112,
+          0.0,
+          872.0694127583383
+        ],
+        [
+          0.0,
+          4133.193408885674,
+          516.2293805472402
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "D2": [
+        0.3105858681740897,
+        -4.828259883673682,
+        -0.04195460099868336,
+        -0.023428741953979648,
+        0.0
+      ],
+      "R": [
+        [
+          0.9999123612030034,
+          0.0023903092312475595,
+          0.013021379927395542
+        ],
+        [
+          -0.0025609898782161028,
+          0.9999108218351801,
+          0.013106857279240587
+        ],
+        [
+          -0.01298888926268299,
+          -0.013139056232230684,
+          0.9998293124113976
+        ]
+      ],
+      "T": [
+        [
+          -55.47164115388085
+        ],
+        [
+          0.03528669705598677
+        ],
+        [
+          1.729787997852587
+        ]
+      ],
+      "R1": [
+        [
+          0.9998328251111726,
+          0.0021629117260333957,
+          -0.018156091073710776
+        ],
+        [
+          -0.0020440564471057663,
+          0.9999763786795648,
+          0.006562310274949943
+        ],
+        [
+          0.018169855900709225,
+          -0.00652410114644581,
+          0.9998136288532871
+        ]
+      ],
+      "R2": [
+        [
+          0.99951395363318,
+          -0.0006358121979345409,
+          -0.031168128519663232
+        ],
+        [
+          0.0004318257958207139,
+          0.9999784486933183,
+          -0.0065510056774996765
+        ],
+        [
+          0.031171622015085297,
+          0.0065343623830888715,
+          0.999492687361541
+        ]
+      ],
+      "P1": [
+        [
+          4411.372505842463,
+          0.0,
+          1013.1379928588867,
+          0.0
+        ],
+        [
+          0.0,
+          4411.372505842463,
+          528.8058547973633,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "P2": [
+        [
+          4411.372505842463,
+          0.0,
+          1013.1379928588867,
+          -244825.06897547125
+        ],
+        [
+          0.0,
+          4411.372505842463,
+          528.8058547973633,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "per_pair_rms_px": [
+        [
+          0.6810439741558719,
+          0.7963649962277789
+        ],
+        [
+          1.9633141360249258,
+          1.726016012270003
+        ],
+        [
+          1.3299542838262808,
+          1.486126550858057
+        ],
+        [
+          2.00976851269524,
+          2.239304557919176
+        ],
+        [
+          1.251149546157469,
+          1.402052105343099
+        ],
+        [
+          1.5340724945668842,
+          1.4458106795821821
+        ],
+        [
+          0.8834371725329642,
+          0.945654675645559
+        ],
+        [
+          1.616570460306322,
+          1.6089222163146035
+        ],
+        [
+          3.016112388514562,
+          2.5941486944074894
+        ],
+        [
+          1.6700666932103345,
+          1.5923158034613665
+        ],
+        [
+          1.8188583369420361,
+          1.6578096306783594
+        ],
+        [
+          1.5058193692676884,
+          1.7309344021956625
+        ],
+        [
+          2.4554464269810423,
+          2.395461277555795
+        ],
+        [
+          1.0993179450806019,
+          1.0899811436388762
+        ],
+        [
+          1.1636428277482715,
+          1.1359569514573153
+        ],
+        [
+          1.8357220504646752,
+          1.8538896478836606
+        ],
+        [
+          1.5970464153600328,
+          1.7045674593913833
+        ],
+        [
+          0.9172618615002961,
+          0.8851337967625909
+        ],
+        [
+          2.0141070215646373,
+          2.065903976810902
+        ],
+        [
+          1.838183612989145,
+          1.704355803323583
+        ],
+        [
+          1.0746126402591818,
+          0.9852037418376095
+        ],
+        [
+          0.5354898794291685,
+          0.6492997764505819
+        ],
+        [
+          0.750544600129287,
+          0.7879963234818295
+        ],
+        [
+          2.282222331898728,
+          2.287921944965853
+        ],
+        [
+          0.5756717925169316,
+          0.5156357737693485
+        ]
+      ],
+      "training_geometry": {
+        "vertical_rms_px": 0.42211031913757324,
+        "vertical_p95_abs_px": 0.8616417050361633,
+        "vertical_max_abs_px": 1.28076171875,
+        "per_pair_vertical_rms_px": [
+          0.21646828949451447,
+          0.3483257591724396,
+          0.2873265743255615,
+          0.591130793094635,
+          0.45594966411590576,
+          0.25089794397354126,
+          0.3617798984050751,
+          0.48853951692581177,
+          0.18584507703781128,
+          0.9711211919784546,
+          0.6418921947479248,
+          0.5273654460906982,
+          0.18984362483024597,
+          0.15699635446071625,
+          0.24641814827919006,
+          0.3684462010860443,
+          0.24146799743175507,
+          0.37104642391204834,
+          0.5110371112823486,
+          0.13790349662303925,
+          0.1031196340918541,
+          0.6225711703300476,
+          0.24351342022418976,
+          0.16779541969299316,
+          0.5719200372695923
+        ],
+        "median_disparity_px": 146.5648193359375,
+        "positive_disparity_ratio": 1.0,
+        "horizontal_encoded_baseline_mm": 55.49861605457771,
+        "vertical_projection_mm": -0.0,
+        "p1_p2_k_identical": true
+      }
+    },
+    "holdout": {
+      "algorithm_revision": "stereo-holdout-quality-v1",
+      "policy": {
+        "minimum_holdout_pairs": 3,
+        "holdout_fraction": 0.2,
+        "max_vertical_rms_px": 0.5,
+        "max_vertical_p95_px": 1.0,
+        "max_cross_reprojection_rms_px": 1.0,
+        "max_pair_cross_rms_px": 1.5
+      },
+      "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+      "status": "FAILED",
+      "pair_count": 6,
+      "pairs": [
+        {
+          "holdout_index": 1,
+          "passed": false,
+          "cross_reprojection_rms_px": 2.1781143282958357,
+          "vertical_rms_px": 0.361535722056752,
+          "vertical_p95_px": 0.5415457262691177,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 2,
+          "passed": true,
+          "cross_reprojection_rms_px": 0.9182453857556315,
+          "vertical_rms_px": 0.3109042803155722,
+          "vertical_p95_px": 0.4772716291707226,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 3,
+          "passed": false,
+          "cross_reprojection_rms_px": 3.54024325353644,
+          "vertical_rms_px": 0.15772707186707333,
+          "vertical_p95_px": 0.272259471431245,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 4,
+          "passed": false,
+          "cross_reprojection_rms_px": 1.804114758618799,
+          "vertical_rms_px": 0.2329713035448684,
+          "vertical_p95_px": 0.3416883281379995,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 5,
+          "passed": true,
+          "cross_reprojection_rms_px": 1.2671564853724013,
+          "vertical_rms_px": 0.3860131114196528,
+          "vertical_p95_px": 0.5349522773491769,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 6,
+          "passed": true,
+          "cross_reprojection_rms_px": 0.9596619729526612,
+          "vertical_rms_px": 0.1463729491758754,
+          "vertical_p95_px": 0.27604684602155627,
+          "positive_disparity_fraction": 1.0
+        }
+      ],
+      "cross_reprojection_rms_px": 1.9959185701834257,
+      "vertical_rms_px": 0.28194389801138386,
+      "vertical_p95_px": 0.48999485887500216,
+      "scale_verified_independently": false,
+      "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY"
+    }
+  },
+  "additional_static_checks": [
+    {
+      "group": "post_round1_static",
+      "images": [
+        {
+          "path": "outputs\\calibration-20261013\\final-board\\pair_0001_left.png",
+          "sha256": "2e578c74758f4b16fb2ab1cd83bdad3151b6de5659be8cba500130910874cd05"
+        },
+        {
+          "path": "outputs\\calibration-20261013\\final-board\\pair_0001_right.png",
+          "sha256": "ffa73610e3244cafaeeb883ba76923d774175984d9d318a6fedbce37f95831e9"
+        }
+      ],
+      "scope": "single_pose_diagnostic_not_full_holdout_pass",
+      "metrics": {
+        "holdout_index": 1,
+        "passed": false,
+        "cross_reprojection_rms_px": 2.2828034100262884,
+        "vertical_rms_px": 0.11168381902917204,
+        "vertical_p95_px": 0.22164058553476587,
+        "positive_disparity_fraction": 1.0
+      }
+    },
+    {
+      "group": "round2_static",
+      "images": [
+        {
+          "path": "outputs\\measurement_workbench\\calibration_captures\\20261013_094747_800185_14e37398\\left\\000001.png",
+          "sha256": "cd72733634ce83d7950782cae973516b7d7a8ef06f07356128d602e6f2eeb23d"
+        },
+        {
+          "path": "outputs\\measurement_workbench\\calibration_captures\\20261013_094747_800185_14e37398\\right\\000001.png",
+          "sha256": "04d302ea9b5e652b4c79adca5a838f4bc2d548f0b4d3c0f1db320059246819bf"
+        }
+      ],
+      "scope": "single_pose_diagnostic_not_full_holdout_pass",
+      "metrics": {
+        "holdout_index": 1,
+        "passed": true,
+        "cross_reprojection_rms_px": 0.7890979099199634,
+        "vertical_rms_px": 0.21730208950796762,
+        "vertical_p95_px": 0.33463281807621,
+        "positive_disparity_fraction": 1.0
+      }
+    }
+  ],
+  "limits": [
+    "Diagnostic candidate only; convergence not established",
+    "No independent physical scale acceptance",
+    "No new camera capture; original data unchanged",
+    "Holdout reused for diagnostics, not used for fitting or seed selection"
+  ],
+  "artifacts_sha256": {
+    "baseline-replay.json": "6616cb42b8eee75b97a71871ce190488f309999ad90ffe253ba9cbca71115b81",
+    "accuracy-sb-result.json": "28ae468b4c512b4a4f47c19eac189ad62929ad4ce87954677c58430b9bc1746f",
+    "joint-diagnostic.json": "14279f666f19d85db4474d30a983288514152a4de5a4820cdeb9b6e06720e81e",
+    "joint-lu-diagnostic.json": "d4c87ec526430dfc86f1aeeb534d86a2eca9c2bb7fbc0004c1c9026232bd5c13",
+    "joint-continuation.json": "5c62d5b4c50a57c898c7dbaa16baaccd9aa7b92f08c107b21512a633b331df52",
+    "extra-static-final.json": "207277fa0ec1c0450fb70e3bf8a2340aff0c258cdd5fcbff115dc553e0757733",
+    "portable-replay.json": "43881ec8015d9489db5fec0289a676bfd218e29538906f23cd18a13228127421"
+  },
+  "verification": {
+    "portable_replay_completed": true,
+    "portable_metrics_and_matrices_equal": true,
+    "all_62_source_image_hashes_unchanged": true,
+    "production_test_suite_rerun": false,
+    "reason": "No production code changes; actual field replay verified"
+  }
+}

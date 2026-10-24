@@ -28,7 +28,7 @@ import threading
 import time
 import uuid
 import zlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -452,6 +452,64 @@ class BoardObservation:
     @property
     def centroid_px(self) -> np.ndarray:
         return self.corners_px.mean(axis=0)
+
+
+class BoardStabilityGate:
+    """Require both corner grids to settle before a calibration exposure is used.
+
+    Compare against the first observation of the dwell, so a slow continuous
+    drift cannot pass just because consecutive observations are close together.
+    This checks image motion, not board flatness or absolute accuracy.
+    """
+
+    # Full-resolution stereo SB detection takes about 2.6 s per preview cycle
+    # on the field PC. A shorter timeout would reset every stationary sample.
+    policy = {"minimum_seconds": 0.8, "minimum_observations": 3,
+              "maximum_gap_seconds": 5.0, "median_motion_px": 0.4,
+              "p95_motion_px": 0.8, "maximum_motion_px": 1.5}
+
+    def __init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> None:
+        self.reference: dict[str, np.ndarray] = {}
+        self.detectors: tuple[str, ...] = ()
+        self.started = self.last = 0.0
+        self.samples = 0
+
+    def observe(self, observations: Mapping[str, BoardObservation], now: float) -> bool:
+        roles = ("left", "right")
+        if not all(role in observations for role in roles) or not math.isfinite(now):
+            self.reset()
+            return False
+        points = {role: np.asarray(observations[role].corners_px, dtype=float) for role in roles}
+        if any(p.ndim != 2 or p.shape[1] != 2 or len(p) < 4 or not np.all(np.isfinite(p))
+               for p in points.values()):
+            self.reset()
+            return False
+        detectors = tuple(observations[role].detector for role in roles)
+        restart = (not self.reference or detectors != self.detectors
+                   or now <= self.last or now-self.last > self.policy["maximum_gap_seconds"])
+        if not restart:
+            for role in roles:
+                if points[role].shape != self.reference[role].shape:
+                    restart = True
+                    break
+                motion = np.linalg.norm(points[role]-self.reference[role], axis=1)
+                if (np.median(motion) > self.policy["median_motion_px"]
+                        or np.percentile(motion, 95) > self.policy["p95_motion_px"]
+                        or np.max(motion) > self.policy["maximum_motion_px"]):
+                    restart = True
+                    break
+        if restart:
+            self.reference = {role: value.copy() for role, value in points.items()}
+            self.detectors = detectors
+            self.started = now
+            self.samples = 0
+        self.last = now
+        self.samples += 1
+        return (self.samples >= self.policy["minimum_observations"]
+                and now-self.started >= self.policy["minimum_seconds"])
 
 
 class CalibrationCaptureArchive:
@@ -2184,6 +2242,8 @@ def solve_stereo_calibration(
     }
 
     reasons: list[str] = []
+    if solve_mode == "baseline_anchored_centered_pinhole":
+        reasons.append("当前仅得到固定主点、零畸变的简化模型，不能作为尺寸标定保存；请补拍覆盖边缘、远近及双方向倾斜的棋盘姿态")
     if len(pairs) < min_pairs:
         reasons.append(f"照片对不足：需要至少 {min_pairs} 对，当前 {len(pairs)} 对")
     diversity = audit["diversity"]
@@ -2193,8 +2253,8 @@ def solve_stereo_calibration(
         )
     if diversity["centroid_spread_ratio"] < _MIN_CENTROID_SPREAD_RATIO:
         reasons.append(
-            f"棋盘格位置变化不足：质心散布 {diversity['centroid_spread_ratio']:.2f}"
-            f"（要求 ≥ {_MIN_CENTROID_SPREAD_RATIO:.2f}），请覆盖画面四角和中心"
+            f"棋盘格位置变化不足：质心散布 {diversity['centroid_spread_ratio']:.4f}"
+            f"（要求 ≥ {_MIN_CENTROID_SPREAD_RATIO:.4f}），请覆盖画面四角和中心"
         )
     if (
         image_pose_geometry["projected_scale_span_ratio"]
@@ -2328,6 +2388,16 @@ def solve_stereo_calibration(
         reasons.append(f"极线矫正配方校验失败：{error}")
     validated = not reasons
     calibration["validated"] = validated
+    from .calibration_quality import REVISION, POLICY_SHA256
+    calibration["quality_audit"] = {
+        "algorithm_revision": REVISION, "policy_sha256": POLICY_SHA256,
+        "solve_mode": solve_mode, "square_mm": float(square_mm),
+        "pattern_inner_corners": list(pattern), "training_pair_count": len(pairs),
+        "stereo_rms_px": float(stereo_rms), "rectification_geometry": rectification_geometry,
+        "left_rms_px": float(left_rms), "right_rms_px": float(right_rms),
+        "per_pair_rms_px": audit["per_pair_rms_px"], "diversity": audit["diversity"],
+        "image_pose_geometry": image_pose_geometry, "calibration_pose_geometry": pose_geometry,
+        "scale_verified_independently": False, "holdout": {"status": "NOT_RUN"}}
     return WizardResult(
         calibration=calibration,
         recipe=recipe,
@@ -2340,6 +2410,46 @@ def solve_stereo_calibration(
         rejection_reasons=reasons,
         audit=audit,
     )
+
+
+def solve_stereo_calibration_checked(*, pairs, **kwargs) -> WizardResult:
+    """Reserve images before any model selection; never refit on holdout."""
+    from .calibration_quality import POLICY, holdout_quality
+    minimum = int(kwargs["min_pairs"])
+    holdout_count = max(POLICY["minimum_holdout_pairs"], int(len(pairs)*POLICY["holdout_fraction"]))
+    if len(pairs)-holdout_count < minimum:
+        raise ChessboardCalibrationError(f"需要至少 {minimum + POLICY['minimum_holdout_pairs']} 组：{minimum} 组求解、至少 3 组留出验证；建议采集 20～30 个不同姿态")
+    # Fixed split, independent of residuals: bad validation views cannot be pruned.
+    indices = set(np.linspace(0, len(pairs)-1, holdout_count+2, dtype=int)[1:-1].tolist())
+    train_indices = [i for i in range(len(pairs)) if i not in indices]
+    validation_indices = sorted(indices)
+    for index in validation_indices:
+        if any(all(np.asarray(pairs[index][r].corners_px).shape == np.asarray(pairs[j][r].corners_px).shape and
+                       np.max(np.abs(np.asarray(pairs[index][r].corners_px)-pairs[j][r].corners_px)) < .5
+                       for r in (0, 1)) for j in train_indices + [j for j in validation_indices if j < index]):
+            raise ChessboardCalibrationError("留出照片与求解照片姿态重复；请移动棋盘补拍不同位置、远近和倾斜姿态")
+    result = solve_stereo_calibration(pairs=[pairs[i] for i in train_indices], **kwargs)
+    if result.recipe:
+        check = holdout_quality([pairs[i] for i in validation_indices], recipe=result.recipe,
+            image_size=kwargs["image_size"], pattern=kwargs["pattern"], square_mm=kwargs["square_mm"])
+    else:
+        check = {"status": "FAILED", "reason": "NO_RECTIFICATION_RECIPE"}
+    check["input_pair_indices"] = [i+1 for i in validation_indices]
+    result.audit["holdout"] = check
+    result.audit["training_input_indices"] = [i+1 for i in train_indices]
+    result.audit["input_pair_count"] = len(pairs)
+    result.audit["discarded_pair_indices"] = [train_indices[i-1]+1 for i in result.audit.get("discarded_pair_indices", [])]
+    result.calibration["quality_audit"]["holdout"] = copy.deepcopy(check)
+    if check["status"] != "PASSED":
+        result.rejection_reasons.append("未参与求解的照片验证失败：请检查格板平整、同步、清晰度和边缘/倾斜覆盖；不要通过放宽 RMS 跳过此检查")
+    result = replace(result, validated=not result.rejection_reasons)
+    result.calibration["validated"] = result.validated
+    # The holdout evidence is part of calibration identity and recipe binding.
+    calibration_id = f"{kwargs['operator']}{CHESS_ID_MARKER}{_audit_hash(result.audit)}"
+    result.calibration["calibration_id"] = calibration_id
+    result.recipe["calibration_id"] = calibration_id
+    result.audit["calibration_id"] = calibration_id
+    return result
 
 
 def write_calibration_diagnostic(
@@ -2610,7 +2720,8 @@ def replay_calibration_diagnostic(
         if expected_baseline_mm is None
         else float(expected_baseline_mm)
     )
-    return solve_stereo_calibration(
+    solver = solve_stereo_calibration_checked if audit.get("holdout") else solve_stereo_calibration
+    return solver(
         pairs=pairs,
         image_size=image_size,
         square_mm=float(metadata["square_mm"]),
@@ -2639,14 +2750,20 @@ def save_wizard_result(
     from .workbench_profile import (
         default_calibration_path,
         update_profile,
-        write_standalone_calibration,
+        camera_calibration_bundle,
     )
 
     if not result.validated:
         raise ChessboardCalibrationError("标定未通过门禁校验，不能保存")
-    calibration_path = write_standalone_calibration(
-        result.calibration, path=default_calibration_path()
-    )
+    from .pipeline import atomic_write_text
+    calibration_path = Path(default_calibration_path()).resolve()
+    # Preserve the previous calibration before replacement, and make the new
+    # file portable without relying on a matching machine-local profile.
+    if calibration_path.is_file():
+        backup = calibration_path.with_name(f"calibration_{datetime.now():%Y%m%d-%H%M%S}-{uuid.uuid4().hex[:6]}.json")
+        backup.write_bytes(calibration_path.read_bytes())
+    atomic_write_text(calibration_path, json.dumps(camera_calibration_bundle(
+        result.calibration, rectification_recipe=result.recipe), ensure_ascii=False, indent=2, allow_nan=False)+"\n")
     updates = {
         "calibration_path": str(calibration_path),
         "calibration_current": copy.deepcopy(result.calibration),
@@ -2850,6 +2967,7 @@ class ChessboardWizardDialog:
         self._tick = 0
         self.preview_images: list[Any] = []
         self._last_auto_time = 0.0
+        self._capture_stability = BoardStabilityGate()
         self._last_left_observation: BoardObservation | None = None
         self.pairs: list[tuple[BoardObservation, BoardObservation]] = []
         self._pair_capture_ids: list[int | None] = []
@@ -2858,8 +2976,8 @@ class ChessboardWizardDialog:
         self.message = tk.StringVar(
             value=(
                 "步骤：生成并 100% 打印棋盘格 → 量取实测格边长 → 打开预览，"
-                "把纸张固定在硬质平板上，覆盖各区域并改变远近、前后倾斜和左右倾斜，"
-                "抓拍 ≥10 组 → 完成标定。"
+                "把纸张固定在硬质平板上，每次移动后停稳，等列表新增一组再移动，覆盖各区域并改变远近、前后倾斜和左右倾斜，"
+                "建议采集 20～30 个不同姿态 → 留出验证 → 完成标定。"
                 + "基础立面模式标定后可直接抓拍评估。"
             )
         )
@@ -2876,26 +2994,27 @@ class ChessboardWizardDialog:
             ("打印后实测格边长/mm", self.measured_square_mm, 9),
             ("操作员代号", self.operator, 12),
             ("允许RMS/px", self.max_rms, 6),
-            ("最少组数", self.min_pairs, 5),
+            ("求解最少组数", self.min_pairs, 5),
             ("同步容差/ms", self.max_sync, 7),
             ("清晰度门限", self.sharpness_gate, 6),
         )):
+            row, column = divmod(column, 5)
             column *= 2
-            ttk.Label(params, text=label).grid(row=0, column=column, padx=(8, 2), sticky="w")
-            ttk.Entry(params, textvariable=variable, width=width).grid(row=0, column=column + 1, sticky="w")
+            ttk.Label(params, text=label).grid(row=row, column=column, padx=(8, 2), pady=3, sticky="w")
+            ttk.Entry(params, textvariable=variable, width=width).grid(row=row, column=column + 1, sticky="w")
         ttk.Button(params, text="生成 A4 棋盘格打印 PNG", command=self.export_target).grid(
-            row=1, column=0, columnspan=4, sticky="w", pady=(7, 0)
+            row=2, column=0, columnspan=4, sticky="w", pady=(7, 0)
         )
         ttk.Label(
             params,
-            text="打印选择 100%/实际大小；打印后用量具测量格边长并填入“打印后实测格边长”。",
-            foreground="#4A6178",
-        ).grid(row=1, column=4, columnspan=6, sticky="w", pady=(7, 0))
+            text="实测连续多格总长÷格数，横纵分别核对；求解只用实测格长。固定板不动的视频不能替代多姿态标定。",
+            foreground="#4A6178", wraplength=570,
+        ).grid(row=2, column=4, columnspan=6, sticky="w", pady=(7, 0))
         self.fit_hint = tk.StringVar(value="")
-        ttk.Label(params, textvariable=self.fit_hint, foreground="#8A4E00").grid(
-            row=2, column=0, columnspan=12, sticky="w", pady=(4, 0)
+        ttk.Label(params, textvariable=self.fit_hint, foreground="#8A4E00", wraplength=920).grid(
+            row=3, column=0, columnspan=10, sticky="w", pady=(4, 0)
         )
-        for variable in (self.columns, self.rows, self.square_mm):
+        for variable in (self.columns, self.rows, self.square_mm, self.measured_square_mm):
             variable.trace_add("write", lambda *_e: self._update_fit_hint())
         self._update_fit_hint()
 
@@ -3011,7 +3130,7 @@ class ChessboardWizardDialog:
         previews.rowconfigure(1, weight=1)
 
         bottom = ttk.Frame(main)
-        bottom.pack(fill="both", pady=(6, 0))
+        bottom.pack(fill="x", pady=(6, 0), before=previews)
         columns = ("index", "left_zone", "right_zone")
         self.tree = ttk.Treeview(bottom, columns=columns, show="headings", height=5)
         for key, title, width in (
@@ -3028,25 +3147,18 @@ class ChessboardWizardDialog:
             actions,
             text="连续抓拍（移动棋盘格自动采集）",
             variable=self.continuous,
-        ).pack(fill="x", pady=(0, 3))
-        ttk.Button(actions, text="抓拍一组", command=self.capture_pair).pack(fill="x", pady=3)
-        ttk.Button(
-            actions,
-            text="移除选中组",
-            command=self.remove_selected,
-        ).pack(fill="x", pady=3)
-        ttk.Button(actions, text="移除上一组", command=self.remove_last).pack(fill="x", pady=3)
-        ttk.Button(
-            actions,
-            text="恢复最近照片组",
-            command=self.restore_recent_pairs,
-        ).pack(fill="x", pady=3)
-        ttk.Button(actions, text="完成标定并保存", command=self.finish).pack(fill="x", pady=(14, 3))
-        ttk.Button(actions, text="查看完整日志", command=self.show_log).pack(fill="x", pady=3)
-        ttk.Button(actions, text="关闭", command=self.close).pack(fill="x", pady=3)
+        ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 3))
+        for index, (label, command) in enumerate((
+            ("抓拍一组", self.capture_pair), ("完成标定并保存", self.finish),
+            ("移除选中组", self.remove_selected), ("移除上一组", self.remove_last),
+            ("恢复最近照片组", self.restore_recent_pairs), ("查看完整日志", self.show_log),
+            ("关闭", self.close),
+        )):
+            ttk.Button(actions, text=label, command=command).grid(
+                row=1+index//2, column=index%2, sticky="ew", padx=3, pady=3)
 
         ttk.Label(main, textvariable=self.message, wraplength=1040, foreground="#355371").pack(
-            fill="x", pady=(6, 0)
+            fill="x", pady=(6, 0), before=previews
         )
 
     # -- helpers -----------------------------------------------------------
@@ -3063,9 +3175,10 @@ class ChessboardWizardDialog:
         height_mm = rows * square_mm
         fits = width_mm <= _A4_BOARD_WIDTH_MM and height_mm <= _A4_BOARD_HEIGHT_MM
         self.fit_hint.set(
-            f"棋盘格占用 {width_mm:g}×{height_mm:g} mm（A4 可打印区域 "
+            f"检测内角点 {columns-1}×{rows-1}；棋盘格占用 {width_mm:g}×{height_mm:g} mm（A4 可打印区域 "
             f"{_A4_BOARD_WIDTH_MM:g}×{_A4_BOARD_HEIGHT_MM:g} mm）—— "
             + ("可打印" if fits else "超出 A4，无法打印")
+            + f"；本次求解格长：{self.measured_square_mm.get().strip() or '待实测填写'} mm"
         )
 
     def _int_value(self, variable: Any, label: str, *, minimum: int = 0) -> int:
@@ -3145,6 +3258,7 @@ class ChessboardWizardDialog:
 
     def _capture_session_metadata(self) -> dict[str, Any]:
         return {
+            "capture_stability_policy": dict(BoardStabilityGate.policy),
             "hardware": self._hardware_specs(),
             "camera": {
                 "layout": self._layout(),
@@ -3340,7 +3454,8 @@ class ChessboardWizardDialog:
             )
             self.message.set(
                 f"已从 {source.name} 恢复 {len(retained)} 组{removal_note}"
-                f"{missing_note}{archive_note}{selection_note}。现有照片可继续使用。"
+                f"{missing_note}{archive_note}{selection_note}。已恢复历史格长 {self.measured_square_mm.get()} mm，"
+                "请按实测重新核对；镜头、分辨率或对焦改变后，应重新采集所有姿态。"
             )
             log_event(
                 get_logger("calibration_wizard"),
@@ -3400,7 +3515,8 @@ class ChessboardWizardDialog:
             path = write_printable_chessboard_png(
                 selected, square_mm=square_mm, columns=columns, rows=rows, dpi=300
             )
-            self.measured_square_mm.set(f"{square_mm:g}")
+            # A design dimension is not a physical measurement of the print.
+            self.measured_square_mm.set("")
             self.message.set(
                 f"棋盘格打印文件已保存：{path}。请按 100%/实际大小打印，"
                 "然后用量具测量格边长并更新“打印后实测格边长”。"
@@ -3701,7 +3817,8 @@ class ChessboardWizardDialog:
         import base64
 
         height, width = frame.shape[:2]
-        scale = min(470 / width, 420 / height, 1.0)
+        available_height = max(60, self.left_preview.winfo_height()-6)
+        scale = min(470 / width, available_height / height, 1.0)
         shown = (
             cv2.resize(
                 frame,
@@ -3821,16 +3938,16 @@ class ChessboardWizardDialog:
     ) -> None:
         """Accept a pair automatically when the pose really changed.
 
-        Continuously sweeping the board replaces per-pose button clicks; the
-        novelty gate keeps near-identical frames from padding the count.
+        A novel pose must settle in both eyes before it enters the solve.
         """
+        now = time.monotonic()
+        stable = self._capture_stability.observe(observations, now)
         if not self.continuous.get() or len(observations) < 2:
             return
         if len(self.pairs) >= _MAX_AUTO_PAIRS:
             self.continuous.set(False)
-            self.message.set(f"已达自动采集上限 {_MAX_AUTO_PAIRS} 组，请点击“完成标定并保存”。")
+            self.message.set(f"已达自动采集上限 {_MAX_AUTO_PAIRS} 组；组数不代表标定合格，请检查区域、远近与倾斜覆盖，必要时手动补拍。")
             return
-        now = time.monotonic()
         if now - self._last_auto_time < _AUTO_CAPTURE_COOLDOWN_S:
             return
         left_obs = observations["left"]
@@ -3848,10 +3965,14 @@ class ChessboardWizardDialog:
         if not math.isfinite(threshold) or threshold < 0:
             threshold = _DEFAULT_SHARPNESS_GATE
         if threshold > 0 and min(left_obs.sharpness, right_obs.sharpness) < threshold:
+            self._capture_stability.reset()
             self.message.set(
                 f"清晰度不足（左 {left_obs.sharpness:.0f} / 右 {right_obs.sharpness:.0f}"
                 f" < {threshold:g}），已跳过自动抓拍；请放慢移动或增加光照。"
             )
+            return
+        if not stable:
+            self.message.set("请保持棋盘不动，连续 3 次检测稳定后计入；高分辨率下可能需要 6～10 秒，请等列表新增一组再移动。")
             return
         if not observation_is_novel(
             self._last_left_observation,
@@ -3860,13 +3981,18 @@ class ChessboardWizardDialog:
             self._pattern(),
         ):
             return
-        self._accept_pair(
-            left_obs,
-            observations["right"],
-            automatic=True,
-            raw_left=pair.left,
-            raw_right=pair.right,
-        )
+        try:
+            self._accept_pair(
+                left_obs,
+                observations["right"],
+                automatic=True,
+                raw_left=pair.left,
+                raw_right=pair.right,
+            )
+        except ChessboardCalibrationError as error:
+            self.continuous.set(False)
+            self.message.set(str(error))
+            return
         self._last_auto_time = now
         self._last_left_observation = left_obs
 
@@ -3898,27 +4024,17 @@ class ChessboardWizardDialog:
             for detector in (left_obs.detector, right_obs.detector)
             if detector != "unknown"
         }
-        reset_count = 0
         if existing_detectors and incoming_detectors != existing_detectors:
-            reset_count = len(self.pairs)
-            reset_capture_ids = [
-                value for value in self._pair_capture_ids if value is not None
-            ]
-            if self.capture_archive is not None:
-                self.capture_archive.mark_status(
-                    reset_capture_ids,
-                    status="excluded_detector_reset",
-                    reason="角点检测器在同一数据集中发生切换",
-                )
-            self.pairs.clear()
-            self._pair_capture_ids.clear()
-            self._last_left_observation = None
             log_event(
                 get_logger("calibration_wizard"),
-                "wizard_detector_dataset_reset",
-                discarded_pair_count=reset_count,
+                "wizard_detector_pair_rejected",
+                retained_pair_count=len(self.pairs),
                 previous_detectors=sorted(existing_detectors),
                 new_detectors=sorted(incoming_detectors),
+            )
+            raise ChessboardCalibrationError(
+                f"角点检测器已切换，已保留原有 {len(self.pairs)} 组，本帧未加入；"
+                "请停止并重新打开预览，恢复原检测器后继续采集，不能混用两种检测器。"
             )
         aligned_right = align_pair_orientation(
             left_obs, right_obs, pattern=self._pattern()
@@ -3940,6 +4056,7 @@ class ChessboardWizardDialog:
                     "left_sharpness": float(left_obs.sharpness),
                     "right_sharpness": float(aligned_right.sharpness),
                     "detector": left_obs.detector,
+                    "capture_stability_policy": dict(BoardStabilityGate.policy),
                     "right_corner_order_rotated_180": orientation_flipped,
                     "median_raw_disparity_px": float(
                         np.median(
@@ -3967,11 +4084,7 @@ class ChessboardWizardDialog:
             image_size=self._eye_size(),
             pattern=self._pattern(),
         )
-        summary = f"{'自动' if automatic else '手动'}接受第 {count} 组（建议 ≥ {minimum} 组）"
-        if reset_count:
-            summary = (
-                f"角点检测器已切换，旧的 {reset_count} 组已清除；" + summary
-            )
+        summary = f"{'自动' if automatic else '手动'}接受第 {count} 组（建议 20～30 组，含留出验证）"
         if coverage["missing"]:
             summary += (
                 f"；区域覆盖 {coverage['covered']}/9（要求 ≥{coverage['required']}），"
@@ -3980,15 +4093,18 @@ class ChessboardWizardDialog:
         else:
             summary += "；区域覆盖 9/9。"
         summary += (
-            f"；质心散布 {diversity['centroid_spread_ratio']:.2f}/"
-            f"{_MIN_CENTROID_SPREAD_RATIO:.2f}；远近跨度 "
+            f"；质心散布 {diversity['centroid_spread_ratio']:.4f}/"
+            f"{_MIN_CENTROID_SPREAD_RATIO:.4f}；远近跨度 "
             f"{image_geometry['projected_scale_span_ratio']:.2f}/"
             f"{_MIN_PROJECTED_SCALE_SPAN_RATIO:.2f}；倾斜跨度 "
             f"{image_geometry['projective_shape_span']:.2f}/"
             f"{_MIN_PROJECTIVE_SHAPE_SPAN:.2f}。"
         )
+        from .calibration_quality import POLICY as holdout_policy
+
         if (
-            count >= minimum
+            count - max(holdout_policy["minimum_holdout_pairs"],
+                        int(count * holdout_policy["holdout_fraction"])) >= minimum
             and coverage["covered"] >= coverage["required"]
             and diversity["centroid_spread_ratio"] >= _MIN_CENTROID_SPREAD_RATIO
             and image_geometry["projected_scale_span_ratio"]
@@ -3996,7 +4112,7 @@ class ChessboardWizardDialog:
             and image_geometry["projective_shape_span"]
             >= _MIN_PROJECTIVE_SHAPE_SPAN
         ):
-            summary += " 已满足组数、区域、远近与倾斜要求，可点击“完成标定并保存”。"
+            summary += " 全部照片的覆盖初检通过；可开始求解，仍须通过训练组检查与留出验证。"
         if count >= _MAX_AUTO_PAIRS:
             self.continuous.set(False)
             summary += f" 已达自动采集上限 {_MAX_AUTO_PAIRS} 组。"
@@ -4032,6 +4148,7 @@ class ChessboardWizardDialog:
         )
 
     def stop(self) -> None:
+        self._capture_stability.reset()
         # Also interrupts a running device sweep between indices.
         self._probe_cancelled.set()
         self._start_after_probe = False
@@ -4092,11 +4209,16 @@ class ChessboardWizardDialog:
             if threshold > 0 and min(
                 observations[0].sharpness, observations[1].sharpness
             ) < threshold:
+                self._capture_stability.reset()
                 raise ChessboardCalibrationError(
                     f"清晰度不足（左 {observations[0].sharpness:.0f} / "
                     f"右 {observations[1].sharpness:.0f} < {threshold:g}）；"
                     "请增加光照或放慢移动；确要忽略请把“清晰度门限”改为 0。"
                 )
+            if not self._capture_stability.observe(
+                dict(zip(("left", "right"), observations)), time.monotonic()
+            ):
+                raise ChessboardCalibrationError("棋盘尚未停稳；请保持左右画面完整，等待连续 3 次稳定检测后再抓拍，高分辨率下可能需要 6～10 秒。已有照片组已保留。")
             self._accept_pair(
                 observations[0],
                 observations[1],
@@ -4105,6 +4227,7 @@ class ChessboardWizardDialog:
                 raw_right=pair.right,
             )
         except Exception as error:  # native cv2 errors included, never silent
+            self._capture_stability.reset()
             from .logging_config import get_logger, log_event
 
             log_event(
@@ -4207,7 +4330,7 @@ class ChessboardWizardDialog:
                 self.capture_archive.update_session(
                     self._capture_session_metadata()
                 )
-            result = solve_stereo_calibration(
+            result = solve_stereo_calibration_checked(
                 pairs=list(self.pairs),
                 image_size=eye_size,
                 square_mm=square_mm,
@@ -4353,6 +4476,9 @@ class ChessboardWizardDialog:
                 int(value)
                 for value in result.audit.get("discarded_pair_indices", [])
             ]
+            validation_capture_ids = [self._pair_capture_ids[index-1]
+                for index in result.audit["holdout"]["input_pair_indices"]
+                if self._pair_capture_ids[index-1] is not None]
             (
                 retained_pairs,
                 retained_capture_ids,
@@ -4383,8 +4509,10 @@ class ChessboardWizardDialog:
                             "used_capture_ids": [
                                 value
                                 for value in retained_capture_ids
-                                if value is not None
+                                if value is not None and value not in validation_capture_ids
                             ],
+                            "validation_capture_ids": validation_capture_ids,
+                            "quality_audit": copy.deepcopy(result.calibration["quality_audit"]),
                             "discarded_capture_ids": discarded_capture_ids,
                         }
                     }
@@ -4398,11 +4526,13 @@ class ChessboardWizardDialog:
                     [
                         value
                         for value in retained_capture_ids
-                        if value is not None
+                        if value is not None and value not in validation_capture_ids
                     ],
                     status="used_in_saved_calibration",
                     reason=result.calibration["calibration_id"],
                 )
+                self.capture_archive.mark_status(validation_capture_ids, status="held_out_validation",
+                                                 reason=result.calibration["calibration_id"])
             checkpoint_note = (
                 f"\n可恢复照片组已保存：{checkpoint_path}。"
                 if checkpoint_path is not None
@@ -4412,8 +4542,9 @@ class ChessboardWizardDialog:
                 f"标定完成并已保存：{path}\n"
                 f"双目 RMS {result.stereo_rms_px:.3f} px，左右目 "
                 f"{result.left_rms_px:.3f}/{result.right_rms_px:.3f} px，"
-                f"基线 {result.calibration['baseline_mm']:.2f} mm，共 {result.pair_count} 组。\n"
+                f"基线 {result.calibration['baseline_mm']:.2f} mm，求解 {result.pair_count} 组，留出验证 {result.audit['holdout']['pair_count']} 组。\n"
                 f"右目画面自动修正：{result.audit.get('right_frame_transform', 'none')}。\n"
+                + "留出验证通过仍不代表毫米尺度已验收；请用另一件已知尺寸实物复核。\n"
                 + "基础立面模式无需额外 CAD 标记配准；请重新抓拍并评估。"
                 + checkpoint_note
             )

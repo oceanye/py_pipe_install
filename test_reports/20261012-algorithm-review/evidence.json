@@ -1,0 +1,1320 @@
+{
+  "scope": "OFFLINE_IN_SAMPLE_DIAGNOSTIC_NOT_FIELD_VALIDATION",
+  "code_head": "a8f0fb6fa0c61e31456aa41f3d215df513f3bb23",
+  "source_sha256": {
+    "manifest.json": "ed5ad2f3239724c7f64f93aa8a674c1ee20635585863f50cbcf36c590500943f",
+    "report.json": "ad30de444cce06479724a5f6e39dc3b7a9e33697e8ef14c954cba5ef87964d14",
+    "photos/left.png": "b0227bd5d09a1af53f276f8f03561e7d8454557e2b3e5b03109092f50837f7f5",
+    "photos/right.png": "f78401230c996c4c9cacdb03ae9e6df45cba19556c940a2a1119a8154e4fb647"
+  },
+  "policy": "No production changes; exact same capture; block_size and preprocessing varied; max candidates increased only in separate diagnostic.",
+  "cases": [
+    {
+      "case": "low_light_block5",
+      "matcher": {
+        "preprocessing": "low_light",
+        "min_disparity": 0,
+        "num_disparities": 256,
+        "block_size": 5,
+        "uniqueness_ratio": 5,
+        "speckle_window_size": 50,
+        "speckle_range": 2,
+        "disp12_max_diff": 2
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.29355275848765433,
+        "valid_right_fraction": 0.29162037037037036,
+        "searchable_depth_min_mm": 713.1569233387398,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "pipe_patch_depth_diagnostics": {
+        "upper_red": {
+          "left": {
+            "valid_percent": 9.413333333333334,
+            "raw_z_p05_p50_p95_mm": [
+              999.203369140625,
+              1667.4385986328125,
+              4640.63818359375
+            ]
+          },
+          "right": {
+            "valid_percent": 14.746666666666666,
+            "raw_z_p05_p50_p95_mm": [
+              976.0752563476562,
+              2062.140625,
+              3358.940454101458
+            ]
+          }
+        },
+        "lower_red": {
+          "left": {
+            "valid_percent": 20.992,
+            "raw_z_p05_p50_p95_mm": [
+              1338.3994140625,
+              1385.56201171875,
+              1732.9840087890625
+            ]
+          },
+          "right": {
+            "valid_percent": 21.656,
+            "raw_z_p05_p50_p95_mm": [
+              1334.103759765625,
+              1382.2708740234375,
+              1732.9840087890625
+            ]
+          }
+        },
+        "white": {
+          "left": {
+            "valid_percent": 17.57142857142857,
+            "raw_z_p05_p50_p95_mm": [
+              1876.002685546875,
+              2070.94677734375,
+              2359.837890625
+            ]
+          },
+          "right": {
+            "valid_percent": 16.142857142857142,
+            "raw_z_p05_p50_p95_mm": [
+              1907.4243957519532,
+              2073.89892578125,
+              2351.1621948242187
+            ]
+          }
+        },
+        "blue": {
+          "left": {
+            "valid_percent": 17.553333333333335,
+            "raw_z_p05_p50_p95_mm": [
+              1122.561767578125,
+              1485.28857421875,
+              4582.173828125
+            ]
+          },
+          "right": {
+            "valid_percent": 17.046666666666667,
+            "raw_z_p05_p50_p95_mm": [
+              1122.12890625,
+              1479.2476806640625,
+              4618.5400390625
+            ]
+          }
+        }
+      },
+      "elapsed_seconds": 9.604367099993397,
+      "geometry": {
+        "observation_count": 0,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "rejection_counts": {
+          "CANDIDATE_BUDGET_EXCEEDED": 2,
+          "CYLINDER_FIT_RESIDUAL_TOO_LARGE": 90,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 96,
+          "DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS": 2,
+          "INSUFFICIENT_VISIBLE_CYLINDER_ARC": 3,
+          "SURFACE_CURVATURE_NOT_RESOLVED": 1
+        }
+      },
+      "color_strip": {
+        "observation_count": 1,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "observations": [
+          {
+            "observation_id": "OBS-0001",
+            "left_region_px": [
+              1473,
+              654,
+              123,
+              46
+            ],
+            "right_region_px": [
+              1368,
+              653,
+              130,
+              47
+            ],
+            "diameter_mm": 57.22337561009756,
+            "diameter_uncertainty_mm": 36.34580903477798,
+            "fit_rms_mm": 36.34580903477798,
+            "axis_camera": [
+              0.001971465110551813,
+              0.10141752444442381,
+              0.9948419970331382
+            ],
+            "axial_support_mm": 232.83353846823206,
+            "measured_color_class": "WHITE",
+            "left_right_center_difference_mm": 13.58339775936822,
+            "left_right_axis_angle_deg": 7.536153787202644,
+            "candidate_pipe_ids": [
+              "P001",
+              "P004",
+              "P007",
+              "P010"
+            ]
+          }
+        ],
+        "rejection_counts": {
+          "PARALLEL_COMPONENT_BUDGET_EXCEEDED": 1,
+          "LOCAL_DIAMETER_INVALID": 9,
+          "LOCAL_COLOR_CLASS_MISMATCH": 22,
+          "INSUFFICIENT_LOCAL_STEREO_POINTS": 72,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 5,
+          "LOCAL_AXIS_NOT_ELONGATED": 11,
+          "NO_STEREO_LOCAL_STRIP_PAIR": 14,
+          "STEREO_LOCAL_CENTER_DISAGREEMENT": 7,
+          "LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE": 1,
+          "STEREO_LOCAL_DIAMETER_DISAGREEMENT": 1,
+          "LOCAL_AXIS_OUTSIDE_PARALLEL_CONSENSUS": 1
+        }
+      }
+    },
+    {
+      "case": "none_block5",
+      "matcher": {
+        "preprocessing": "none",
+        "min_disparity": 0,
+        "num_disparities": 256,
+        "block_size": 5,
+        "uniqueness_ratio": 5,
+        "speckle_window_size": 50,
+        "speckle_range": 2,
+        "disp12_max_diff": 2
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "none",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.27025559413580247,
+        "valid_right_fraction": 0.2679272762345679,
+        "searchable_depth_min_mm": 713.1569233387398,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "pipe_patch_depth_diagnostics": {
+        "upper_red": {
+          "left": {
+            "valid_percent": 4.417777777777778,
+            "raw_z_p05_p50_p95_mm": [
+              989.0143432617188,
+              1529.80029296875,
+              4762.16064453125
+            ]
+          },
+          "right": {
+            "valid_percent": 7.635555555555555,
+            "raw_z_p05_p50_p95_mm": [
+              960.2588439941406,
+              2418.686767578125,
+              4677.9423828125
+            ]
+          }
+        },
+        "lower_red": {
+          "left": {
+            "valid_percent": 13.303999999999998,
+            "raw_z_p05_p50_p95_mm": [
+              733.47119140625,
+              1391.5257568359375,
+              4777.80029296875
+            ]
+          },
+          "right": {
+            "valid_percent": 15.032,
+            "raw_z_p05_p50_p95_mm": [
+              733.6561279296875,
+              1376.3861083984375,
+              4260.14697265625
+            ]
+          }
+        },
+        "white": {
+          "left": {
+            "valid_percent": 22.464285714285715,
+            "raw_z_p05_p50_p95_mm": [
+              1843.90380859375,
+              1913.0047607421875,
+              2321.43017578125
+            ]
+          },
+          "right": {
+            "valid_percent": 23.142857142857142,
+            "raw_z_p05_p50_p95_mm": [
+              1842.736083984375,
+              1914.2633056640625,
+              2314.781494140625
+            ]
+          }
+        },
+        "blue": {
+          "left": {
+            "valid_percent": 10.566666666666666,
+            "raw_z_p05_p50_p95_mm": [
+              1123.0818359375,
+              1326.1988525390625,
+              2184.444580078125
+            ]
+          },
+          "right": {
+            "valid_percent": 11.966666666666667,
+            "raw_z_p05_p50_p95_mm": [
+              1123.4287109375,
+              1329.8355712890625,
+              2169.783935546875
+            ]
+          }
+        }
+      },
+      "elapsed_seconds": 10.877394299954176,
+      "geometry": {
+        "observation_count": 0,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "rejection_counts": {
+          "CANDIDATE_BUDGET_EXCEEDED": 2,
+          "CYLINDER_FIT_RESIDUAL_TOO_LARGE": 108,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 79,
+          "DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS": 2,
+          "INSUFFICIENT_VISIBLE_CYLINDER_ARC": 2,
+          "SURFACE_CURVATURE_NOT_RESOLVED": 1
+        }
+      },
+      "color_strip": {
+        "observation_count": 0,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "observations": [],
+        "rejection_counts": {
+          "PARALLEL_COMPONENT_BUDGET_EXCEEDED": 1,
+          "LOCAL_DIAMETER_INVALID": 9,
+          "LOCAL_COLOR_CLASS_MISMATCH": 28,
+          "INSUFFICIENT_LOCAL_STEREO_POINTS": 69,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 5,
+          "LOCAL_AXIS_NOT_ELONGATED": 14,
+          "NO_STEREO_LOCAL_STRIP_PAIR": 8,
+          "LOCAL_PAIR_AXIS_MISMATCH": 2,
+          "STEREO_LOCAL_CENTER_DISAGREEMENT": 4,
+          "STEREO_LOCAL_DIAMETER_DISAGREEMENT": 2,
+          "LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE": 2
+        }
+      }
+    },
+    {
+      "case": "low_light_block3",
+      "matcher": {
+        "preprocessing": "low_light",
+        "min_disparity": 0,
+        "num_disparities": 256,
+        "block_size": 3,
+        "uniqueness_ratio": 5,
+        "speckle_window_size": 50,
+        "speckle_range": 2,
+        "disp12_max_diff": 2
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 3,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.26348765432098764,
+        "valid_right_fraction": 0.26075086805555553,
+        "searchable_depth_min_mm": 713.1569233387398,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "pipe_patch_depth_diagnostics": {
+        "upper_red": {
+          "left": {
+            "valid_percent": 8.266666666666666,
+            "raw_z_p05_p50_p95_mm": [
+              999.203369140625,
+              1670.3101806640625,
+              4902.994799804687
+            ]
+          },
+          "right": {
+            "valid_percent": 12.835555555555555,
+            "raw_z_p05_p50_p95_mm": [
+              1000.6294464111328,
+              1879.63916015625,
+              4646.939721679687
+            ]
+          }
+        },
+        "lower_red": {
+          "left": {
+            "valid_percent": 20.119999999999997,
+            "raw_z_p05_p50_p95_mm": [
+              1339.0152587890625,
+              1390.196044921875,
+              2236.4951171875
+            ]
+          },
+          "right": {
+            "valid_percent": 20.832,
+            "raw_z_p05_p50_p95_mm": [
+              1341.484619140625,
+              1388.2061767578125,
+              2236.4951171875
+            ]
+          }
+        },
+        "white": {
+          "left": {
+            "valid_percent": 8.928571428571429,
+            "raw_z_p05_p50_p95_mm": [
+              1910.8113708496094,
+              2324.02587890625,
+              2368.5789428710937
+            ]
+          },
+          "right": {
+            "valid_percent": 8.821428571428571,
+            "raw_z_p05_p50_p95_mm": [
+              1909.1153198242187,
+              2331.474609375,
+              2354.1103515625
+            ]
+          }
+        },
+        "blue": {
+          "left": {
+            "valid_percent": 14.713333333333335,
+            "raw_z_p05_p50_p95_mm": [
+              1124.8619262695313,
+              1490.6148681640625,
+              4606.849902343747
+            ]
+          },
+          "right": {
+            "valid_percent": 13.853333333333333,
+            "raw_z_p05_p50_p95_mm": [
+              1124.7314453125,
+              1478.8718872070312,
+              4625.8828125
+            ]
+          }
+        }
+      },
+      "elapsed_seconds": 12.883421700040344,
+      "geometry": {
+        "observation_count": 0,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "rejection_counts": {
+          "CANDIDATE_BUDGET_EXCEEDED": 2,
+          "CYLINDER_FIT_RESIDUAL_TOO_LARGE": 88,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 99,
+          "SURFACE_OUTLIERS": 3,
+          "INSUFFICIENT_VISIBLE_CYLINDER_ARC": 1,
+          "SURFACE_CURVATURE_NOT_RESOLVED": 1
+        }
+      },
+      "color_strip": {
+        "observation_count": 1,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "observations": [
+          {
+            "observation_id": "OBS-0001",
+            "left_region_px": [
+              1231,
+              177,
+              74,
+              10
+            ],
+            "right_region_px": [
+              1085,
+              174,
+              194,
+              14
+            ],
+            "diameter_mm": 29.282400133943238,
+            "diameter_uncertainty_mm": 26.7910925649566,
+            "fit_rms_mm": 26.7910925649566,
+            "axis_camera": [
+              0.019725088129976732,
+              -0.12078124699846207,
+              0.9924831541501151
+            ],
+            "axial_support_mm": 1182.9529348167312,
+            "measured_color_class": "WHITE",
+            "left_right_center_difference_mm": 13.640235018178169,
+            "left_right_axis_angle_deg": 0.04004726037930568,
+            "candidate_pipe_ids": [
+              "P002",
+              "P005",
+              "P009",
+              "P012"
+            ]
+          }
+        ],
+        "rejection_counts": {
+          "PARALLEL_COMPONENT_BUDGET_EXCEEDED": 1,
+          "LOCAL_DIAMETER_INVALID": 9,
+          "LOCAL_COLOR_CLASS_MISMATCH": 23,
+          "INSUFFICIENT_LOCAL_STEREO_POINTS": 76,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 3,
+          "LOCAL_AXIS_NOT_ELONGATED": 10,
+          "NO_STEREO_LOCAL_STRIP_PAIR": 11,
+          "STEREO_LOCAL_CENTER_DISAGREEMENT": 6,
+          "STEREO_LOCAL_DIAMETER_DISAGREEMENT": 1,
+          "LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE": 1,
+          "LOCAL_AXIS_OUTSIDE_PARALLEL_CONSENSUS": 2
+        }
+      }
+    },
+    {
+      "case": "low_light_block7",
+      "matcher": {
+        "preprocessing": "low_light",
+        "min_disparity": 0,
+        "num_disparities": 256,
+        "block_size": 7,
+        "uniqueness_ratio": 5,
+        "speckle_window_size": 50,
+        "speckle_range": 2,
+        "disp12_max_diff": 2
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 7,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.32220052083333334,
+        "valid_right_fraction": 0.32046344521604936,
+        "searchable_depth_min_mm": 713.1569233387398,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "pipe_patch_depth_diagnostics": {
+        "upper_red": {
+          "left": {
+            "valid_percent": 8.595555555555555,
+            "raw_z_p05_p50_p95_mm": [
+              997.832763671875,
+              1675.1181640625,
+              4618.5400390625
+            ]
+          },
+          "right": {
+            "valid_percent": 13.635555555555555,
+            "raw_z_p05_p50_p95_mm": [
+              972.4866943359375,
+              2065.067626953125,
+              3204.49365234375
+            ]
+          }
+        },
+        "lower_red": {
+          "left": {
+            "valid_percent": 24.456,
+            "raw_z_p05_p50_p95_mm": [
+              1267.83447265625,
+              1384.24365234375,
+              1941.0809326171875
+            ]
+          },
+          "right": {
+            "valid_percent": 26.151999999999997,
+            "raw_z_p05_p50_p95_mm": [
+              1269.4940185546875,
+              1380.9588623046875,
+              2183.789111328125
+            ]
+          }
+        },
+        "white": {
+          "left": {
+            "valid_percent": 18.75,
+            "raw_z_p05_p50_p95_mm": [
+              1839.2415771484375,
+              2020.611328125,
+              2354.1103515625
+            ]
+          },
+          "right": {
+            "valid_percent": 17.392857142857142,
+            "raw_z_p05_p50_p95_mm": [
+              1831.1392822265625,
+              2029.065673828125,
+              2342.73779296875
+            ]
+          }
+        },
+        "blue": {
+          "left": {
+            "valid_percent": 20.613333333333333,
+            "raw_z_p05_p50_p95_mm": [
+              1124.296875,
+              1478.49609375,
+              2238.215576171875
+            ]
+          },
+          "right": {
+            "valid_percent": 20.133333333333333,
+            "raw_z_p05_p50_p95_mm": [
+              1122.9951171875,
+              1477.7451171875,
+              1848.5897216796875
+            ]
+          }
+        }
+      },
+      "elapsed_seconds": 14.243509399995673,
+      "geometry": {
+        "observation_count": 0,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "rejection_counts": {
+          "CANDIDATE_BUDGET_EXCEEDED": 2,
+          "CYLINDER_FIT_RESIDUAL_TOO_LARGE": 106,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 79,
+          "DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS": 3,
+          "INSUFFICIENT_VISIBLE_CYLINDER_ARC": 4
+        }
+      },
+      "color_strip": {
+        "observation_count": 1,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "observations": [
+          {
+            "observation_id": "OBS-0001",
+            "left_region_px": [
+              1473,
+              654,
+              123,
+              46
+            ],
+            "right_region_px": [
+              1368,
+              653,
+              130,
+              47
+            ],
+            "diameter_mm": 57.5866049123495,
+            "diameter_uncertainty_mm": 36.35303640289003,
+            "fit_rms_mm": 36.35303640289003,
+            "axis_camera": [
+              0.009829629586548668,
+              0.1152649801709858,
+              0.9932861434291599
+            ],
+            "axial_support_mm": 216.77034546672735,
+            "measured_color_class": "WHITE",
+            "left_right_center_difference_mm": 27.017289899602233,
+            "left_right_axis_angle_deg": 8.643902971813343,
+            "candidate_pipe_ids": [
+              "P001",
+              "P004",
+              "P007",
+              "P010"
+            ]
+          }
+        ],
+        "rejection_counts": {
+          "PARALLEL_COMPONENT_BUDGET_EXCEEDED": 1,
+          "LOCAL_DIAMETER_INVALID": 9,
+          "LOCAL_COLOR_CLASS_MISMATCH": 23,
+          "INSUFFICIENT_LOCAL_STEREO_POINTS": 69,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 7,
+          "LOCAL_AXIS_NOT_ELONGATED": 10,
+          "NO_STEREO_LOCAL_STRIP_PAIR": 12,
+          "STEREO_LOCAL_CENTER_DISAGREEMENT": 8,
+          "LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE": 1,
+          "STEREO_LOCAL_DIAMETER_DISAGREEMENT": 1
+        }
+      }
+    },
+    {
+      "case": "low_light_block11",
+      "matcher": {
+        "preprocessing": "low_light",
+        "min_disparity": 0,
+        "num_disparities": 256,
+        "block_size": 11,
+        "uniqueness_ratio": 5,
+        "speckle_window_size": 50,
+        "speckle_range": 2,
+        "disp12_max_diff": 2
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 11,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.3656524884259259,
+        "valid_right_fraction": 0.3642544367283951,
+        "searchable_depth_min_mm": 713.1569233387398,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "pipe_patch_depth_diagnostics": {
+        "upper_red": {
+          "left": {
+            "valid_percent": 10.08,
+            "raw_z_p05_p50_p95_mm": [
+              1148.255859375,
+              2022.0155029296875,
+              4923.31689453125
+            ]
+          },
+          "right": {
+            "valid_percent": 14.675555555555556,
+            "raw_z_p05_p50_p95_mm": [
+              1143.2928466796875,
+              2072.421875,
+              4817.3515625
+            ]
+          }
+        },
+        "lower_red": {
+          "left": {
+            "valid_percent": 29.56,
+            "raw_z_p05_p50_p95_mm": [
+              1338.8305053710938,
+              1380.3037109375,
+              1578.77392578125
+            ]
+          },
+          "right": {
+            "valid_percent": 31.608000000000004,
+            "raw_z_p05_p50_p95_mm": [
+              1336.5550537109375,
+              1380.3037109375,
+              2189.375732421875
+            ]
+          }
+        },
+        "white": {
+          "left": {
+            "valid_percent": 18.321428571428573,
+            "raw_z_p05_p50_p95_mm": [
+              1831.8311279296875,
+              1998.40673828125,
+              2334.09326171875
+            ]
+          },
+          "right": {
+            "valid_percent": 18.5,
+            "raw_z_p05_p50_p95_mm": [
+              1820.4847717285156,
+              1983.422119140625,
+              2335.216796875
+            ]
+          }
+        },
+        "blue": {
+          "left": {
+            "valid_percent": 26.866666666666667,
+            "raw_z_p05_p50_p95_mm": [
+              1136.5938720703125,
+              1479.2476806640625,
+              1832.2923583984375
+            ]
+          },
+          "right": {
+            "valid_percent": 26.68,
+            "raw_z_p05_p50_p95_mm": [
+              1137.0379638671875,
+              1480.0001220703125,
+              1824.2509765625
+            ]
+          }
+        }
+      },
+      "elapsed_seconds": 13.669053799996618,
+      "geometry": {
+        "observation_count": 0,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "rejection_counts": {
+          "CANDIDATE_BUDGET_EXCEEDED": 2,
+          "CYLINDER_FIT_RESIDUAL_TOO_LARGE": 114,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 69,
+          "INSUFFICIENT_VISIBLE_CYLINDER_ARC": 4,
+          "SURFACE_CURVATURE_NOT_RESOLVED": 4,
+          "DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS": 1
+        }
+      },
+      "color_strip": {
+        "observation_count": 0,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "observations": [],
+        "rejection_counts": {
+          "PARALLEL_COMPONENT_BUDGET_EXCEEDED": 1,
+          "LOCAL_DIAMETER_INVALID": 9,
+          "LOCAL_COLOR_CLASS_MISMATCH": 26,
+          "INSUFFICIENT_LOCAL_STEREO_POINTS": 65,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 8,
+          "LOCAL_AXIS_NOT_ELONGATED": 15,
+          "NO_STEREO_LOCAL_STRIP_PAIR": 13,
+          "STEREO_LOCAL_DIAMETER_DISAGREEMENT": 2,
+          "LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE": 1,
+          "STEREO_LOCAL_CENTER_DISAGREEMENT": 5
+        }
+      }
+    },
+    {
+      "case": "none_block7",
+      "matcher": {
+        "preprocessing": "none",
+        "min_disparity": 0,
+        "num_disparities": 256,
+        "block_size": 7,
+        "uniqueness_ratio": 5,
+        "speckle_window_size": 50,
+        "speckle_range": 2,
+        "disp12_max_diff": 2
+      },
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "none",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 7,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.3094463734567901,
+        "valid_right_fraction": 0.3071074459876543,
+        "searchable_depth_min_mm": 713.1569233387398,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "pipe_patch_depth_diagnostics": {
+        "upper_red": {
+          "left": {
+            "valid_percent": 5.653333333333333,
+            "raw_z_p05_p50_p95_mm": [
+              988.2585754394531,
+              1524.1907958984375,
+              4567.787109375
+            ]
+          },
+          "right": {
+            "valid_percent": 8.408888888888889,
+            "raw_z_p05_p50_p95_mm": [
+              959.9736938476562,
+              1609.33642578125,
+              4546.37548828125
+            ]
+          }
+        },
+        "lower_red": {
+          "left": {
+            "valid_percent": 14.544,
+            "raw_z_p05_p50_p95_mm": [
+              734.9533081054688,
+              1377.0374755859375,
+              4723.5068359375
+            ]
+          },
+          "right": {
+            "valid_percent": 16.352,
+            "raw_z_p05_p50_p95_mm": [
+              734.7677612304688,
+              1367.9737548828125,
+              3587.7685546875
+            ]
+          }
+        },
+        "white": {
+          "left": {
+            "valid_percent": 18.035714285714285,
+            "raw_z_p05_p50_p95_mm": [
+              1854.480712890625,
+              1914.2633056640625,
+              2091.48974609375
+            ]
+          },
+          "right": {
+            "valid_percent": 20.25,
+            "raw_z_p05_p50_p95_mm": [
+              1856.3744140625,
+              1920.5810546875,
+              2113.0576171875
+            ]
+          }
+        },
+        "blue": {
+          "left": {
+            "valid_percent": 13.186666666666666,
+            "raw_z_p05_p50_p95_mm": [
+              1122.561767578125,
+              1319.5828857421875,
+              2036.165283203125
+            ]
+          },
+          "right": {
+            "valid_percent": 14.553333333333333,
+            "raw_z_p05_p50_p95_mm": [
+              1122.561767578125,
+              1326.8035888671875,
+              2039.01904296875
+            ]
+          }
+        }
+      },
+      "elapsed_seconds": 11.845394600008149,
+      "geometry": {
+        "observation_count": 0,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "rejection_counts": {
+          "CANDIDATE_BUDGET_EXCEEDED": 2,
+          "CYLINDER_FIT_RESIDUAL_TOO_LARGE": 107,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 80,
+          "INSUFFICIENT_VISIBLE_CYLINDER_ARC": 1,
+          "SURFACE_CURVATURE_NOT_RESOLVED": 2,
+          "DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS": 2
+        }
+      },
+      "color_strip": {
+        "observation_count": 1,
+        "registration_status": "INSUFFICIENT_OBSERVATIONS",
+        "matched_count": 0,
+        "observations": [
+          {
+            "observation_id": "OBS-0001",
+            "left_region_px": [
+              1473,
+              654,
+              123,
+              46
+            ],
+            "right_region_px": [
+              1368,
+              653,
+              130,
+              47
+            ],
+            "diameter_mm": 61.2491303161986,
+            "diameter_uncertainty_mm": 42.976435584040786,
+            "fit_rms_mm": 42.976435584040786,
+            "axis_camera": [
+              0.12130217741950218,
+              0.1116772952277304,
+              0.9863133191252696
+            ],
+            "axial_support_mm": 291.9087131267306,
+            "measured_color_class": "WHITE",
+            "left_right_center_difference_mm": 23.740304853179968,
+            "left_right_axis_angle_deg": 9.065204989138952,
+            "candidate_pipe_ids": [
+              "P001",
+              "P004",
+              "P007",
+              "P010"
+            ]
+          }
+        ],
+        "rejection_counts": {
+          "PARALLEL_COMPONENT_BUDGET_EXCEEDED": 1,
+          "LOCAL_DIAMETER_INVALID": 9,
+          "LOCAL_COLOR_CLASS_MISMATCH": 26,
+          "INSUFFICIENT_LOCAL_STEREO_POINTS": 67,
+          "LOCAL_AXIS_SUPPORT_TOO_SHORT": 9,
+          "LOCAL_AXIS_NOT_ELONGATED": 13,
+          "NO_STEREO_LOCAL_STRIP_PAIR": 12,
+          "LOCAL_PAIR_AXIS_MISMATCH": 1,
+          "STEREO_LOCAL_DIAMETER_DISAGREEMENT": 2,
+          "LOCAL_DIAMETER_OUTSIDE_MODEL_RANGE": 1,
+          "STEREO_LOCAL_CENTER_DISAGREEMENT": 3
+        }
+      }
+    }
+  ],
+  "budget384": {
+    "observation_count": 0,
+    "registration_status": "INSUFFICIENT_OBSERVATIONS",
+    "matched_count": 0,
+    "rejection_counts": {
+      "CANDIDATE_BUDGET_EXCEEDED": 2,
+      "CYLINDER_FIT_RESIDUAL_TOO_LARGE": 499,
+      "LOCAL_AXIS_SUPPORT_TOO_SHORT": 243,
+      "DIAMETER_VARIES_ACROSS_LOCAL_SECTIONS": 7,
+      "INSUFFICIENT_VISIBLE_CYLINDER_ARC": 15,
+      "SURFACE_CURVATURE_NOT_RESOLVED": 4
+    },
+    "elapsed_seconds": 13.880520100006834
+  },
+  "auto_trace": {
+    "auto_geometry_extraction_calls": 2,
+    "auto_seconds": 9.105022700037807,
+    "auto_observation_count": 0,
+    "backend_label": "parallel_strip"
+  },
+  "largest_components_by_eye_and_color": [
+    {
+      "role": "left",
+      "color_srgb": "#0000FF",
+      "target_index": 0,
+      "region_px": [
+        848,
+        290,
+        891,
+        205
+      ],
+      "component_pixels": 109355,
+      "valid_points": 27063,
+      "valid_fraction": 0.24747839604956334,
+      "pixel_aspect": 5.976252189681282,
+      "axis_elongation": 4.04920768561121,
+      "axis_support_mm": 4236.781843500192,
+      "singular_values": [
+        89945.04999817387,
+        22212.999920402224,
+        4309.2046488378255
+      ],
+      "measured_color_srgb": "#1F52B5",
+      "measured_color_class": "BLUE",
+      "expected_color_class": "BLUE",
+      "reason": "LOCAL_DIAMETER_INVALID"
+    },
+    {
+      "role": "left",
+      "color_srgb": "#0000FF",
+      "target_index": 0,
+      "region_px": [
+        173,
+        343,
+        638,
+        163
+      ],
+      "component_pixels": 72226,
+      "valid_points": 9523,
+      "valid_fraction": 0.1318500263063163,
+      "pixel_aspect": 5.221324062258024,
+      "axis_elongation": 5.799855306295632,
+      "axis_support_mm": 4226.739310979625,
+      "singular_values": [
+        49418.228111263714,
+        8520.59672206325,
+        2011.9144625993174
+      ],
+      "measured_color_srgb": "#0B389B",
+      "measured_color_class": "BLUE",
+      "expected_color_class": "BLUE",
+      "reason": "LOCAL_DIAMETER_INVALID"
+    },
+    {
+      "role": "right",
+      "color_srgb": "#0000FF",
+      "target_index": 0,
+      "region_px": [
+        706,
+        295,
+        905,
+        160
+      ],
+      "component_pixels": 93464,
+      "valid_points": 18788,
+      "valid_fraction": 0.20101857399640502,
+      "pixel_aspect": 8.134733823222785,
+      "axis_elongation": 3.9013693546590775,
+      "axis_support_mm": 4156.6531613758025,
+      "singular_values": [
+        80863.93882749137,
+        20727.065672703447,
+        2366.379522998827
+      ],
+      "measured_color_srgb": "#0057CE",
+      "measured_color_class": "BLUE",
+      "expected_color_class": "BLUE",
+      "reason": "LOCAL_DIAMETER_INVALID"
+    },
+    {
+      "role": "right",
+      "color_srgb": "#0000FF",
+      "target_index": 0,
+      "region_px": [
+        23,
+        345,
+        647,
+        175
+      ],
+      "component_pixels": 71866,
+      "valid_points": 8922,
+      "valid_fraction": 0.12414771936659895,
+      "pixel_aspect": 5.514312605266454,
+      "axis_elongation": 5.742362493494473,
+      "axis_support_mm": 4226.215701276094,
+      "singular_values": [
+        47864.07223487228,
+        8335.257881942758,
+        1640.1877819654162
+      ],
+      "measured_color_srgb": "#01389B",
+      "measured_color_class": "BLUE",
+      "expected_color_class": "BLUE",
+      "reason": "LOCAL_DIAMETER_INVALID"
+    },
+    {
+      "role": "left",
+      "color_srgb": "#FFFFFF",
+      "target_index": 1,
+      "region_px": [
+        1262,
+        832,
+        466,
+        248
+      ],
+      "component_pixels": 84285,
+      "valid_points": 9334,
+      "valid_fraction": 0.11074331138399478,
+      "pixel_aspect": 1.801312797022813,
+      "axis_elongation": 26.765630592696226,
+      "axis_support_mm": 4317.774923429096,
+      "singular_values": [
+        70676.14675764514,
+        2640.556011294991,
+        1713.4059003961368
+      ],
+      "measured_color_srgb": "#FAFEF9",
+      "measured_color_class": "WHITE",
+      "expected_color_class": "WHITE",
+      "diameter_mm": 90.34667283026285,
+      "radial_diameter_mm": 90.34667283026285,
+      "diameter_source": "STEREO_LOCAL_RADIAL_P95_AND_PROJECTED_CHORD",
+      "projected_width_px": 212.59322409241503,
+      "projected_width_mm": 52.276266885840926,
+      "diameter_radial_percentile": 95.0,
+      "diameter_uncertainty_mm": 38.07040594442192,
+      "depth_median_mm": 737.3746337890625,
+      "depth_mad_mm": 19.1724853515625,
+      "reason": "ACCEPTED_COMPONENT"
+    },
+    {
+      "role": "right",
+      "color_srgb": "#FFFFFF",
+      "target_index": 1,
+      "region_px": [
+        939,
+        833,
+        500,
+        247
+      ],
+      "component_pixels": 91988,
+      "valid_points": 8548,
+      "valid_fraction": 0.09292516415184589,
+      "pixel_aspect": 1.945946837417252,
+      "axis_elongation": 14.686856362000398,
+      "axis_support_mm": 3560.485173818102,
+      "singular_values": [
+        33351.38764696519,
+        2270.8322887432814,
+        1511.704053372406
+      ],
+      "measured_color_srgb": "#FAFEF9",
+      "measured_color_class": "WHITE",
+      "expected_color_class": "WHITE",
+      "diameter_mm": 91.81262260247138,
+      "radial_diameter_mm": 91.81262260247138,
+      "diameter_source": "STEREO_LOCAL_RADIAL_P95_AND_PROJECTED_CHORD",
+      "projected_width_px": 217.3399768477575,
+      "projected_width_mm": 53.22766034763373,
+      "diameter_radial_percentile": 95.0,
+      "diameter_uncertainty_mm": 38.58496225483765,
+      "depth_median_mm": 734.3968505859375,
+      "depth_mad_mm": 20.0142822265625,
+      "reason": "ACCEPTED_COMPONENT"
+    },
+    {
+      "role": "right",
+      "color_srgb": "#FFFFFF",
+      "target_index": 1,
+      "region_px": [
+        1611,
+        855,
+        309,
+        225
+      ],
+      "component_pixels": 53681,
+      "valid_points": 64,
+      "valid_fraction": 0.0011922281626646299,
+      "pixel_aspect": 1.252204038086754,
+      "reason": "INSUFFICIENT_LOCAL_STEREO_POINTS"
+    },
+    {
+      "role": "left",
+      "color_srgb": "#FF0000",
+      "target_index": 2,
+      "region_px": [
+        840,
+        0,
+        1080,
+        691
+      ],
+      "component_pixels": 244225,
+      "valid_points": 76754,
+      "valid_fraction": 0.31427577029378645,
+      "pixel_aspect": 3.374214715850061,
+      "axis_elongation": 2.6438544871749334,
+      "axis_support_mm": 4301.3153548376395,
+      "singular_values": [
+        114122.2449647264,
+        43165.10062044704,
+        14513.164295766446
+      ],
+      "measured_color_srgb": "#C34C48",
+      "measured_color_class": "RED",
+      "expected_color_class": "RED",
+      "reason": "LOCAL_DIAMETER_INVALID"
+    },
+    {
+      "role": "left",
+      "color_srgb": "#FF0000",
+      "target_index": 2,
+      "region_px": [
+        161,
+        56,
+        718,
+        723
+      ],
+      "component_pixels": 145627,
+      "valid_points": 44108,
+      "valid_fraction": 0.3028833938761356,
+      "pixel_aspect": 1.6408752773295094,
+      "axis_elongation": 5.484589057822813,
+      "axis_support_mm": 4387.530217584832,
+      "singular_values": [
+        108716.9750173786,
+        19822.26450718541,
+        12984.224478229848
+      ],
+      "measured_color_srgb": "#C05B58",
+      "measured_color_class": "RED",
+      "expected_color_class": "RED",
+      "reason": "LOCAL_DIAMETER_INVALID"
+    },
+    {
+      "role": "right",
+      "color_srgb": "#FF0000",
+      "target_index": 2,
+      "region_px": [
+        700,
+        0,
+        1220,
+        335
+      ],
+      "component_pixels": 244653,
+      "valid_points": 61292,
+      "valid_fraction": 0.2505262555537843,
+      "pixel_aspect": 5.279052053026254,
+      "axis_elongation": 2.6491659350009997,
+      "axis_support_mm": 4282.083744345364,
+      "singular_values": [
+        103615.70309197667,
+        39112.57566881614,
+        9156.855792780874
+      ],
+      "measured_color_srgb": "#CC3F39",
+      "measured_color_class": "RED",
+      "expected_color_class": "RED",
+      "reason": "LOCAL_DIAMETER_INVALID"
+    },
+    {
+      "role": "right",
+      "color_srgb": "#FF0000",
+      "target_index": 2,
+      "region_px": [
+        30,
+        61,
+        644,
+        231
+      ],
+      "component_pixels": 101024,
+      "valid_points": 19508,
+      "valid_fraction": 0.19310262907823883,
+      "pixel_aspect": 3.005820323150828,
+      "axis_elongation": 7.587127131680451,
+      "axis_support_mm": 4386.540761698041,
+      "singular_values": [
+        87612.3524639519,
+        11547.500251857107,
+        4550.19545380652
+      ],
+      "measured_color_srgb": "#CB312F",
+      "measured_color_class": "RED",
+      "expected_color_class": "RED",
+      "reason": "LOCAL_DIAMETER_INVALID"
+    }
+  ]
+}

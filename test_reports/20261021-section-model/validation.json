@@ -1,0 +1,33 @@
+{
+  "tests_command": ".venv/Scripts/python.exe -m pytest tests/test_section_model.py tests/test_projection_diagnostics.py tests/test_section_diagnostics.py tests/test_pipe_geometry.py -q",
+  "passed": 43,
+  "replayed_stereo_pairs": 20,
+  "occluded_rim_searches": 160,
+  "calibration_changed": false,
+  "procurement_sizes_used_in_field_fit": false,
+  "fully_fitted_candidates": 2,
+  "occluded_unresolved_candidates": 1,
+  "white_pipe_localized": false,
+  "production_gui_acceptance_changed": false,
+  "artifacts": [
+    "section-model.json",
+    "pipe-dimensions.csv",
+    "pair-dimensions.csv",
+    "section.svg",
+    "section.dxf",
+    "local-only index.html and observed-contours.png"
+  ],
+  "checks": [
+    "code and calibration hashes verified",
+    "source image SHA-256 verified in both replay scripts",
+    "DXF mm units and geometric radii round-trip tested",
+    "HTML rendered with headless Edge"
+  ],
+  "limitations": [
+    "temporary calibration",
+    "field-specific selected ROIs",
+    "unknown occluded radius",
+    "unstable relative depth",
+    "no claim of accepted field accuracy"
+  ]
+}

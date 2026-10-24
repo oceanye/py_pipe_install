@@ -19,6 +19,7 @@ name in ``registration.local_observation_mode``.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+import copy
 from typing import Any
 
 
@@ -80,7 +81,7 @@ def _invoke(name: str, left: Any, right: Any, depth: Any, calibration: Any,
     if backend is None:
         names = "、".join(available_recognizers()) or "无"
         raise RecognitionBackendError(f"未注册的管道识别算法：{name}（当前可用：{names}）")
-    if name in {"auto", "cylinder", "geometry_only", "parallel_strip"}:
+    if name in {"auto", "cylinder", "geometry_only", "parallel_strip", "image_guided"}:
         result = backend(left, right, depth, calibration, pipe_specs, matching_settings)
     else:
         # Keep the public custom-backend contract at five arguments.  The
@@ -152,6 +153,7 @@ def _parallel_strip(left: Any, right: Any, depth: Any, calibration: Any,
             config={"geometry_only": True},
         )
         result.setdefault("audit", {})["color_filter_fallback"] = "GEOMETRY_ONLY"
+        result["audit"]["recognizer_backend_used"] = "geometry_only"
         return result
     from ..parallel_local import extract_parallel_local_pipes
 
@@ -161,12 +163,31 @@ def _parallel_strip(left: Any, right: Any, depth: Any, calibration: Any,
     )
 
 
+def _image_guided(left: Any, right: Any, depth: Any, calibration: Any,
+                  pipe_specs: list[dict], matching_settings: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
+    from ..local_surface import extract_local_pipes
+    return extract_local_pipes(left,right,depth,calibration,pipe_specs,config={"image_guided":True})
+
+
 def _auto(left: Any, right: Any, depth: Any, calibration: Any,
           pipe_specs: list[dict], matching_settings: Mapping[str, Any] | None = None) -> Mapping[str, Any]:
     cylinder = _invoke("cylinder", left, right, depth, calibration, pipe_specs, matching_settings)
+    geometry_only = not bool(dict(matching_settings or {}).get("color_filter_enabled",True))
+    cylinder["audit"]["recognizer_backend_used"] = "geometry_only" if geometry_only else "cylinder"
     if cylinder["observations"] and not cylinder.get("audit", {}).get("truncated"):
-        cylinder["audit"].setdefault("recognizer_backend_used", "cylinder")
         return cylinder
+
+    if geometry_only:
+        guided = _invoke("image_guided",left,right,depth,calibration,pipe_specs,matching_settings)
+        guided["audit"].update(recognizer_backend_used="image_guided",fallback_from="geometry_only",
+                                cylinder_surface_audit=copy.deepcopy(cylinder["audit"]))
+        # An incomplete original search still cannot justify absence. Keep
+        # partial original observations instead of silently discarding them.
+        if cylinder["observations"]:
+            cylinder["image_candidates"] = guided.get("image_candidates",[])
+            cylinder["audit"]["image_guided_audit"] = guided["audit"]
+            return cylinder
+        return guided
 
     # A bounded strip fallback is useful when a foreground board hides the
     # curved section needed by the strict cylinder fitter.  Keep both audits
@@ -184,6 +205,7 @@ register_recognizer("auto", _auto)
 register_recognizer("cylinder", _cylinder)
 register_recognizer("geometry_only", _geometry_only)
 register_recognizer("parallel_strip", _parallel_strip)
+register_recognizer("image_guided", _image_guided)
 
 
 __all__ = [
