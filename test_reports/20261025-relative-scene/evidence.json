@@ -1,0 +1,683 @@
+{
+  "calibration_sha256": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+  "fresh_capture_status": "COMPLETED",
+  "fresh_capture_times": [
+    "2026-10-25T12:07:24.854+08:00",
+    "2026-10-25T12:07:27.409+08:00",
+    "2026-10-25T12:07:29.995+08:00"
+  ],
+  "runs": [
+    {
+      "label": "reference-20261022",
+      "image_sha256": {
+        "left": "c750d6b75f9732e9c7be1d018b9dab8c6d8119709cede37d55187bb025293493",
+        "right": "6ad1af63177f7d2fe9bec0b55f320c063ce0b08ff8957a52da821990f475436c"
+      },
+      "before_sections": 3,
+      "after_sections": 4,
+      "epipolar_refinement": {
+        "revision": "held-out-epipolar-pitch-roll-v1",
+        "applied": true,
+        "status": "VALIDATED_IMAGE_REFINEMENT",
+        "calibration_updated": false,
+        "yaw_estimated": false,
+        "baseline_or_focal_length_estimated": false,
+        "feature_count": 419,
+        "train_count": 222,
+        "validation_count": 197,
+        "rotation_pitch_roll_deg": [
+          0.006283981683655382,
+          -0.08998851457882254
+        ],
+        "heldout_before_median_p95_px": [
+          0.85491943359375,
+          1.9334068298339844
+        ],
+        "heldout_after_median_p95_px": [
+          0.4810944272355755,
+          1.5088122003250646
+        ],
+        "maximum_corner_shift_px": [
+          0.8788625663021725,
+          1.9147336109538173
+        ],
+        "right_original_to_refined": [
+          [
+            0.9999987468338702,
+            0.0015957839899490415,
+            -0.8429763247936535
+          ],
+          [
+            -0.0015706055440171524,
+            1.0000119078410579,
+            1.1011177886315409
+          ],
+          [
+            -1.9524184872354134e-11,
+            2.4862131923492358e-08,
+            0.9999868665253396
+          ]
+        ],
+        "right_refined_to_original": [
+          [
+            0.9999987468338708,
+            -0.0015957839899490417,
+            0.8447435089598911
+          ],
+          [
+            0.0015705848950106117,
+            0.9999856133592099,
+            -1.0997924254588272
+          ],
+          [
+            -1.952418487187855e-11,
+            -2.4862131923492358e-08,
+            1.0000131610071874
+          ]
+        ],
+        "metric_accuracy_validated": false
+      },
+      "axis_camera": {
+        "axis": [
+          0.9861370359516793,
+          -0.12561446568090973,
+          0.1084193356193233
+        ],
+        "singular_values": [
+          3.9986959127477824,
+          0.10202505176076421,
+          0.004678267562639188
+        ],
+        "line_residual_degrees": [
+          0.015865383946366014,
+          0.13421408519095998,
+          0.05136321641444333,
+          0.00847973984295267,
+          0.10771947743556916,
+          0.14101621263400088,
+          0.07569513082244772,
+          0.0048883035246077245,
+          0.04354784036173004,
+          0.0013199165412085476,
+          0.043779209913055665,
+          0.012336186952832234,
+          0.08782388175397621,
+          0.014306628139688736,
+          0.04100417833025889,
+          0.008017207409155897
+        ],
+        "nullspace_ratio": 0.04585410624058424,
+        "status": "STABLE"
+      },
+      "position_counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "registration_status": "INSUFFICIENT_OBSERVATIONS",
+      "candidates": [
+        {
+          "id": "POOL-L01-POOL-R01",
+          "diameter_mm": 41.65484945099367,
+          "subset": {
+            "diameter_difference_mm": 0.002309780959713237,
+            "center_difference_mm": 3.865194540211848,
+            "center_difference_components_mm": [
+              -0.00045489629124517705,
+              3.8651945134433845
+            ],
+            "stable": true,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": []
+        },
+        {
+          "id": "POOL-L02-POOL-R02",
+          "diameter_mm": 41.28044780297268,
+          "subset": {
+            "diameter_difference_mm": 0.23202264313316334,
+            "center_difference_mm": 7.094559700571064,
+            "center_difference_components_mm": [
+              -0.08942896372598597,
+              7.093996039286594
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        },
+        {
+          "id": "POOL-L03-POOL-R03",
+          "diameter_mm": 27.442811338635014,
+          "subset": {
+            "diameter_difference_mm": 0.5964197998286096,
+            "center_difference_mm": 57.896966655202675,
+            "center_difference_components_mm": [
+              -0.14275636199398356,
+              -57.89679065798691
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        },
+        {
+          "id": "POOL-L04-POOL-R04",
+          "diameter_mm": 48.69190580508568,
+          "subset": {
+            "diameter_difference_mm": 1.0559541719456504,
+            "center_difference_mm": 43.062360903465276,
+            "center_difference_components_mm": [
+              -0.9600591382018635,
+              -43.05165749458956
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        }
+      ],
+      "nominal_dimensions_used_in_fitting": false
+    },
+    {
+      "label": "fresh-01",
+      "image_sha256": {
+        "left": "cb470c27b6b3844adc77c0b49d8e27f09457f5c4c81f7534948556767721895b",
+        "right": "6ff6ce2871713fc4f44cfd859acb91d697df976b3ddac62f8ce2a68ae4831bb0"
+      },
+      "before_sections": 3,
+      "after_sections": 4,
+      "epipolar_refinement": {
+        "revision": "held-out-epipolar-pitch-roll-v1",
+        "applied": true,
+        "status": "VALIDATED_IMAGE_REFINEMENT",
+        "calibration_updated": false,
+        "yaw_estimated": false,
+        "baseline_or_focal_length_estimated": false,
+        "feature_count": 459,
+        "train_count": 210,
+        "validation_count": 249,
+        "rotation_pitch_roll_deg": [
+          0.0027599039762387987,
+          -0.10644854985481182
+        ],
+        "heldout_before_median_p95_px": [
+          0.6962890625,
+          1.7120361328124998
+        ],
+        "heldout_after_median_p95_px": [
+          0.4926591755827303,
+          1.1894448392336698
+        ],
+        "maximum_corner_shift_px": [
+          1.0298337086650171,
+          1.8997114753856295
+        ],
+        "right_original_to_refined": [
+          [
+            0.9999982638690729,
+            0.001868939432297878,
+            -0.986745742391463
+          ],
+          [
+            -0.0018578819733148172,
+            1.0000040472094172,
+            1.6676569170322182
+          ],
+          [
+            -1.0143424570766078e-11,
+            1.0919364354448812e-08,
+            0.9999942348927418
+          ]
+        ],
+        "right_refined_to_original": [
+          [
+            0.9999982638690731,
+            -0.001868939432297879,
+            0.9898664857299101
+          ],
+          [
+            0.0018578712455102166,
+            0.9999924987618151,
+            -1.6658207646344352
+          ],
+          [
+            -1.0143424570857318e-11,
+            -1.0919364354448815e-08,
+            1.0000057833403444
+          ]
+        ],
+        "metric_accuracy_validated": false
+      },
+      "axis_camera": {
+        "axis": [
+          0.9867946709411783,
+          -0.10104661167999945,
+          0.12659328445886364
+        ],
+        "singular_values": [
+          3.87166552943682,
+          0.10088722230281186,
+          0.005272243046581727
+        ],
+        "line_residual_degrees": [
+          0.006748289495252582,
+          0.14643657393976772,
+          0.06576997572719802,
+          0.013881946687866983,
+          0.14638451230960461,
+          0.14547201294107984,
+          0.031750498055430225,
+          0.09703786675184063,
+          0.03964009165999702,
+          0.06463874248403514,
+          0.003541780797307573,
+          0.05041785843837614,
+          0.06099756523189104,
+          0.009057332326581019,
+          0.011022966738359634
+        ],
+        "nullspace_ratio": 0.052258778924026174,
+        "status": "STABLE"
+      },
+      "position_counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "registration_status": "INSUFFICIENT_OBSERVATIONS",
+      "candidates": [
+        {
+          "id": "POOL-L01-POOL-R01",
+          "diameter_mm": 41.13452329257802,
+          "subset": {
+            "diameter_difference_mm": 0.05990693558240423,
+            "center_difference_mm": 7.300811515649288,
+            "center_difference_components_mm": [
+              0.424581446217033,
+              -7.2884552123591675
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        },
+        {
+          "id": "POOL-L02-POOL-R02",
+          "diameter_mm": 41.71438112448544,
+          "subset": {
+            "diameter_difference_mm": 0.5593098755613255,
+            "center_difference_mm": 38.804184220915744,
+            "center_difference_components_mm": [
+              0.4706183887694273,
+              -38.80133027852162
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        },
+        {
+          "id": "POOL-L03-POOL-R03",
+          "diameter_mm": 28.524598843559602,
+          "subset": {
+            "diameter_difference_mm": 0.7995663009793397,
+            "center_difference_mm": 73.76362987511978,
+            "center_difference_components_mm": [
+              -0.9328667415158236,
+              -73.75773079478677
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        },
+        {
+          "id": "POOL-L04-POOL-R04",
+          "diameter_mm": 49.75522562865692,
+          "subset": {
+            "diameter_difference_mm": 0.6245550268235007,
+            "center_difference_mm": 32.26924808300671,
+            "center_difference_components_mm": [
+              1.1417419690352517,
+              32.249043351993805
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE",
+            "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+          ]
+        }
+      ],
+      "nominal_dimensions_used_in_fitting": false
+    },
+    {
+      "label": "fresh-02",
+      "image_sha256": {
+        "left": "3dd7f151659e80658874348e36d60151d04be4b73af354663a733cbc470437ad",
+        "right": "ad93910f35d35a33207ed3906afb777597e95533e6bf0c47c438efa991e304a6"
+      },
+      "before_sections": 3,
+      "after_sections": 3,
+      "epipolar_refinement": {
+        "revision": "held-out-epipolar-pitch-roll-v1",
+        "applied": true,
+        "status": "VALIDATED_IMAGE_REFINEMENT",
+        "calibration_updated": false,
+        "yaw_estimated": false,
+        "baseline_or_focal_length_estimated": false,
+        "feature_count": 402,
+        "train_count": 190,
+        "validation_count": 212,
+        "rotation_pitch_roll_deg": [
+          0.003137476247871035,
+          -0.10074532233039718
+        ],
+        "heldout_before_median_p95_px": [
+          0.876983642578125,
+          1.7472244262695311
+        ],
+        "heldout_after_median_p95_px": [
+          0.4250538143337792,
+          1.4231456553751511
+        ],
+        "maximum_corner_shift_px": [
+          0.9757027625457222,
+          1.8389640924503965
+        ],
+        "right_original_to_refined": [
+          [
+            0.9999984430681924,
+            0.0017709129612990284,
+            -0.9351056496412866
+          ],
+          [
+            -0.0017583424447315573,
+            1.0000050168000159,
+            1.5372263241976043
+          ],
+          [
+            -1.0913303492473067e-11,
+            1.2413203013702776e-08,
+            0.9999934453829624
+          ]
+        ],
+        "right_refined_to_original": [
+          [
+            0.9999984430681925,
+            -0.001770912961299028,
+            0.9378326349012962
+          ],
+          [
+            0.0017583309026939936,
+            0.9999918884511547,
+            -1.5355796948869722
+          ],
+          [
+            -1.0913303491729073e-11,
+            -1.2413203013702776e-08,
+            1.0000065737318233
+          ]
+        ],
+        "metric_accuracy_validated": false
+      },
+      "axis_camera": {
+        "axis": [
+          0.989452270704561,
+          -0.10185813654276146,
+          0.103000602025544
+        ],
+        "singular_values": [
+          3.46340364315811,
+          0.06881485158056587,
+          0.009986028293099617
+        ],
+        "line_residual_degrees": [
+          0.1551485197912103,
+          0.38040254801116435,
+          0.14811248627810072,
+          0.10725401049257577,
+          0.26937721787178154,
+          0.16308009184930372,
+          0.10947819805845961,
+          0.06962763611053062,
+          0.024142142631173844,
+          0.05497963836785767,
+          0.041100815430482204,
+          0.062139858355617424
+        ],
+        "nullspace_ratio": 0.1451144348020332,
+        "status": "STABLE"
+      },
+      "position_counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "registration_status": "INSUFFICIENT_OBSERVATIONS",
+      "candidates": [
+        {
+          "id": "POOL-L01-POOL-R01",
+          "diameter_mm": 42.3593976471931,
+          "subset": {
+            "diameter_difference_mm": 0.15815560919810423,
+            "center_difference_mm": 20.8401547087645,
+            "center_difference_components_mm": [
+              0.7410422939162231,
+              -20.82697540700201
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        },
+        {
+          "id": "POOL-L02-POOL-R02",
+          "diameter_mm": 42.158870598033644,
+          "subset": {
+            "diameter_difference_mm": 0.5154575102889751,
+            "center_difference_mm": 11.819634465868651,
+            "center_difference_components_mm": [
+              -0.08300936657037639,
+              11.81934297462476
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        },
+        {
+          "id": "POOL-L03-POOL-R03",
+          "diameter_mm": 28.06162704187817,
+          "subset": {
+            "diameter_difference_mm": 0.11415601305554901,
+            "center_difference_mm": 11.642252805012957,
+            "center_difference_components_mm": [
+              -0.08146862605722305,
+              -11.641967756303075
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        }
+      ],
+      "nominal_dimensions_used_in_fitting": false
+    },
+    {
+      "label": "fresh-03",
+      "image_sha256": {
+        "left": "a2b04d2d4f73158b0f4bffa4339fd355582d6acae0d9973713e2f7fc510044f2",
+        "right": "5a03439242ed5ba5b342f6e7e96fe12f305f7515128a3924320cb4d86428000c"
+      },
+      "before_sections": 3,
+      "after_sections": 3,
+      "epipolar_refinement": {
+        "revision": "held-out-epipolar-pitch-roll-v1",
+        "applied": true,
+        "status": "VALIDATED_IMAGE_REFINEMENT",
+        "calibration_updated": false,
+        "yaw_estimated": false,
+        "baseline_or_focal_length_estimated": false,
+        "feature_count": 411,
+        "train_count": 205,
+        "validation_count": 206,
+        "rotation_pitch_roll_deg": [
+          0.0035960532645817186,
+          -0.09580595074265187
+        ],
+        "heldout_before_median_p95_px": [
+          0.7453079223632812,
+          1.7357864379882812
+        ],
+        "heldout_after_median_p95_px": [
+          0.47634362578152434,
+          1.246416675610135
+        ],
+        "maximum_corner_shift_px": [
+          0.9291138847066273,
+          1.7966444643905106
+        ],
+        "right_original_to_refined": [
+          [
+            0.999998589940739,
+            0.001686542955618981,
+            -0.8906586820244229
+          ],
+          [
+            -0.0016721347933672242,
+            1.000006123624394,
+            1.4139933293488411
+          ],
+          [
+            -1.1895138606903327e-11,
+            1.4227531266516585e-08,
+            0.9999924864799891
+          ]
+        ],
+        "right_refined_to_original": [
+          [
+            0.9999985899407392,
+            -0.0016865429556189816,
+            0.8930488965725606
+          ],
+          [
+            0.0016721222129293474,
+            0.9999910764207284,
+            -1.4125020341632248
+          ],
+          [
+            -1.1895138606198167e-11,
+            -1.4227531266516589e-08,
+            1.0000075336836551
+          ]
+        ],
+        "metric_accuracy_validated": false
+      },
+      "axis_camera": {
+        "axis": [
+          0.9863646671021079,
+          -0.1008185172007955,
+          0.13007832287503063
+        ],
+        "singular_values": [
+          3.4634116481604336,
+          0.06897408987342647,
+          0.004725496034118895
+        ],
+        "line_residual_degrees": [
+          0.006951474892303953,
+          0.1711909506406394,
+          0.043802033718075645,
+          0.044755671048830874,
+          0.12273373924152149,
+          0.1401236458720027,
+          0.011256423138773626,
+          0.0067487727653013085,
+          0.02049111691765958,
+          0.037779338024982546,
+          0.016623269978317673,
+          0.0550993088040895
+        ],
+        "nullspace_ratio": 0.06851117633868888,
+        "status": "STABLE"
+      },
+      "position_counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "registration_status": "INSUFFICIENT_OBSERVATIONS",
+      "candidates": [
+        {
+          "id": "POOL-L01-POOL-R01",
+          "diameter_mm": 42.191407988831266,
+          "subset": {
+            "diameter_difference_mm": 0.18300179544348083,
+            "center_difference_mm": 3.638727296479945,
+            "center_difference_components_mm": [
+              0.08446006445308285,
+              3.6377469449730597
+            ],
+            "stable": true,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": []
+        },
+        {
+          "id": "POOL-L02-POOL-R02",
+          "diameter_mm": 40.98150973763869,
+          "subset": {
+            "diameter_difference_mm": 0.3792602658932793,
+            "center_difference_mm": 27.725996254768532,
+            "center_difference_components_mm": [
+              0.3129581746613752,
+              -27.724229935209223
+            ],
+            "stable": false,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE"
+          ]
+        },
+        {
+          "id": "POOL-L03-POOL-R03",
+          "diameter_mm": 27.940453410405492,
+          "subset": {
+            "diameter_difference_mm": 0.04252756092711607,
+            "center_difference_mm": 4.701707052260927,
+            "center_difference_components_mm": [
+              0.032270705584124926,
+              -4.701596304112172
+            ],
+            "stable": true,
+            "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+          },
+          "reason_codes": []
+        }
+      ],
+      "nominal_dimensions_used_in_fitting": false
+    }
+  ]
+}

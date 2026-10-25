@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 REASONS = {
+    'PARTIAL_STEREO_BOUNDARY_SUPPORT': '仅三条稳定轮廓参与拟合；缺失边界未补齐，尚不用于就位验收',
+    'EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED': '图像微校正改善了对齐，毫米精度尚未独立验证',
     'CALIBRATION_NOT_VALIDATED': '当前为暂用标定，尚未验证尺寸精度',
     'CAPTURE_UNHEALTHY': '拍摄质量未通过',
     'SECTION_SEARCH_TRUNCATED': '候选搜索未完成',
@@ -67,11 +69,17 @@ def section_summary_lines(report, *, detailed=False):
         if stage.get('ground_correction'):
             from .ground_correction import correction_summary
             lines.append(correction_summary(stage['ground_correction']))
+        refinement = stage.get('epipolar_refinement', {})
+        if refinement.get('applied'):
+            before = refinement['heldout_before_median_p95_px']
+            after = refinement['heldout_after_median_p95_px']
+            lines.append(f'断面图像微校正：独立验证点垂直误差 P95 {before[1]:.2f} → {after[1]:.2f} px；原照片、标定和深度图保留，尺寸精度仍待验证。')
         for candidate in stage.get('candidates', []):
             fit = candidate.get('fit', {})
             diameter = fit.get('trial_diameter_mm')
             reasons = candidate.get('reason_codes', [])
-            text = f"{candidate['candidate_id']}：边界稳定；"
+            boundary_label = '三条稳定轮廓' if candidate.get('boundary_status') == 'PARTIAL' else '边界稳定'
+            text = f"{candidate['candidate_id']}：{boundary_label}；"
             if diameter is None:
                 text += '断面尺寸未解出'
             else:
@@ -125,5 +133,10 @@ def boundary_overlay_segments(report, role):
                 for window in edge['windows']:
                     if window['accepted']:
                         u, v = window['axial_interval_px']
-                        lines.append((u+dx, slope*u+intercept+dy, v+dx, slope*v+intercept+dy))
+                        points = [[u, slope*u+intercept], [v, slope*v+intercept]]
+                        refinement = stage.get('epipolar_refinement', {})
+                        if role == 'right' and refinement.get('applied'):
+                            from .epipolar_refinement import transform_points
+                            points = transform_points(points, refinement['right_refined_to_original'])
+                        lines.append((points[0][0]+dx, points[0][1]+dy, points[1][0]+dx, points[1][1]+dy))
     return lines

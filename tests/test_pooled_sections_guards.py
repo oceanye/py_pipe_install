@@ -40,6 +40,35 @@ def test_ambiguous_stereo_proposals_are_not_assigned_by_order(monkeypatch):
     assert not result['candidates']
 
 
+def test_three_stable_tangents_keep_conditional_section_without_filling_fourth(monkeypatch):
+    views, k = synthetic_views()
+    right = views['right'][0]
+    right['aggregation']['boundaries'][0]['status'] = 'UNSTABLE'
+    right['aggregation']['stable_boundary_count'] = 1
+    right['boundary_stable'] = False
+    right['pooled_edges'] = right['pooled_edges'][1:]
+    result = run_views(monkeypatch, views, k)
+    assert result['conditional_section_count'] == 1
+    candidate = result['candidates'][0]
+    assert candidate['boundary_status'] == 'PARTIAL'
+    assert candidate['fit']['observed_boundary_count'] == 3
+    assert 'PARTIAL_STEREO_BOUNDARY_SUPPORT' in candidate['reason_codes']
+    assert not result['occlusion_recovered']
+    assert candidate['fit']['diameter_source'] == 'IMAGE_FIT'
+
+
+def test_two_remaining_tangents_do_not_create_a_free_radius(monkeypatch):
+    views, k = synthetic_views()
+    for role in views:
+        item = views[role][0]
+        item['aggregation']['stable_boundary_count'] = 1
+        item['aggregation']['boundaries'][0]['status'] = 'UNSTABLE'
+        item['boundary_stable'] = False
+        item['pooled_edges'] = item['pooled_edges'][1:]
+    result = run_views(monkeypatch, views, k)
+    assert result['boundary_pair_count'] == 0
+
+
 def test_separated_pieces_of_the_same_outline_do_not_create_an_inter_pipe_gap(monkeypatch):
     views, k = synthetic_views()
     for role in views:

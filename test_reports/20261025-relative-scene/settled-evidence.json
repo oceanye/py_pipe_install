@@ -1,0 +1,154 @@
+{
+  "source_report": "outputs\\relative-scene-20261025\\settled-gui\\captures\\elevation-20261025-121727-1f80ea78\\report.json",
+  "capture_times": [
+    "2026-10-25T12:16:26.162000+08:00"
+  ],
+  "input_sha256": {
+    "manifest": "da6e298a0df0503e477219bb21b4dfe59fc75fd56593597d38bf61b191f9d271",
+    "model": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "elevation-20261025-121727-1f80ea78_left": "a7a4d57a4f4308be3dff83fa09ce70e7ba6ab70ae07d6e00385591faefa5e9c5",
+    "elevation-20261025-121727-1f80ea78_right": "7248ce3c744b0b1da943fe4da5fa7576137561b9d409c802640c29b16dbfa332",
+    "elevation-20261025-121727-1f80ea78_burst_0_left": "6dacf7a67e552edfc46cda1e376641a8b38025ae55c4f5029458db385f6c6d1c",
+    "elevation-20261025-121727-1f80ea78_burst_0_right": "f148ec00b3458b1d8c8967f4497fcafd8dd83d406b2915a12dd894692d283480",
+    "elevation-20261025-121727-1f80ea78_burst_1_left": "f217d97ef5fb5e4ed429ad1f8979222c1ee0fb676fa85977d808b5c8574573c7",
+    "elevation-20261025-121727-1f80ea78_burst_1_right": "b2a5a6ccbc29f7d9799912593a60fa7ce77af05ca06bd02bf7d02716ebc2f8fa",
+    "elevation-20261025-121727-1f80ea78_burst_2_left": "6c29b02b735a9b61f25fd419f7f7b9b99842f2627c79a609517304af8141c36d",
+    "elevation-20261025-121727-1f80ea78_burst_2_right": "933d5d36ff83526a10346cd675e14509f5571fa9d1ca5def84900ef0fd155c86",
+    "elevation-20261025-121727-1f80ea78_burst_3_left": "6ab15578144b16b9e91ef36865055d13d364cc89616439cee2acf01de652680c",
+    "elevation-20261025-121727-1f80ea78_burst_3_right": "b86e591a2ed80a7f627d8f1a5d5123a6e68621978b910edc746c0a7c677a0e32",
+    "elevation-20261025-121727-1f80ea78_burst_4_left": "a7a4d57a4f4308be3dff83fa09ce70e7ba6ab70ae07d6e00385591faefa5e9c5",
+    "elevation-20261025-121727-1f80ea78_burst_4_right": "7248ce3c744b0b1da943fe4da5fa7576137561b9d409c802640c29b16dbfa332"
+  },
+  "calibration_audit": {
+    "calibration_id": "field-chess-provisional-20261014-5c62d5b4c50a",
+    "validated": false
+  },
+  "epipolar_refinement": {
+    "revision": "held-out-epipolar-pitch-roll-v1",
+    "applied": true,
+    "status": "VALIDATED_IMAGE_REFINEMENT",
+    "calibration_updated": false,
+    "yaw_estimated": false,
+    "baseline_or_focal_length_estimated": false,
+    "feature_count": 459,
+    "train_count": 220,
+    "validation_count": 239,
+    "rotation_pitch_roll_deg": [
+      0.002786204858883217,
+      -0.09893506117803982
+    ],
+    "heldout_before_median_p95_px": [
+      0.744598388671875,
+      1.8975944519042969
+    ],
+    "heldout_after_median_p95_px": [
+      0.44101662721237744,
+      1.3716640233314563
+    ],
+    "maximum_corner_shift_px": [
+      0.957515833787259,
+      1.7828494410925941
+    ],
+    "right_original_to_refined": [
+      [
+        0.9999984995380835,
+        0.0017379099528959101,
+        -0.9176831899316085
+      ],
+      [
+        -0.0017267467372597209,
+        1.000004337248582,
+        1.5326204421927514
+      ],
+      [
+        -9.517309032713467e-12,
+        1.1023422794966895e-08,
+        0.9999941792094709
+      ]
+    ],
+    "right_refined_to_original": [
+      [
+        0.9999984995380835,
+        -0.0017379099528959103,
+        0.9203507264722213
+      ],
+      [
+        0.001726736671642244,
+        0.9999926787475545,
+        -1.531033536100093
+      ],
+      [
+        -9.517309032994946e-12,
+        -1.1023422794966895e-08,
+        1.0000058377104986
+      ]
+    ],
+    "metric_accuracy_validated": false
+  },
+  "conditional_candidates": [
+    {
+      "candidate_id": "POOL-L01-POOL-R01",
+      "reason_codes": [],
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.10831274877474328,
+        "center_difference_mm": 4.439015223436706,
+        "center_difference_components_mm": [
+          0.36628224976050205,
+          -4.423877650592658
+        ],
+        "stable": true,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      },
+      "boundary_status": "STABLE",
+      "diameter_mm": 41.91728177117735,
+      "baseline_perpendicular_to_axis_mm": 9.682103006657092
+    },
+    {
+      "candidate_id": "POOL-L02-POOL-R02",
+      "reason_codes": [],
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.2697745578727364,
+        "center_difference_mm": 1.5541509408982928,
+        "center_difference_components_mm": [
+          0.0733173846642039,
+          -1.5524205964238718
+        ],
+        "stable": true,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      },
+      "boundary_status": "STABLE",
+      "diameter_mm": 42.21498008028836,
+      "baseline_perpendicular_to_axis_mm": 9.682103006657092
+    },
+    {
+      "candidate_id": "POOL-L03-POOL-R03",
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE"
+      ],
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.261041023079045,
+        "center_difference_mm": 15.079535617501147,
+        "center_difference_components_mm": [
+          -0.09178586325788984,
+          -15.079256274590989
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      },
+      "boundary_status": "STABLE",
+      "diameter_mm": 27.378583793801553,
+      "baseline_perpendicular_to_axis_mm": 9.682103006657092
+    }
+  ],
+  "position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "ground_status": "GROUND_PLANE_INCONSISTENT",
+  "counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  }
+}

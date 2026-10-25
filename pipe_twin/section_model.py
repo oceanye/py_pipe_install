@@ -241,7 +241,7 @@ def write_section_artifacts(model, directory):
     html = '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>管道断面模型与尺寸</title><style>body{font:16px/1.7 Arial,"Microsoft YaHei",sans-serif;max-width:1100px;margin:25px auto;padding:0 20px;color:#182b40}svg{width:100%;height:auto}table{border-collapse:collapse;width:100%;margin:20px 0}td,th{padding:8px;border:1px solid #ccd3dd;text-align:left}.notice{background:#fff4d9;padding:16px}pre{white-space:pre-wrap;overflow-wrap:anywhere}</style>'
     uses_reference = any(c['diameter_source'] == 'USER_KNOWN_CONSTRAINT' for c in solved.values())
     size_note = '部分外径作为约束输入，见尺寸来源列。' if uses_reference else '采购外径仅作参照，没有用于拟合半径或位置。'
-    html += '<h1>管道断面模型与尺寸</h1><p class="notice">这是使用暂用标定得到的条件模型。'+size_note+'图像估计的尺寸尚未通过独立量测核验。白色参照尺寸不代表已检测到白管。</p>'+svg
+    html += '<h1>管道断面模型与尺寸</h1><p class="notice">这是图像解算得到的条件模型。'+size_note+'图像估计的尺寸尚未通过独立量测核验；暂用标定或图像微校正不能直接作为验收依据。仅绘制已解出的候选；完整圆周为拟合轮廓，不代表遮挡部分已被观测。</p>'+svg
     html += '<h2>管道尺寸（mm）</h2><p>圆心坐标相对选定原点，均在同一个垂直于共同管轴的平面上。改变截面沿轴的位置不会改变这里的管间尺寸。</p><table><tr><th>候选</th><th>参照外径</th><th>模型外径</th><th>半径</th><th>外径来源</th><th>圆心 U</th><th>圆心 V</th></tr>'+''.join(rows)+'</table>'
     html += '<h2>断面间距（mm）</h2><p>净距 = 轴心距 − 两个外半径。误差列假设每条边缘有独立的 0.5 px 整体偏移，给出 1σ；不包含标定、轴向、遮挡判断和给定直径公差，不能作为总精度。</p><table><tr><th>候选对</th><th>轴心距</th><th>表面净距</th><th>像素假设下心距 σ</th></tr>'+''.join(pair_rows)+'</table>'
     html += '<p><a href="section-model.json">完整模型 JSON</a> · <a href="pipe-dimensions.csv">管尺寸 CSV</a> · <a href="pair-dimensions.csv">间距 CSV</a> · <a href="section.svg">矢量断面 SVG</a> · <a href="section.dxf">CAD 断面 DXF</a></p><details><summary>输入与限制</summary><pre>'+metadata+'</pre></details></html>'

@@ -975,7 +975,7 @@ class ElevationCaptureDialog:
             values=tuple(CAMERA_SIDE_PRESETS), state="readonly", width=25)
         self.camera_side_box.pack(side="left", padx=6)
         self.camera_side_box.bind("<<ComboboxSelected>>", lambda _e: self._camera_side_selected())
-        ttk.Button(view_bar, text="查看方向示意", command=self.open_model_viewer).pack(side="left", padx=4)
+        ttk.Button(view_bar, text="现场模型 / 查看方向", command=self.open_model_viewer).pack(side="left", padx=4)
         ttk.Label(view_bar, text="允许斜视；管长方向另设。不确定时保留自动判断。", foreground="#355371").pack(side="left")
 
         # Reserve results and status before the expanding photo pane consumes
@@ -2126,6 +2126,12 @@ class ElevationCaptureDialog:
             self.report = report
             self.results = {row["pipe_id"]: row for row in report["pipes"]} if report else {}
             self.refresh_table()
+            if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
+                # Only a result accepted for this generation may refresh the
+                # snapshot after submit() invalidated the previous assessment.
+                self.model_viewer.sync_from_owner()
+                if report:
+                    self.model_viewer.scene_tabs.select(0)
             counts = report["counts"] if report else {}
             self.summary.set(f"安装 {counts.get('INSTALLED', 0)} · 未安装 {counts.get('NOT_INSTALLED', 0)} · 不确定 {counts.get('UNKNOWN', 0)}" if report else "基础现场已保存")
             inventory = report.get("scene_inventory", {}) if report else {}

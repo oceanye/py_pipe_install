@@ -179,7 +179,10 @@ def _possible_same_instance(first, second):
 
 
 def _compatible(first, second, offset=(0., 0.)):
-    if not (first['boundary_stable'] and second['boundary_stable']):
+    stable_counts = [item['aggregation']['stable_boundary_count'] for item in (first, second)]
+    # Three independent tangents can determine a conditional free circle.
+    # An unstable fourth contour is omitted, never replaced by a prediction.
+    if min(stable_counts) < 1 or sum(stable_counts) < 3:
         return False
     if not _compatible_appearance(first, second):
         return False
@@ -193,6 +196,8 @@ def _compatible(first, second, offset=(0., 0.)):
     # not point correspondence or depth. Multiple choices stay ambiguous.
     station = (max(x, u)+min(x+w, u+s))/2
     for a, b in zip(first['aggregation']['boundaries'], second['aggregation']['boundaries']):
+        if a['status'] != 'STABLE' or b['status'] != 'STABLE':
+            continue
         right_line = np.asarray(b['line_slope_intercept']).copy()
         right_line[1] += offset[1]-right_line[0]*offset[0]
         delta = np.asarray(a['line_slope_intercept'])-right_line
@@ -226,11 +231,20 @@ def _compatible_appearance(first, second):
 
 
 def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, image_offsets=None,
-                            disparity_range=(0., 256.), ground_result=None):
+                            disparity_range=(0., 256.), ground_result=None, refine_epipolar=False):
     views, proposal_audit = {}, {}
     masks, band_audit = {}, None
     k = np.asarray(calibration.left.rectified_intrinsic, float)
     kr = np.asarray(calibration.right.rectified_intrinsic, float)
+    refinement = {'applied': False, 'status': 'NOT_REQUESTED'}
+    if refine_epipolar:
+        # Dense depth/ground keep their own original evidence. This operation
+        # belongs only to the independent silhouette reconstruction stage.
+        if image_offsets or left.shape != right.shape or not np.allclose(k, kr):
+            refinement = {'applied': False, 'status': 'FULL_COMMON_INTRINSICS_REQUIRED'}
+        else:
+            from .epipolar_refinement import refine_right_image
+            right, refinement = refine_right_image(left, right, k)
     if aggregation_band is not None:
         from .axial_selection import normalize_axial_band, band_sampling_masks
         aggregation_band = normalize_axial_band(aggregation_band,
@@ -248,6 +262,7 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
               'occlusion_recovered': False, 'nominal_dimensions_used_in_fitting': False,
               'views': {role: [_compact(i) for i in items] for role, items in views.items()},
               'proposal_audit': proposal_audit, 'candidates': [], 'model': None,
+              'epipolar_refinement': refinement,
               'ground_correction': correct_pipe_axis([], k, {}, ground_result)[1],
               'aggregation_band': band_audit,
               'truncated': any(a['truncated'] for a in proposal_audit.values())}
@@ -294,7 +309,8 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                      'left_candidate_id': a['candidate_id'], 'right_candidate_id': b['candidate_id'],
                      'left_region_px': a['region_px'], 'right_region_px': b['region_px'],
                      'boundary_status': 'STABLE', 'reason_codes': sorted(set(a['reason_codes']+b['reason_codes']))}
-        reference = a['aggregation']['boundaries'][0]['reference_u_px']
+        candidate['observed_boundary_count'] = len(observations)
+        reference = float(np.mean(a['pooled_edges'][0]['points'][:, 0]))
         fit = {'status': 'OUTLINE_IDENTITY_OR_OCCLUSION_UNRESOLVED'}
         error, sensitivity = {}, {}
         common_support = None
@@ -333,6 +349,9 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                          dimension_status='CONDITIONAL' if fit['status'] == 'CONDITIONAL_FIT' else 'UNRESOLVED')
         if correction['status'] == 'GROUND_AXIS_CONFLICT':
             candidate['reason_codes'].append('GROUND_AXIS_CONFLICT')
+        if len(observations) < 4:
+            candidate['boundary_status'] = 'PARTIAL'
+            candidate['reason_codes'].append('PARTIAL_STEREO_BOUNDARY_SUPPORT')
         result['candidates'].append(candidate)
         model_items.append({'id': candidate['candidate_id'], 'label': candidate['candidate_id'],
                             'color': a['color_srgb'], 'reference_diameter_mm': None, 'fit': fit, 'pixel_error': error})
@@ -352,7 +371,11 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
     matched = {x for i, j in pair_indexes for x in (views['left'][i]['candidate_id'], views['right'][j]['candidate_id'])}
     result['unpaired_candidate_ids'] = [c['candidate_id'] for items in views.values() for c in items if c['candidate_id'] not in matched]
     if axis is not None:
-        result['model'] = build_section_model([m for index, m in enumerate(model_items) if index not in omitted], axis,
-            metadata={'nominal_dimensions_used_in_fitting': False, 'occlusion_recovered': False})
+        included = [m for index, m in enumerate(model_items) if index not in omitted]
+        origin_id = next((m['id'] for m in included if m['fit']['status'] == 'CONDITIONAL_FIT'), None)
+        result['model'] = build_section_model(included, axis, origin_id=origin_id,
+            metadata={'nominal_dimensions_used_in_fitting': False, 'occlusion_recovered': False,
+                      'epipolar_refinement': refinement,
+                      'candidate_quality': {c['candidate_id']: c['reason_codes'] for c in result['candidates']}})
     return result | {'status': 'ANALYZED', 'boundary_pair_count': len(pair_indexes),
                      'conditional_section_count': sum(c['dimension_status'] == 'CONDITIONAL' for c in result['candidates'])}

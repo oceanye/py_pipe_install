@@ -571,6 +571,43 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(self.dialog.registration_settings, settings)
         self.assertIs(self.dialog.report, report)
 
+    def test_scene_is_visible_without_registration_and_live_report_updates_cad_states(self):
+        from test_relative_scene import report_fixture
+        from pipe_twin.relative_scene import STATE_COLORS
+        self.dialog.open_model_viewer()
+        viewer = self.dialog.model_viewer
+        report = report_fixture()
+        report['pipes'] = [{'pipe_id': 'P001', 'installation_state': 'INSTALLED'}]
+        self.dialog.report = report
+        self.dialog.redraw(); self.root.update_idletasks()
+        self.assertEqual(len(viewer.scene_hits), 2)
+        self.assertEqual(viewer.scene_tabs.index(viewer.scene_tabs.select()), 0)
+        circle = next(i for i in viewer.section_canvas.find_withtag('pipe:P001')
+                      if viewer.section_canvas.type(i) == 'oval')
+        self.assertEqual(viewer.section_canvas.itemcget(circle, 'fill'), STATE_COLORS['INSTALLED'])
+        # Looking at a conditional section creates no identity/installation.
+        old_selection = self.dialog.selected_id()
+        _, x, y, _ = viewer.scene_hits[1]
+        viewer.pick_scene_pipe(SimpleNamespace(x=x, y=y))
+        self.assertEqual(self.dialog.selected_id(), old_selection)
+        self.assertIn('尚未唯一对应', viewer.selection_info.get())
+        self.dialog.invalidate()
+        self.assertEqual(viewer.scene_hits, [])
+        self.assertFalse(viewer.section_canvas.find_withtag('state:INSTALLED'))
+
+    def test_completed_assessment_refreshes_viewer_invalidated_by_submit(self):
+        from test_relative_scene import report_fixture
+        self.dialog.open_model_viewer()
+        viewer = self.dialog.model_viewer
+        self.dialog.invalidate()
+        self.assertFalse(viewer._is_current())
+        report = report_fixture()
+        report.update(pipes=[], counts={})
+        self.dialog.messages.put((self.dialog.generation, 'ok', (self.output/'manifest.json', report, False)))
+        self.dialog.poll()
+        self.assertTrue(viewer._is_current())
+        self.assertEqual(len(viewer.scene_hits), 2)
+
     def test_camera_arrow_updates_while_cross_section_remains_fixed(self):
         self.dialog.show_catalog()
         viewer = self.dialog.model_viewer

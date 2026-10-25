@@ -6,6 +6,7 @@ from typing import Any, Callable
 import numpy as np
 
 from .camera_view import CAMERA_SIDE_PRESETS, camera_side_label, preview_rotation
+from .relative_scene import STATE_COLORS, STATE_LABELS, model_states, scene_sections, draw_scene
 
 
 def model_section_basis(lines: np.ndarray, axis: np.ndarray | None = None) -> np.ndarray:
@@ -27,14 +28,27 @@ class ElevationModelViewer:
         self.on_camera_side = on_camera_side
         self.camera_side_world = camera_side_world
         tk, ttk = owner.app.tk, owner.app.ttk
-        self.window = tk.Toplevel(owner.window); self.window.title("立面模型 · 方向示意与管道编号联动"); self.window.geometry("1220x780")
+        self.window = tk.Toplevel(owner.window); self.window.title("现场相对模型 · CAD 管位与方向联动"); self.window.geometry("1320x820")
         self.window.minsize(1000, 660)
         panes = ttk.Panedwindow(self.window, orient="horizontal")
         panes.pack(fill="both", expand=True, padx=8, pady=8)
-        model_panel = ttk.LabelFrame(panes, text="三维方向示意 · 点击管线选中，重叠处重复点击切换")
+        model_panel = ttk.LabelFrame(panes, text="现场建模与观察方向")
         section_panel = ttk.LabelFrame(panes, text="模型管道编号 · 沿共同长度轴观察的截面")
         panes.add(model_panel, weight=1); panes.add(section_panel, weight=1)
-        self.canvas = tk.Canvas(model_panel, width=580, height=540, bg="#101923", highlightthickness=0)
+        self.scene_tabs = ttk.Notebook(model_panel)
+        self.scene_tabs.pack(fill='both', expand=True)
+        scene_panel, direction_panel = ttk.Frame(self.scene_tabs), ttk.Frame(self.scene_tabs)
+        self.scene_tabs.add(scene_panel, text='现场相对断面')
+        self.scene_tabs.add(direction_panel, text='三维方向示意')
+        self.scene_zone = tk.StringVar()
+        self.scene_zone_box = ttk.Combobox(scene_panel, textvariable=self.scene_zone, state='readonly')
+        self.scene_zone_box.pack(fill='x', padx=5, pady=3)
+        self.scene_zone_box.bind('<<ComboboxSelected>>', lambda _e: self.draw())
+        self.scene_canvas = tk.Canvas(scene_panel, width=580, height=540, bg='#F2F5F8', highlightthickness=0)
+        self.scene_canvas.pack(fill='both', expand=True)
+        self.scene_hits = []
+        self.scene_canvas.bind('<Button-1>', self.pick_scene_pipe)
+        self.canvas = tk.Canvas(direction_panel, width=580, height=540, bg="#101923", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
         self.section_canvas = tk.Canvas(section_panel, width=580, height=540, bg="#F2F5F8", highlightthickness=0)
         self.section_canvas.pack(fill="both", expand=True)
@@ -72,9 +86,11 @@ class ElevationModelViewer:
         self.canvas.bind("<ButtonPress-3>", self.begin_orbit); self.canvas.bind("<B3-Motion>", self.orbit); self.canvas.bind("<MouseWheel>", self.wheel)
         self.canvas.bind("<Button-1>", self.pick_model_pipe)
         self.section_canvas.bind("<Button-1>", self.pick_section_pipe)
-        for canvas in (self.canvas, self.section_canvas):
+        for canvas in (self.canvas, self.section_canvas, self.scene_canvas):
             canvas.bind("<Configure>", lambda _e: self.draw())
         self.window.protocol("WM_DELETE_WINDOW", self.close); self.preview_side()
+        if not any(s['items'] for s in scene_sections(self.report)):
+            self.scene_tabs.select(1)
 
     def _snapshot_owner(self) -> None:
         self.snapshot_hashes = dict(getattr(self.owner, "image_hashes", {}))
@@ -155,12 +171,18 @@ class ElevationModelViewer:
         center, scale = self._frame(); q = points @ self._rotation().T - center; w, h = max(self.canvas.winfo_width(), 100), max(self.canvas.winfo_height(), 100); return np.column_stack((w/2 + q[:, 0]*scale, h/2 - q[:, 1]*scale))
 
     def draw(self) -> None:
+        # A newly completed assessment must update an already open viewer.
+        if getattr(self.owner, 'report', self.report) is not self.report and self._is_current():
+            self._load_geometry(self.pipes, self.axis, self.owner.report)
+            if any(s['items'] for s in scene_sections(self.report)):
+                self.scene_tabs.select(0)
+        self.installation_states = model_states(self.report) if self._is_current() else {}
         self.canvas.delete("all"); lines = self._project(self.display_lines.reshape(-1, 3)).reshape((-1, 2, 2)) if len(self.display_lines) else np.empty((0, 2, 2))
         self.projected_lines = lines
         selected = self.owner.selected_id()
         for index in sorted(range(len(lines)), key=lambda i: self.pipes[i]["pipe_id"] == selected):
             line, pipe = lines[index], self.pipes[index]
-            color = pipe.get("color_srgb", "#B0B0B0")
+            color = STATE_COLORS[self.installation_states.get(pipe['pipe_id'], 'UNKNOWN')]
             active = pipe["pipe_id"] == selected
             tags = (f"pipe:{pipe['pipe_id']}", "selected" if active else "pipe")
             if active:
@@ -188,8 +210,14 @@ class ElevationModelViewer:
         self.canvas.create_text(12, 12, text="模型坐标 · 预览可旋转（不改变已保存观察侧）", fill="#DCE9F5", anchor="nw")
         self.canvas.create_text(12, 32, text=f"待应用：{self.view_mode.get()}", fill="#FFD166", anchor="nw")
         self.draw_section(selected)
+        scenes = scene_sections(self.report) if self._is_current() else []
+        self.scene_zone_box.configure(values=[s['zone_id'] for s in scenes])
+        scene = next((s for s in scenes if s['zone_id'] == self.scene_zone.get()), scenes[0] if scenes else None)
+        if scene:
+            self.scene_zone.set(scene['zone_id'])
+        self.scene_hits = draw_scene(self.scene_canvas, scene, selected_pipe=selected)
         spec = next((p for p in self.pipes if p["pipe_id"] == selected), None)
-        self.selection_info.set(f"当前选择：{selected} · 模型外径 {spec['nominal_diameter_mm']:g} mm · 颜色 {spec['color_srgb']}（仅浏览模型，不绑定照片身份）" if spec else "点击任一视图中的管道，与主列表同步选择。")
+        self.selection_info.set(f"当前选择：{selected} · 模型外径 {spec['nominal_diameter_mm']:g} mm · {STATE_LABELS[self.installation_states.get(selected, 'UNKNOWN')]}（点击编号只作选择，不创建照片身份）" if spec else "点击任一视图中的管道，与主列表同步选择。")
         if not self._is_current():
             self.info.set("现场输入已改变，请重新打开联动视图；旧图不能用于选择或应用设置。")
 
@@ -210,7 +238,8 @@ class ElevationModelViewer:
             radius = max(3., radii[index]*scale)
             active = pipe["pipe_id"] == selected
             tags = (f"pipe:{pipe['pipe_id']}", "selected" if active else "pipe")
-            canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=pipe["color_srgb"], outline="#D47D00" if active else "#273B51", width=4 if active else 1, tags=tags)
+            state = self.installation_states.get(pipe['pipe_id'], 'UNKNOWN')
+            canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=STATE_COLORS[state], outline="#D47D00" if active else "#273B51", width=4 if active else 1, tags=(*tags, f'state:{state}'))
             canvas.create_text(x, y-radius-5, text=pipe["pipe_id"], anchor="s", fill="#A45C00" if active else "#273B51", tags=tags)
             self.section_hits.append((pipe["pipe_id"], float(x), float(y), radius))
         canvas.create_text(12, 12, anchor="nw", text=f"固定截面 · 从管长轴正侧看，轴={np.round(self.section_basis[2], 3).tolist()}", fill="#273B51")
@@ -241,7 +270,20 @@ class ElevationModelViewer:
             canvas.create_text(12, h-48, anchor="nw", text=caption, fill="#995200", tags="camera_direction")
         else:
             canvas.create_text(12, h-48, anchor="nw", text="相机侧未指定；求解前不猜测观察方向。", fill="#355371")
-        canvas.create_text(12, h-25, anchor="nw", text="截面保持固定；选择管号不会创建模型与照片的对应。", fill="#355371")
+        canvas.create_text(12, h-25, anchor="nw", text="绿：相对就位  蓝：已识别安装  橙：不符  灰：待确认", fill="#355371", tags='installation-legend')
+
+    def pick_scene_pipe(self, event) -> None:
+        if not self._is_current():
+            return
+        hits = [r for r, x, y, radius in self.scene_hits if (event.x-x)**2+(event.y-y)**2 <= radius**2]
+        if not hits:
+            return
+        row = hits[0]
+        if row['pipe_id']:
+            self.owner.select_model_pipe(row['pipe_id'])
+        text = f"{row['label']}：估计外径 {row['diameter_mm']:.2f} mm，来源 {row['diameter_source']}。"
+        text += f"对应 {row['pipe_id']}。" if row['pipe_id'] else '尚未唯一对应 CAD 管号，不点亮确定安装位置。'
+        self.selection_info.set(text)
 
     def _pick(self, candidates: list[str]) -> None:
         if not self._is_current():

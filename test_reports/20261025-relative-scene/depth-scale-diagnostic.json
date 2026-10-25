@@ -1,0 +1,132 @@
+{
+  "diagnostic_only": true,
+  "applied_to_production": false,
+  "scale_fitted_to_cad": true,
+  "confirms_focal_length_or_pipe_identity": false,
+  "runs": [
+    {
+      "name": "reference-20261022",
+      "observation_order": [
+        "POOL-L01-POOL-R01",
+        "POOL-L02-POOL-R02",
+        "POOL-L03-POOL-R03",
+        "POOL-L04-POOL-R04"
+      ],
+      "top_hypotheses": [
+        {
+          "rms_mm": 9.738230382598656,
+          "v_scale": 0.31862851668810277,
+          "candidate_pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "point_errors_mm": [
+            2.6027876969477957,
+            14.564951562419308,
+            3.959070292555516,
+            12.031041872833429
+          ],
+          "identity_confirmed": false
+        },
+        {
+          "rms_mm": 13.638460075240008,
+          "v_scale": 0.3984525365508451,
+          "candidate_pipe_ids": [
+            "P008",
+            "P011",
+            "P003",
+            "P010"
+          ],
+          "point_errors_mm": [
+            1.7874156698985715,
+            20.588468181741167,
+            5.138578463940401,
+            17.045395490220326
+          ],
+          "identity_confirmed": false
+        },
+        {
+          "rms_mm": 29.673972926290645,
+          "v_scale": 0.13565350580357585,
+          "candidate_pipe_ids": [
+            "P005",
+            "P002",
+            "P006",
+            "P001"
+          ],
+          "point_errors_mm": [
+            3.8732704037748866,
+            42.8691397676277,
+            22.4290552256001,
+            34.151878287595615
+          ],
+          "identity_confirmed": false
+        }
+      ]
+    },
+    {
+      "name": "fresh-01",
+      "observation_order": [
+        "POOL-L01-POOL-R01",
+        "POOL-L02-POOL-R02",
+        "POOL-L03-POOL-R03",
+        "POOL-L04-POOL-R04"
+      ],
+      "top_hypotheses": [
+        {
+          "rms_mm": 7.838132716056064,
+          "v_scale": 0.3255416530454202,
+          "candidate_pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "point_errors_mm": [
+            11.812768458099002,
+            3.796452674939881,
+            7.341278777315745,
+            6.156002944610262
+          ],
+          "identity_confirmed": false
+        },
+        {
+          "rms_mm": 25.60606275086925,
+          "v_scale": 0.14267413979425028,
+          "candidate_pipe_ids": [
+            "P005",
+            "P002",
+            "P006",
+            "P001"
+          ],
+          "point_errors_mm": [
+            3.8451943068517638,
+            35.03817829628793,
+            18.323299874751307,
+            32.31840068019835
+          ],
+          "identity_confirmed": false
+        },
+        {
+          "rms_mm": 28.557833083421738,
+          "v_scale": 0.40103547548658663,
+          "candidate_pipe_ids": [
+            "P008",
+            "P011",
+            "P003",
+            "P010"
+          ],
+          "point_errors_mm": [
+            14.944432715704943,
+            32.89536180752017,
+            16.71336271851932,
+            40.95634176387862
+          ],
+          "identity_confirmed": false
+        }
+      ]
+    }
+  ]
+}

@@ -292,7 +292,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
     section = assess_pooled_sections(
         analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
             aggregation_band=settings.get('aggregation_band'), image_offsets=groups[-1].get('image_offsets'),
-            disparity_range=(disparity_min, disparity_max), ground_result=ground),
+            disparity_range=(disparity_min, disparity_max), ground_result=ground, refine_epipolar=True),
         pipe_specs, calibration, capture_healthy=bool(groups[-1].get('pair_healthy', False)),
         settings=settings if groups[-1].get('anchors_apply', True) else dict(settings, anchors={}), matching=matching)
     positions = {row['pipe_id']: row for row in section['position_assessment']['pipes']}
@@ -930,6 +930,22 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
             lines.append(" ".join([*(f"{v:.5f}" for v in point), *(str(int(v)) for v in color)]))
         atomic_write_bytes(outputs["point_cloud"], ("\n".join(lines)+"\n").encode("utf-8"))
         evidence_files.append(str(outputs["point_cloud"]))
+    if evidence_dir is not None:
+        from .section_display import section_evaluations
+        from .section_model import write_section_artifacts
+        artifact_names = ('section-model.json', 'pipe-dimensions.csv', 'pair-dimensions.csv',
+                          'section.svg', 'section.dxf', 'index.html')
+        section_outputs = []
+        for index, stage in enumerate(section_evaluations(result), 1):
+            if not stage.get('model'):
+                continue
+            directory = Path(evidence_dir).resolve() / f'section-{index:02d}'
+            destinations = {f'section_{index}_{name}': directory/name for name in artifact_names}
+            ensure_paths_distinct(**inputs, **outputs, **destinations)
+            section_outputs.append((stage['model'], directory, destinations))
+        for model, directory, destinations in section_outputs:
+            write_section_artifacts(model, directory)
+            evidence_files.extend(str(p) for p in destinations.values())
     result["evidence_files"] = evidence_files
     if "report" in outputs:
         atomic_write_bytes(outputs["report"], (json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False)+"\n").encode("utf-8"))
