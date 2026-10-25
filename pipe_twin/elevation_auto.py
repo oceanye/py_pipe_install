@@ -260,7 +260,8 @@ def _same_alignment(first: Mapping, second: Mapping, specs: list[dict]) -> bool:
 
 def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pipe_specs: list[dict],
                                    registration_settings: Mapping | None = None,
-                                   matching_settings: Mapping | None = None, ground_result: Mapping | None = None) -> dict:
+                                   matching_settings: Mapping | None = None, ground_result: Mapping | None = None,
+                                   progress=None) -> dict:
     """Pure in-memory entry point; every capture estimates its own alignment."""
     from .elevation_registration import register_elevation
     from .elevation_dataset import normalize_registration_settings
@@ -289,10 +290,32 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
         ground = check_ground(groups[-1], calibration, settings.get('ground_region'), section_stages=())
     # Current image evidence only: historical images cannot fill today's hidden
     # boundaries. This independent stage precedes dense-surface recognition.
-    section = assess_pooled_sections(
-        analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
+    section = analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
             aggregation_band=settings.get('aggregation_band'), image_offsets=groups[-1].get('image_offsets'),
-            disparity_range=(disparity_min, disparity_max), ground_result=ground, refine_epipolar=True),
+            disparity_range=(disparity_min, disparity_max), ground_result=ground, refine_epipolar=True)
+    burst = groups[-1]['depth'].audit.get('temporal_fusion') or {}
+    frames = groups[-1].get('section_frames', [])
+    reference_valid = bool(frames and frames[-1]['capture_id'] == burst.get('reference_capture_id'))
+    if burst.get('status') == 'VALID' and len(frames) >= 3 and reference_valid:
+        from .temporal_sections import check_sections
+        if not all(np.array_equal(frames[-1][r], groups[-1][r]) for r in ('left', 'right')):
+            raise ValueError('SECTION_BURST_REFERENCE_IMAGE_MISMATCH')
+        stages = []
+        for index, frame in enumerate(frames[:-1], 1):
+            if progress:
+                progress(f'断面重复性检查 {index}/{len(frames)}：独立提取边界和解算尺寸……')
+            stages.append(analyze_pooled_sections(frame['left'], frame['right'], calibration,
+                aggregation_band=settings.get('aggregation_band'), image_offsets=groups[-1].get('image_offsets'),
+                disparity_range=(disparity_min, disparity_max), ground_result=ground, refine_epipolar=True))
+        check_sections(section, stages+[section], [{k: f[k] for k in ('capture_id', 'sha256')} for f in frames],
+                       requested_frames=burst['requested_frames'])
+        if progress:
+            progress(f"断面重复性检查 {len(frames)}/{len(frames)} 完成：当前解出 {section.get('conditional_section_count', 0)} 个断面，正在检查 CAD 对应……")
+    else:
+        section['temporal_sections'] = {'status': 'BURST_REJECTED' if burst and (burst.get('status') != 'VALID' or not reference_valid) else 'NOT_CHECKED',
+                                       'requested_frames': burst.get('requested_frames', 1), 'sampled_frames': 1,
+                                       'reason_codes': burst.get('reason_codes', [])}
+    assess_pooled_sections(section,
         pipe_specs, calibration, capture_healthy=bool(groups[-1].get('pair_healthy', False)),
         settings=settings if groups[-1].get('anchors_apply', True) else dict(settings, anchors={}), matching=matching)
     positions = {row['pipe_id']: row for row in section['position_assessment']['pipes']}
@@ -740,7 +763,7 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
 def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pipe_specs: list[dict],
                                  registration_settings: Mapping | None = None,
                                  matching_settings: Mapping | None = None,
-                                 scope_settings: Mapping | None = None) -> dict:
+                                 scope_settings: Mapping | None = None, progress=None) -> dict:
     """Analyze configured group zones and merge their independent evidence."""
 
     settings = normalize_zone_settings(scope_settings, image_size=(calibration.left.width, calibration.left.height))
@@ -772,7 +795,7 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
             cropped_groups, calibration=crop_calibration_for_zone(
                 calibration, zone, right_padding_px=settings["right_roi_padding_px"]),
             pipe_specs=zone_specs, registration_settings=zone_registration,
-            matching_settings=matching, ground_result=ground,
+            matching_settings=matching, ground_result=ground, progress=progress,
         )
         reports.append(_qualify_zone_report(report, zone, offsets or {}))
     result = _merge_zone_reports(reports, groups=groups, calibration=calibration,
@@ -848,6 +871,18 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                            status_refresh=capture.get("status_refresh"),
                            pair_healthy=bool(capture["sync_valid"] and depth.audit["status"] == "VALID" and all(q["passed"] for q in quality.values())),
                            quality=quality, photos=photos, anchors_apply=anchors_apply))
+        # Only the current burst contributes to section repeatability, never
+        # previous installation-state history. Bound decoding to seven pairs.
+        burst_audit = depth.audit.get('temporal_fusion') or {}
+        if capture is captures[-1] and burst_audit.get('status') == 'VALID':
+            from .temporal_sections import sample_indices
+            accepted = {f['capture_id'] for f in burst_audit['frames'] if f['accepted']}
+            frames = [f for f in bursts[capture['capture_id']] if f['capture_id'] in accepted]
+            groups[-1]['section_frames'] = [{
+                'capture_id': frames[i]['capture_id'],
+                'sha256': {r: frames[i]['views'][r]['sha256'] for r in ('left', 'right')},
+                **{r: load_photo_snapshot(path, frames[i]['views'][r])[0] for r in ('left', 'right')}
+            } for i in sample_indices(len(frames))]
     if loaded["registration_settings"]["anchors"] and not any(g["anchors_apply"] for g in groups):
         raise ValueError("手工基准对应缺少匹配的照片哈希，请在当前照片上重新指定")
     scope_settings = loaded.get("scope_settings") or {"scope": "full_frame", "zones": []}
@@ -857,13 +892,14 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
         result = analyze_elevation_auto_zones(
             groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
             registration_settings=loaded["registration_settings"],
-            matching_settings=config["matching"], scope_settings=scope_settings,
+            matching_settings=config["matching"], scope_settings=scope_settings, progress=progress,
         )
     else:
         result = analyze_elevation_auto_groups(
             groups, calibration=calibration, pipe_specs=loaded["pipe_specs"],
             registration_settings=loaded["registration_settings"],
             matching_settings=config["matching"],
+            progress=progress,
         )
     result.update(schema_version="2.0", report_type="stereo-auto-elevation-state", dataset_id=manifest["dataset_id"],
                   generated_at=datetime.now(timezone.utc).isoformat(), inputs=hashes,
@@ -871,6 +907,8 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                                      "quality_audit": loaded["calibration"].get("quality_audit"),
                                      "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM"})
     result["temporal_fusion"] = groups[-1]["depth"].audit.get("temporal_fusion")
+    from .section_status import solver_status_rows
+    result['solver_status'] = solver_status_rows(result)
     # All inference used immutable decoded images. Recheck bound snapshots
     # before publishing any output, including the optional STL reference.
     if path.read_bytes() != original or any(hashlib.sha256(p.read_bytes()).hexdigest() != hashes[key] for key, p in inputs.items()):

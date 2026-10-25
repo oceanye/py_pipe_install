@@ -53,6 +53,8 @@ def test_zone_crop_shifts_intrinsics_and_pixel_boxes():
     )
     group = {"left": np.zeros((480, 640, 3), np.uint8), "right": np.zeros((480, 640, 3), np.uint8),
              "depth": depth, "capture_id": "CAP-1", "captured_at": "2026-10-04T10:00:00+08:00"}
+    sample = np.arange(480*640).reshape(480, 640)
+    group['section_frames'] = [{'capture_id': 'F1', 'sha256': {'left': 'source'}, 'left': sample, 'right': sample}]
     cropped, offsets = crop_stereo_group_for_zone(group, calibration, _zone((80, 60, 240, 180)), right_padding_px=64)
     cropped_calibration = crop_calibration_for_zone(calibration, _zone((80, 60, 240, 180)), right_padding_px=64)
     assert cropped["left"].shape[:2] == (180, 240)
@@ -61,6 +63,11 @@ def test_zone_crop_shifts_intrinsics_and_pixel_boxes():
                       "width": 240, "height": 180, "right_width": 368}
     assert cropped_calibration.left.rectified_intrinsic[0, 2] == pytest.approx(240.0)
     assert cropped_calibration.right.rectified_intrinsic[0, 2] == pytest.approx(304.0)
+    assert cropped['section_frames'][0]['left'].shape == (180, 240)
+    assert cropped['section_frames'][0]['right'].shape == (180, 368)
+    assert cropped['section_frames'][0]['left'][0, 0] == sample[60, 80]
+    assert cropped['section_frames'][0]['right'][0, 0] == sample[60, 16]
+    assert cropped['section_frames'][0]['sha256'] == {'left': 'source'}
 
 
 def test_full_width_zone_reuses_automatic_geometry_and_qualifies_observations():

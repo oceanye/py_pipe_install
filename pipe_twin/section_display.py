@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 REASONS = {
+    'TEMPORAL_SECTION_SUPPORT_INSUFFICIENT': '当前连拍中可独立解算的帧数不足',
+    'TEMPORAL_SECTION_DIAMETER_UNSTABLE': '当前连拍的外径变化超出重复性门限',
+    'TEMPORAL_SECTION_LAYOUT_UNSTABLE': '当前连拍的相对心距不稳定或比较帧数不足',
+    'STEREO_SECTION_PAIR_UNRESOLVED': '已有图像边界，左右候选尚未唯一配对',
     'PARTIAL_STEREO_BOUNDARY_SUPPORT': '仅三条稳定轮廓参与拟合；缺失边界未补齐，尚不用于就位验收',
     'EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED': '图像微校正改善了对齐，毫米精度尚未独立验证',
     'CALIBRATION_NOT_VALIDATED': '当前为暂用标定，尚未验证尺寸精度',
@@ -56,6 +60,9 @@ def section_summary_lines(report, *, detailed=False):
     lines += ['', pooling_summary(report)]
     for stage in stages:
         lines += ['', f"{stage.get('zone_id', '全幅')}：稳定双目边界 {stage.get('boundary_pair_count', 0)} 对"]
+        temporal = stage.get('temporal_sections') or {}
+        if temporal.get('status') == 'CHECKED':
+            lines += [f"当前连拍：逐帧独立复核 {temporal['sampled_frames']} 帧；只检查重复性，不证明绝对精度。"]
         band = stage.get('aggregation_band')
         if band:
             lines += [f"手动汇聚范围：沿左图指定方向 {band['span_px']:.1f} px，两条垂线之间取样。"]
@@ -89,6 +96,12 @@ def section_summary_lines(report, *, detailed=False):
             if reasons:
                 text += '；'+'、'.join(REASONS.get(r, r) for r in reasons)
             lines.append(text)
+            temporal = candidate.get('temporal_consistency') or {}
+            if temporal:
+                spread = temporal.get('diameter')
+                lines.append(f"  连拍解出 {temporal['solved_frames']}/{temporal['sampled_frames']} 帧；外径重复性{'通过' if temporal['diameter_repeatable'] else '未通过'}。")
+                if spread:
+                    lines.append(f"  外径范围 {spread['min_mm']:.2f}～{spread['max_mm']:.2f} mm，极差 {spread['span_mm']:.2f} mm。")
             sensitivity = candidate.get('window_sensitivity') or {}
             if 'center_difference_mm' in sensitivity:
                 lines.append(f"  子段间变化：直径 {sensitivity['diameter_difference_mm']:.2f} mm，断面圆心 {sensitivity['center_difference_mm']:.2f} mm")

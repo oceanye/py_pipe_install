@@ -405,6 +405,14 @@ class RegionCanvas:
         for x1, y1, x2, y2 in boundary_overlay_segments(report, self.role):
             canvas.create_line(ox+x1*scale, oy+y1*scale, ox+x2*scale, oy+y2*scale,
                                fill='#67E8EF', width=2, tags='pooled-boundary')
+        selected_solver = self.owner.selected_solver_row() if hasattr(self.owner, 'selected_solver_row') else None
+        box = (selected_solver or {}).get(self.role+'_region_px')
+        if box:
+            x, y, bw, bh = box
+            canvas.create_rectangle(ox+x*scale, oy+y*scale, ox+(x+bw)*scale, oy+(y+bh)*scale,
+                                    outline='#FFD344', width=3, tags='solver-selection')
+            canvas.create_text(ox+x*scale+4, oy+y*scale+4, anchor='nw',
+                               text=selected_solver['label'], fill='#FFD344', tags='solver-selection')
 
         # Group search bounds are independent from automatic pipe identities.
         if self.assessment_regions and self.role == "left" and self.owner.zone_settings.get("scope") == "zones":
@@ -991,8 +999,30 @@ class ElevationCaptureDialog:
             self.views[role] = RegionCanvas(view_frame, self, role, assessment_regions=True)
         ttk.Label(footer, text="左图画管长方向：两条橙色垂线之间汇聚；拖动端点可调范围。青色线为稳定边界。方向与范围随现场保存。", foreground="#355371").pack(anchor="w")
 
-        table_frame = ttk.Frame(footer)
-        table_frame.pack(fill="x", pady=6)
+        self.status_tabs = ttk.Notebook(footer)
+        self.status_tabs.pack(fill="x", pady=6)
+        solver_frame = ttk.Frame(self.status_tabs)
+        table_frame = ttk.Frame(self.status_tabs)
+        self.status_tabs.add(solver_frame, text='现场求解状态')
+        self.status_tabs.add(table_frame, text='CAD 安装状态')
+        solver_columns = ('boundaries', 'diameter', 'frames', 'repeatability', 'layout', 'cad', 'status')
+        self.solver_tree = ttk.Treeview(solver_frame, columns=solver_columns, height=5, selectmode='browse')
+        self.solver_tree.heading('#0', text='现场候选')
+        self.solver_tree.column('#0', width=100, stretch=False)
+        for column, label, width in zip(solver_columns,
+                ('稳定轮廓', '估计外径 mm', '连拍解出', '外径重复性 mm', '心距重复性', 'CAD 对应', '当前进度'),
+                (100, 110, 75, 150, 100, 90, 220)):
+            self.solver_tree.heading(column, text=label)
+            self.solver_tree.column(column, width=width, stretch=column == 'status')
+        solver_scroll = ttk.Scrollbar(solver_frame, orient='vertical', command=self.solver_tree.yview)
+        self.solver_tree.configure(yscrollcommand=solver_scroll.set)
+        solver_scroll.pack(side='right', fill='y')
+        self.solver_tree.pack(side='left', fill='x', expand=True)
+        self.solver_rows = {}
+        self.solver_detail = tk.StringVar(value='评估后显示每个现场候选的求解过程；选择一行可在左右图中定位，双击查看详细原因。')
+        self.solver_tree.bind('<<TreeviewSelect>>', lambda _e: self._solver_selected())
+        self.solver_tree.bind('<Double-1>', lambda _e: self.show_solver_detail())
+        ttk.Label(footer, textvariable=self.solver_detail, wraplength=1000, foreground='#355371').pack(anchor='w')
         columns = ("diameter", "color", "left", "right", "reference", "state", "position", "reason")
         self.tree = ttk.Treeview(table_frame, columns=columns, height=5, selectmode="browse")
         self.tree.heading("#0", text="管道编号")
@@ -1013,8 +1043,16 @@ class ElevationCaptureDialog:
         actions = [("设置颜色", self.edit_pipe), ("同径统一颜色", self.apply_diameter_color),
                    ("管长与观察方向", self.open_model_viewer), ("查看模型管道编号", self.show_catalog),
                    ("断面尺寸与就位", self.show_measurement), ("管段汇聚", self.show_section_aggregation)]
+        cad_buttons = []
         for name, action in actions:
-            ttk.Button(row, text=name, command=action).pack(side="left", padx=2)
+            button = ttk.Button(row, text=name, command=action)
+            button.pack(side="left", padx=2)
+            if name in ('设置颜色', '同径统一颜色', '断面尺寸与就位'):
+                cad_buttons.append(button)
+                button.state(['disabled'])
+        self.status_tabs.bind('<<NotebookTabChanged>>', lambda _e: [b.state(
+            ['!disabled'] if self.status_tabs.select() == str(table_frame) else ['disabled']) for b in cad_buttons])
+        ttk.Button(row, text='所选求解详情', command=self.show_solver_detail).pack(side='left', padx=2)
         bottom = ttk.Frame(footer)
         bottom.pack(fill="x", pady=(8, 4))
         ttk.Checkbutton(bottom, text="沿用上次场景历史（相机未移动）", variable=self.history).pack(side="left")
@@ -1496,7 +1534,45 @@ class ElevationCaptureDialog:
             self.tree.insert("", "end", iid=spec["pipe_id"], text=spec["pipe_id"], tags=(row.get("installation_state", "UNKNOWN"),), values=(f"{spec['nominal_diameter_mm']:g}", spec["color_srgb"], "自动" if left_region else "待匹配", "自动" if right_region else "待匹配", "自动", row.get("installation_state_zh", "待评估"), position.get('state_zh', '待评估'), explanation))
         if self.pipes:
             self.tree.selection_set(selected if selected in self.tree.get_children() else self.pipes[0]["pipe_id"])
+        from .section_status import solver_status_rows
+        selected_solver = self.solver_tree.selection()
+        self.solver_tree.delete(*self.solver_tree.get_children())
+        self.solver_rows = {r['key']: r for r in solver_status_rows(self.report)}
+        for key, row in self.solver_rows.items():
+            self.solver_tree.insert('', 'end', iid=key, text=f"{row['zone_id']} / {row['label']}", values=row['values'])
+        if self.solver_rows:
+            key = selected_solver[0] if selected_solver and selected_solver[0] in self.solver_rows else next(iter(self.solver_rows))
+            self.solver_tree.selection_set(key)
+        self._solver_selected()
         self.redraw()
+
+    def selected_solver_row(self):
+        selected = self.solver_tree.selection() if hasattr(self, 'solver_tree') else ()
+        return self.solver_rows.get(selected[0]) if selected else None
+
+    def _solver_selected(self):
+        row = self.selected_solver_row()
+        if row:
+            from .section_display import REASONS
+            reason = '；'.join(REASONS.get(r, r) for r in row['reason_codes'][:2])
+            self.solver_detail.set(row['detail'].splitlines()[0] + reason + '  双击查看详情。')
+        else:
+            self.solver_detail.set('评估后显示每个现场候选的求解过程；选择一行定位照片，双击查看详细原因。')
+        self.redraw()
+
+    def show_solver_detail(self):
+        row = self.selected_solver_row()
+        if not row:
+            return
+        tk, ttk = self.app.tk, self.app.ttk
+        dialog = tk.Toplevel(self.window)
+        dialog.title(f"现场求解状态 · {row['zone_id']} / {row['label']}")
+        dialog.geometry('800x460')
+        text = tk.Text(dialog, wrap='word', padx=15, pady=15, font=('Microsoft YaHei', 10))
+        text.pack(fill='both', expand=True)
+        text.insert('1.0', row['detail'])
+        text.configure(state='disabled')
+        ttk.Button(dialog, text='关闭', command=dialog.destroy).pack(pady=6)
 
     def show_measurement(self) -> None:
         spec = self.selected_pipe()

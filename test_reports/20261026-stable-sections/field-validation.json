@@ -1,0 +1,572 @@
+{
+  "source_manifest": "outputs\\relative-scene-20261025\\settled-gui\\captures\\elevation-20261025-122438-e4146031\\manifest.json",
+  "replay_only_no_new_capture": true,
+  "source_hashes_unchanged": {
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\relative-scene-20261025\\settled-gui\\captures\\elevation-20261025-122438-e4146031\\manifest.json": "5b1dfbfd4077a6e3d41989e3f416029dca0b196f957a59665fe3038604b51a0a",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\relative-scene-20261025\\settled-gui\\captures\\elevation-20261025-122438-e4146031\\report.json": "475671fbdd30f0b673e19defa3a376780721a0c7d6e9df874256d3ba5ade124e",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  },
+  "report_path": "outputs\\stable-sections-20261026\\production\\report.json",
+  "conditional_section_count": 4,
+  "temporal_sections": {
+    "status": "CHECKED",
+    "policy": {
+      "revision": "static-section-repeatability-v1",
+      "maximum_frames": 7,
+      "minimum_frames": 3,
+      "minimum_fraction": 0.8,
+      "minimum_box_iou": 0.5,
+      "diameter_span_mm": 1.0,
+      "diameter_span_ratio": 0.05,
+      "pair_distance_span_mm": 5.0
+    },
+    "policy_sha256": "24b330c9eeee69a1663a1198947118f664ad9fbf27c5e88509fac2898f7346cc",
+    "requested_frames": 5,
+    "sampled_frames": 5,
+    "required_frames": 4,
+    "sources": [
+      {
+        "capture_id": "elevation-20261025-122438-e4146031-F001",
+        "sha256": {
+          "left": "6dacf7a67e552edfc46cda1e376641a8b38025ae55c4f5029458db385f6c6d1c",
+          "right": "f148ec00b3458b1d8c8967f4497fcafd8dd83d406b2915a12dd894692d283480"
+        }
+      },
+      {
+        "capture_id": "elevation-20261025-122438-e4146031-F002",
+        "sha256": {
+          "left": "f217d97ef5fb5e4ed429ad1f8979222c1ee0fb676fa85977d808b5c8574573c7",
+          "right": "b2a5a6ccbc29f7d9799912593a60fa7ce77af05ca06bd02bf7d02716ebc2f8fa"
+        }
+      },
+      {
+        "capture_id": "elevation-20261025-122438-e4146031-F003",
+        "sha256": {
+          "left": "6c29b02b735a9b61f25fd419f7f7b9b99842f2627c79a609517304af8141c36d",
+          "right": "933d5d36ff83526a10346cd675e14509f5571fa9d1ca5def84900ef0fd155c86"
+        }
+      },
+      {
+        "capture_id": "elevation-20261025-122438-e4146031-F004",
+        "sha256": {
+          "left": "6ab15578144b16b9e91ef36865055d13d364cc89616439cee2acf01de652680c",
+          "right": "b86e591a2ed80a7f627d8f1a5d5123a6e68621978b910edc746c0a7c677a0e32"
+        }
+      },
+      {
+        "capture_id": "elevation-20261025-122438-e4146031-F005",
+        "sha256": {
+          "left": "a7a4d57a4f4308be3dff83fa09ce70e7ba6ab70ae07d6e00385591faefa5e9c5",
+          "right": "7248ce3c744b0b1da943fe4da5fa7576137561b9d409c802640c29b16dbfa332"
+        }
+      }
+    ],
+    "pairwise": [
+      {
+        "ids": [
+          "POOL-L01-POOL-R01",
+          "POOL-L02-POOL-R02"
+        ],
+        "sample_count": 5,
+        "distance": {
+          "median_mm": 477.16944313651953,
+          "min_mm": 467.2938992301335,
+          "max_mm": 522.0179313062281,
+          "span_mm": 54.7240320760946
+        },
+        "repeatable": false
+      },
+      {
+        "ids": [
+          "POOL-L01-POOL-R01",
+          "POOL-L03-POOL-R03"
+        ],
+        "sample_count": 5,
+        "distance": {
+          "median_mm": 325.70064202205106,
+          "min_mm": 302.79578355538587,
+          "max_mm": 335.13143683890655,
+          "span_mm": 32.335653283520685
+        },
+        "repeatable": false
+      },
+      {
+        "ids": [
+          "POOL-L01-POOL-R01",
+          "POOL-L04-POOL-R04"
+        ],
+        "sample_count": 5,
+        "distance": {
+          "median_mm": 502.62032560329766,
+          "min_mm": 427.13057745937823,
+          "max_mm": 842.3842990708023,
+          "span_mm": 415.25372161142406
+        },
+        "repeatable": false
+      },
+      {
+        "ids": [
+          "POOL-L02-POOL-R02",
+          "POOL-L03-POOL-R03"
+        ],
+        "sample_count": 5,
+        "distance": {
+          "median_mm": 783.7223323944153,
+          "min_mm": 768.3046210730871,
+          "max_mm": 797.4906388688943,
+          "span_mm": 29.186017795807174
+        },
+        "repeatable": false
+      },
+      {
+        "ids": [
+          "POOL-L02-POOL-R02",
+          "POOL-L04-POOL-R04"
+        ],
+        "sample_count": 5,
+        "distance": {
+          "median_mm": 119.55798017619699,
+          "min_mm": 100.20234696629454,
+          "max_mm": 373.20714073143836,
+          "span_mm": 273.0047937651438
+        },
+        "repeatable": false
+      },
+      {
+        "ids": [
+          "POOL-L03-POOL-R03",
+          "POOL-L04-POOL-R04"
+        ],
+        "sample_count": 5,
+        "distance": {
+          "median_mm": 755.7537373482238,
+          "min_mm": 711.9490903124406,
+          "max_mm": 1143.0143368439606,
+          "span_mm": 431.06524653151996
+        },
+        "repeatable": false
+      }
+    ],
+    "geometry_source": "CURRENT_REFERENCE_FRAME",
+    "scope": "REPEATABILITY_NOT_ABSOLUTE_ACCURACY",
+    "historical_frames_used": false
+  },
+  "solver_status": [
+    {
+      "key": "0:POOL-L01-POOL-R01",
+      "zone_id": "全幅",
+      "candidate_id": "POOL-L01-POOL-R01",
+      "label": "S1",
+      "color_srgb": "#F34446",
+      "left_region_px": [
+        762,
+        326,
+        647,
+        131
+      ],
+      "right_region_px": [
+        508.0972426751899,
+        316.34308810335955,
+        900.2667966194433,
+        157.5533714554266
+      ],
+      "solved": true,
+      "diameter_mm": 41.899618768859234,
+      "temporal_consistency": {
+        "sampled_frames": 5,
+        "solved_frames": 5,
+        "required_frames": 4,
+        "diameter": {
+          "median_mm": 41.899618768859234,
+          "min_mm": 41.56844438678629,
+          "max_mm": 42.55571589683564,
+          "span_mm": 0.9872715100493537
+        },
+        "diameter_span_limit_mm": 2.0949809384429616,
+        "diameter_repeatable": true,
+        "layout_repeatable": false,
+        "frames": [
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F001",
+            "candidate_id": "POOL-L01-POOL-R01",
+            "diameter_mm": 41.56844438678629,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F002",
+            "candidate_id": "POOL-L01-POOL-R01",
+            "diameter_mm": 42.16913854918206,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F003",
+            "candidate_id": "POOL-L01-POOL-R01",
+            "diameter_mm": 42.55571589683564,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F004",
+            "candidate_id": "POOL-L01-POOL-R01",
+            "diameter_mm": 41.68689951693857,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F005",
+            "candidate_id": "POOL-L01-POOL-R01",
+            "diameter_mm": 41.899618768859234,
+            "reason_codes": []
+          }
+        ],
+        "reason_codes": [
+          "TEMPORAL_SECTION_LAYOUT_UNSTABLE"
+        ],
+        "accuracy_validated": false
+      },
+      "pipe_id": null,
+      "reason_codes": [
+        "TEMPORAL_SECTION_LAYOUT_UNSTABLE",
+        "CALIBRATION_NOT_VALIDATED",
+        "EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED"
+      ],
+      "detail": "全幅 / S1：断面已解，重复性待改善。\n仅使用当前连拍；表中尺寸来自最后一帧，未将历史或采购尺寸补入拟合。\n重复性仅反映本次帧间变化，不代表绝对精度或已完成安装。\n解出 5/5 帧，至少要求 4 帧。\n外径极差 0.99 mm；重复性门限 2.09 mm。\nS1 / S2 心距范围 467.3～522.0 mm；极差 54.7 mm。\nS1 / S3 心距范围 302.8～335.1 mm；极差 32.3 mm。\nS1 / S4 心距范围 427.1～842.4 mm；极差 415.3 mm。\n当前连拍的相对心距不稳定或比较帧数不足\n当前为暂用标定，尚未验证尺寸精度\n图像微校正改善了对齐，毫米精度尚未独立验证\n尚未唯一对应 CAD 管号，安装状态继续待判定。",
+      "values": [
+        "左 2 / 右 2",
+        "41.90（估）",
+        "5/5",
+        "通过 41.6～42.6",
+        "待稳定",
+        "待对应",
+        "断面已解，重复性待改善"
+      ]
+    },
+    {
+      "key": "0:POOL-L02-POOL-R02",
+      "zone_id": "全幅",
+      "candidate_id": "POOL-L02-POOL-R02",
+      "label": "S2",
+      "color_srgb": "#FF4B4F",
+      "left_region_px": [
+        769,
+        410,
+        649,
+        147
+      ],
+      "right_region_px": [
+        515.9274680441628,
+        397.3564743582324,
+        901.2970319535201,
+        174.55536641855838
+      ],
+      "solved": true,
+      "diameter_mm": 42.214751690689006,
+      "temporal_consistency": {
+        "sampled_frames": 5,
+        "solved_frames": 5,
+        "required_frames": 4,
+        "diameter": {
+          "median_mm": 41.79814594731653,
+          "min_mm": 41.55236519051688,
+          "max_mm": 42.214751690689006,
+          "span_mm": 0.6623865001721256
+        },
+        "diameter_span_limit_mm": 2.0899072973658264,
+        "diameter_repeatable": true,
+        "layout_repeatable": false,
+        "frames": [
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F001",
+            "candidate_id": "POOL-L02-POOL-R02",
+            "diameter_mm": 41.55236519051688,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F002",
+            "candidate_id": "POOL-L02-POOL-R02",
+            "diameter_mm": 41.70646106899355,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F003",
+            "candidate_id": "POOL-L02-POOL-R02",
+            "diameter_mm": 41.79814594731653,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F004",
+            "candidate_id": "POOL-L02-POOL-R02",
+            "diameter_mm": 41.87046957164214,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F005",
+            "candidate_id": "POOL-L02-POOL-R02",
+            "diameter_mm": 42.214751690689006,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          }
+        ],
+        "reason_codes": [
+          "TEMPORAL_SECTION_LAYOUT_UNSTABLE"
+        ],
+        "accuracy_validated": false
+      },
+      "pipe_id": null,
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "TEMPORAL_SECTION_LAYOUT_UNSTABLE",
+        "CALIBRATION_NOT_VALIDATED",
+        "EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED"
+      ],
+      "detail": "全幅 / S2：断面已解，重复性待改善。\n仅使用当前连拍；表中尺寸来自最后一帧，未将历史或采购尺寸补入拟合。\n重复性仅反映本次帧间变化，不代表绝对精度或已完成安装。\n解出 5/5 帧，至少要求 4 帧。\n外径极差 0.66 mm；重复性门限 2.09 mm。\nS1 / S2 心距范围 467.3～522.0 mm；极差 54.7 mm。\nS2 / S3 心距范围 768.3～797.5 mm；极差 29.2 mm。\nS2 / S4 心距范围 100.2～373.2 mm；极差 273.0 mm。\n不同子段解出的尺寸或位置不一致\n当前连拍的相对心距不稳定或比较帧数不足\n当前为暂用标定，尚未验证尺寸精度\n图像微校正改善了对齐，毫米精度尚未独立验证\n尚未唯一对应 CAD 管号，安装状态继续待判定。",
+      "values": [
+        "左 2 / 右 2",
+        "42.21（估）",
+        "5/5",
+        "通过 41.6～42.2",
+        "待稳定",
+        "待对应",
+        "断面已解，重复性待改善"
+      ]
+    },
+    {
+      "key": "0:POOL-L03-POOL-R03",
+      "zone_id": "全幅",
+      "candidate_id": "POOL-L03-POOL-R03",
+      "label": "S3",
+      "color_srgb": "#E2D6D4",
+      "left_region_px": [
+        780,
+        533,
+        644,
+        103
+      ],
+      "right_region_px": [
+        525.7836921755618,
+        524.3733624852049,
+        898.222066677761,
+        130.55059607491523
+      ],
+      "solved": true,
+      "diameter_mm": 27.382799979152267,
+      "temporal_consistency": {
+        "sampled_frames": 5,
+        "solved_frames": 5,
+        "required_frames": 4,
+        "diameter": {
+          "median_mm": 27.201579905696963,
+          "min_mm": 27.131200253273636,
+          "max_mm": 27.405670808060833,
+          "span_mm": 0.2744705547871966
+        },
+        "diameter_span_limit_mm": 1.3600789952848482,
+        "diameter_repeatable": true,
+        "layout_repeatable": false,
+        "frames": [
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F001",
+            "candidate_id": "POOL-L03-POOL-R03",
+            "diameter_mm": 27.186146204798515,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F002",
+            "candidate_id": "POOL-L03-POOL-R03",
+            "diameter_mm": 27.201579905696963,
+            "reason_codes": []
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F003",
+            "candidate_id": "POOL-L03-POOL-R03",
+            "diameter_mm": 27.405670808060833,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F004",
+            "candidate_id": "POOL-L03-POOL-R03",
+            "diameter_mm": 27.131200253273636,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F005",
+            "candidate_id": "POOL-L03-POOL-R03",
+            "diameter_mm": 27.382799979152267,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE"
+            ]
+          }
+        ],
+        "reason_codes": [
+          "TEMPORAL_SECTION_LAYOUT_UNSTABLE"
+        ],
+        "accuracy_validated": false
+      },
+      "pipe_id": null,
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "TEMPORAL_SECTION_LAYOUT_UNSTABLE",
+        "CALIBRATION_NOT_VALIDATED",
+        "EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED"
+      ],
+      "detail": "全幅 / S3：断面已解，重复性待改善。\n仅使用当前连拍；表中尺寸来自最后一帧，未将历史或采购尺寸补入拟合。\n重复性仅反映本次帧间变化，不代表绝对精度或已完成安装。\n解出 5/5 帧，至少要求 4 帧。\n外径极差 0.27 mm；重复性门限 1.36 mm。\nS1 / S3 心距范围 302.8～335.1 mm；极差 32.3 mm。\nS2 / S3 心距范围 768.3～797.5 mm；极差 29.2 mm。\nS3 / S4 心距范围 711.9～1143.0 mm；极差 431.1 mm。\n不同子段解出的尺寸或位置不一致\n当前连拍的相对心距不稳定或比较帧数不足\n当前为暂用标定，尚未验证尺寸精度\n图像微校正改善了对齐，毫米精度尚未独立验证\n尚未唯一对应 CAD 管号，安装状态继续待判定。",
+      "values": [
+        "左 2 / 右 2",
+        "27.38（估）",
+        "5/5",
+        "通过 27.1～27.4",
+        "待稳定",
+        "待对应",
+        "断面已解，重复性待改善"
+      ]
+    },
+    {
+      "key": "0:POOL-L04-POOL-R04",
+      "zone_id": "全幅",
+      "candidate_id": "POOL-L04-POOL-R04",
+      "label": "S4",
+      "color_srgb": "#2D79E0",
+      "left_region_px": [
+        784,
+        585,
+        650,
+        169
+      ],
+      "right_region_px": [
+        530.5862363470319,
+        571.3819459958335,
+        902.3385694279125,
+        197.55784287137647
+      ],
+      "solved": true,
+      "diameter_mm": 42.87492567766225,
+      "temporal_consistency": {
+        "sampled_frames": 5,
+        "solved_frames": 5,
+        "required_frames": 4,
+        "diameter": {
+          "median_mm": 52.14397607869015,
+          "min_mm": 42.87492567766225,
+          "max_mm": 52.75246467436959,
+          "span_mm": 9.877538996707344
+        },
+        "diameter_span_limit_mm": 2.6071988039345078,
+        "diameter_repeatable": false,
+        "layout_repeatable": false,
+        "frames": [
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F001",
+            "candidate_id": "POOL-L04-POOL-R04",
+            "diameter_mm": 52.75246467436959,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE",
+              "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F002",
+            "candidate_id": "POOL-L04-POOL-R04",
+            "diameter_mm": 52.14397607869015,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE",
+              "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F003",
+            "candidate_id": "POOL-L04-POOL-R04",
+            "diameter_mm": 52.370648552408916,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE",
+              "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F004",
+            "candidate_id": "POOL-L04-POOL-R04",
+            "diameter_mm": 43.09420004253956,
+            "reason_codes": [
+              "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+            ]
+          },
+          {
+            "capture_id": "elevation-20261025-122438-e4146031-F005",
+            "candidate_id": "POOL-L04-POOL-R04",
+            "diameter_mm": 42.87492567766225,
+            "reason_codes": [
+              "POOLED_DIMENSIONS_UNSTABLE",
+              "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+            ]
+          }
+        ],
+        "reason_codes": [
+          "TEMPORAL_SECTION_DIAMETER_UNSTABLE",
+          "TEMPORAL_SECTION_LAYOUT_UNSTABLE"
+        ],
+        "accuracy_validated": false
+      },
+      "pipe_id": null,
+      "reason_codes": [
+        "PARTIAL_STEREO_BOUNDARY_SUPPORT",
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "TEMPORAL_SECTION_DIAMETER_UNSTABLE",
+        "TEMPORAL_SECTION_LAYOUT_UNSTABLE",
+        "CALIBRATION_NOT_VALIDATED",
+        "EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED"
+      ],
+      "detail": "全幅 / S4：断面已解，重复性待改善。\n仅使用当前连拍；表中尺寸来自最后一帧，未将历史或采购尺寸补入拟合。\n重复性仅反映本次帧间变化，不代表绝对精度或已完成安装。\n解出 5/5 帧，至少要求 4 帧。\n外径极差 9.88 mm；重复性门限 2.61 mm。\nS1 / S4 心距范围 427.1～842.4 mm；极差 415.3 mm。\nS2 / S4 心距范围 100.2～373.2 mm；极差 273.0 mm。\nS3 / S4 心距范围 711.9～1143.0 mm；极差 431.1 mm。\n仅三条稳定轮廓参与拟合；缺失边界未补齐，尚不用于就位验收\n不同子段解出的尺寸或位置不一致\n当前连拍的外径变化超出重复性门限\n当前连拍的相对心距不稳定或比较帧数不足\n当前为暂用标定，尚未验证尺寸精度\n图像微校正改善了对齐，毫米精度尚未独立验证\n尚未唯一对应 CAD 管号，安装状态继续待判定。",
+      "values": [
+        "左 2 / 右 1",
+        "42.87（估）",
+        "5/5",
+        "波动 42.9～52.8",
+        "待稳定",
+        "待对应",
+        "断面已解，重复性待改善"
+      ]
+    }
+  ],
+  "installation_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "real_tk_status_selection_and_scene_checked": true,
+  "evidence_files": [
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\elevation-20261025-122438-e4146031_left_overlay.png",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\elevation-20261025-122438-e4146031_right_overlay.png",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\local_surface.ply",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\section-01\\section-model.json",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\section-01\\pipe-dimensions.csv",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\section-01\\pair-dimensions.csv",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\section-01\\section.svg",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\section-01\\section.dxf",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\stable-sections-20261026\\production\\evidence\\section-01\\index.html"
+  ]
+}

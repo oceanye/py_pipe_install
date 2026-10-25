@@ -45,6 +45,26 @@ def test_more_columns_do_not_certify_a_bent_boundary():
     assert audit['stable_boundary_count'] == 0
 
 
+def test_adaptive_span_preserves_one_stable_edge_when_other_is_unusable(monkeypatch):
+    import pipe_twin.pooled_sections as module
+    top = edge()
+    top['points'][450:, 1] += .0002*(top['points'][450:, 0]-450)**2
+    bottom = edge(); bottom['edge'] = 'bottom'
+    bottom['points'][:, 1] += 40+12*np.sin(bottom['points'][:, 0]/30)
+    proposal = {'role': 'left', 'region_px': [0, 200, 1024, 200], 'appearance': 'hue-0',
+                'width_px': 40., 'edges': [top, bottom], 'reason_codes': []}
+    monkeypatch.setattr(module, 'propose_regions', lambda *a, **kw: ([{}], {}))
+    monkeypatch.setattr(module, '_observed_edges', lambda *a: copy.deepcopy(proposal))
+    items, _ = module.aggregate_image(None, 'left')
+    row = items[0]
+    assert row['full_span_audit']['stable_boundary_count'] == 0
+    assert row['aggregation']['stable_boundary_count'] == 1
+    assert len(row['pooled_edges']) == 1 and row['pooled_edges'][0]['edge'] == 'top'
+    assert not row['boundary_stable']
+    assert np.max(row['pooled_edges'][0]['points'][:, 0]) < 640
+    assert row['aggregation']['boundaries'][0]['holdout_p95_px'] <= 2
+
+
 def synthetic_views():
     axis = np.array([1., -.35, .15]); axis /= np.linalg.norm(axis)
     observations, k = independent_contours(axis, [100., 80., 1800.], 25.)

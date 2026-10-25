@@ -129,7 +129,8 @@ def aggregate_image(image, role, *, sampling_mask=None, axis_hint_image=None):
         # Extend only while independent substrip checks remain consistent.
         # A failed full span stays in the audit; a locally stable part does not
         # certify the rejected ends, occluded gap or whole physical pipe.
-        best_length = 0.
+        best_count = item['aggregation']['stable_boundary_count']
+        best_length = max((float(np.ptp(e['points'][:, 0]))+1 for e in item['pooled_edges']), default=0.)
         if item['aggregation']['stable_boundary_count'] < 2 and all(len(e['points']) for e in item['edges']):
             low = max(e['points'][:, 0].min() for e in item['edges'])
             high = min(e['points'][:, 0].max() for e in item['edges'])+1
@@ -141,8 +142,10 @@ def aggregate_image(image, role, *, sampling_mask=None, axis_hint_image=None):
                     aggregation, pooled = aggregate_boundaries(selected)
                     attempts.append({'span': [float(start), float(start+length)],
                                      'stable_boundary_count': aggregation['stable_boundary_count']})
-                    if aggregation['stable_boundary_count'] == 2 and length > best_length:
+                    score = aggregation['stable_boundary_count']
+                    if score > best_count or (score == best_count and score > 0 and length > best_length):
                         item['aggregation'], item['pooled_edges'] = aggregation, pooled
+                        best_count = score
                         best_length = length
         item['span_attempts'] = attempts
         item['boundary_stable'] = item['aggregation']['stable_boundary_count'] == 2

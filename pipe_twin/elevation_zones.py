@@ -230,6 +230,14 @@ def crop_stereo_group_for_zone(group: Mapping[str, Any], calibration: StereoCali
     cropped_group = dict(group)
     cropped_group.update({"left": cropped_left, "right": cropped_right, "depth": cropped_depth,
                           "zone_id": zone["zone_id"], "zone_label": zone.get("label", zone["zone_id"])})
+    if group.get('section_frames'):
+        frames = []
+        for frame in group['section_frames']:
+            if frame['left'].shape[:2] != left.shape[:2] or frame['right'].shape[:2] != right.shape[:2]:
+                raise ElevationZoneError('SECTION_BURST_IMAGE_SIZE_MISMATCH')
+            frames.append(dict(frame, left=frame['left'][y:y+height, x:x+width].copy(),
+                               right=frame['right'][y:y+height, right_x:right_end].copy()))
+        cropped_group['section_frames'] = frames
     return cropped_group, {"left_x": x, "left_y": y, "right_x": right_x, "right_y": y,
                            "width": width, "height": height, "right_width": right_width}
 

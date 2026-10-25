@@ -16,6 +16,7 @@ POLICY = {'window_px': 128, 'minimum_windows': 3, 'maximum_windows': 16,
           'maximum_edge_rms_px': 1.25, 'maximum_window_offset_px': 1.5,
           'maximum_holdout_p95_px': 2., 'minimum_width_px': 8.,
           'adaptive_lengths_px': [384, 640, 1024], 'adaptive_positions': 3,
+          'adaptive_selection': 'stable-edge-count-then-longest-v2',
           'maximum_fit_points_per_boundary': 128, 'maximum_reprojection_rms_px': 2.,
           'maximum_axis_nullspace_ratio': .25,
           'assumed_coherent_edge_sigma_px': .5}

@@ -73,6 +73,25 @@ class ElevationGuiTests(unittest.TestCase):
             self.root.update()
             time.sleep(0.01)
         self.assertFalse(self.dialog.busy, "GUI worker did not finish")
+
+    def test_scene_status_is_visible_before_cad_assignment_and_clears_on_edit(self):
+        from test_temporal_sections import stage, check
+        value = check([stage(), stage(), stage()])
+        self.dialog.report = {'section_evaluation': value}
+        self.dialog.refresh_table()
+        self.root.update()
+        self.assertEqual(len(self.dialog.solver_tree.get_children()), 2)
+        self.assertIsNone(self.dialog.selected_solver_row()['pipe_id'])
+        self.assertIn('3/3', self.dialog.solver_tree.item('0:0', 'values'))
+        for view in self.dialog.views.values():
+            self.assertEqual(len(view.canvas.find_withtag('solver-selection')), 2)
+        self.dialog.solver_tree.selection_set('0:1')
+        self.root.update()
+        self.assertEqual(self.dialog.selected_solver_row()['label'], 'S2')
+        self.dialog.invalidate()
+        self.root.update()
+        self.assertFalse(self.dialog.solver_tree.get_children())
+        self.assertIsNone(self.dialog.selected_solver_row())
         self.app.messagebox.showerror.assert_not_called()
 
     def test_save_reopen_and_repeat_save_without_json_editing(self):
