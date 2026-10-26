@@ -293,6 +293,16 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
     section = analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
             aggregation_band=settings.get('aggregation_band'), image_offsets=groups[-1].get('image_offsets'),
             disparity_range=(disparity_min, disparity_max), ground_result=ground, refine_epipolar=True)
+    if settings.get('ground_candidate_trial'):
+        from .ground_correction import compare_ground_trial
+        if progress:
+            progress('试验采用候选地面倾角：重算管轴、自由管径及相对心距……')
+        baseline_section = section
+        ground = dict(ground or {}, candidate_trial_enabled=True)
+        section = analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
+            aggregation_band=settings.get('aggregation_band'), image_offsets=groups[-1].get('image_offsets'),
+            disparity_range=(disparity_min, disparity_max), ground_result=ground, refine_epipolar=True)
+        section['ground_trial_comparison'] = compare_ground_trial(baseline_section, section)
     burst = groups[-1]['depth'].audit.get('temporal_fusion') or {}
     frames = groups[-1].get('section_frames', [])
     reference_valid = bool(frames and frames[-1]['capture_id'] == burst.get('reference_capture_id'))

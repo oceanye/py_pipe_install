@@ -73,6 +73,9 @@ def solver_status_rows(report):
             current = '断面已解（条件估计）' if solved else '断面未解'
             if temporal and temporal.get('reason_codes'):
                 current = '断面已解，重复性待改善' if solved else '断面未解'
+            correction = stage.get('ground_correction') or {}
+            if correction.get('trial_mode'):
+                current = ('倾角试验 · ' if correction.get('applied') else '倾角试验未应用 · ')+current
             detail = [f'{zone} / {label}：{current}。',
                       '仅使用当前连拍；表中尺寸来自最后一帧，未将历史或采购尺寸补入拟合。',
                       '重复性仅反映本次帧间变化，不代表绝对精度或已完成安装。']
@@ -86,6 +89,20 @@ def solver_status_rows(report):
                         distance = pair['distance']
                         detail.append(f"{ids} 心距范围 {distance['min_mm']:.1f}～{distance['max_mm']:.1f} mm；极差 {distance['span_mm']:.1f} mm。")
             detail.extend(REASONS.get(r, r) for r in reasons)
+            if correction.get('trial_mode'):
+                from .ground_correction import correction_summary
+                detail.append(correction_summary(correction))
+                comparison = stage.get('ground_trial_comparison') or {}
+                for change in comparison.get('candidates', []):
+                    if change['candidate_id'] == identity:
+                        a, b = change['before_diameter_mm'], change['after_diameter_mm']
+                        if a is not None and b is not None:
+                            detail.append(f'同图对照外径：默认修正规则 {a:.2f} → 候选地面试验 {b:.2f} mm。')
+                for change in comparison.get('pairs', []):
+                    if identity in change['ids']:
+                        ids = ' / '.join(labels.get(i, i) for i in change['ids'])
+                        detail.append(f"{ids} 同图心距：{change['before_center_distance_mm']:.2f} → {change['after_center_distance_mm']:.2f} mm。")
+                detail.append('前后变化仅用于测试效果，不能据此认定更准确。')
             if not assigned.get(identity):
                 detail.append('尚未唯一对应 CAD 管号，安装状态继续待判定。')
             rows.append({'key': f'{stage_index}:{identity}', 'zone_id': zone, 'candidate_id': identity,

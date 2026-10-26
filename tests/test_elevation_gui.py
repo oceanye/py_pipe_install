@@ -92,6 +92,21 @@ class ElevationGuiTests(unittest.TestCase):
         self.root.update()
         self.assertFalse(self.dialog.solver_tree.get_children())
         self.assertIsNone(self.dialog.selected_solver_row())
+
+    def test_candidate_ground_trial_toggle_is_explicit_and_invalidates_old_report(self):
+        from pipe_twin.elevation_dataset import normalize_registration_settings
+        self.assertFalse(self.dialog.ground_candidate_trial.get())
+        self.dialog.report = {'old': True}
+        self.dialog.ground_candidate_trial.set(True)
+        self.dialog._ground_trial_changed()
+        self.assertIsNone(self.dialog.report)
+        settings = normalize_registration_settings(self.dialog.registration_settings)
+        self.assertTrue(settings['ground_candidate_trial'])
+        self.dialog.ground_candidate_trial.set(False)
+        self.dialog._ground_trial_changed()
+        self.assertNotIn('ground_candidate_trial', normalize_registration_settings(self.dialog.registration_settings))
+        with self.assertRaises(ValueError):
+            normalize_registration_settings({'ground_candidate_trial': 'true'})
         self.app.messagebox.showerror.assert_not_called()
 
     def test_save_reopen_and_repeat_save_without_json_editing(self):

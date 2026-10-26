@@ -146,12 +146,17 @@ def assess_pooled_sections(pooled, pipe_specs, calibration, *, capture_healthy, 
     pooled['position_assessment'] = compare_section_position(model, pooled.get('candidates', []), pipe_specs, registration,
         calibration_validated=bool(calibration.validated), capture_healthy=capture_healthy,
         truncated=pooled.get('truncated', False), matching=matching)
+    gates = []
     if pooled.get('epipolar_refinement', {}).get('applied'):
+        gates.append('EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED')
+    if pooled.get('ground_correction', {}).get('trial_mode'):
+        gates.append('GROUND_CORRECTION_EXPERIMENTAL')
+    if gates:
         # Image alignment validation does not validate the new metric pose.
         assessment = pooled['position_assessment']
         for row in assessment['pipes']:
             row.update(state='UNKNOWN', state_zh=STATE_ZH['UNKNOWN'])
-            row['reason_codes'] = sorted(set(row['reason_codes'] + ['EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED']))
+            row['reason_codes'] = sorted(set(row['reason_codes'] + gates))
         assessment['counts'] = {'IN_POSITION': 0, 'OUT_OF_POSITION': 0, 'UNKNOWN': len(assessment['pipes'])}
     return pooled
 

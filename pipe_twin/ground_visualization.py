@@ -94,11 +94,12 @@ def tilt_label_lines(check, *, compact=False):
     if not check:
         return []
     passed = checked_ground(check)
+    trial = any(c.get('trial_mode') and c.get('applied') for c in check.get('corrections', []))
     lines = ['地面检查通过 · 绿色为平面支持像素' if passed else '地面未通过或未确认 · 橙色仅为候选支持']
     angles = tilt_angles(check)
     if angles:
         pitch, roll = angles
-        prefix = '' if passed else '候选 / 不用于修正：'
+        prefix = '试验采用 / 未验证：' if trial else '' if passed else '候选 / 不用于修正：'
         lines.append(f'{prefix}光轴与地面夹角 {pitch:.2f}°（0° 为平行）')
         lines.append(f'画面横滚 {roll:+.2f}°' if roll is not None else '横滚不可可靠观测')
     else:
@@ -108,11 +109,13 @@ def tilt_label_lines(check, *, compact=False):
         count, valid = support['pixel_count'], support['valid_pixel_count']
         lines.append(f'涂色支持 {count:,} / {valid:,} 有效像素（{count/max(1, valid):.1%}）；空洞不填充')
     else:
-        lines[0] = '地面检查通过 · 无涂色记录' if passed else '地面未通过或未确认 · 无可涂色支持'
+        lines[0] = ('候选倾角已用于试验 · 无可涂色支持' if trial else
+                    '地面检查通过 · 无涂色记录' if passed else '地面未通过或未确认 · 无可涂色支持')
     if not check.get('calibration_validated'):
         lines.append('暂用标定：角度精度未验证')
     if compact:
-        state = '地面检查通过 · 绿色支持' if passed else '候选 / 不用于修正 · 橙色支持'
+        state = ('候选倾角已用于试验 · 未验证' if trial else
+                 '地面检查通过 · 绿色支持' if passed else '候选 / 不用于修正 · 橙色支持')
         if support:
             state += f" {support['pixel_count']/max(1, support['valid_pixel_count']):.1%}"
         else:
@@ -155,6 +158,8 @@ def ground_evidence_image(image, check):
     cv2.rectangle(out, (x, y), (x+w, y+h), (255, 169, 231), 2)
     color = (115, 210, 70) if checked_ground(check) else (40, 170, 255)
     status = 'GROUND CHECK PASSED' if checked_ground(check) else 'CANDIDATE ONLY - NOT VALIDATED'
+    if any(c.get('trial_mode') and c.get('applied') for c in check.get('corrections', [])):
+        status = 'TRIAL GROUND CORRECTION APPLIED - NOT VALIDATED'
     angles = tilt_angles(check)
     lines = [status]
     if angles:

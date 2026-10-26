@@ -350,8 +350,10 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                     candidate['reason_codes'].append('POOLED_DIMENSIONS_UNSTABLE')
         candidate.update(fit=fit, pixel_error=error, window_sensitivity=sensitivity, common_axial_support=common_support,
                          dimension_status='CONDITIONAL' if fit['status'] == 'CONDITIONAL_FIT' else 'UNRESOLVED')
-        if correction['status'] == 'GROUND_AXIS_CONFLICT':
+        if correction['status'] == 'GROUND_AXIS_CONFLICT' or correction.get('boundary_consistency_bypassed'):
             candidate['reason_codes'].append('GROUND_AXIS_CONFLICT')
+        if correction.get('trial_mode') and correction.get('applied'):
+            candidate['reason_codes'].append('GROUND_CORRECTION_EXPERIMENTAL')
         if len(observations) < 4:
             candidate['boundary_status'] = 'PARTIAL'
             candidate['reason_codes'].append('PARTIAL_STEREO_BOUNDARY_SUPPORT')
@@ -378,6 +380,7 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
         origin_id = next((m['id'] for m in included if m['fit']['status'] == 'CONDITIONAL_FIT'), None)
         result['model'] = build_section_model(included, axis, origin_id=origin_id,
             metadata={'nominal_dimensions_used_in_fitting': False, 'occlusion_recovered': False,
+                      'ground_correction': correction,
                       'epipolar_refinement': refinement,
                       'candidate_quality': {c['candidate_id']: c['reason_codes'] for c in result['candidates']}})
     return result | {'status': 'ANALYZED', 'boundary_pair_count': len(pair_indexes),

@@ -940,6 +940,9 @@ class ElevationCaptureDialog:
         ttk.Label(ground_bar, text='紫框：搜索范围；涂色：平面支持', foreground='#355371').pack(side='left', padx=6)
         self.settings_button = ttk.Button(ground_bar, text='展开拍摄 / 评估设置', command=self.toggle_capture_settings)
         self.settings_button.pack(side='right', padx=3)
+        self.ground_candidate_trial = tk.BooleanVar(value=False)
+        ttk.Checkbutton(self.controls, text='试用候选地面倾角（未验证，显示修正前后对照）',
+                        variable=self.ground_candidate_trial, command=self._ground_trial_changed).pack(anchor='w')
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
         # Keep photo selection usable at the minimum window size. Infrequent
         # controls remain available in one expandable area, with values intact.
@@ -1271,6 +1274,19 @@ class ElevationCaptureDialog:
             self.registration_settings.pop('ground_region', None)
             self.invalidate()
             self.redraw()
+
+    def _ground_trial_changed(self):
+        if self.busy:
+            self.ground_candidate_trial.set(bool(self.registration_settings.get('ground_candidate_trial')))
+            return
+        if self.ground_candidate_trial.get():
+            self.registration_settings['ground_candidate_trial'] = True
+        else:
+            self.registration_settings.pop('ground_candidate_trial', None)
+        self.invalidate()
+        self.redraw()
+        self.message.set('已启用候选地面倾角试验；点击④保存并评估，查看同图修正前后对照。'
+                         if self.ground_candidate_trial.get() else '已恢复默认地面修正规则。')
 
     def current_ground_check(self):
         check = getattr(self, 'ground_inspection', None) or (self.report or {}).get('ground_check')
@@ -1661,6 +1677,7 @@ class ElevationCaptureDialog:
         self._analyze_after_camera_capture = False
         self.registration_settings = {"axis_world": [0.0, 0.0, 1.0] if suffix == ".dxf" else None,
                                       "anchors": {}, "local_observation_mode": "auto"}
+        self.ground_candidate_trial.set(False)
         self._restore_camera_side_control()
         self.zone_settings = normalize_zone_settings()
         self.scope_label.set("全幅自动")
@@ -2043,6 +2060,7 @@ class ElevationCaptureDialog:
             for frame in manifest["capture"]["capture_groups"][-1].get("temporal_frames", [])]
         self._restore_zone_settings(loaded.get("scope_settings"))
         self.registration_settings = restored_registration
+        self.ground_candidate_trial.set(bool(restored_registration.get('ground_candidate_trial')))
         self._restore_camera_side_control()
         local_labels = {
             "auto": "自动（圆柱/图像引导）",

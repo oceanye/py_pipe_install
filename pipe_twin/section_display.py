@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 REASONS = {
+    'GROUND_CORRECTION_EXPERIMENTAL': '正在试用候选地面倾角；结果仅作测试，尚未验证',
     'TEMPORAL_SECTION_SUPPORT_INSUFFICIENT': '当前连拍中可独立解算的帧数不足',
     'TEMPORAL_SECTION_DIAMETER_UNSTABLE': '当前连拍的外径变化超出重复性门限',
     'TEMPORAL_SECTION_LAYOUT_UNSTABLE': '当前连拍的相对心距不稳定或比较帧数不足',

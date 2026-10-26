@@ -102,6 +102,58 @@ def test_summary_distinguishes_partial_correction_and_constrained_zero_angle():
     assert '已应用地面修正' in text and '未应用地面修正' in text and '不是独立核验' in text
 
 
+def test_candidate_trial_applies_conflicting_hypothesis_without_promoting_ground():
+    from pipe_twin.ground_visualization import tilt_label_lines, checked_ground
+    obs, _, k, _, _ = projected_samples([1., -.2, .1])
+    original = free_axis(obs, k)
+    ground = {'status': 'GROUND_PLANE_INCONSISTENT', 'surface_identity_source': 'ASSISTANT_SUGGESTED_GROUND_NOT_CONFIRMED',
+              'left_plane': {'status': 'GROUND_PLANE_INCONSISTENT', 'candidate_plane': {'normal_camera': [.5, 1., 0.]}},
+              'candidate_trial_enabled': True}
+    before = copy.deepcopy(ground)
+    corrected, audit = correct_pipe_axis(obs, k, original, ground)
+    assert audit['status'] == 'TRIAL_APPLIED' and audit['applied']
+    assert audit['boundary_consistency_bypassed'] and not audit['boundary_check_passed']
+    assert abs(np.dot(corrected['axis'], [.5, 1., 0.])) < 1e-10
+    assert ground == before
+    result = finish_ground_correction(ground, [{'axis': corrected, 'ground_correction': audit}])
+    assert result['correction_status'] == 'TRIAL_APPLIED'
+    assert result['status'] == 'GROUND_PLANE_INCONSISTENT' and not checked_ground(result)
+    text = '\n'.join(tilt_label_lines(result, compact=True))
+    assert '试验' in text and '不用于修正' not in text
+    strict = dict(ground, candidate_trial_enabled=False)
+    unchanged, rejected = correct_pipe_axis(obs, k, original, strict)
+    assert unchanged is original and not rejected['applied']
+
+
+@pytest.mark.parametrize('normal', [[0, 0, 0], [float('nan'), 0, 1], [1, 2]])
+def test_trial_does_not_invent_a_missing_or_invalid_plane(normal):
+    obs, _, k, _, _ = projected_samples([1., -.2, .1])
+    original = free_axis(obs, k)
+    ground = {'status': 'GROUND_PLANE_INCONSISTENT', 'candidate_trial_enabled': True,
+              'left_plane': {'candidate_plane': {'normal_camera': normal}}}
+    corrected, audit = correct_pipe_axis(obs, k, original, ground)
+    assert corrected is original and not audit['applied']
+    assert audit['status'] == 'GROUND_NORMAL_INVALID'
+
+
+def test_trial_free_radius_fits_remain_diagnostic_even_with_validated_calibration(monkeypatch):
+    from pipe_twin.section_position import assess_pooled_sections
+    import pipe_twin.pooled_sections as module
+    views, k = synthetic_views()
+    monkeypatch.setattr(module, 'aggregate_image', lambda image, role: (copy.deepcopy(views[role]), {'truncated': False}))
+    cal = SimpleNamespace(left=SimpleNamespace(rectified_intrinsic=k), right=SimpleNamespace(rectified_intrinsic=k), baseline_mm=60., validated=True)
+    g = {'status': 'GROUND_PLANE_INCONSISTENT', 'candidate_trial_enabled': True,
+         'left_plane': {'candidate_plane': {'normal_camera': [.35, 1., 0.]}}}
+    stage = analyze_pooled_sections(None, None, cal, ground_result=g)
+    assert stage['ground_correction']['applied']
+    assert stage['candidates'][0]['fit']['trial_diameter_mm'] == pytest.approx(50., abs=.02)
+    assert 'GROUND_CORRECTION_EXPERIMENTAL' in stage['candidates'][0]['reason_codes']
+    spec = {'pipe_id': 'P1', 'centerline_world_mm': [[0,0,0], [0,0,300]], 'nominal_diameter_mm': 50.}
+    assess_pooled_sections(stage, [spec], cal, capture_healthy=True, settings={}, matching={})
+    assert stage['position_assessment']['pipes'][0]['state'] == 'UNKNOWN'
+    assert 'GROUND_CORRECTION_EXPERIMENTAL' in stage['position_assessment']['pipes'][0]['reason_codes']
+
+
 @pytest.mark.parametrize('zones', [False, True])
 def test_real_ground_plane_flows_before_section_fit_in_full_and_cropped_pipeline(monkeypatch, zones):
     from test_elevation_auto import _groups
