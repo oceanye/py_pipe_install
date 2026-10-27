@@ -78,7 +78,7 @@ def draw_scene(canvas, scene, *, selected_pipe=None):
     w, h = max(canvas.winfo_width(), 150), max(canvas.winfo_height(), 150)
     items = scene.get('items', []) if scene else []
     if not items:
-        canvas.create_text(w/2, h/2, text='尚未生成现场断面\n请先点击④保存并评估', justify='center', fill='#355371')
+        canvas.create_text(w/2, h/2, text='尚未生成现场断面\n请先点击⑤保存并评估', justify='center', fill='#355371')
         return []
     centers = np.asarray([r['center_uv_mm'][::-1] for r in items], float)
     radii = np.asarray([r['diameter_mm']/2 for r in items])

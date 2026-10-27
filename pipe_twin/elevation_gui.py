@@ -112,7 +112,7 @@ def recognition_diagnostic_lines(report: dict | None) -> list[str]:
              "图像唯一匹配比例来自有限抽样，仅作诊断，不代表测量合格率。",
              "高光 H 只统计多通道近饱和像素，不能覆盖全部反光。"]
     if not report:
-        return lines + ["", "请先点击④保存并评估。"]
+        return lines + ["", "请先点击⑤保存并评估。"]
     lines += ["", recognition_summary(report)]
     temporal = report.get("temporal_fusion")
     if temporal:
@@ -424,7 +424,7 @@ class RegionCanvas:
                                         ox + (x + bw) * scale, oy + (y + bh) * scale,
                                         outline="#67E8A5", width=2, dash=(7, 3), tags="assessment-zone")
                 canvas.create_text(ox + x * scale + 4, oy + y * scale + 4,
-                                   anchor="nw", text=f"{zone['zone_id']} · 评估区域", fill="#67E8A5",
+                                   anchor="nw", text=f"{zone['zone_id']} · 管道评估范围", fill="#67E8A5",
                                    tags="assessment-zone")
         if self.band_controller:
             self.band_controller.draw()
@@ -875,7 +875,7 @@ class ElevationCaptureDialog:
         self.confirmed = tk.BooleanVar(value=False)
         self.history = tk.BooleanVar(value=True)
         self.local_observation_label = tk.StringVar(value="自动（圆柱/图像引导）")
-        self.message = tk.StringVar(value="首次导入模型并载入标定；③抓拍 → 选择汇聚范围 → ④评估。点击结果行定位照片，双击查看详情。")
+        self.message = tk.StringVar(value="首次导入模型并载入标定；③抓拍 → ④分析准备 → ⑤评估。点击结果行定位照片，双击查看详情。")
         self.calibration_status = tk.StringVar(value="未加载标定；重投影通过后仍需独立尺寸复核")
         self.calibration_details = tk.StringVar()
         self.summary = tk.StringVar(value="尚未建立管道目录")
@@ -908,6 +908,7 @@ class ElevationCaptureDialog:
         more = ttk.Menubutton(bar, text='场景与诊断 ▾')
         self.scene_menu = tk.Menu(more, tearoff=False)
         for title, command in [('重新抓拍并评估', self.refresh_status), ('仅保存现场', lambda: self.submit(False)),
+                               ('恢复全图管道分析（清除评估框）', self.clear_assessment_regions),
                                ('清除汇聚范围', self.clear_axial_band), ('清除地面区域', self.clear_ground_region),
                                ('完整分析报告', self.show_analysis_details), ('运行日志', self.show_log)]:
             self.scene_menu.add_command(label=title, command=command)
@@ -915,20 +916,24 @@ class ElevationCaptureDialog:
         action_bar = ttk.Frame(self.controls)
         action_bar.pack(fill="x", pady=(0, 7))
         ttk.Button(action_bar, text="③ 双目抓拍", command=self.capture_camera).pack(side="left", padx=3)
-        self.run_button = ttk.Button(action_bar, text="④ 保存并评估", command=lambda: self.submit(True))
-        self.run_button.pack(side="left", padx=6)
         ttk.Button(action_bar, text='现场模型 / 编号 / 方向', command=self.open_model_viewer).pack(side='left', padx=6)
         self.save_button = ttk.Button(action_bar, text="仅保存基础现场", command=lambda: self.submit(False))
-        ttk.Label(action_bar, text="抓拍后点击④开始分析", foreground="#355371").pack(side="left", padx=6)
+        ttk.Label(action_bar, text="先抓拍 → ④设置范围 → ⑤保存并评估", foreground="#355371").pack(side="left", padx=6)
         method_bar = ttk.Frame(self.controls)
         method_bar.pack(fill="x", pady=(0, 4))
+        ttk.Label(method_bar, text='④ 分析准备').pack(side='left', padx=3)
         self.axial_button = ttk.Button(method_bar, text='管长方向 / 汇聚范围', command=self.toggle_axial_selection)
         self.axial_button.pack(side='left', padx=3)
-        self.region_button = ttk.Button(method_bar, text="框选评估区域", command=self.toggle_region_selection)
+        self.region_button = ttk.Button(method_bar, text="管道评估区域（可选）", command=self.toggle_region_selection)
         self.region_button.pack(side="left", padx=3)
-        ttk.Button(method_bar, text='地面 / 倾角…', command=lambda: self.open_settings('ground')).pack(side='left', padx=3)
+        ttk.Button(method_bar, text='地面选区 / 倾角…', command=lambda: self.open_settings('ground')).pack(side='left', padx=3)
+        run_bar = ttk.Frame(self.controls)
+        run_bar.pack(fill='x', pady=(0, 4))
+        self.run_button = ttk.Button(run_bar, text="⑤ 保存并评估", command=lambda: self.submit(True))
+        self.run_button.pack(side='left', padx=3)
         self.setup_summary = tk.StringVar()
-        ttk.Label(method_bar, textvariable=self.setup_summary, foreground='#355371').pack(side='left', padx=8)
+        self.setup_label = ttk.Label(run_bar, textvariable=self.setup_summary, foreground='#355371')
+        self.setup_label.pack(side='left', padx=8)
         self.window.bind("<Escape>", lambda _e: self.cancel_image_selections())
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
 
@@ -970,8 +975,10 @@ class ElevationCaptureDialog:
         self.scope_box.bind("<<ComboboxSelected>>", lambda _e: self._scope_selected())
         self.zone_button = ttk.Button(scope_bar, text="分区管理", command=self.open_zone_manager)
         self.zone_button.pack(side="left", padx=3)
+        ttk.Label(model_page, text='管道评估区（绿框）框住待测管道，可不设置。它与橙色汇聚范围取交集；地面紫框独立。',
+                  wraplength=780, foreground='#355371').pack(anchor='w', pady=4)
         ground_page = self.settings_pages['ground']
-        ttk.Label(ground_page, text='框选裸露地面后可单独检查倾角。④保存并评估会重算管轴和断面。', wraplength=780).pack(anchor='w', pady=8)
+        ttk.Label(ground_page, text='地面选区（紫框）只估计相机相对地面的倾角，可在管道评估区之外。\n先抓拍，再框裸露地面并检查；⑤保存并评估会按当前规则重算管轴和断面。', wraplength=780).pack(anchor='w', pady=8)
         ground_bar = ttk.Frame(ground_page)
         ground_bar.pack(fill='x', pady=5)
         self.ground_button = ttk.Button(ground_bar, text='左图框选地面', command=self.toggle_ground_selection)
@@ -1232,7 +1239,7 @@ class ElevationCaptureDialog:
             self._set_axial_selection(False)
         self.region_selection_active = active
         self.region_selection_target = target if active else 'assessment'
-        self.region_button.configure(text="取消框选（Esc）" if active and target == 'assessment' else "框选评估区域")
+        self.region_button.configure(text="取消框选（Esc）" if active and target == 'assessment' else "管道评估区域（可选）")
         self.ground_button.configure(text='取消地面框选（Esc）' if active and target == 'ground' else '左图框选地面')
         view = self.views["left"]
         view.cancel_region_drag()
@@ -1274,7 +1281,7 @@ class ElevationCaptureDialog:
         self.redraw()
         length = band_geometry(band)[2]
         note = '；范围较短，可能不足以通过子段稳定性检查' if length < 384 else ''
-        self.message.set(f'已指定汇聚范围 {length:.0f} px{note}。点击④保存并评估；所画方向仅用于图像取样，三维方向仍由双目解算。')
+        self.message.set(f'已指定汇聚范围 {length:.0f} px{note}。点击⑤保存并评估；所画方向仅用于图像取样，三维方向仍由双目解算。')
         log_event(LOGGER, 'elevation_axial_band_changed', aggregation_band=band)
 
     def clear_axial_band(self) -> None:
@@ -1328,7 +1335,7 @@ class ElevationCaptureDialog:
             return
         self.hide_settings()
         self._set_region_selection(True, target='ground')
-        self.message.set('在左图框选一块裸露地面，避开支架、管道和杂物。应有足够宽度与高度；框选后打开“地面 / 倾角…”执行倾角检查。')
+        self.message.set('在左图框选一块裸露地面，避开支架、管道和杂物。应有足够宽度与高度；框选后打开“地面选区 / 倾角…”执行倾角检查。')
 
     def set_ground_region(self, rect: list[int]) -> None:
         if self.busy or self.views['left'].image is None:
@@ -1338,7 +1345,7 @@ class ElevationCaptureDialog:
         self.registration_settings['ground_region'] = ground
         self.invalidate()
         self.redraw()
-        self.message.set('已保存地面区域。打开“地面 / 倾角…”执行倾角检查；点击④保存并评估，按当前地面规则重算管轴与断面。')
+        self.message.set('已保存地面区域。打开“地面选区 / 倾角…”执行倾角检查；点击⑤保存并评估，按当前地面规则重算管轴与断面。')
         log_event(LOGGER, 'elevation_ground_region_changed', ground_region=ground)
 
     def clear_ground_region(self) -> None:
@@ -1357,7 +1364,7 @@ class ElevationCaptureDialog:
             self.registration_settings.pop('ground_candidate_trial', None)
         self.invalidate()
         self.redraw()
-        self.message.set('已启用候选地面倾角试验；点击④保存并评估，查看同图修正前后对照。'
+        self.message.set('已启用候选地面倾角试验；点击⑤保存并评估，查看同图修正前后对照。'
                          if self.ground_candidate_trial.get() else '已恢复默认地面修正规则。')
 
     def current_ground_check(self):
@@ -1457,7 +1464,7 @@ class ElevationCaptureDialog:
         text.pack(side='left', fill='both', expand=True)
         text.insert('1.0', '\n'.join(ground_summary_lines(check)))
         if inspection:
-            text.insert('end', '\n本次检查当前一对照片；角度以所选区域确实为地面为前提。\n绿色：通过检查的地面支持；橙色：未通过或未确认的候选。紫框只限定搜索范围。\n机位固定时可保留选区；更换照片、标定或选区后重新检查。\n检查不重算管径；点击④保存并评估应用地面修正。')
+            text.insert('end', '\n本次检查当前一对照片；角度以所选区域确实为地面为前提。\n绿色：通过检查的地面支持；橙色：未通过或未确认的候选。紫框只限定搜索范围。\n机位固定时可保留选区；更换照片、标定或选区后重新检查。\n检查不重算管径；点击⑤保存并评估应用地面修正。')
         text.configure(state='disabled')
 
     def toggle_region_selection(self) -> None:
@@ -1474,7 +1481,7 @@ class ElevationCaptureDialog:
             self.message.set(f"评估区域最多 {MAX_ZONES} 个，请在“分区管理”中删除不需要的区域。")
             return
         self._set_region_selection(True)
-        self.message.set("在左图拖框选断面附近的一小段，跨过待比较的各管并保留完整管宽；不必框整根管长。滚轮缩放、右键平移；Esc 取消。")
+        self.message.set("绿框用于管道：跨过待测各管、保留完整管宽，并与橙色汇聚范围重叠。地面用独立紫框；不框管道区域时按全图分析。Esc 取消。")
 
     def add_left_region(self, rect: list[int]) -> None:
         """Add a group ROI through the existing persisted zone contract."""
@@ -1500,7 +1507,35 @@ class ElevationCaptureDialog:
         self.invalidate()
         self.redraw()
         log_event(LOGGER, "elevation_left_region_added", zone_id=zone_id, roi_rect_px=rect)
-        self.message.set(f"已加入 {zone_id}，切换为分区分析。点击④保存并评估；修改或删除请用“分区管理”。")
+        self.message.set(f"已加入 {zone_id}，切换为分区分析。点击⑤保存并评估；修改或删除请用“分区管理”。")
+
+    def clear_assessment_regions(self):
+        if self.busy:
+            return
+        self.scope_label.set('全幅自动')
+        self._scope_selected()
+        self.message.set('已清除管道评估框，恢复全图管道分析；橙色汇聚范围和紫色地面选区保留。')
+
+    def assessment_region_problem(self, scope_settings=None):
+        """Detect empty pipe sampling without imposing an overlap on ground ROI."""
+        settings = scope_settings if scope_settings is not None else self.zone_settings
+        band = self.registration_settings.get('aggregation_band')
+        if settings.get('scope') != 'zones' or not band:
+            return None
+        from .axial_selection import band_sampling_masks
+        empty = []
+        for zone in settings.get('zones', []):
+            if not zone.get('enabled') or not zone.get('roi_rect_px'):
+                continue
+            x, y, width, height = zone['roi_rect_px']
+            masks, _ = band_sampling_masks(band, (height, width), (1, 1),
+                                          offsets={'left_x': x, 'left_y': y})
+            if not masks['left'].any():
+                empty.append(zone['zone_id'])
+        if empty:
+            return ('管道评估区 '+ '、'.join(empty) + ' 与橙色汇聚范围没有交集，无法提取管段。'
+                    '请把绿框移到待测管道上，或在“场景与诊断”恢复全图管道分析。地面请使用独立紫框。')
+        return None
 
     def open_zone_manager(self) -> None:
         if self.busy:
@@ -1567,6 +1602,10 @@ class ElevationCaptureDialog:
             trial = '地面试验：开' if self.registration_settings.get('ground_candidate_trial') else '地面：默认规则'
             mode = self.registration_settings.get('local_observation_mode', 'auto')
             self.setup_summary.set(self.scope_label.get()+' · '+trial+(' · 辅助识别非自动' if mode != 'auto' else ''))
+            problem = self.assessment_region_problem()
+            if problem:
+                self.setup_summary.set('范围冲突：管道绿框与橙色汇聚范围无交集；请调整④')
+            self.setup_label.configure(foreground='#B23423' if problem else '#355371')
         for view in self.views.values():
             view.draw()
         if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
@@ -2232,6 +2271,8 @@ class ElevationCaptureDialog:
                 raise ValueError("视差搜索范围必须小于每目图像宽度")
             scope_settings = normalize_zone_settings(
                 self.zone_settings, image_size=(left.shape[1], left.shape[0]))
+            if analyze and (problem := self.assessment_region_problem(scope_settings)):
+                raise ValueError(problem)
             arguments = dict(output_root=self.output_root / "captures", calibration=calibration,
                 analysis_settings=settings,
                 left_path=Path(self.fields["left"].get()), right_path=Path(self.fields["right"].get()),

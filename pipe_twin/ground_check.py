@@ -179,9 +179,9 @@ def ground_summary_lines(check):
     lines = ['请在左图框选确定的裸露地面，避开管道、支架和其他物体。',
              '垂直离地距离与沿视线的深度是两个不同量；水平放管不等于两端到相机等距。']
     if not check or check.get('status') == 'NOT_CONFIGURED':
-        return lines+['尚未设置地面区域。框选后点击“倾角检查”，或点击④保存并评估。']
+        return lines+['尚未设置地面区域。框选后点击“倾角检查”，或点击⑤保存并评估。']
     if check.get('status') == 'PENDING_EVALUATION':
-        return lines+['已设置地面区域；点击“倾角检查”单独计算。点击④保存并评估，通过检查后自动约束水平管轴并重新计算断面。']
+        return lines+['已设置地面区域；点击“倾角检查”单独计算。点击⑤保存并评估，通过检查后自动约束水平管轴并重新计算断面。']
     from .ground_visualization import tilt_label_lines
     lines += tilt_label_lines(check)
     if check.get('surface_identity_source') == 'ASSISTANT_SUGGESTED_GROUND_NOT_CONFIRMED':

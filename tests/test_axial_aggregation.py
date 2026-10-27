@@ -126,4 +126,4 @@ def test_gui_boundary_overlay_restores_zone_offsets_and_skips_missing_blocks():
     a = views['left'][0]['aggregation']['boundaries'][0]
     assert segments[0][1] == pytest.approx(400*a['line_slope_intercept'][0]+a['line_slope_intercept'][1]+30)
     assert '不会恢复遮挡' in '\n'.join(section_summary_lines(report, detailed=True))
-    assert '④保存并评估' in '\n'.join(section_summary_lines(None))
+    assert '⑤保存并评估' in '\n'.join(section_summary_lines(None))

@@ -736,7 +736,7 @@ class StereoCameraDialog:
             burst_row = ttk.Frame(main)
             burst_row.pack(fill="x", pady=(0, 6))
             ttk.Button(burst_row, text="多帧采集 20 对并使用", command=self.capture_burst).pack(side="left")
-            ttk.Label(burst_row, text="保持相机和管道静止；采集后回主界面点④保存并评估。",
+            ttk.Label(burst_row, text="保持相机和管道静止；采集后回主界面点⑤保存并评估。",
                       foreground="#355371").pack(side="left", padx=8)
         previews = ttk.Frame(main)
         previews.pack(fill="both", expand=True)
@@ -1145,7 +1145,7 @@ class StereoCameraDialog:
             left_index, right_index = self._indices()
             self.owner._persist_profile(("camera",), camera={"layout": self._layout(),
                 "left_index": left_index, "right_index": right_index, "exposure_ms": self.session.exposure_ms})
-            self.owner.message.set("已采集 20 对图像；预览为末帧。框选管道区域后点击④保存并评估，检查多帧融合结果。"
+            self.owner.message.set("已采集 20 对图像；预览为末帧。核对④管段范围和可选选区，再点击⑤保存并评估。"
                                    + ("" if same_frame else "独立设备需先确认硬件同步。"))
             self._burst_active = False
             if self.on_capture is not None:

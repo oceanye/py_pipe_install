@@ -57,7 +57,7 @@ def section_summary_lines(report, *, detailed=False):
              '当前间距筛查容差 5 mm；误差区间跨越容差时待判定。结论仅限可见共同断面的相对关系。']
     stages = section_evaluations(report)
     if not stages:
-        return lines + ['', '请点击④保存并评估，生成管段汇聚结果。']
+        return lines + ['', '请点击⑤保存并评估，生成管段汇聚结果。']
     lines += ['', pooling_summary(report)]
     for stage in stages:
         lines += ['', f"{stage.get('zone_id', '全幅')}：稳定双目边界 {stage.get('boundary_pair_count', 0)} 对"]

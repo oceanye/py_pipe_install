@@ -161,6 +161,36 @@ class ElevationGuiTests(unittest.TestCase):
         self.root.update()
         self.assertFalse(self.dialog.cad_actions.winfo_manager())
 
+    def test_empty_pipe_roi_band_intersection_stops_analysis_before_saving(self):
+        self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})
+        self.dialog.add_left_region([10, 10, 100, 100])
+        self.assertIn('范围冲突', self.dialog.setup_summary.get())
+        self.assertIn('Z01', self.dialog.assessment_region_problem())
+        with mock.patch.object(self.dialog, '_worker') as worker:
+            self.dialog.submit(True)
+        worker.assert_not_called()
+        self.assertFalse(self.dialog.busy)
+        self.assertIsNone(self.dialog.last_manifest)
+        self.assertIn('没有交集', self.app.messagebox.showerror.call_args.args[1])
+
+    def test_pipe_scope_reset_preserves_independent_ground_and_pooling(self):
+        self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})
+        self.dialog.set_ground_region([10, 10, 100, 100])
+        self.dialog.add_left_region([350, 200, 200, 160])
+        self.assertIsNone(self.dialog.assessment_region_problem())
+        original = copy.deepcopy(self.dialog.registration_settings)
+        self.dialog.clear_assessment_regions()
+        self.assertEqual(self.dialog.registration_settings, original)
+        self.assertEqual(self.dialog.zone_settings['scope'], 'full_frame')
+        self.assertEqual(self.dialog.zone_settings['zones'], [])
+        self.assertIsNone(self.dialog.assessment_region_problem())
+
+    def test_analysis_button_follows_scope_controls_on_screen(self):
+        self.dialog.window.deiconify()
+        self.root.update()
+        self.assertGreater(self.dialog.run_button.winfo_rooty(), self.dialog.axial_button.winfo_rooty())
+        self.assertGreater(self.dialog.run_button.winfo_rooty(), self.dialog.region_button.winfo_rooty())
+
     def test_save_reopen_and_repeat_save_without_json_editing(self):
         self.dialog.submit(False)
         self.finish_worker()
