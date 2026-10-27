@@ -2834,16 +2834,38 @@ class QuickCaptureDialog:
         self.app._run_analysis()
 
 
+def _start_application(root, manifest_path=None, report_path=None):
+    """Use the current field workflow by default; explicit old inputs retain their viewer."""
+    from types import SimpleNamespace
+    import tkinter as tk
+    from tkinter import ttk, filedialog, messagebox
+    current = manifest_path is None and report_path is None
+    if manifest_path is not None:
+        payload = _read_json_object(Path(manifest_path), 'manifest')
+        current = (payload.get('analysis') or {}).get('mode') == 'elevation_auto'
+    if not current:
+        return _PipeTwinApplication(root, manifest_path, report_path)
+    from .elevation_gui import ElevationCaptureDialog
+    style = ttk.Style(root)
+    if 'clam' in style.theme_names():
+        style.theme_use('clam')
+    style.configure('.', font=('Microsoft YaHei UI', 10))
+    style.configure('Treeview', rowheight=25)
+    app = SimpleNamespace(root=root, tk=tk, ttk=ttk, filedialog=filedialog, messagebox=messagebox)
+    dialog = ElevationCaptureDialog(app, Path(manifest_path) if manifest_path else None, window=root)
+    if report_path is not None:
+        dialog.message.set('已载入现场；请重新评估当前照片以生成匹配的求解状态。历史报告文件保留。')
+    return dialog
+
+
 def launch_gui(
     manifest_path: str | Path | None = None,
     report_path: str | Path | None = None,
 ) -> None:
-    """Launch the Windows-friendly local desktop dashboard.
+    """Launch the field workbench directly; explicit legacy inputs use their viewer.
 
-    The manifest is authoritative for CAD identity and geometry.  A report is
-    optional; without one every pipe is shown as ``UNKNOWN`` until recognition
-    is run.  File-dialog-selected photos are previews only and never silently
-    replace the manifest-bound stereo pair used by the analyzer.
+    Closing the primary window returns control to the office client, which owns
+    the remote services. Scene changes invalidate results until reevaluation.
     """
 
     log_event(_LOGGER, "gui_launch", manifest=manifest_path, report=report_path)
@@ -2855,7 +2877,12 @@ def launch_gui(
         raise RuntimeError(
             "The pipe dashboard requires an interactive desktop session with Tk 8.6"
         ) from error
-    _PipeTwinApplication(root, manifest_path, report_path)
+    try:
+        application = _start_application(root, manifest_path, report_path)
+        root._pipe_twin_application = application
+    except Exception:
+        root.destroy()
+        raise
     root.mainloop()
 
 

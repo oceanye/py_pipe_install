@@ -1,0 +1,230 @@
+{
+  "baseline_commit": "3358460",
+  "source_hashes_unchanged": {
+    "outputs\\ground-trial-20261026\\gui\\captures\\elevation-20261026-133314-f4a6779d\\manifest.json": "b30040e2a78adfd3846299bb4a19fd062fe64a0385a9186d79a03c50ef5ee9d5",
+    "outputs\\ground-trial-20261026\\gui\\captures\\elevation-20261026-133314-f4a6779d\\report.json": "a2ffe2b97447e5756a434ccb04630090008ac650e7d48a63b407c43356ee8e11",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  },
+  "replay_only_no_new_capture": true,
+  "before": {
+    "sizes": {
+      "1024x720": {
+        "buttons": [
+          "① 导入 STL/DXF",
+          "② 相机标定",
+          "重新标定 / 质量检查",
+          "打开基础现场",
+          "③ 双目抓拍",
+          "④ 保存并评估",
+          "状态刷新",
+          "仅保存基础现场",
+          "分区管理",
+          "左图框选区域",
+          "管长方向 / 汇聚范围",
+          "清除汇聚范围",
+          "左图框选地面",
+          "倾角检查",
+          "地面修正",
+          "清除地面区域",
+          "展开拍摄 / 评估设置",
+          "设置颜色",
+          "同径统一颜色",
+          "管长与观察方向",
+          "查看模型管道编号",
+          "断面尺寸与就位",
+          "管段汇聚",
+          "所选求解详情",
+          "识别诊断"
+        ],
+        "button_count": 25,
+        "clipped_controls": [],
+        "left_preview_height": 1,
+        "right_preview_height": 1
+      },
+      "1280x860": {
+        "buttons": [
+          "① 导入 STL/DXF",
+          "② 相机标定",
+          "重新标定 / 质量检查",
+          "打开基础现场",
+          "③ 双目抓拍",
+          "④ 保存并评估",
+          "状态刷新",
+          "仅保存基础现场",
+          "分区管理",
+          "左图框选区域",
+          "管长方向 / 汇聚范围",
+          "清除汇聚范围",
+          "左图框选地面",
+          "倾角检查",
+          "地面修正",
+          "清除地面区域",
+          "展开拍摄 / 评估设置",
+          "设置颜色",
+          "同径统一颜色",
+          "管长与观察方向",
+          "查看模型管道编号",
+          "断面尺寸与就位",
+          "管段汇聚",
+          "所选求解详情",
+          "识别诊断"
+        ],
+        "button_count": 25,
+        "clipped_controls": [],
+        "left_preview_height": 125,
+        "right_preview_height": 125
+      }
+    }
+  },
+  "after": {
+    "sizes": {
+      "1024x720": {
+        "buttons": [
+          "① 导入 STL/DXF",
+          "② 标定 ▾",
+          "打开现场",
+          "设置…",
+          "场景与诊断 ▾",
+          "③ 双目抓拍",
+          "④ 保存并评估",
+          "现场模型 / 编号 / 方向",
+          "管长方向 / 汇聚范围",
+          "框选评估区域",
+          "地面 / 倾角…",
+          "查看详情 / 诊断"
+        ],
+        "button_count": 12,
+        "clipped_controls": [],
+        "left_preview_height": 229,
+        "right_preview_height": 229
+      },
+      "1280x860": {
+        "buttons": [
+          "① 导入 STL/DXF",
+          "② 标定 ▾",
+          "打开现场",
+          "设置…",
+          "场景与诊断 ▾",
+          "③ 双目抓拍",
+          "④ 保存并评估",
+          "现场模型 / 编号 / 方向",
+          "管长方向 / 汇聚范围",
+          "框选评估区域",
+          "地面 / 倾角…",
+          "查看详情 / 诊断"
+        ],
+        "button_count": 12,
+        "clipped_controls": [],
+        "left_preview_height": 369,
+        "right_preview_height": 369
+      }
+    },
+    "settings": {
+      "photos": {
+        "buttons": [
+          "导入左矫正图",
+          "导入右矫正图"
+        ],
+        "button_count": 2,
+        "clipped_controls": []
+      },
+      "model": {
+        "buttons": [
+          "分区管理"
+        ],
+        "button_count": 1,
+        "clipped_controls": []
+      },
+      "analysis": {
+        "buttons": [
+          "颜色与反光检查"
+        ],
+        "button_count": 1,
+        "clipped_controls": []
+      },
+      "ground": {
+        "buttons": [
+          "左图框选地面",
+          "倾角检查",
+          "查看倾角与修正结果"
+        ],
+        "button_count": 3,
+        "clipped_controls": []
+      }
+    },
+    "details_tabs": 5,
+    "scene_count": 4,
+    "quality_dialog_opened": true,
+    "capture_and_calibration_dialogs": {
+      "camera": {
+        "buttons": [
+          "检测设备",
+          "打开预览",
+          "停止",
+          "多帧采集 20 对并使用",
+          "取消",
+          "单帧抓拍并使用"
+        ],
+        "button_count": 6,
+        "clipped_controls": []
+      },
+      "calibration": {
+        "buttons": [
+          "生成 A4 棋盘格打印 PNG",
+          "检测设备",
+          "打开预览",
+          "停止",
+          "抓拍一组",
+          "完成标定并保存",
+          "移除选中组",
+          "移除上一组",
+          "恢复最近照片组",
+          "查看完整日志",
+          "关闭"
+        ],
+        "button_count": 11,
+        "clipped_controls": []
+      }
+    },
+    "evaluated_layout": {
+      "buttons": [
+        "① 导入 STL/DXF",
+        "② 标定 ▾",
+        "打开现场",
+        "设置…",
+        "场景与诊断 ▾",
+        "③ 双目抓拍",
+        "④ 保存并评估",
+        "现场模型 / 编号 / 方向",
+        "管长方向 / 汇聚范围",
+        "框选评估区域",
+        "地面 / 倾角…",
+        "查看详情 / 诊断"
+      ],
+      "button_count": 12,
+      "clipped_controls": [],
+      "left_preview_height": 229
+    },
+    "manifest": "outputs\\gui-audit-20261027\\current\\captures\\elevation-20261027-161125-b51b8155\\manifest.json",
+    "section_count": 4,
+    "installation_counts": {
+      "INSTALLED": 0,
+      "NOT_INSTALLED": 0,
+      "UNKNOWN": 12
+    },
+    "position_counts": {
+      "IN_POSITION": 0,
+      "OUT_OF_POSITION": 0,
+      "UNKNOWN": 12
+    },
+    "trial_state": "TRIAL_APPLIED",
+    "temporal_frames": 5,
+    "saved_settings_and_five_frames_restored": true,
+    "unchanged_result_fields_except_capture_ids": [
+      "section_evaluation",
+      "ground_check",
+      "counts",
+      "position_assessment"
+    ]
+  }
+}

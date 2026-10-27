@@ -158,7 +158,7 @@ class GuiFileServiceStartupTests(unittest.TestCase):
         from pipe_twin import gui
 
         root = Mock()
-        with patch("tkinter.Tk", return_value=root), patch.object(gui, "_PipeTwinApplication") as application, patch.object(remote_files, "ensure_remote_files") as ensure:
+        with patch("tkinter.Tk", return_value=root), patch.object(gui, "_start_application") as application, patch.object(remote_files, "ensure_remote_files") as ensure:
             gui.launch_gui()
         ensure.assert_not_called()
         application.assert_called_once_with(root, None, None)

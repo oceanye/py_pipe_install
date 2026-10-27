@@ -735,7 +735,7 @@ class StereoCameraDialog:
         if hasattr(owner, "temporal_frames"):
             burst_row = ttk.Frame(main)
             burst_row.pack(fill="x", pady=(0, 6))
-            ttk.Button(burst_row, text="连续采集 20 对并使用", command=self.capture_burst).pack(side="left")
+            ttk.Button(burst_row, text="多帧采集 20 对并使用", command=self.capture_burst).pack(side="left")
             ttk.Label(burst_row, text="保持相机和管道静止；采集后回主界面点④保存并评估。",
                       foreground="#355371").pack(side="left", padx=8)
         previews = ttk.Frame(main)
@@ -753,13 +753,14 @@ class StereoCameraDialog:
         bottom.pack(fill="x", pady=(10, 0))
         ttk.Label(
             bottom,
-            text="抓拍保存相机输出分辨率；预览缩小不改变分析图像。设备输出须已完成极线矫正。",
+            text=('保留原始分辨率；抓拍后按当前标定自动矫正。' if self.rectifier is not None
+                  else '保留原始分辨率；当前无矫正配方，需使用已矫正的相机输出。'),
             foreground="#4A6178",
         ).pack(side="left")
         ttk.Button(bottom, text="取消", command=self.close).pack(side="right", padx=4)
         ttk.Button(
             bottom,
-            text="同步抓拍并使用",
+            text="单帧抓拍并使用",
             command=self.capture,
         ).pack(side="right", padx=4)
 

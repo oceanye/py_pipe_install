@@ -109,6 +109,58 @@ class ElevationGuiTests(unittest.TestCase):
             normalize_registration_settings({'ground_candidate_trial': 'true'})
         self.app.messagebox.showerror.assert_not_called()
 
+    def test_settings_do_not_consume_photo_space_and_block_edits_while_evaluating(self):
+        self.dialog.window.deiconify()
+        self.dialog.window.geometry('1024x720')
+        self.root.update()
+        height = self.dialog.views['left'].canvas.winfo_height()
+        self.assertGreater(height, 180)
+        # A long report/path must remain accessible without taking photo space.
+        self.dialog.message.set('long diagnostic path ' * 100)
+        self.root.update()
+        self.assertEqual(self.dialog.views['left'].canvas.winfo_height(), height)
+        self.assertIn(self.dialog.message.get(), self.dialog.status_text.get('1.0', 'end'))
+        for page in self.dialog.settings_pages:
+            self.dialog.open_settings(page)
+            self.root.update()
+            self.assertEqual(self.dialog.views['left'].canvas.winfo_height(), height)
+        self.dialog._set_controls(False)
+        self.assertIn('disabled', self.dialog.local_observation_box.state())
+        self.dialog._set_controls(True)
+        self.assertNotIn('disabled', self.dialog.local_observation_box.state())
+        self.dialog.hide_settings()
+        self.assertEqual(self.dialog.settings_window.state(), 'withdrawn')
+
+    def test_unified_details_follow_selection_and_close_when_inputs_change(self):
+        from test_temporal_sections import stage
+        value = stage()
+        for views in value['views'].values():
+            for item in views:
+                item['boundary_stable'] = True
+        self.dialog.report = {'section_evaluation': value}
+        self.dialog.refresh_table()
+        self.dialog.show_analysis_details()
+        window = self.dialog.analysis_details_window
+        self.assertEqual(len(self.dialog.detail_tabs.tabs()), 5)
+        self.dialog.solver_tree.selection_set('0:1')
+        self.root.update()
+        self.assertIn('/ S2', self.dialog.detail_texts['candidate'].get('1.0', 'end'))
+        self.dialog.show_analysis_details('ground')
+        self.assertIs(self.dialog.analysis_details_window, window)
+        self.assertEqual(self.dialog.detail_tabs.select(), str(self.dialog.detail_pages['ground']))
+        self.dialog.invalidate()
+        self.assertFalse(window.winfo_exists())
+
+    def test_only_cad_tab_exposes_color_mutation_actions(self):
+        self.root.update()
+        self.assertFalse(self.dialog.cad_actions.winfo_manager())
+        self.dialog.status_tabs.select(self.dialog.cad_status_tab)
+        self.root.update()
+        self.assertEqual(self.dialog.cad_actions.winfo_manager(), 'pack')
+        self.dialog.status_tabs.select(0)
+        self.root.update()
+        self.assertFalse(self.dialog.cad_actions.winfo_manager())
+
     def test_save_reopen_and_repeat_save_without_json_editing(self):
         self.dialog.submit(False)
         self.finish_worker()

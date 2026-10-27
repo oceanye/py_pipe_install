@@ -828,7 +828,7 @@ class ElevationCaptureDialog:
     analysis_mode = "elevation_auto"
 
     def __init__(self, app: Any, manifest_path: Path | None = None, *, output_root: Path | None = None,
-                 restore: bool = True, model_path: Path | None = None) -> None:
+                 restore: bool = True, model_path: Path | None = None, window=None) -> None:
         from .workbench_profile import load_profile
 
         self.app = app
@@ -863,8 +863,8 @@ class ElevationCaptureDialog:
         self.region_selection_target = 'assessment'
         self.axial_selection_active = False
         tk, ttk = app.tk, app.ttk
-        self.window = tk.Toplevel(app.root)
-        self.window.title("基础立面评估 · 双目管道状态")
+        self.window = window if window is not None else tk.Toplevel(app.root)
+        self.window.title("管道安装分析 · 双目断面与状态")
         available_width = max(640, self.window.winfo_screenwidth()-80)
         available_height = max(480, self.window.winfo_screenheight()-100)
         self.window.geometry(f"{min(1120, available_width)}x{min(860, available_height)}")
@@ -875,8 +875,9 @@ class ElevationCaptureDialog:
         self.confirmed = tk.BooleanVar(value=False)
         self.history = tk.BooleanVar(value=True)
         self.local_observation_label = tk.StringVar(value="自动（圆柱/图像引导）")
-        self.message = tk.StringVar(value="首次：导入 STL 或 DXF → 选择双目标定 → 设置管长方向 → 双目抓拍 → 自动匹配立面。固定机位以后可直接重复抓拍。")
+        self.message = tk.StringVar(value="首次导入模型并载入标定；③抓拍 → 选择汇聚范围 → ④评估。点击结果行定位照片，双击查看详情。")
         self.calibration_status = tk.StringVar(value="未加载标定；重投影通过后仍需独立尺寸复核")
+        self.calibration_details = tk.StringVar()
         self.summary = tk.StringVar(value="尚未建立管道目录")
         self.matching_preset = tk.StringVar(value="原始灰度")
         self.disparity_count = tk.StringVar(value="256")
@@ -895,74 +896,113 @@ class ElevationCaptureDialog:
         bar = ttk.Frame(self.controls)
         bar.pack(fill="x", pady=(0, 7))
         ttk.Button(bar, text="① 导入 STL/DXF", command=self.browse_model).pack(side="left", padx=3)
-        ttk.Combobox(bar, textvariable=self.stl_unit, values=("millimeter", "centimeter", "meter", "inch"), state="readonly", width=11).pack(side="left")
-        ttk.Button(bar, text="② 相机标定", command=self.browse_calibration).pack(side="left", padx=3)
-        ttk.Button(bar, text="重新标定 / 质量检查", command=self.open_calibration).pack(side="left", padx=3)
-        ttk.Button(bar, text="打开基础现场", command=self.browse_session).pack(side="right", padx=3)
+        calibration_button = ttk.Menubutton(bar, text='② 标定 ▾')
+        calibration_menu = tk.Menu(calibration_button, tearoff=False)
+        calibration_menu.add_command(label='载入已有标定', command=self.browse_calibration)
+        calibration_menu.add_command(label='棋盘格重新标定 / 质量检查', command=self.open_calibration)
+        calibration_button.configure(menu=calibration_menu)
+        calibration_button.pack(side='left', padx=3)
+        ttk.Button(bar, text="打开现场", command=self.browse_session).pack(side="left", padx=3)
+        self.settings_button = ttk.Button(bar, text='设置…', command=self.toggle_capture_settings)
+        self.settings_button.pack(side='right', padx=3)
+        more = ttk.Menubutton(bar, text='场景与诊断 ▾')
+        self.scene_menu = tk.Menu(more, tearoff=False)
+        for title, command in [('重新抓拍并评估', self.refresh_status), ('仅保存现场', lambda: self.submit(False)),
+                               ('清除汇聚范围', self.clear_axial_band), ('清除地面区域', self.clear_ground_region),
+                               ('完整分析报告', self.show_analysis_details), ('运行日志', self.show_log)]:
+            self.scene_menu.add_command(label=title, command=command)
+        more.configure(menu=self.scene_menu); more.pack(side='right', padx=3)
         action_bar = ttk.Frame(self.controls)
         action_bar.pack(fill="x", pady=(0, 7))
         ttk.Button(action_bar, text="③ 双目抓拍", command=self.capture_camera).pack(side="left", padx=3)
         self.run_button = ttk.Button(action_bar, text="④ 保存并评估", command=lambda: self.submit(True))
         self.run_button.pack(side="left", padx=6)
-        ttk.Button(action_bar, text="状态刷新", command=self.refresh_status).pack(side="left", padx=3)
+        ttk.Button(action_bar, text='现场模型 / 编号 / 方向', command=self.open_model_viewer).pack(side='left', padx=6)
         self.save_button = ttk.Button(action_bar, text="仅保存基础现场", command=lambda: self.submit(False))
-        self.save_button.pack(side="left", padx=12)
-        ttk.Label(action_bar, text="已抓拍：点击④开始分析", foreground="#355371").pack(side="left", padx=6)
+        ttk.Label(action_bar, text="抓拍后点击④开始分析", foreground="#355371").pack(side="left", padx=6)
         method_bar = ttk.Frame(self.controls)
         method_bar.pack(fill="x", pady=(0, 4))
-        ttk.Label(method_bar, text="局部建模").pack(side="left", padx=(3, 3))
+        self.axial_button = ttk.Button(method_bar, text='管长方向 / 汇聚范围', command=self.toggle_axial_selection)
+        self.axial_button.pack(side='left', padx=3)
+        self.region_button = ttk.Button(method_bar, text="框选评估区域", command=self.toggle_region_selection)
+        self.region_button.pack(side="left", padx=3)
+        ttk.Button(method_bar, text='地面 / 倾角…', command=lambda: self.open_settings('ground')).pack(side='left', padx=3)
+        self.setup_summary = tk.StringVar()
+        ttk.Label(method_bar, textvariable=self.setup_summary, foreground='#355371').pack(side='left', padx=8)
+        self.window.bind("<Escape>", lambda _e: self.cancel_image_selections())
+        ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
+
+        # Infrequent controls live in a separate window, preserving photo and
+        # result space even on a short display. Values remain bound to the owner.
+        self.settings_window = tk.Toplevel(self.window)
+        self.settings_window.title('现场分析设置')
+        self.settings_window.withdraw()
+        self.settings_window.geometry('860x510')
+        self.settings_window.transient(self.window)
+        self.settings_window.protocol('WM_DELETE_WINDOW', self.hide_settings)
+        self.capture_settings = ttk.Notebook(self.settings_window)
+        self.capture_settings.pack(fill='both', expand=True, padx=10, pady=10)
+        self.capture_settings_expanded = False
+        self.settings_pages = {}
+        for key, title in [('photos', '照片与历史'), ('model', '模型与范围'), ('analysis', '求解参数'), ('ground', '地面修正')]:
+            page = ttk.Frame(self.capture_settings, padding=12)
+            self.settings_pages[key] = page
+            self.capture_settings.add(page, text=title)
+        model_page = self.settings_pages['model']
+        unit_bar = ttk.Frame(model_page); unit_bar.pack(fill='x', pady=5)
+        ttk.Label(unit_bar, text='模型原始单位').pack(side='left')
+        ttk.Combobox(unit_bar, textvariable=self.stl_unit, values=('millimeter', 'centimeter', 'meter', 'inch'),
+                     state='readonly', width=15).pack(side='left', padx=8)
+        analysis_page = self.settings_pages['analysis']
+        algorithm_bar = ttk.Frame(analysis_page); algorithm_bar.pack(fill='x', pady=5)
+        ttk.Label(algorithm_bar, text='辅助识别方法（通常保持自动）').pack(side='left')
         self.local_observation_box = ttk.Combobox(
-            method_bar, textvariable=self.local_observation_label,
+            algorithm_bar, textvariable=self.local_observation_label,
             values=("自动（圆柱/图像引导）", "仅双目深度几何", "图像引导圆柱", "平行局部条带（颜色辅助）"),
             state="readonly", width=22)
         self.local_observation_box.pack(side="left")
         self.local_observation_box.bind("<<ComboboxSelected>>", lambda _e: self._local_observation_selected())
-        ttk.Label(method_bar, text="分析范围").pack(side="left", padx=(10, 3))
-        self.scope_box = ttk.Combobox(method_bar, textvariable=self.scope_label,
+        scope_bar = ttk.Frame(model_page); scope_bar.pack(fill='x', pady=5)
+        ttk.Label(scope_bar, text="分析范围").pack(side="left")
+        self.scope_box = ttk.Combobox(scope_bar, textvariable=self.scope_label,
                                       values=("全幅自动", "分区分析"), state="readonly", width=12)
         self.scope_box.pack(side="left")
         self.scope_box.bind("<<ComboboxSelected>>", lambda _e: self._scope_selected())
-        self.zone_button = ttk.Button(method_bar, text="分区管理", command=self.open_zone_manager)
+        self.zone_button = ttk.Button(scope_bar, text="分区管理", command=self.open_zone_manager)
         self.zone_button.pack(side="left", padx=3)
-        self.region_button = ttk.Button(method_bar, text="左图框选区域", command=self.toggle_region_selection)
-        self.region_button.pack(side="left", padx=3)
-        self.axial_button = ttk.Button(method_bar, text='管长方向 / 汇聚范围', command=self.toggle_axial_selection)
-        self.axial_button.pack(side='left', padx=3)
-        ttk.Button(method_bar, text='清除汇聚范围', command=self.clear_axial_band).pack(side='left', padx=3)
-        self.window.bind("<Escape>", lambda _e: self.cancel_image_selections())
-        ground_bar = ttk.Frame(self.controls)
-        ground_bar.pack(fill='x', pady=(0, 3))
+        ground_page = self.settings_pages['ground']
+        ttk.Label(ground_page, text='框选裸露地面后可单独检查倾角。④保存并评估会重算管轴和断面。', wraplength=780).pack(anchor='w', pady=8)
+        ground_bar = ttk.Frame(ground_page)
+        ground_bar.pack(fill='x', pady=5)
         self.ground_button = ttk.Button(ground_bar, text='左图框选地面', command=self.toggle_ground_selection)
         self.ground_button.pack(side='left', padx=3)
         ttk.Button(ground_bar, text='倾角检查', command=self.inspect_ground).pack(side='left', padx=3)
-        ttk.Button(ground_bar, text='地面修正', command=self.show_ground_check).pack(side='left', padx=3)
-        ttk.Button(ground_bar, text='清除地面区域', command=self.clear_ground_region).pack(side='left', padx=3)
-        ttk.Label(ground_bar, text='紫框：搜索范围；涂色：平面支持', foreground='#355371').pack(side='left', padx=6)
-        self.settings_button = ttk.Button(ground_bar, text='展开拍摄 / 评估设置', command=self.toggle_capture_settings)
-        self.settings_button.pack(side='right', padx=3)
+        ttk.Button(ground_bar, text='查看倾角与修正结果', command=lambda: self.show_analysis_details('ground')).pack(side='left', padx=3)
+        ttk.Label(ground_page, text='紫框限定搜索区域；绿色为通过检查的支持，橙色为待验证的候选支持。', wraplength=780).pack(anchor='w', pady=8)
         self.ground_candidate_trial = tk.BooleanVar(value=False)
-        ttk.Checkbutton(self.controls, text='试用候选地面倾角（未验证，显示修正前后对照）',
+        ttk.Checkbutton(ground_page, text='试用候选地面倾角（未验证，显示修正前后对照）',
                         variable=self.ground_candidate_trial, command=self._ground_trial_changed).pack(anchor='w')
-        ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
-        # Keep photo selection usable at the minimum window size. Infrequent
-        # controls remain available in one expandable area, with values intact.
-        self.capture_settings = ttk.Frame(self.controls)
-        self.capture_settings_expanded = False
-        photos = ttk.Frame(self.capture_settings)
+        photos_page = self.settings_pages['photos']
+        photos = ttk.Frame(photos_page)
         photos.pack(fill="x", pady=6)
         for role, name in (("left", "左"), ("right", "右")):
-            ttk.Button(photos, text=f"导入{name}矫正图", command=lambda r=role: self.browse_photo(r)).pack(side="left", padx=3)
-            ttk.Entry(photos, textvariable=self.fields[f"{role}_time"], width=29).pack(side="left")
-        ttk.Checkbutton(self.capture_settings, text="左右图来自同一次同步拍摄；机位、镜头设置和区域位置正确", variable=self.confirmed).pack(anchor="w")
-        matching_bar = ttk.Frame(self.capture_settings)
+            photo_row = ttk.Frame(photos); photo_row.pack(fill='x', pady=5)
+            ttk.Button(photo_row, text=f"导入{name}矫正图", command=lambda r=role: self.browse_photo(r)).pack(side="left", padx=3)
+            ttk.Label(photo_row, text='拍摄时间').pack(side='left', padx=8)
+            ttk.Entry(photo_row, textvariable=self.fields[f"{role}_time"], width=29).pack(side="left", fill='x', expand=True)
+        ttk.Checkbutton(photos_page, text="左右图来自同一次同步拍摄；机位、镜头设置和区域位置正确", variable=self.confirmed).pack(anchor="w")
+        ttk.Checkbutton(photos_page, text="沿用上次场景历史（相机未移动）", variable=self.history).pack(anchor='w', pady=10)
+        ttk.Label(photos_page, text='相机抓拍会自动记录配对时间；手工导入时请核对拍摄时间与同步关系。', wraplength=780).pack(anchor='w')
+        ttk.Label(photos_page, textvariable=self.calibration_details, wraplength=780, foreground='#355371').pack(anchor='w', pady=12)
+        matching_bar = ttk.Frame(analysis_page)
         matching_bar.pack(fill="x", pady=3)
         ttk.Label(matching_bar, text="深度处理").pack(side="left")
         ttk.Combobox(matching_bar, textvariable=self.matching_preset, values=("原始灰度", "弱光降噪"),
                      state="readonly", width=12).pack(side="left", padx=6)
         ttk.Label(matching_bar, text="视差搜索范围（像素，16 的倍数）").pack(side="left")
         ttk.Entry(matching_bar, textvariable=self.disparity_count, width=7).pack(side="left", padx=6)
-        ttk.Label(matching_bar, text="近距离需扩大范围；弱光处理保留原始照片与颜色", foreground="#355371").pack(side="left")
-        policy_bar = ttk.Frame(self.capture_settings)
+        ttk.Label(analysis_page, text="近距离可扩大视差范围；弱光处理保留原始照片与颜色。", foreground="#355371").pack(anchor='w')
+        policy_bar = ttk.Frame(analysis_page)
         policy_bar.pack(fill="x", pady=3)
         ttk.Label(policy_bar, text="直径容差 mm").pack(side="left")
         ttk.Entry(policy_bar, textvariable=self.diameter_tolerance_mm, width=7).pack(side="left", padx=(4, 10))
@@ -971,23 +1011,22 @@ class ElevationCaptureDialog:
         ttk.Checkbutton(policy_bar, text="启用颜色筛选（辅助）", variable=self.color_filter_enabled).pack(side="left", padx=(4, 10))
         ttk.Label(policy_bar, text="颜色容差 Lab").pack(side="left")
         ttk.Entry(policy_bar, textvariable=self.color_delta_lab, width=7).pack(side="left", padx=(4, 6))
-        ttk.Label(policy_bar, text="直径始终为主筛选；STL 颜色需先按管径确认", foreground="#355371").pack(side="left")
-        scene_bar = ttk.Frame(self.capture_settings)
+        ttk.Label(analysis_page, text="以上为 CAD 匹配设置；现场条件外径由图像拟合。颜色仅作辅助。", foreground="#355371").pack(anchor='w')
+        scene_bar = ttk.Frame(model_page)
         scene_bar.pack(fill="x", pady=3)
         ttk.Label(scene_bar, text="现场实际管数（未知可留空）").pack(side="left")
         ttk.Entry(scene_bar, textvariable=self.present_pipe_count, width=5).pack(side="left", padx=6)
-        ttk.Label(scene_bar, text="模型目录可多于现场实物；数量不代替管道身份确认", foreground="#355371").pack(side="left")
-        ttk.Button(scene_bar, text="颜色与反光检查", command=self.open_quality_check).pack(side="right", padx=4)
+        ttk.Label(model_page, text="模型目录可多于现场实物；数量不代替管道身份确认。", foreground="#355371").pack(anchor='w')
+        ttk.Button(analysis_page, text="颜色与反光检查", command=self.open_quality_check).pack(anchor='w', pady=12)
 
-        view_bar = ttk.Frame(self.capture_settings)
+        view_bar = ttk.Frame(model_page)
         view_bar.pack(fill="x", pady=3)
         ttk.Label(view_bar, text="相机从哪侧看（模型坐标）").pack(side="left")
         self.camera_side_box = ttk.Combobox(view_bar, textvariable=self.camera_side_label,
             values=tuple(CAMERA_SIDE_PRESETS), state="readonly", width=25)
         self.camera_side_box.pack(side="left", padx=6)
         self.camera_side_box.bind("<<ComboboxSelected>>", lambda _e: self._camera_side_selected())
-        ttk.Button(view_bar, text="现场模型 / 查看方向", command=self.open_model_viewer).pack(side="left", padx=4)
-        ttk.Label(view_bar, text="允许斜视；管长方向另设。不确定时保留自动判断。", foreground="#355371").pack(side="left")
+        ttk.Label(model_page, text="允许斜视；在主界面“现场模型 / 编号 / 方向”中设置管轴和观察侧。", foreground="#355371").pack(anchor='w', pady=8)
 
         # Reserve results and status before the expanding photo pane consumes
         # space, so shorter displays do not lose the bottom of the workflow.
@@ -1000,16 +1039,15 @@ class ElevationCaptureDialog:
             view_frame = ttk.LabelFrame(panes, text=title, padding=3)
             panes.add(view_frame, weight=1)
             self.views[role] = RegionCanvas(view_frame, self, role, assessment_regions=True)
-        ttk.Label(footer, text="左图画管长方向：两条橙色垂线之间汇聚；拖动端点可调范围。青色线为稳定边界。方向与范围随现场保存。", foreground="#355371").pack(anchor="w")
-
         self.status_tabs = ttk.Notebook(footer)
         self.status_tabs.pack(fill="x", pady=6)
         solver_frame = ttk.Frame(self.status_tabs)
         table_frame = ttk.Frame(self.status_tabs)
         self.status_tabs.add(solver_frame, text='现场求解状态')
         self.status_tabs.add(table_frame, text='CAD 安装状态')
+        self.cad_status_tab = table_frame
         solver_columns = ('boundaries', 'diameter', 'frames', 'repeatability', 'layout', 'cad', 'status')
-        self.solver_tree = ttk.Treeview(solver_frame, columns=solver_columns, height=5, selectmode='browse')
+        self.solver_tree = ttk.Treeview(solver_frame, columns=solver_columns, height=4, selectmode='browse')
         self.solver_tree.heading('#0', text='现场候选')
         self.solver_tree.column('#0', width=100, stretch=False)
         for column, label, width in zip(solver_columns,
@@ -1025,9 +1063,8 @@ class ElevationCaptureDialog:
         self.solver_detail = tk.StringVar(value='评估后显示每个现场候选的求解过程；选择一行可在左右图中定位，双击查看详细原因。')
         self.solver_tree.bind('<<TreeviewSelect>>', lambda _e: self._solver_selected())
         self.solver_tree.bind('<Double-1>', lambda _e: self.show_solver_detail())
-        ttk.Label(footer, textvariable=self.solver_detail, wraplength=1000, foreground='#355371').pack(anchor='w')
         columns = ("diameter", "color", "left", "right", "reference", "state", "position", "reason")
-        self.tree = ttk.Treeview(table_frame, columns=columns, height=5, selectmode="browse")
+        self.tree = ttk.Treeview(table_frame, columns=columns, height=4, selectmode="browse")
         self.tree.heading("#0", text="管道编号")
         self.tree.column("#0", width=90, stretch=False)
         for column, label, width in zip(columns, ("模型管径 mm", "颜色", "左证据", "右证据", "深度", "安装证据", "断面就位", "说明"), (90, 80, 60, 60, 60, 90, 135, 310)):
@@ -1039,29 +1076,29 @@ class ElevationCaptureDialog:
         self.tree.pack(side="left", fill="x", expand=True)
         for state, color in STATE_COLORS.items():
             self.tree.tag_configure(state, foreground=color)
-        self.tree.bind("<<TreeviewSelect>>", lambda _e: self.redraw())
-        self.tree.bind("<Double-1>", lambda _e: self.edit_pipe())
+        self.tree.bind("<<TreeviewSelect>>", lambda _e: self._cad_selected())
+        self.tree.bind("<Double-1>", lambda _e: self.show_analysis_details('cad'))
         row = ttk.Frame(footer)
         row.pack(fill="x")
-        actions = [("设置颜色", self.edit_pipe), ("同径统一颜色", self.apply_diameter_color),
-                   ("管长与观察方向", self.open_model_viewer), ("查看模型管道编号", self.show_catalog),
-                   ("断面尺寸与就位", self.show_measurement), ("管段汇聚", self.show_section_aggregation)]
-        cad_buttons = []
-        for name, action in actions:
-            button = ttk.Button(row, text=name, command=action)
-            button.pack(side="left", padx=2)
-            if name in ('设置颜色', '同径统一颜色', '断面尺寸与就位'):
-                cad_buttons.append(button)
-                button.state(['disabled'])
-        self.status_tabs.bind('<<NotebookTabChanged>>', lambda _e: [b.state(
-            ['!disabled'] if self.status_tabs.select() == str(table_frame) else ['disabled']) for b in cad_buttons])
-        ttk.Button(row, text='所选求解详情', command=self.show_solver_detail).pack(side='left', padx=2)
-        bottom = ttk.Frame(footer)
-        bottom.pack(fill="x", pady=(8, 4))
-        ttk.Checkbutton(bottom, text="沿用上次场景历史（相机未移动）", variable=self.history).pack(side="left")
-        ttk.Button(bottom, text="识别诊断", command=self.show_recognition_diagnostics).pack(side="left", padx=8)
-        ttk.Label(footer, textvariable=self.summary, wraplength=860).pack(anchor="w")
-        ttk.Label(footer, textvariable=self.message, wraplength=860, foreground="#355371").pack(fill="x", pady=3)
+        ttk.Button(row, text='查看详情 / 诊断', command=self.show_analysis_details).pack(side='left', padx=2)
+        self.cad_actions = ttk.Frame(row)
+        for name, action in [('设置所选管颜色', self.edit_pipe), ('同径统一颜色', self.apply_diameter_color)]:
+            ttk.Button(self.cad_actions, text=name, command=action).pack(side='left', padx=2)
+        self.status_tabs.bind('<<NotebookTabChanged>>', lambda _e: self._status_tab_changed())
+        # Bound the status area: long paths and diagnostic explanations must not
+        # consume the photo pane. All text stays selectable and scrollable.
+        status_frame = ttk.Frame(footer)
+        status_frame.pack(fill='x', pady=3)
+        self.status_text = tk.Text(status_frame, height=3, width=1, wrap='word',
+                                   font=('Microsoft YaHei UI', 9), foreground='#355371',
+                                   relief='flat', state='disabled')
+        status_scroll = ttk.Scrollbar(status_frame, command=self.status_text.yview)
+        self.status_text.configure(yscrollcommand=status_scroll.set)
+        status_scroll.pack(side='right', fill='y')
+        self.status_text.pack(side='left', fill='x', expand=True)
+        for variable in (self.summary, self.solver_detail, self.message):
+            variable.trace_add('write', lambda *_: self._refresh_status_text())
+        self._refresh_status_text()
 
         for key, variable in self.fields.items():
             variable.trace_add("write", lambda *_args, k=key: self._field_changed(k))
@@ -1111,10 +1148,20 @@ class ElevationCaptureDialog:
             # have to browse for the same layout twice.
             self.load_model(Path(model_path).resolve())
         self.refresh_calibration_status()
+        self.redraw()
         self.poll_id = self.window.after(100, self.poll)
+
+    def _refresh_status_text(self) -> None:
+        self.status_text.configure(state='normal')
+        self.status_text.delete('1.0', 'end')
+        self.status_text.insert('1.0', '\n'.join(v.get() for v in (self.message, self.summary, self.solver_detail)))
+        self.status_text.configure(state='disabled')
 
     def invalidate(self) -> None:
         self.generation += 1
+        details = getattr(self, 'analysis_details_window', None)
+        if details is not None and details.winfo_exists():
+            details.destroy()
         had_inspection = getattr(self, 'ground_inspection', None) is not None
         self.ground_inspection = None
         inspection_window = getattr(self, 'ground_inspection_window', None)
@@ -1185,7 +1232,7 @@ class ElevationCaptureDialog:
             self._set_axial_selection(False)
         self.region_selection_active = active
         self.region_selection_target = target if active else 'assessment'
-        self.region_button.configure(text="取消框选（Esc）" if active and target == 'assessment' else "左图框选区域")
+        self.region_button.configure(text="取消框选（Esc）" if active and target == 'assessment' else "框选评估区域")
         self.ground_button.configure(text='取消地面框选（Esc）' if active and target == 'ground' else '左图框选地面')
         view = self.views["left"]
         view.cancel_region_drag()
@@ -1239,12 +1286,36 @@ class ElevationCaptureDialog:
         self.message.set('已清除手动汇聚范围，恢复自动管段汇聚。')
 
     def toggle_capture_settings(self) -> None:
-        self.capture_settings_expanded = not self.capture_settings_expanded
-        if self.capture_settings_expanded:
-            self.capture_settings.pack(fill='x')
+        self.hide_settings() if self.capture_settings_expanded else self.open_settings()
+
+    def open_settings(self, page=None):
+        if self.busy:
+            return
+        if page:
+            self.capture_settings.select(self.settings_pages[page])
+        self.capture_settings_expanded = True
+        self.settings_window.deiconify()
+        self.settings_window.lift()
+
+    def hide_settings(self):
+        self.capture_settings_expanded = False
+        self.settings_window.withdraw()
+
+    def _status_tab_changed(self):
+        if self.status_tabs.select() == str(self.cad_status_tab):
+            self.cad_actions.pack(side='left', padx=8)
         else:
-            self.capture_settings.pack_forget()
-        self.settings_button.configure(text='收起拍摄 / 评估设置' if self.capture_settings_expanded else '展开拍摄 / 评估设置')
+            self.cad_actions.pack_forget()
+
+    def _cad_selected(self):
+        self.redraw()
+        self._refresh_open_details()
+
+    def show_log(self):
+        from .log_viewer import LogViewerDialog
+        dialog = LogViewerDialog(self.app, parent=self.window)
+        dialog.only_calibration.set(False)
+        dialog.reload()
 
     def toggle_ground_selection(self) -> None:
         if self.busy:
@@ -1255,8 +1326,9 @@ class ElevationCaptureDialog:
         if self.views['left'].image is None:
             self.message.set('请先抓拍或导入左目矫正图，再框选地面。')
             return
+        self.hide_settings()
         self._set_region_selection(True, target='ground')
-        self.message.set('在左图框选一块裸露地面，避开支架、管道和杂物。应有足够宽度与高度；框选后点击“倾角检查”。')
+        self.message.set('在左图框选一块裸露地面，避开支架、管道和杂物。应有足够宽度与高度；框选后打开“地面 / 倾角…”执行倾角检查。')
 
     def set_ground_region(self, rect: list[int]) -> None:
         if self.busy or self.views['left'].image is None:
@@ -1266,7 +1338,7 @@ class ElevationCaptureDialog:
         self.registration_settings['ground_region'] = ground
         self.invalidate()
         self.redraw()
-        self.message.set('已保存地面区域。点击“倾角检查”查看角度和地面涂色；点击④保存并评估，通过检查后修正管轴并重算断面。')
+        self.message.set('已保存地面区域。打开“地面 / 倾角…”执行倾角检查；点击④保存并评估，按当前地面规则重算管轴与断面。')
         log_event(LOGGER, 'elevation_ground_region_changed', ground_region=ground)
 
     def clear_ground_region(self) -> None:
@@ -1491,6 +1563,10 @@ class ElevationCaptureDialog:
         return next((row for row in self.pipes if row["pipe_id"] == self.selected_id()), None)
 
     def redraw(self) -> None:
+        if hasattr(self, 'setup_summary'):
+            trial = '地面试验：开' if self.registration_settings.get('ground_candidate_trial') else '地面：默认规则'
+            mode = self.registration_settings.get('local_observation_mode', 'auto')
+            self.setup_summary.set(self.scope_label.get()+' · '+trial+(' · 辅助识别非自动' if mode != 'auto' else ''))
         for view in self.views.values():
             view.draw()
         if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
@@ -1522,6 +1598,7 @@ class ElevationCaptureDialog:
             self.message.set("平行局部条带：沿共同管轴测量可见条带，颜色仅作候选辅助。")
         else:
             self.message.set("自动局部建模：优先圆柱表面；颜色关闭时回退到图像引导圆柱，颜色开启时回退到平行条带。")
+        self.redraw()
 
     def refresh_table(self) -> None:
         selected = self.selected_id()
@@ -1575,20 +1652,55 @@ class ElevationCaptureDialog:
         else:
             self.solver_detail.set('评估后显示每个现场候选的求解过程；选择一行定位照片，双击查看详细原因。')
         self.redraw()
+        self._refresh_open_details()
+
+    def _refresh_open_details(self):
+        details = getattr(self, 'analysis_details_window', None)
+        if details is not None and details.winfo_exists():
+            key = next((k for k, p in self.detail_pages.items() if str(p) == self.detail_tabs.select()), 'candidate')
+            self.show_analysis_details(key)
 
     def show_solver_detail(self):
-        row = self.selected_solver_row()
-        if not row:
-            return
+        self.show_analysis_details('candidate')
+
+    def show_analysis_details(self, tab=None):
+        from .section_display import section_summary_lines
+        from .ground_check import ground_summary_lines
         tk, ttk = self.app.tk, self.app.ttk
-        dialog = tk.Toplevel(self.window)
-        dialog.title(f"现场求解状态 · {row['zone_id']} / {row['label']}")
-        dialog.geometry('800x460')
-        text = tk.Text(dialog, wrap='word', padx=15, pady=15, font=('Microsoft YaHei', 10))
-        text.pack(fill='both', expand=True)
-        text.insert('1.0', row['detail'])
-        text.configure(state='disabled')
-        ttk.Button(dialog, text='关闭', command=dialog.destroy).pack(pady=6)
+        row = self.selected_solver_row()
+        spec = self.selected_pipe()
+        cad_lines = relative_layout_summary_lines(self.report)
+        if spec is not None:
+            cad_lines += ['', '所选 CAD 管号：'+spec['pipe_id']]+measurement_summary_lines(spec, self.results.get(spec['pipe_id']))
+        pages = [('candidate', '当前候选', row['detail'] if row else '评估后选择一个现场候选，查看轮廓、尺寸与重复性。'),
+                 ('sections', '断面与汇聚', '\n'.join(section_summary_lines(self.report, detailed=True))),
+                 ('ground', '地面倾角', '\n'.join(ground_summary_lines(self.current_ground_check()))),
+                 ('cad', 'CAD 对应与就位', '\n'.join(cad_lines)),
+                 ('recognition', '识别诊断', '\n'.join(recognition_diagnostic_lines(self.report)))]
+        dialog = getattr(self, 'analysis_details_window', None)
+        if dialog is None or not dialog.winfo_exists():
+            dialog = tk.Toplevel(self.window)
+            self.analysis_details_window = dialog
+            dialog.title('分析详情 · 当前现场')
+            dialog.geometry('920x650')
+            self.detail_tabs = ttk.Notebook(dialog)
+            self.detail_tabs.pack(fill='both', expand=True, padx=8, pady=8)
+            self.detail_pages, self.detail_texts = {}, {}
+            for key, title, _ in pages:
+                panel = ttk.Frame(self.detail_tabs)
+                self.detail_tabs.add(panel, text=title)
+                text = tk.Text(panel, wrap='word', padx=12, pady=12, font=('Microsoft YaHei', 10))
+                scroll = ttk.Scrollbar(panel, orient='vertical', command=text.yview)
+                text.configure(yscrollcommand=scroll.set)
+                scroll.pack(side='right', fill='y'); text.pack(fill='both', expand=True)
+                self.detail_pages[key], self.detail_texts[key] = panel, text
+        for key, _, content in pages:
+            text = self.detail_texts[key]
+            text.configure(state='normal'); text.delete('1.0', 'end')
+            text.insert('1.0', content); text.configure(state='disabled')
+        tab = tab or ('cad' if self.status_tabs.select() == str(self.cad_status_tab) else 'candidate')
+        self.detail_tabs.select(self.detail_pages[tab])
+        dialog.lift()
 
     def show_measurement(self) -> None:
         spec = self.selected_pipe()
@@ -1870,14 +1982,19 @@ class ElevationCaptureDialog:
                     else "CAD配准未确认（立面相对布局仍可继续；完整绝对坐标需另行配准）"
                 )
                 from .calibration_quality import calibration_quality_text
-                self.calibration_status.set(
+                self.calibration_details.set(
                     f"已加载标定 · {parsed.calibration_id} · "
                     f"{parsed.left.width}×{parsed.left.height} 每目 · 基线 {parsed.baseline_mm:g} mm · {registration}\n"
                     + calibration_quality_text(calibration))
+                self.calibration_status.set(
+                    ('已载入标定' if parsed.validated else '暂用标定')+
+                    f' · {parsed.left.width}×{parsed.left.height} 每目 · 基线 {parsed.baseline_mm:.2f} mm · 尺寸精度需独立核验')
             else:
                 self.calibration_status.set("标定文件已载入，但尚未满足现场双目门禁；请完成一次标定向导")
+                self.calibration_details.set(self.calibration_status.get())
         except (OSError, ValueError) as error:
             self.calibration_status.set(str(error))
+            self.calibration_details.set(str(error))
 
     def open_calibration(self) -> None:
         if not self.busy:
@@ -2181,6 +2298,8 @@ class ElevationCaptureDialog:
                     child.state(["!disabled"] if enabled else ["disabled"])
                 visit(child)
         visit(self.controls)
+        visit(self.capture_settings)
+        visit(self.cad_actions)
         for button in (self.run_button, self.save_button):
             button.configure(state="normal" if enabled else "disabled")
 

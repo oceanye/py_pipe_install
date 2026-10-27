@@ -40,8 +40,10 @@ def test_acceptance_allows_relative_use_without_claiming_validated():
     owner = object.__new__(ElevationCaptureDialog)
     owner.current_calibration = lambda: calibration
     owner.calibration_status = Mock()
+    owner.calibration_details = Mock()
     owner.refresh_calibration_status()
     assert '暂用标定' in owner.calibration_status.set.call_args.args[0]
+    assert '1.996' in owner.calibration_details.set.call_args.args[0]
 
 
 @pytest.mark.parametrize('key,value', [
