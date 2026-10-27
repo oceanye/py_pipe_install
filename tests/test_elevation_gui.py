@@ -191,6 +191,40 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertGreater(self.dialog.run_button.winfo_rooty(), self.dialog.axial_button.winfo_rooty())
         self.assertGreater(self.dialog.run_button.winfo_rooty(), self.dialog.region_button.winfo_rooty())
 
+    def test_disable_conflicts_preserves_new_valid_zone_ground_and_roundtrips(self):
+        self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})
+        self.dialog.set_ground_region([10, 10, 100, 100])
+        for rect in ([10, 10, 100, 100], [20, 20, 100, 100], [350, 200, 200, 160]):
+            self.dialog.add_left_region(rect)
+        original = copy.deepcopy(self.dialog.registration_settings)
+        self.assertEqual(self.dialog.conflicting_assessment_zones(), ['Z01', 'Z02'])
+        self.assertEqual(self.dialog.region_conflict_button.winfo_manager(), 'pack')
+        self.dialog.region_conflict_button.invoke()
+        self.assertEqual(self.dialog.registration_settings, original)
+        self.assertEqual([(z['zone_id'], z['enabled']) for z in self.dialog.zone_settings['zones']],
+                         [('Z01', False), ('Z02', False), ('Z03', True)])
+        self.assertEqual(self.dialog.zone_settings['scope'], 'zones')
+        self.assertFalse(self.dialog.region_conflict_button.winfo_manager())
+        self.dialog.submit(False)
+        self.finish_worker()
+        saved = copy.deepcopy(self.dialog.zone_settings)
+        self.dialog.load_session(self.dialog.last_manifest)
+        self.assertEqual(self.dialog.zone_settings, saved)
+        self.assertIsNone(self.dialog.assessment_region_problem())
+
+    def test_disabling_all_conflicts_returns_to_full_frame_without_deleting_drafts(self):
+        self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})
+        self.dialog.add_left_region([10, 10, 100, 100])
+        self.dialog.busy = True
+        self.dialog.disable_conflicting_regions()
+        self.assertTrue(self.dialog.zone_settings['zones'][0]['enabled'])
+        self.dialog.busy = False
+        self.dialog.disable_conflicting_regions()
+        self.assertEqual(self.dialog.zone_settings['scope'], 'full_frame')
+        self.assertEqual(self.dialog.zone_settings['zones'][0]['roi_rect_px'], [10, 10, 100, 100])
+        self.assertFalse(self.dialog.zone_settings['zones'][0]['enabled'])
+        self.assertIsNone(self.dialog.assessment_region_problem())
+
     def test_save_reopen_and_repeat_save_without_json_editing(self):
         self.dialog.submit(False)
         self.finish_worker()

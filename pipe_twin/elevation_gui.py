@@ -934,6 +934,7 @@ class ElevationCaptureDialog:
         self.setup_summary = tk.StringVar()
         self.setup_label = ttk.Label(run_bar, textvariable=self.setup_summary, foreground='#355371')
         self.setup_label.pack(side='left', padx=8)
+        self.region_conflict_button = ttk.Button(run_bar, text='停用冲突区域', command=self.disable_conflicting_regions)
         self.window.bind("<Escape>", lambda _e: self.cancel_image_selections())
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
 
@@ -1481,7 +1482,7 @@ class ElevationCaptureDialog:
             self.message.set(f"评估区域最多 {MAX_ZONES} 个，请在“分区管理”中删除不需要的区域。")
             return
         self._set_region_selection(True)
-        self.message.set("绿框用于管道：跨过待测各管、保留完整管宽，并与橙色汇聚范围重叠。地面用独立紫框；不框管道区域时按全图分析。Esc 取消。")
+        self.message.set("本次框选会新增管道区域，不替换旧框。绿框需跨过待测管道并与橙色范围重叠；冲突旧框可用提示旁“停用冲突区域”处理。地面使用独立紫框。Esc 取消。")
 
     def add_left_region(self, rect: list[int]) -> None:
         """Add a group ROI through the existing persisted zone contract."""
@@ -1516,12 +1517,12 @@ class ElevationCaptureDialog:
         self._scope_selected()
         self.message.set('已清除管道评估框，恢复全图管道分析；橙色汇聚范围和紫色地面选区保留。')
 
-    def assessment_region_problem(self, scope_settings=None):
+    def conflicting_assessment_zones(self, scope_settings=None):
         """Detect empty pipe sampling without imposing an overlap on ground ROI."""
         settings = scope_settings if scope_settings is not None else self.zone_settings
         band = self.registration_settings.get('aggregation_band')
         if settings.get('scope') != 'zones' or not band:
-            return None
+            return []
         from .axial_selection import band_sampling_masks
         empty = []
         for zone in settings.get('zones', []):
@@ -1532,10 +1533,36 @@ class ElevationCaptureDialog:
                                           offsets={'left_x': x, 'left_y': y})
             if not masks['left'].any():
                 empty.append(zone['zone_id'])
+        return empty
+
+    def assessment_region_problem(self, scope_settings=None):
+        empty = self.conflicting_assessment_zones(scope_settings)
         if empty:
             return ('管道评估区 '+ '、'.join(empty) + ' 与橙色汇聚范围没有交集，无法提取管段。'
-                    '请把绿框移到待测管道上，或在“场景与诊断”恢复全图管道分析。地面请使用独立紫框。')
+                    '请点击提示旁“停用冲突区域”，保留其他有效区域；也可在“分区管理”调整。地面请使用独立紫框。')
         return None
+
+    def disable_conflicting_regions(self):
+        if self.busy:
+            return
+        conflicts = self.conflicting_assessment_zones()
+        if not conflicts:
+            return
+        settings = copy.deepcopy(self.zone_settings)
+        for zone in settings['zones']:
+            if zone['zone_id'] in conflicts:
+                zone['enabled'] = False
+        active = [z['zone_id'] for z in settings['zones'] if z['enabled']]
+        settings['scope'] = 'zones' if active else 'full_frame'
+        self.zone_settings = normalize_zone_settings(settings)
+        self.scope_label.set('分区分析' if active else '全幅自动')
+        self.invalidate()
+        self.redraw()
+        remaining = '继续使用 '+ '、'.join(active) if active else '恢复全图管道分析'
+        self.message.set('已停用 '+ '、'.join(conflicts)+'；'+remaining+
+                         '。橙色范围和地面选区保留，点击⑤保存并评估。旧框可在分区管理中恢复。')
+        log_event(LOGGER, 'elevation_conflicting_regions_disabled', disabled_zone_ids=conflicts,
+                  active_zone_ids=active, scope=settings['scope'])
 
     def open_zone_manager(self) -> None:
         if self.busy:
@@ -1605,6 +1632,9 @@ class ElevationCaptureDialog:
             problem = self.assessment_region_problem()
             if problem:
                 self.setup_summary.set('范围冲突：管道绿框与橙色汇聚范围无交集；请调整④')
+                self.region_conflict_button.pack(side='right', padx=3)
+            else:
+                self.region_conflict_button.pack_forget()
             self.setup_label.configure(foreground='#B23423' if problem else '#355371')
         for view in self.views.values():
             view.draw()

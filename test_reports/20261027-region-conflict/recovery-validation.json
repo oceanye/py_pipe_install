@@ -1,0 +1,130 @@
+{
+  "source": "outputs\\elevation_workbench\\captures\\elevation-20261027-170823-c8d2285a\\manifest.json",
+  "inspection": "outputs\\elevation_workbench\\ground_inspections\\tilt-20261027-174748-4f02e075\\inspection.json",
+  "new_manifest": "outputs\\region-conflict-recovery-20261027\\captures\\elevation-20261027-175505-a2a82c73\\manifest.json",
+  "recovered_pair_only": true,
+  "captured_at": "2026-10-27T17:46:42.296+08:00",
+  "zone_settings": {
+    "scope": "zones",
+    "zone_schema_version": 1,
+    "right_roi_padding_px": 128,
+    "zones": [
+      {
+        "zone_id": "Z01",
+        "label": "Z01",
+        "enabled": false,
+        "coordinate_space": "rectified_left",
+        "roi_rect_px": [
+          161,
+          86,
+          579,
+          245
+        ]
+      },
+      {
+        "zone_id": "Z02",
+        "label": "Z02",
+        "enabled": false,
+        "coordinate_space": "rectified_left",
+        "roi_rect_px": [
+          197,
+          35,
+          428,
+          245
+        ]
+      },
+      {
+        "zone_id": "Z03",
+        "label": "Z03",
+        "enabled": true,
+        "coordinate_space": "rectified_left",
+        "roi_rect_px": [
+          1112,
+          295,
+          439,
+          461
+        ]
+      }
+    ]
+  },
+  "registration_preserved": {
+    "axis_world": null,
+    "anchors": {},
+    "local_observation_mode": "auto",
+    "ground_candidate_trial": true,
+    "aggregation_band": {
+      "revision": "left-image-axial-band-v1",
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "axis_segment_px": [
+        [
+          1022.803738317757,
+          737.3831775700935
+        ],
+        [
+          1715.4392523364488,
+          644.0747663551402
+        ]
+      ]
+    },
+    "ground_region": {
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "rect_px": [
+        1001,
+        62,
+        597,
+        188
+      ]
+    }
+  },
+  "layout_with_repair_button": {
+    "buttons": [
+      "① 导入 STL/DXF",
+      "② 标定 ▾",
+      "打开现场",
+      "设置…",
+      "场景与诊断 ▾",
+      "③ 双目抓拍",
+      "现场模型 / 编号 / 方向",
+      "管长方向 / 汇聚范围",
+      "管道评估区域（可选）",
+      "地面选区 / 倾角…",
+      "⑤ 保存并评估",
+      "停用冲突区域",
+      "查看详情 / 诊断"
+    ],
+    "button_count": 13,
+    "clipped_controls": []
+  },
+  "counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "sections": [
+    {
+      "zone_id": "Z03",
+      "count": 2,
+      "status": "ANALYZED"
+    }
+  ],
+  "source_hashes_unchanged": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261027-170823-c8d2285a\\manifest.json": "ba0b90038bec64a5cd32002fbb03658436000c741b39101043aba3ded04a60c4",
+    "outputs\\elevation_workbench\\captures\\elevation-20261027-170823-c8d2285a\\report.json": "82f72af798a21ddafc1b0ad7a6474bc8b6b5aea3ea457c085715b9f492f7c5e1",
+    "outputs\\elevation_workbench\\ground_inspections\\tilt-20261027-174748-4f02e075\\inspection.json": "008e6997f6087a9013de4be18fcc830ef42c229418a6d109965c1e8cce3308be",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  },
+  "default_resume_updated": true
+}
