@@ -191,39 +191,96 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertGreater(self.dialog.run_button.winfo_rooty(), self.dialog.axial_button.winfo_rooty())
         self.assertGreater(self.dialog.run_button.winfo_rooty(), self.dialog.region_button.winfo_rooty())
 
-    def test_disable_conflicts_preserves_new_valid_zone_ground_and_roundtrips(self):
+    def test_redraw_replaces_old_region_preserves_ground_band_and_saved_history(self):
         self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})
         self.dialog.set_ground_region([10, 10, 100, 100])
-        for rect in ([10, 10, 100, 100], [20, 20, 100, 100], [350, 200, 200, 160]):
-            self.dialog.add_left_region(rect)
+        self.dialog.zone_settings['right_roi_padding_px'] = 80
+        self.dialog.add_left_region([10, 10, 100, 100])
+        self.dialog.submit(False)
+        self.finish_worker()
+        old_path = self.dialog.last_manifest
+        old_bytes = old_path.read_bytes()
         original = copy.deepcopy(self.dialog.registration_settings)
-        self.assertEqual(self.dialog.conflicting_assessment_zones(), ['Z01', 'Z02'])
         self.assertEqual(self.dialog.region_conflict_button.winfo_manager(), 'pack')
         self.dialog.region_conflict_button.invoke()
+        self.assertTrue(self.dialog.region_selection_active)
+        self.dialog.report = {'old': True}
+        view = self.dialog.views['left']
+        view.transform = (1., 0., 0.)
+        view.start_region(SimpleNamespace(x=350, y=200))
+        view.finish_region(SimpleNamespace(x=550, y=360))
+        self.assertIsNone(self.dialog.report)
         self.assertEqual(self.dialog.registration_settings, original)
-        self.assertEqual([(z['zone_id'], z['enabled']) for z in self.dialog.zone_settings['zones']],
-                         [('Z01', False), ('Z02', False), ('Z03', True)])
-        self.assertEqual(self.dialog.zone_settings['scope'], 'zones')
+        self.assertEqual(len(self.dialog.zone_settings['zones']), 1)
+        self.assertEqual(self.dialog.zone_settings['zones'][0]['roi_rect_px'], [350, 200, 200, 160])
+        self.assertEqual(self.dialog.zone_settings['right_roi_padding_px'], 80)
         self.assertFalse(self.dialog.region_conflict_button.winfo_manager())
         self.dialog.submit(False)
         self.finish_worker()
         saved = copy.deepcopy(self.dialog.zone_settings)
+        self.assertNotEqual(self.dialog.last_manifest, old_path)
         self.dialog.load_session(self.dialog.last_manifest)
         self.assertEqual(self.dialog.zone_settings, saved)
         self.assertIsNone(self.dialog.assessment_region_problem())
+        self.assertEqual(old_path.read_bytes(), old_bytes)
+        self.app.messagebox.showerror.assert_not_called()
 
-    def test_disabling_all_conflicts_returns_to_full_frame_without_deleting_drafts(self):
-        self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})
-        self.dialog.add_left_region([10, 10, 100, 100])
-        self.dialog.busy = True
-        self.dialog.disable_conflicting_regions()
-        self.assertTrue(self.dialog.zone_settings['zones'][0]['enabled'])
-        self.dialog.busy = False
-        self.dialog.disable_conflicting_regions()
-        self.assertEqual(self.dialog.zone_settings['scope'], 'full_frame')
-        self.assertEqual(self.dialog.zone_settings['zones'][0]['roi_rect_px'], [10, 10, 100, 100])
-        self.assertFalse(self.dialog.zone_settings['zones'][0]['enabled'])
-        self.assertIsNone(self.dialog.assessment_region_problem())
+    def test_legacy_regions_restore_without_accumulation_or_modifying_source(self):
+        self.dialog.add_left_region([350, 200, 200, 160])
+        self.dialog.submit(False)
+        self.finish_worker()
+        path = self.dialog.last_manifest
+        payload = json.loads(path.read_text(encoding='utf-8'))
+        scope = payload['analysis']['elevation_auto']
+        scope['zones'] = [
+            {'zone_id': 'Z01', 'enabled': False, 'roi_rect_px': [10, 10, 100, 100]},
+            {'zone_id': 'Z02', 'enabled': False, 'roi_rect_px': [20, 20, 100, 100]},
+            {'zone_id': 'Z03', 'enabled': True, 'roi_rect_px': [350, 200, 200, 160]}]
+        for active_count in (1, 2, 0):
+            with self.subTest(active_count=active_count):
+                scope['scope'] = 'zones' if active_count else 'full_frame'
+                scope['zones'][0]['enabled'] = active_count == 2
+                scope['zones'][2]['enabled'] = active_count > 0
+                path.write_text(json.dumps(payload), encoding='utf-8')
+                original = path.read_bytes()
+                self.dialog.load_session(path)
+                self.assertEqual(path.read_bytes(), original)
+                self.assertIsNone(self.dialog.report)
+                if active_count == 1:
+                    self.assertEqual([z['zone_id'] for z in self.dialog.zone_settings['zones']], ['Z03'])
+                    self.assertIn('沿用历史', self.dialog.message.get())
+                else:
+                    self.assertEqual(self.dialog.zone_settings['zones'], [])
+                    self.assertEqual(self.dialog.zone_settings['scope'], 'full_frame')
+                    self.assertIn('恢复全图', self.dialog.message.get())
+        self.app.messagebox.showerror.assert_not_called()
+
+    def test_cancel_or_invalid_replacement_keeps_current_region_and_result(self):
+        self.dialog.add_left_region([350, 200, 200, 160])
+        self.dialog.report = {'old': True}
+        original = copy.deepcopy(self.dialog.zone_settings)
+        self.dialog.toggle_region_selection()
+        view = self.dialog.views['left']
+        view.transform = (1., 0., 0.)
+        view.start_region(SimpleNamespace(x=80, y=80))
+        view.finish_region(SimpleNamespace(x=90, y=90))
+        self.assertTrue(self.dialog.region_selection_active)
+        self.dialog.cancel_image_selections()
+        self.dialog.add_left_region([600, 400, 200, 200])
+        self.assertEqual(self.dialog.zone_settings, original)
+        self.assertEqual(self.dialog.report, {'old': True})
+        self.assertFalse(self.dialog.region_selection_active)
+
+    def test_unmigrated_multiple_regions_cannot_be_saved_or_evaluated(self):
+        self.dialog.add_left_region([20, 20, 80, 80])
+        self.dialog.zone_settings['zones'].append({
+            'zone_id': 'Z02', 'enabled': True, 'roi_rect_px': [200, 200, 80, 80]})
+        for analyze in (False, True):
+            with mock.patch.object(self.dialog, '_worker') as worker:
+                self.dialog.submit(analyze)
+            worker.assert_not_called()
+            self.assertIsNone(self.dialog.last_manifest)
+            self.assertIn('一个管段', self.app.messagebox.showerror.call_args.args[1])
 
     def test_save_reopen_and_repeat_save_without_json_editing(self):
         self.dialog.submit(False)
@@ -436,7 +493,7 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertTrue(view.canvas.find_withtag("pending-zone"))
         view.finish_region(SimpleNamespace(x=30, y=50))
         self.assertEqual(self.dialog.zone_settings["zones"][0]["roi_rect_px"], [10, 20, 90, 40])
-        self.assertEqual(self.dialog.scope_label.get(), "分区分析")
+        self.assertEqual(self.dialog.scope_label.get(), "单一区域")
         self.assertFalse(self.dialog.region_selection_active)
         self.assertIsNone(self.dialog.report)
         self.assertFalse(self.dialog.results)
@@ -483,20 +540,17 @@ class ElevationGuiTests(unittest.TestCase):
         finally:
             self.dialog.busy = False
 
-    def test_left_regions_append_with_unique_ids_and_respect_limit_and_full_frame(self):
-        for _ in range(8):
-            self.dialog.add_left_region([20, 20, 80, 80])
-        self.assertEqual([z["zone_id"] for z in self.dialog.zone_settings["zones"]],
-                         [f"Z{i:02d}" for i in range(1, 9)])
-        self.dialog.add_left_region([30, 30, 80, 80])
-        self.assertEqual(len(self.dialog.zone_settings["zones"]), 8)
+    def test_repeated_regions_replace_without_limit_and_clear_to_full_frame(self):
+        for x in range(20, 32):
+            self.dialog.add_left_region([x, 20, 80, 80])
+            self.assertEqual(len(self.dialog.zone_settings['zones']), 1)
+            self.assertEqual(self.dialog.zone_settings['zones'][0]['roi_rect_px'], [x, 20, 80, 80])
         self.dialog.toggle_region_selection()
+        self.assertTrue(self.dialog.region_selection_active)
+        self.dialog.clear_assessment_regions()
+        self.assertFalse(self.dialog.zone_settings['zones'])
         self.assertFalse(self.dialog.region_selection_active)
-        self.assertIn("最多", self.dialog.message.get())
-        self.dialog.scope_label.set("全幅自动")
-        self.dialog._scope_selected()
-        self.assertFalse(self.dialog.zone_settings["zones"])
-        self.assertFalse(self.dialog.views["left"].canvas.find_withtag("assessment-zone"))
+        self.assertFalse(self.dialog.views['left'].canvas.find_withtag('assessment-zone'))
 
     def test_new_photo_or_input_change_cancels_pending_drag(self):
         view = self.dialog.views["left"]

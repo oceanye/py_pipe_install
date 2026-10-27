@@ -1,0 +1,107 @@
+{
+  "source": "outputs\\region-conflict-recovery-20261027\\captures\\elevation-20261027-175505-a2a82c73\\manifest.json",
+  "new_manifest": "outputs\\single-region-20261028\\captures\\elevation-20261028-025336-3820630f\\manifest.json",
+  "zone_settings": {
+    "scope": "zones",
+    "zone_schema_version": 1,
+    "right_roi_padding_px": 128,
+    "zones": [
+      {
+        "zone_id": "Z03",
+        "label": "Z03",
+        "enabled": true,
+        "coordinate_space": "rectified_left",
+        "roi_rect_px": [
+          1112,
+          295,
+          439,
+          461
+        ]
+      }
+    ]
+  },
+  "layouts": {
+    "main": {
+      "buttons": [
+        "① 导入 STL/DXF",
+        "② 标定 ▾",
+        "打开现场",
+        "设置…",
+        "场景与诊断 ▾",
+        "③ 双目抓拍",
+        "现场模型 / 编号 / 方向",
+        "管长方向 / 汇聚范围",
+        "管道评估区域（可选）",
+        "地面选区 / 倾角…",
+        "⑤ 保存并评估",
+        "查看详情 / 诊断"
+      ],
+      "button_count": 12,
+      "clipped_controls": []
+    },
+    "model_settings": {
+      "buttons": [
+        "清除当前区域（恢复全图）"
+      ],
+      "button_count": 1,
+      "clipped_controls": []
+    }
+  },
+  "captured_at": "2026-10-27T17:46:42.296+08:00",
+  "replayed_pair_only": true,
+  "unchanged_result_fields": [
+    "counts",
+    "section_evaluations",
+    "ground_check",
+    "position_assessment"
+  ],
+  "registration_preserved": {
+    "axis_world": null,
+    "anchors": {},
+    "local_observation_mode": "auto",
+    "ground_candidate_trial": true,
+    "aggregation_band": {
+      "revision": "left-image-axial-band-v1",
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "axis_segment_px": [
+        [
+          1022.803738317757,
+          737.3831775700935
+        ],
+        [
+          1715.4392523364488,
+          644.0747663551402
+        ]
+      ]
+    },
+    "ground_region": {
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "rect_px": [
+        1001,
+        62,
+        597,
+        188
+      ]
+    }
+  },
+  "counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "conditional_section_count": 2,
+  "source_hashes_unchanged": {
+    "outputs\\region-conflict-recovery-20261027\\captures\\elevation-20261027-175505-a2a82c73\\manifest.json": "a17674621c77ae62a8d0073b5a4f28dfb4f2b8b23233bc73b50c3dd5048eac39",
+    "outputs\\region-conflict-recovery-20261027\\captures\\elevation-20261027-175505-a2a82c73\\report.json": "de844fef72949eb161026bca1dd7fb28d7f47b1b0aa3b62ce381c0df4974bb85",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  },
+  "default_resume_updated": true
+}

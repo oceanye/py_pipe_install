@@ -424,7 +424,7 @@ class RegionCanvas:
                                         ox + (x + bw) * scale, oy + (y + bh) * scale,
                                         outline="#67E8A5", width=2, dash=(7, 3), tags="assessment-zone")
                 canvas.create_text(ox + x * scale + 4, oy + y * scale + 4,
-                                   anchor="nw", text=f"{zone['zone_id']} · 管道评估范围", fill="#67E8A5",
+                                   anchor="nw", text="当前管段评估范围", fill="#67E8A5",
                                    tags="assessment-zone")
         if self.band_controller:
             self.band_controller.draw()
@@ -934,7 +934,7 @@ class ElevationCaptureDialog:
         self.setup_summary = tk.StringVar()
         self.setup_label = ttk.Label(run_bar, textvariable=self.setup_summary, foreground='#355371')
         self.setup_label.pack(side='left', padx=8)
-        self.region_conflict_button = ttk.Button(run_bar, text='停用冲突区域', command=self.disable_conflicting_regions)
+        self.region_conflict_button = ttk.Button(run_bar, text='重画当前区域', command=self.toggle_region_selection)
         self.window.bind("<Escape>", lambda _e: self.cancel_image_selections())
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
 
@@ -970,13 +970,9 @@ class ElevationCaptureDialog:
         self.local_observation_box.bind("<<ComboboxSelected>>", lambda _e: self._local_observation_selected())
         scope_bar = ttk.Frame(model_page); scope_bar.pack(fill='x', pady=5)
         ttk.Label(scope_bar, text="分析范围").pack(side="left")
-        self.scope_box = ttk.Combobox(scope_bar, textvariable=self.scope_label,
-                                      values=("全幅自动", "分区分析"), state="readonly", width=12)
-        self.scope_box.pack(side="left")
-        self.scope_box.bind("<<ComboboxSelected>>", lambda _e: self._scope_selected())
-        self.zone_button = ttk.Button(scope_bar, text="分区管理", command=self.open_zone_manager)
-        self.zone_button.pack(side="left", padx=3)
-        ttk.Label(model_page, text='管道评估区（绿框）框住待测管道，可不设置。它与橙色汇聚范围取交集；地面紫框独立。',
+        ttk.Label(scope_bar, textvariable=self.scope_label).pack(side="left", padx=8)
+        ttk.Button(scope_bar, text="清除当前区域（恢复全图）", command=self.clear_assessment_regions).pack(side="left", padx=3)
+        ttk.Label(model_page, text='只保留一个当前管段评估区域（绿框），可包含多根管道；重画替换旧框，不累加。\n绿框可不设，与橙色汇聚范围取交集；地面用独立紫框。',
                   wraplength=780, foreground='#355371').pack(anchor='w', pady=4)
         ground_page = self.settings_pages['ground']
         ttk.Label(ground_page, text='地面选区（紫框）只估计相机相对地面的倾角，可在管道评估区之外。\n先抓拍，再框裸露地面并检查；⑤保存并评估会按当前规则重算管轴和断面。', wraplength=780).pack(anchor='w', pady=8)
@@ -1224,17 +1220,6 @@ class ElevationCaptureDialog:
             self.refresh_table()
             self.message.set("模型单位已改变，请重新导入 STL 或 DXF")
 
-    def _scope_selected(self) -> None:
-        if self.scope_label.get() == "分区分析":
-            if not self.zone_settings.get("zones"):
-                self.message.set("分区分析需要至少一个区域；点击“左图框选区域”，在左图拖框。")
-            self.zone_settings["scope"] = "zones"
-        else:
-            self.zone_settings = normalize_zone_settings()
-            self.message.set("已切换为全幅自动分析；分区配置已停用。")
-        self.invalidate()
-        self.redraw()
-
     def _set_region_selection(self, active: bool, *, target='assessment') -> None:
         if active:
             self._set_axial_selection(False)
@@ -1478,25 +1463,16 @@ class ElevationCaptureDialog:
         if self.views["left"].image is None:
             self.message.set("请先双目抓拍或导入左目矫正图，再框选评估区域。")
             return
-        if len(self.zone_settings.get("zones", [])) >= MAX_ZONES:
-            self.message.set(f"评估区域最多 {MAX_ZONES} 个，请在“分区管理”中删除不需要的区域。")
-            return
         self._set_region_selection(True)
-        self.message.set("本次框选会新增管道区域，不替换旧框。绿框需跨过待测管道并与橙色范围重叠；冲突旧框可用提示旁“停用冲突区域”处理。地面使用独立紫框。Esc 取消。")
+        self.message.set("重画将替换当前绿框，只保留一个管段评估区域，可包含多根管道。需与橙色汇聚范围重叠；地面使用独立紫框。Esc 取消并保留原框。")
 
     def add_left_region(self, rect: list[int]) -> None:
-        """Add a group ROI through the existing persisted zone contract."""
+        """Replace the single current ROI, retaining the persisted zone schema."""
         image = self.views["left"].image
         if self.busy or image is None:
             return
-        zones = copy.deepcopy(self.zone_settings.get("zones", []))
-        used = {zone["zone_id"] for zone in zones}
-        index = 1
-        while f"Z{index:02d}" in used:
-            index += 1
-        zone_id = f"Z{index:02d}"
-        zones.append({"zone_id": zone_id, "label": zone_id, "enabled": True,
-                      "coordinate_space": "rectified_left", "roi_rect_px": list(rect)})
+        zones = [{"zone_id": "Z01", "label": "当前管段", "enabled": True,
+                  "coordinate_space": "rectified_left", "roi_rect_px": list(rect)}]
         try:
             settings = normalize_zone_settings({**self.zone_settings, "scope": "zones", "zones": zones},
                                                image_size=(image.shape[1], image.shape[0]))
@@ -1504,17 +1480,19 @@ class ElevationCaptureDialog:
             self.message.set(str(error))
             return
         self.zone_settings = settings
-        self.scope_label.set("分区分析")
+        self.scope_label.set("单一区域")
         self.invalidate()
         self.redraw()
-        log_event(LOGGER, "elevation_left_region_added", zone_id=zone_id, roi_rect_px=rect)
-        self.message.set(f"已加入 {zone_id}，切换为分区分析。点击⑤保存并评估；修改或删除请用“分区管理”。")
+        log_event(LOGGER, "elevation_left_region_replaced", zone_id="Z01", roi_rect_px=rect)
+        self.message.set("已设置当前管段评估区域，旧框已替换。橙色范围、地面选区保留；点击⑤保存并评估。")
 
     def clear_assessment_regions(self):
         if self.busy:
             return
+        self.zone_settings = normalize_zone_settings({**self.zone_settings, 'scope': 'full_frame', 'zones': []})
         self.scope_label.set('全幅自动')
-        self._scope_selected()
+        self.invalidate()
+        self.redraw()
         self.message.set('已清除管道评估框，恢复全图管道分析；橙色汇聚范围和紫色地面选区保留。')
 
     def conflicting_assessment_zones(self, scope_settings=None):
@@ -1539,47 +1517,26 @@ class ElevationCaptureDialog:
         empty = self.conflicting_assessment_zones(scope_settings)
         if empty:
             return ('管道评估区 '+ '、'.join(empty) + ' 与橙色汇聚范围没有交集，无法提取管段。'
-                    '请点击提示旁“停用冲突区域”，保留其他有效区域；也可在“分区管理”调整。地面请使用独立紫框。')
+                    '请点击“重画当前区域”替换绿框，或清除当前区域恢复全图。地面请使用独立紫框。')
         return None
-
-    def disable_conflicting_regions(self):
-        if self.busy:
-            return
-        conflicts = self.conflicting_assessment_zones()
-        if not conflicts:
-            return
-        settings = copy.deepcopy(self.zone_settings)
-        for zone in settings['zones']:
-            if zone['zone_id'] in conflicts:
-                zone['enabled'] = False
-        active = [z['zone_id'] for z in settings['zones'] if z['enabled']]
-        settings['scope'] = 'zones' if active else 'full_frame'
-        self.zone_settings = normalize_zone_settings(settings)
-        self.scope_label.set('分区分析' if active else '全幅自动')
-        self.invalidate()
-        self.redraw()
-        remaining = '继续使用 '+ '、'.join(active) if active else '恢复全图管道分析'
-        self.message.set('已停用 '+ '、'.join(conflicts)+'；'+remaining+
-                         '。橙色范围和地面选区保留，点击⑤保存并评估。旧框可在分区管理中恢复。')
-        log_event(LOGGER, 'elevation_conflicting_regions_disabled', disabled_zone_ids=conflicts,
-                  active_zone_ids=active, scope=settings['scope'])
-
-    def open_zone_manager(self) -> None:
-        if self.busy:
-            return
-        self._set_region_selection(False)
-        try:
-            if self.views["left"].image is None:
-                raise ValueError("请先载入左目矫正图，再配置分区")
-            ZoneEditorDialog(self)
-        except (OSError, ValueError) as error:
-            self.show_error(error)
 
     def _restore_zone_settings(self, payload: Mapping[str, Any] | None) -> None:
         image = self.views["left"].image
         size = (image.shape[1], image.shape[0]) if image is not None else None
-        self.zone_settings = normalize_zone_settings(payload, image_size=size)
-        self.scope_label.set("分区分析" if self.zone_settings["scope"] == "zones"
+        settings = normalize_zone_settings(payload, image_size=size)
+        active = [z for z in settings['zones'] if z['enabled']] if settings['scope'] == 'zones' else []
+        self.region_restore_note = ''
+        if len(active) == 1:
+            settings['zones'] = active
+            self.region_restore_note = '已沿用历史现场的一个有效区域，重画即可替换；其他旧框不载入当前操作。'
+        else:
+            settings.update(scope='full_frame', zones=[])
+            if len(active) > 1:
+                self.region_restore_note = '历史现场含多个有效区域，本次不叠加，已恢复全图；请在④重新画一个当前区域。'
+            elif payload and payload.get('zones'):
+                self.region_restore_note = '历史停用区域不载入当前操作，已恢复全图。'
+        self.zone_settings = settings
+        self.scope_label.set("单一区域" if self.zone_settings["scope"] == "zones"
                              else "全幅自动")
 
     def _matching_settings_from_controls(self) -> dict[str, Any]:
@@ -2261,7 +2218,7 @@ class ElevationCaptureDialog:
         self.refresh_table()
         self.refresh_calibration_status()
         self.summary.set(f"已恢复 {len(self.pipes)} 根管；自动匹配会重新生成照片区域")
-        self.message.set(f"已打开 {path}。可直接重新分析，自动匹配 {self.model_kind.upper() or '模型'}。")
+        self.message.set(f"已打开 {path}。{self.region_restore_note}自动匹配 {self.model_kind.upper() or '模型'}。")
 
     def submit(self, analyze: bool) -> None:
         if self.busy:
@@ -2301,6 +2258,8 @@ class ElevationCaptureDialog:
                 raise ValueError("视差搜索范围必须小于每目图像宽度")
             scope_settings = normalize_zone_settings(
                 self.zone_settings, image_size=(left.shape[1], left.shape[0]))
+            if len(scope_settings['zones']) > 1:
+                raise ValueError('当前界面仅使用一个管段评估区域，请重新框选或清除当前区域。')
             if analyze and (problem := self.assessment_region_problem(scope_settings)):
                 raise ValueError(problem)
             arguments = dict(output_root=self.output_root / "captures", calibration=calibration,
