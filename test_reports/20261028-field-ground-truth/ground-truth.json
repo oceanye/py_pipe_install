@@ -1,0 +1,372 @@
+{
+  "schema_version": 1,
+  "record_type": "USER_CONFIRMED_FIELD_INSTALLATION_REFERENCE",
+  "recorded_at": "2026-10-28T10:36:14.214888+08:00",
+  "user_statement": "我给你结论：P004， P008，P011,P009 四根安装了",
+  "source": "USER_STATEMENT_IN_CONVERSATION",
+  "confirmed_installed_pipe_ids": [
+    "P004",
+    "P008",
+    "P011",
+    "P009"
+  ],
+  "unlisted_pipe_status": "NOT_ASSERTED",
+  "metric_accuracy_or_relative_position_acceptance": "NOT_ASSERTED",
+  "algorithm_inference_used_labels": false,
+  "scene_manifest": "outputs\\elevation_workbench\\captures\\elevation-20261028-093854-42d303f4\\manifest.json",
+  "captured_at": "2026-10-28T09:37:38.959+08:00",
+  "model_sha256": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+  "model_pipe_reference": [
+    {
+      "pipe_id": "P004",
+      "cad_object_id": "stl-87766d775655f2235777",
+      "nominal_diameter_mm": 51.000073,
+      "centerline_world_mm": [
+        [
+          2172.11083984375,
+          1937.4565124511719,
+          9.99999883788405e-07
+        ],
+        [
+          2172.11083984375,
+          1937.4565124511719,
+          683.0776367187501
+        ]
+      ]
+    },
+    {
+      "pipe_id": "P008",
+      "cad_object_id": "stl-f44abbc04a35c2405703",
+      "nominal_diameter_mm": 41.000017,
+      "centerline_world_mm": [
+        [
+          2262.1108194986978,
+          1937.4565124511719,
+          9.999999974752427e-07
+        ],
+        [
+          2262.1108194986978,
+          1937.4565124511719,
+          683.07763671875
+        ]
+      ]
+    },
+    {
+      "pipe_id": "P011",
+      "cad_object_id": "stl-2677c1db4ee18896a527",
+      "nominal_diameter_mm": 41.000017,
+      "centerline_world_mm": [
+        [
+          2352.1108194986978,
+          1797.4565124511719,
+          9.999999974752427e-07
+        ],
+        [
+          2352.1108194986978,
+          1797.4565124511719,
+          683.07763671875
+        ]
+      ]
+    },
+    {
+      "pipe_id": "P009",
+      "cad_object_id": "stl-17298b8d5bb5744b1658",
+      "nominal_diameter_mm": 26.000124,
+      "centerline_world_mm": [
+        [
+          2262.11083984375,
+          1657.4565124511719,
+          9.999999974752427e-07
+        ],
+        [
+          2262.11083984375,
+          1657.4565124511719,
+          683.07763671875
+        ]
+      ]
+    }
+  ],
+  "model_cross_section_pairs": [
+    {
+      "pipe_ids": [
+        "P004",
+        "P008"
+      ],
+      "model_cross_section_center_distance_mm": 89.99997965494777,
+      "model_surface_clearance_mm": 43.999934654947765
+    },
+    {
+      "pipe_ids": [
+        "P004",
+        "P011"
+      ],
+      "model_cross_section_center_distance_mm": 228.03506896041586,
+      "model_surface_clearance_mm": 182.03502396041586
+    },
+    {
+      "pipe_ids": [
+        "P004",
+        "P009"
+      ],
+      "model_cross_section_center_distance_mm": 294.10882339705483,
+      "model_surface_clearance_mm": 255.60872489705483
+    },
+    {
+      "pipe_ids": [
+        "P008",
+        "P011"
+      ],
+      "model_cross_section_center_distance_mm": 166.43316977093238,
+      "model_surface_clearance_mm": 125.43315277093238
+    },
+    {
+      "pipe_ids": [
+        "P008",
+        "P009"
+      ],
+      "model_cross_section_center_distance_mm": 280.00000000000074,
+      "model_surface_clearance_mm": 246.49992950000075
+    },
+    {
+      "pipe_ids": [
+        "P011",
+        "P009"
+      ],
+      "model_cross_section_center_distance_mm": 166.4331587691918,
+      "model_surface_clearance_mm": 132.9330882691918
+    }
+  ],
+  "automatic_result_at_confirmation": {
+    "installation_counts": {
+      "INSTALLED": 0,
+      "NOT_INSTALLED": 0,
+      "UNKNOWN": 12
+    },
+    "solver_candidates": [
+      {
+        "label": "S1",
+        "candidate_id": "POOL-L20-POOL-R01",
+        "pipe_id": null,
+        "values": [
+          "左 2 / 右 2",
+          "41.78（估）",
+          "无有效连拍",
+          "连拍未通过",
+          "未复核",
+          "待对应",
+          "倾角试验未应用 · 断面已解（条件估计）"
+        ]
+      },
+      {
+        "label": "S2",
+        "candidate_id": "POOL-L21-POOL-R03",
+        "pipe_id": null,
+        "values": [
+          "左 2 / 右 2",
+          "39.92（估）",
+          "无有效连拍",
+          "连拍未通过",
+          "未复核",
+          "待对应",
+          "倾角试验未应用 · 断面已解（条件估计）"
+        ]
+      },
+      {
+        "label": "S3",
+        "candidate_id": "POOL-L23-POOL-R05",
+        "pipe_id": null,
+        "values": [
+          "左 2 / 右 2",
+          "41.25（估）",
+          "无有效连拍",
+          "连拍未通过",
+          "未复核",
+          "待对应",
+          "倾角试验未应用 · 断面已解（条件估计）"
+        ]
+      },
+      {
+        "label": "C4",
+        "candidate_id": "POOL-L22",
+        "pipe_id": null,
+        "values": [
+          "左 2 / 右 0",
+          "未解出",
+          "无有效连拍",
+          "连拍未通过",
+          "未复核",
+          "待对应",
+          "倾角试验未应用 · 断面未解"
+        ]
+      }
+    ],
+    "scene_sections": [
+      {
+        "zone_id": "全幅",
+        "items": [
+          {
+            "label": "S1",
+            "id": "POOL-L20-POOL-R01",
+            "diameter_mm": 41.776299197029545,
+            "center_uv_mm": [
+              0.0,
+              0.0
+            ],
+            "pipe_id": null
+          },
+          {
+            "label": "S2",
+            "id": "POOL-L21-POOL-R03",
+            "diameter_mm": 39.924905001592016,
+            "center_uv_mm": [
+              60.91635469788988,
+              -577.6100988965318
+            ],
+            "pipe_id": null
+          },
+          {
+            "label": "S3",
+            "id": "POOL-L23-POOL-R05",
+            "diameter_mm": 41.253128692884964,
+            "center_uv_mm": [
+              135.6861258038536,
+              -909.7648984653563
+            ],
+            "pipe_id": null
+          }
+        ],
+        "pairs": [
+          {
+            "ids": [
+              "POOL-L20-POOL-R01",
+              "POOL-L21-POOL-R03"
+            ],
+            "delta_uv_mm": [
+              60.91635469788988,
+              -577.6100988965318
+            ],
+            "center_distance_mm": 580.8134197975633,
+            "surface_clearance_mm": 539.9628176982525,
+            "status": "CONDITIONAL_ESTIMATE",
+            "accepted_measurement": false,
+            "pixel_error": {
+              "status": "CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumes_independent_candidate_edge_errors": true,
+              "excluded": [
+                "SHARED_CALIBRATION_AND_AXIS_ERRORS",
+                "EDGE_MISIDENTIFICATION",
+                "CROSS_CANDIDATE_CORRELATION",
+                "SUPPLIED_DIAMETER_TOLERANCE"
+              ],
+              "scenarios": {
+                "COHERENT_EDGE_OFFSETS": {
+                  "center_distance_sigma_mm": 321.4172485163071,
+                  "center_distance_normal_95_halfwidth_mm": 629.977807091962,
+                  "surface_clearance_sigma_mm": 320.4376722093921,
+                  "surface_clearance_normal_95_halfwidth_mm": 628.0578375304085
+                },
+                "IID_PIXELS_OPTIMISTIC": {
+                  "center_distance_sigma_mm": 28.408874676025356,
+                  "center_distance_normal_95_halfwidth_mm": 55.681394365009695,
+                  "surface_clearance_sigma_mm": 28.32229555393013,
+                  "surface_clearance_normal_95_halfwidth_mm": 55.51169928570305
+                }
+              }
+            }
+          },
+          {
+            "ids": [
+              "POOL-L20-POOL-R01",
+              "POOL-L23-POOL-R05"
+            ],
+            "delta_uv_mm": [
+              135.6861258038536,
+              -909.7648984653563
+            ],
+            "center_distance_mm": 919.8276442982888,
+            "surface_clearance_mm": 878.3129303533315,
+            "status": "CONDITIONAL_ESTIMATE",
+            "accepted_measurement": false,
+            "pixel_error": {
+              "status": "CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumes_independent_candidate_edge_errors": true,
+              "excluded": [
+                "SHARED_CALIBRATION_AND_AXIS_ERRORS",
+                "EDGE_MISIDENTIFICATION",
+                "CROSS_CANDIDATE_CORRELATION",
+                "SUPPLIED_DIAMETER_TOLERANCE"
+              ],
+              "scenarios": {
+                "COHERENT_EDGE_OFFSETS": {
+                  "center_distance_sigma_mm": 297.79968678829414,
+                  "center_distance_normal_95_halfwidth_mm": 583.6873861050565,
+                  "surface_clearance_sigma_mm": 296.4079266610173,
+                  "surface_clearance_normal_95_halfwidth_mm": 580.9595362555939
+                },
+                "IID_PIXELS_OPTIMISTIC": {
+                  "center_distance_sigma_mm": 26.32139369770343,
+                  "center_distance_normal_95_halfwidth_mm": 51.58993164749872,
+                  "surface_clearance_sigma_mm": 26.198383257534005,
+                  "surface_clearance_normal_95_halfwidth_mm": 51.348831184766645
+                }
+              }
+            }
+          },
+          {
+            "ids": [
+              "POOL-L21-POOL-R03",
+              "POOL-L23-POOL-R05"
+            ],
+            "delta_uv_mm": [
+              74.7697711059637,
+              -332.1547995688245
+            ],
+            "center_distance_mm": 340.46634128477984,
+            "surface_clearance_mm": 299.87732443754135,
+            "status": "CONDITIONAL_ESTIMATE",
+            "accepted_measurement": false,
+            "pixel_error": {
+              "status": "CONDITIONAL_LINEAR_PROPAGATION",
+              "total_accuracy_known": false,
+              "assumes_independent_candidate_edge_errors": true,
+              "excluded": [
+                "SHARED_CALIBRATION_AND_AXIS_ERRORS",
+                "EDGE_MISIDENTIFICATION",
+                "CROSS_CANDIDATE_CORRELATION",
+                "SUPPLIED_DIAMETER_TOLERANCE"
+              ],
+              "scenarios": {
+                "COHERENT_EDGE_OFFSETS": {
+                  "center_distance_sigma_mm": 203.40083454925121,
+                  "center_distance_normal_95_halfwidth_mm": 398.6656357165324,
+                  "surface_clearance_sigma_mm": 202.92463945529695,
+                  "surface_clearance_normal_95_halfwidth_mm": 397.732293332382
+                },
+                "IID_PIXELS_OPTIMISTIC": {
+                  "center_distance_sigma_mm": 17.978012941491283,
+                  "center_distance_normal_95_halfwidth_mm": 35.23690536532291,
+                  "surface_clearance_sigma_mm": 17.935924233738778,
+                  "surface_clearance_normal_95_halfwidth_mm": 35.154411498128006
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "confirmed_ids_automatically_matched": []
+  },
+  "source_hashes_unchanged": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261028-093854-42d303f4\\manifest.json": "dc0d99e24397cab387d17e8b0546f30849f6f51d9182da61bb52eaa005c54775",
+    "outputs\\elevation_workbench\\captures\\elevation-20261028-093854-42d303f4\\report.json": "ad2a425c4db94597f7574d02505143b6c1222cd61881bb626d5a354eb3242c8b",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  },
+  "notes": [
+    "人工确认用作独立验算参照；未写入原分析报告或用来强制自动配准。",
+    "S 编号为现场候选，P 编号为当前哈希绑定的模型管位；目前尚未建立唯一对应。",
+    "模型尺寸与管间心距为 CAD 参考值，不是相机实测值。",
+    "模型颜色标记为 STL 自动配色，不据此推定实物颜色。"
+  ]
+}
