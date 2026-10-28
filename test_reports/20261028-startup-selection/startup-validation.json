@@ -1,0 +1,39 @@
+{
+  "source": "outputs\\single-region-20261028\\captures\\elevation-20261028-025336-3820630f\\manifest.json",
+  "default_startup": {
+    "screenshot": "outputs\\startup-selection-20261028\\default-startup.png",
+    "message": "已打开 C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\single-region-20261028\\captures\\elevation-20261028-025336-3820630f\\manifest.json。本次启动已清空绿色评估框、橙色汇聚范围和紫色地面框。当前显示上次照片作参考，请③抓拍后在④设置范围；手动“打开现场”可恢复历史选区。自动匹配 STL。",
+    "tags": {
+      "assessment-zone": 0,
+      "axial-band": 0,
+      "ground-region": 0,
+      "solver-selection": 0,
+      "pooled-boundary": 0
+    },
+    "scope": "full_frame",
+    "zone_count": 0
+  },
+  "explicit_history": {
+    "screenshot": "outputs\\startup-selection-20261028\\explicit-history.png",
+    "message": "已打开 C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\single-region-20261028\\captures\\elevation-20261028-025336-3820630f\\manifest.json。已沿用历史现场的一个有效区域，重画即可替换；其他旧框不载入当前操作。自动匹配 STL。",
+    "tags": {
+      "assessment-zone": 2,
+      "axial-band": 9,
+      "ground-region": 2,
+      "solver-selection": 0,
+      "pooled-boundary": 0
+    },
+    "scope": "zones",
+    "zone_count": 1
+  },
+  "photo_hashes_unchanged": {
+    "left": "21b0779280f3db7a87ee120c6fdc20477795ffb01b109faf89ad8ae4e2c341de",
+    "right": "f724079c323263e1a66bbc7c0dab4ed98448839e41f9dd6a02be265a1b530930"
+  },
+  "source_hashes_unchanged": {
+    "outputs\\elevation_workbench\\last_scene.json": "54cef0ce093702d82186d521d3a9dfb8a683f1c65785becfd9d448c75812ae6a",
+    "outputs\\single-region-20261028\\captures\\elevation-20261028-025336-3820630f\\manifest.json": "e0fa011707174d9bdaabe4f2549eac82c53e472ad7791477fdcfacd0781ae5b9",
+    "outputs\\single-region-20261028\\captures\\elevation-20261028-025336-3820630f\\report.json": "d1a140453adef29e2d6d326493f141f1b5b9787a49d9036a96af27ab89502e2f",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  }
+}

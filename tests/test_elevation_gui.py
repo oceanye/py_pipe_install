@@ -425,6 +425,52 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertIsNone(self.dialog.ground_inspection)
         self.assertFalse(self.dialog.views['left'].canvas.find_withtag('ground-angle'))
 
+    def test_startup_clears_all_old_selections_but_explicit_open_restores_them(self):
+        self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})
+        self.dialog.set_ground_region([10, 10, 100, 100])
+        self.dialog.add_left_region([350, 200, 200, 160])
+        self.dialog._set_camera_side([0, -1, 0])
+        original_registration = copy.deepcopy(self.dialog.registration_settings)
+        original_zones = copy.deepcopy(self.dialog.zone_settings)
+        self.dialog.submit(False)
+        self.finish_worker()
+        source = self.dialog.last_manifest
+        original_bytes = source.read_bytes()
+        resume = self.output/'last_scene.json'
+        resume_bytes = resume.read_bytes()
+        tags = ('assessment-zone', 'axial-band', 'ground-region')
+        for explicit in (False, True):
+            with self.subTest(explicit=explicit):
+                reopened = ElevationCaptureDialog(self.app, source if explicit else None,
+                                                 output_root=self.output, restore=True)
+                try:
+                    self.root.update()
+                    canvas = reopened.views['left'].canvas
+                    if not explicit:
+                        self.assertEqual(reopened.zone_settings['zones'], [])
+                        self.assertEqual(reopened.zone_settings['scope'], 'full_frame')
+                        self.assertNotIn('aggregation_band', reopened.registration_settings)
+                        self.assertNotIn('ground_region', reopened.registration_settings)
+                        self.assertTrue(all(not canvas.find_withtag(tag) for tag in tags))
+                        self.assertIn('已清空', reopened.message.get())
+                        self.assertIn('上次照片', reopened.message.get())
+                        self.assertEqual(reopened.registration_settings['camera_side_world'], [0, -1, 0])
+                        self.assertEqual(reopened.current_calibration(), self.dialog.current_calibration())
+                        self.assertEqual(reopened.image_hashes, self.dialog.image_hashes)
+                        self.assertEqual(
+                            [(p['pipe_id'], p['nominal_diameter_mm'], p['color_srgb']) for p in reopened.pipes],
+                            [(p['pipe_id'], p['nominal_diameter_mm'], p['color_srgb']) for p in self.dialog.pipes])
+                        self.assertIsNone(reopened.report)
+                        reopened.load_session(source)
+                        self.root.update()
+                    self.assertEqual(reopened.registration_settings, original_registration)
+                    self.assertEqual(reopened.zone_settings, original_zones)
+                    self.assertTrue(all(canvas.find_withtag(tag) for tag in tags))
+                    self.assertEqual(source.read_bytes(), original_bytes)
+                    self.assertEqual(resume.read_bytes(), resume_bytes)
+                finally:
+                    reopened.close()
+
     def test_auto_restore_uses_new_profile_calibration_and_clears_old_photos(self):
         from pipe_twin.workbench_profile import save_camera_calibration_bundle
         self.dialog.submit(False)

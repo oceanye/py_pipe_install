@@ -1128,7 +1128,7 @@ class ElevationCaptureDialog:
             try:
                 active_profile = copy.deepcopy(self.profile)
                 recent = json.loads((self.output_root / "last_scene.json").read_text(encoding="utf-8"))
-                self.load_session(Path(recent["manifest_path"]))
+                self.load_session(Path(recent["manifest_path"]), restore_selections=False)
                 active = (active_profile or {}).get("calibration_current")
                 if (active and active_profile.get("calibration_path")
                         and active.get("calibration_id") != self.calibration_override.get("calibration_id")):
@@ -2141,7 +2141,7 @@ class ElevationCaptureDialog:
             except (OSError, ValueError) as error:
                 self.show_error(error)
 
-    def load_session(self, path: Path) -> None:
+    def load_session(self, path: Path, *, restore_selections: bool = True) -> None:
         from .elevation_dataset import load_elevation_dataset
         path = Path(path).resolve()
         if path.is_dir():
@@ -2202,6 +2202,18 @@ class ElevationCaptureDialog:
                    if k.startswith("capture_") or k == "side_by_side_order"} for role in ("left", "right")}}
             for frame in manifest["capture"]["capture_groups"][-1].get("temporal_frames", [])]
         self._restore_zone_settings(loaded.get("scope_settings"))
+        if not restore_selections:
+            # Startup resumes reusable inputs, not image selections from a prior
+            # operation. Explicitly opening a scene retains its saved selections.
+            self.zone_settings = normalize_zone_settings({
+                **self.zone_settings, 'scope': 'full_frame', 'zones': []})
+            self.scope_label.set('全幅自动')
+            restored_registration.pop('aggregation_band', None)
+            restored_registration.pop('ground_region', None)
+            restored_registration['anchors'] = {}
+            self.region_restore_note = ('本次启动已清空绿色评估框、橙色汇聚范围和紫色地面框。'
+                                        '当前显示上次照片作参考，请③抓拍后在④设置范围；'
+                                        '手动“打开现场”可恢复历史选区。')
         self.registration_settings = restored_registration
         self.ground_candidate_trial.set(bool(restored_registration.get('ground_candidate_trial')))
         self._restore_camera_side_control()
@@ -2219,6 +2231,10 @@ class ElevationCaptureDialog:
         self.refresh_calibration_status()
         self.summary.set(f"已恢复 {len(self.pipes)} 根管；自动匹配会重新生成照片区域")
         self.message.set(f"已打开 {path}。{self.region_restore_note}自动匹配 {self.model_kind.upper() or '模型'}。")
+        log_event(LOGGER, 'elevation_scene_loaded', manifest=str(path),
+                  restore_selections=restore_selections, zone_count=len(self.zone_settings['zones']),
+                  aggregation_band=bool(self.registration_settings.get('aggregation_band')),
+                  ground_region=bool(self.registration_settings.get('ground_region')))
 
     def submit(self, analyze: bool) -> None:
         if self.busy:
