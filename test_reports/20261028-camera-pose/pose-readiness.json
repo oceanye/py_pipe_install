@@ -1,0 +1,61 @@
+{
+  "audit_type": "CAMERA_TO_CAD_POSE_READINESS",
+  "recorded_at": "2026-10-28T11:13:31.234387+08:00",
+  "source_manifest": "outputs\\elevation_workbench\\captures\\elevation-20261028-093854-42d303f4\\manifest.json",
+  "status": "NO_VALID_CAMERA_TO_CAD_POSE",
+  "camera_center_cad_mm": null,
+  "rotation_cad_to_camera": null,
+  "existing_camera_origin_scope": "LEFT_RECTIFIED_CAMERA_FRAME_NOT_REGISTERED_CAD_ORIGIN",
+  "registration_status": "INSUFFICIENT_OBSERVATIONS",
+  "ground_status": "CAPTURE_UNHEALTHY",
+  "ground_correction_status": "TRIAL_NOT_APPLIED",
+  "parallel_pipe_observability": {
+    "translation_along_pipe_axis_observable_without_endpoint_or_reference": false,
+    "cross_section_only_task_requires_axial_translation": false
+  },
+  "rigid_alignment_diagnostic": {
+    "scope": "OPTIMISTIC_LOWER_BOUND_NOT_CAMERA_POSE_OR_IDENTITY",
+    "model_positive_ids": [
+      "P004",
+      "P008",
+      "P011",
+      "P009"
+    ],
+    "observation_ids": [
+      "POOL-L20-POOL-R01",
+      "POOL-L21-POOL-R03",
+      "POOL-L23-POOL-R05"
+    ],
+    "assignment_count": 24,
+    "minimum_center_residual_rms_mm": 256.94217894635744,
+    "scale_fixed": 1.0,
+    "diameter_and_color_constraints_used": false,
+    "interpretation": "当前三维中心之间的距离不相容；旋转平移不能修复该距离偏差。"
+  },
+  "axis_conditioning_diagnostic": {
+    "scope": "BASED_ON_UNVALIDATED_FITTED_AXIS_NOT_INDEPENDENT_POSE",
+    "fitted_axis_camera": [
+      0.998229522554798,
+      -0.05061609761131357,
+      -0.031238293209169862
+    ],
+    "baseline_mm": 55.49861605457772,
+    "transverse_baseline_to_fitted_axis_mm": 3.3010343096126222
+  },
+  "reference_requirements": {
+    "recommended": "FIXED_CHESSBOARD_WITH_KNOWN_TRANSFORM_TO_CAD",
+    "square_mm": 17.0,
+    "inner_corners": [
+      8,
+      6
+    ],
+    "board_to_cad_transform": "MISSING",
+    "using_test_pipes_as_reference": "MODEL_ASSISTED_ESTIMATE_ONLY_NOT_INDEPENDENT_POSITION_VALIDATION"
+  },
+  "pose_reference_documentation": "https://docs.opencv.org/4.13.0/d5/d1f/calib3d_solvePnP.html",
+  "source_hashes_unchanged": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261028-093854-42d303f4\\manifest.json": "dc0d99e24397cab387d17e8b0546f30849f6f51d9182da61bb52eaa005c54775",
+    "outputs\\elevation_workbench\\captures\\elevation-20261028-093854-42d303f4\\report.json": "ad2a425c4db94597f7574d02505143b6c1222cd61881bb626d5a354eb3242c8b",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+  }
+}
