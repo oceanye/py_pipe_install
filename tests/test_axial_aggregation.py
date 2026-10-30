@@ -38,6 +38,20 @@ def test_occlusion_and_empty_windows_are_never_filled():
     assert sum(not w['accepted'] for w in audit['boundaries'][0]['windows']) == 2
 
 
+def test_real_column_runs_preserve_gaps_inside_otherwise_accepted_windows():
+    columns = np.concatenate([np.r_[np.arange(start, start+45), np.arange(start+75, start+128)]
+        for start in range(0, 384, 128)])
+    audit, pooled = aggregate_boundaries([edge(columns)])
+    boundary = audit['boundaries'][0]
+    assert boundary['status'] == 'STABLE'
+    # Adjacent source windows form one continuous observed run.
+    expected = [[0, 45], [75, 173], [203, 301], [331, 384]]
+    assert boundary['observed_column_runs_px'] == expected
+    assert boundary['retained_column_runs_px'] == expected
+    reconstructed = np.concatenate([np.arange(low, high) for low, high in expected])
+    np.testing.assert_array_equal(reconstructed, pooled[0]['points'][:, 0])
+
+
 def test_more_columns_do_not_certify_a_bent_boundary():
     a = edge(); a['points'][:, 1] += 12*np.sin(a['points'][:, 0]/170)
     audit, pooled = aggregate_boundaries([a])

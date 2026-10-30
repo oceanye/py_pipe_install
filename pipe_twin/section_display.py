@@ -53,6 +53,7 @@ def pooling_summary(report):
 def section_summary_lines(report, *, detailed=False):
     lines = ['流程：沿管轴汇聚可见边界 → 检查子段一致性 → 估算断面尺寸 → 对比模型相对就位。',
              '汇聚不会恢复遮挡；稳定边界不等于尺寸准确。同一根管的分离片段不作为两根管计数。',
+             '图面黄色框为图像候选（含颜色线索），青色线为实测稳定边界；缺测或未稳定处不画线，不补齐遮挡。',
              '只比较管径、轴心距和净距；相机距离和管长不作为模型验收目标。',
              '当前间距筛查容差 5 mm；误差区间跨越容差时待判定。结论仅限可见共同断面的相对关系。']
     stages = section_evaluations(report)
@@ -61,6 +62,10 @@ def section_summary_lines(report, *, detailed=False):
     lines += ['', pooling_summary(report)]
     for stage in stages:
         lines += ['', f"{stage.get('zone_id', '全幅')}：稳定双目边界 {stage.get('boundary_pair_count', 0)} 对"]
+        if any(edge.get('status') == 'STABLE' and 'retained_column_runs_px' not in edge
+               for view in stage.get('views', {}).values() for item in view
+               for edge in item.get('aggregation', {}).get('boundaries', [])):
+            lines.append('旧记录缺少逐列观测范围，未绘制这些稳定边界；重新评估后可查看。')
         temporal = stage.get('temporal_sections') or {}
         if temporal.get('status') == 'CHECKED':
             lines += [f"当前连拍：逐帧独立复核 {temporal['sampled_frames']} 帧；只检查重复性，不证明绝对精度。"]
@@ -134,7 +139,11 @@ def section_summary_lines(report, *, detailed=False):
 
 
 def boundary_overlay_segments(report, role):
-    """Draw only accepted observed blocks, with zone offsets restored."""
+    """Draw fitted edges only over retained observed columns, restoring offsets.
+
+    Accepted windows can contain holes. Their full extents are not evidence of
+    a visible boundary; old reports without per-column support stay undrawn.
+    """
     lines = []
     for stage in section_evaluations(report):
         offsets = stage.get('zone_offsets', {})
@@ -144,13 +153,14 @@ def boundary_overlay_segments(report, role):
                 if edge['status'] != 'STABLE':
                     continue
                 slope, intercept = edge['line_slope_intercept']
-                for window in edge['windows']:
-                    if window['accepted']:
-                        u, v = window['axial_interval_px']
-                        points = [[u, slope*u+intercept], [v, slope*v+intercept]]
-                        refinement = stage.get('epipolar_refinement', {})
-                        if role == 'right' and refinement.get('applied'):
-                            from .epipolar_refinement import transform_points
-                            points = transform_points(points, refinement['right_refined_to_original'])
-                        lines.append((points[0][0]+dx, points[0][1]+dy, points[1][0]+dx, points[1][1]+dy))
+                for u, end in edge.get('retained_column_runs_px', []):
+                    if end <= u:
+                        continue
+                    v = end-1  # Runs are half-open; the next column may be missing.
+                    points = [[u, slope*u+intercept], [v, slope*v+intercept]]
+                    refinement = stage.get('epipolar_refinement', {})
+                    if role == 'right' and refinement.get('applied'):
+                        from .epipolar_refinement import transform_points
+                        points = transform_points(points, refinement['right_refined_to_original'])
+                    lines.append((points[0][0]+dx, points[0][1]+dy, points[1][0]+dx, points[1][1]+dy))
     return lines

@@ -78,19 +78,30 @@ def test_right_envelope_contains_every_allowed_disparity_and_zone_masks_use_full
     assert audit['right_scope'] == 'EPIPOLAR_SEARCH_ENVELOPE'
 
 
-def test_manual_cuts_cannot_turn_into_observed_pipe_silhouettes():
+@pytest.mark.parametrize('endpoints', [((250, 150), (600, 250)), ((250, 250), (600, 150))])
+def test_manual_cuts_cannot_turn_into_observed_pipe_silhouettes(endpoints):
     image = np.zeros((300, 800, 3), np.uint8)
     image[80:180, 10:790] = (0, 0, 220)
-    band = selection(((250, 150), (600, 250)), (800, 300))
+    band = selection(endpoints, (800, 300))
     mask = band_sampling_masks(band, image.shape, image.shape)[0]['left']
     proposal = {'region_px': [10, 80, 780, 100], 'appearance': 'hue-0', 'width_px': 100,
                 'mask': np.ones((100, 780), np.uint8), 'axis_image': [1, 0], 'sampled_color_srgb': '#DC0000'}
+    unmasked = _observed_edges(image, proposal, 'left')
     item = _observed_edges(image, proposal, 'left', mask)
     origin, axis, length = band_geometry(band)
-    for edge, expected_y in zip(item['edges'], (79.5, 179.5)):
+    for edge, full_edge, expected_y in zip(item['edges'], unmasked['edges'], (79.5, 179.5)):
         assert len(edge['points']) > 200
-        # Real pipe edges remain horizontal even though selection ends are oblique.
-        np.testing.assert_allclose(edge['points'][:, 1], expected_y)
+        # The continuous colour margin has a small threshold-localization
+        # bias even for a hard RGB step. Bound it against the independently
+        # known pixel interface, then compare to an unmasked extraction of
+        # the same image: the hand-drawn cut must not become a silhouette.
+        assert np.max(np.abs(edge['points'][:, 1]-expected_y)) < .35
+        reference = dict(full_edge['points'])
+        full_y = [reference[x] for x in edge['points'][:, 0]]
+        np.testing.assert_allclose(edge['points'][:, 1], full_y, rtol=0, atol=.04)
+        assert np.ptp(edge['points'][:, 1]) < .04
+        slope = np.polyfit(edge['points'][:, 0], edge['points'][:, 1], 1)[0]
+        assert abs(slope) < 1e-5  # Both signs of oblique cuts leave a horizontal pipe.
         station = (edge['points']-origin)@axis
         assert (station > 1).all() and (station < length-1).all()
 

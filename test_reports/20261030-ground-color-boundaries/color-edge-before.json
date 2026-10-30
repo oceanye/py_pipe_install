@@ -1,0 +1,4770 @@
+{
+  "source": "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875",
+  "source_hashes": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660"
+  },
+  "source_unchanged": true,
+  "scope": "CONDITIONAL_LAST_FRAME_NOT_BURST_FUSION_OR_ACCEPTANCE",
+  "conditional_section_count": 3,
+  "axis": {
+    "axis": [
+      0.9961643767572301,
+      -0.08749991322178831,
+      0.0005474176271995789
+    ],
+    "singular_values": [
+      3.460140698555881,
+      0.165586498484062,
+      0.002730882091539714
+    ],
+    "line_residual_degrees": [
+      0.010792061879494481,
+      0.05098286971608678,
+      0.04576511223966458,
+      0.07908269980570726,
+      0.020056021395536947,
+      0.004740184082736061,
+      0.04229596667852982,
+      0.04379453653737577,
+      0.05239325187066846,
+      0.06053944376485124,
+      0.026302803203503106,
+      0.04673832015961149
+    ],
+    "nullspace_ratio": 0.016492178508156367,
+    "status": "STABLE"
+  },
+  "ground_correction": {
+    "revision": "ground-constrained-pipe-axis-v1",
+    "policy": {
+      "maximum_nullspace_ratio": 0.25,
+      "maximum_boundary_p95_px": 2.0,
+      "minimum_boundaries": 3,
+      "minimum_direction_strength": 1e-06
+    },
+    "policy_sha256": "f8ba3fa18c6239f79510846a7e2b463c822df89c696080befc44e73e3f00ae90",
+    "status": "GROUND_NORMAL_INVALID",
+    "applied": false,
+    "assumption": "PIPE_AXES_PARALLEL_TO_GROUND",
+    "calibration_modified": false,
+    "nominal_dimensions_used": false,
+    "trial_mode": true,
+    "ground_status": "CAPTURE_UNHEALTHY"
+  },
+  "epipolar_refinement": {
+    "revision": "held-out-epipolar-pitch-roll-v1",
+    "applied": false,
+    "status": "NO_VALIDATED_IMPROVEMENT",
+    "calibration_updated": false,
+    "yaw_estimated": false,
+    "baseline_or_focal_length_estimated": false,
+    "feature_count": 169,
+    "train_count": 91,
+    "validation_count": 78,
+    "rotation_pitch_roll_deg": [
+      -0.01015081726073688,
+      0.017694789934781734
+    ],
+    "heldout_before_median_p95_px": [
+      0.6252861022949219,
+      2.309611511230466
+    ],
+    "heldout_after_median_p95_px": [
+      0.6502905029472004,
+      2.218525025515003
+    ]
+  },
+  "views": {
+    "left": [
+      {
+        "candidate_id": "POOL-L18",
+        "region_px": [
+          1067,
+          269,
+          658,
+          126
+        ],
+        "appearance": "hue-0",
+        "width_px": 70.28413391113281,
+        "boundary_status": "STABLE",
+        "edge_extraction": null,
+        "aggregation": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "left",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1077.0,
+                    1204.6
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4820040482629667,
+                  "offset_from_global_px": 0.05235526385337064,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1204.6,
+                    1332.2
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.38332998144798064,
+                  "offset_from_global_px": 0.08518271895150908,
+                  "inlier_fraction": 0.96875
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1332.2,
+                    1459.8
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.44411535443882755,
+                  "offset_from_global_px": 0.10152138064304683,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1459.8,
+                    1587.4
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.442028245676702,
+                  "offset_from_global_px": 0.18447937283903193,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1587.4,
+                    1715.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3672582746419694,
+                  "offset_from_global_px": 0.187656138902498,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 638,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08759115849340066,
+                418.52879370773076
+              ],
+              "retained_columns": 633,
+              "pooled_rms_px": 0.4536331187648083,
+              "holdout_p95_px": 0.9889387439217614,
+              "observed_axial_interval_px": [
+                1077.0,
+                1715.0
+              ],
+              "reference_u_px": 1395.5,
+              "edge_v_at_reference_px": 296.29533203019014
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1077.0,
+                    1204.6
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9471303260433445,
+                  "offset_from_global_px": 0.18386554182935289,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1204.6,
+                    1332.2
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.626314732306316,
+                  "offset_from_global_px": 0.13420594341044012,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1332.2,
+                    1459.8
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7598985845234643,
+                  "offset_from_global_px": 0.10464987717266361,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1459.8,
+                    1587.4
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7815260853959094,
+                  "offset_from_global_px": 0.15592550384890913,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1587.4,
+                    1715.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7262682973617322,
+                  "offset_from_global_px": 0.23079099545955906,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 638,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08870158995906427,
+                490.6052978064832
+              ],
+              "retained_columns": 637,
+              "pooled_rms_px": 0.8209503616342465,
+              "holdout_p95_px": 1.6911529511450791,
+              "observed_axial_interval_px": [
+                1077.0,
+                1715.0
+              ],
+              "reference_u_px": 1395.5,
+              "edge_v_at_reference_px": 366.822229018609
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "full_span_audit": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "left",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1077.0,
+                    1204.6
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4820040482629667,
+                  "offset_from_global_px": 0.05235526385337064,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1204.6,
+                    1332.2
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.38332998144798064,
+                  "offset_from_global_px": 0.08518271895150908,
+                  "inlier_fraction": 0.96875
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1332.2,
+                    1459.8
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.44411535443882755,
+                  "offset_from_global_px": 0.10152138064304683,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1459.8,
+                    1587.4
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.442028245676702,
+                  "offset_from_global_px": 0.18447937283903193,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1587.4,
+                    1715.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3672582746419694,
+                  "offset_from_global_px": 0.187656138902498,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 638,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08759115849340066,
+                418.52879370773076
+              ],
+              "retained_columns": 633,
+              "pooled_rms_px": 0.4536331187648083,
+              "holdout_p95_px": 0.9889387439217614,
+              "observed_axial_interval_px": [
+                1077.0,
+                1715.0
+              ],
+              "reference_u_px": 1395.5,
+              "edge_v_at_reference_px": 296.29533203019014
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1077.0,
+                    1204.6
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9471303260433445,
+                  "offset_from_global_px": 0.18386554182935289,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1204.6,
+                    1332.2
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.626314732306316,
+                  "offset_from_global_px": 0.13420594341044012,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1332.2,
+                    1459.8
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7598985845234643,
+                  "offset_from_global_px": 0.10464987717266361,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1459.8,
+                    1587.4
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7815260853959094,
+                  "offset_from_global_px": 0.15592550384890913,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1587.4,
+                    1715.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7262682973617322,
+                  "offset_from_global_px": 0.23079099545955906,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 638,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08870158995906427,
+                490.6052978064832
+              ],
+              "retained_columns": 637,
+              "pooled_rms_px": 0.8209503616342465,
+              "holdout_p95_px": 1.6911529511450791,
+              "observed_axial_interval_px": [
+                1077.0,
+                1715.0
+              ],
+              "reference_u_px": 1395.5,
+              "edge_v_at_reference_px": 366.822229018609
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "span_attempts": [
+          {
+            "span": "FULL",
+            "stable_boundary_count": 2
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-L19",
+        "region_px": [
+          1076,
+          348,
+          659,
+          140
+        ],
+        "appearance": "hue-0",
+        "width_px": 83.96788787841797,
+        "boundary_status": "STABLE",
+        "edge_extraction": null,
+        "aggregation": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "left",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1088.0,
+                    1215.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6591806415945495,
+                  "offset_from_global_px": 0.4775671734823925,
+                  "inlier_fraction": 0.968503937007874
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1215.0,
+                    1342.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8794651942270711,
+                  "offset_from_global_px": 0.34310159336285473,
+                  "inlier_fraction": 0.984251968503937
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1342.0,
+                    1469.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9560611727995616,
+                  "offset_from_global_px": 0.23499428623200735,
+                  "inlier_fraction": 0.9921259842519685
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1469.0,
+                    1596.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8729331815785617,
+                  "offset_from_global_px": 0.01700373970153457,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1596.0,
+                    1723.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.852195575675436,
+                  "offset_from_global_px": 0.11318924508061734,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 635,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08815905757400118,
+                498.6652048299739
+              ],
+              "retained_columns": 628,
+              "pooled_rms_px": 0.9230058554604337,
+              "holdout_p95_px": 1.8124328320802192,
+              "observed_axial_interval_px": [
+                1088.0,
+                1723.0
+              ],
+              "reference_u_px": 1405.0,
+              "edge_v_at_reference_px": 374.80172893850227
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1088.0,
+                    1215.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5226834267036697,
+                  "offset_from_global_px": 0.26295115798172297,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1215.0,
+                    1342.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4874956049927643,
+                  "offset_from_global_px": 0.22545782497319755,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1342.0,
+                    1469.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.45479805499298215,
+                  "offset_from_global_px": 0.20205578430598092,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1469.0,
+                    1596.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5085029081791026,
+                  "offset_from_global_px": 0.026070665810049132,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1596.0,
+                    1723.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4813181419918618,
+                  "offset_from_global_px": 0.15183491120144382,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 635,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08791444349710012,
+                582.9620063780468
+              ],
+              "retained_columns": 634,
+              "pooled_rms_px": 0.5315309587711728,
+              "holdout_p95_px": 1.1485536289736726,
+              "observed_axial_interval_px": [
+                1088.0,
+                1723.0
+              ],
+              "reference_u_px": 1405.0,
+              "edge_v_at_reference_px": 459.44221326462116
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "full_span_audit": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "left",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1088.0,
+                    1215.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6591806415945495,
+                  "offset_from_global_px": 0.4775671734823925,
+                  "inlier_fraction": 0.968503937007874
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1215.0,
+                    1342.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8794651942270711,
+                  "offset_from_global_px": 0.34310159336285473,
+                  "inlier_fraction": 0.984251968503937
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1342.0,
+                    1469.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9560611727995616,
+                  "offset_from_global_px": 0.23499428623200735,
+                  "inlier_fraction": 0.9921259842519685
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1469.0,
+                    1596.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8729331815785617,
+                  "offset_from_global_px": 0.01700373970153457,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1596.0,
+                    1723.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.852195575675436,
+                  "offset_from_global_px": 0.11318924508061734,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 635,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08815905757400118,
+                498.6652048299739
+              ],
+              "retained_columns": 628,
+              "pooled_rms_px": 0.9230058554604337,
+              "holdout_p95_px": 1.8124328320802192,
+              "observed_axial_interval_px": [
+                1088.0,
+                1723.0
+              ],
+              "reference_u_px": 1405.0,
+              "edge_v_at_reference_px": 374.80172893850227
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1088.0,
+                    1215.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5226834267036697,
+                  "offset_from_global_px": 0.26295115798172297,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1215.0,
+                    1342.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4874956049927643,
+                  "offset_from_global_px": 0.22545782497319755,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1342.0,
+                    1469.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.45479805499298215,
+                  "offset_from_global_px": 0.20205578430598092,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1469.0,
+                    1596.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5085029081791026,
+                  "offset_from_global_px": 0.026070665810049132,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1596.0,
+                    1723.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4813181419918618,
+                  "offset_from_global_px": 0.15183491120144382,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 635,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08791444349710012,
+                582.9620063780468
+              ],
+              "retained_columns": 634,
+              "pooled_rms_px": 0.5315309587711728,
+              "holdout_p95_px": 1.1485536289736726,
+              "observed_axial_interval_px": [
+                1088.0,
+                1723.0
+              ],
+              "reference_u_px": 1405.0,
+              "edge_v_at_reference_px": 459.44221326462116
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "span_attempts": [
+          {
+            "span": "FULL",
+            "stable_boundary_count": 2
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-L20",
+        "region_px": [
+          1090,
+          482,
+          654,
+          95
+        ],
+        "appearance": "neutral",
+        "width_px": 39.09633255004883,
+        "boundary_status": "STABLE",
+        "edge_extraction": null,
+        "aggregation": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "left",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1098.0,
+                    1225.6
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4437884495645304,
+                  "offset_from_global_px": 0.06809556555435403,
+                  "inlier_fraction": 0.9921875
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1225.6,
+                    1353.2
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.39425502577601856,
+                  "offset_from_global_px": 0.0842374455119228,
+                  "inlier_fraction": 0.9609375
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1353.2,
+                    1480.8
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.47680461948420927,
+                  "offset_from_global_px": 0.12672302203373853,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1480.8,
+                    1608.4
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3783204723478127,
+                  "offset_from_global_px": 0.13998500006683878,
+                  "inlier_fraction": 0.9921875
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1608.4,
+                    1736.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.34730379415845325,
+                  "offset_from_global_px": 0.03624183728387109,
+                  "inlier_fraction": 0.984251968503937
+                }
+              ],
+              "source_columns": 638,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08692442693728852,
+                631.7435178819352
+              ],
+              "retained_columns": 626,
+              "pooled_rms_px": 0.42927947550688933,
+              "holdout_p95_px": 0.8970812490702201,
+              "observed_axial_interval_px": [
+                1098.0,
+                1736.0
+              ],
+              "reference_u_px": 1416.5,
+              "edge_v_at_reference_px": 508.615067125266
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1098.0,
+                    1225.6
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.34871236870923394,
+                  "offset_from_global_px": 0.08303065933642262,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1225.6,
+                    1353.2
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.340742338764513,
+                  "offset_from_global_px": 0.08158309314356305,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1353.2,
+                    1480.8
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.379772366502438,
+                  "offset_from_global_px": 0.11054069338535744,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1480.8,
+                    1608.4
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3425078492505858,
+                  "offset_from_global_px": 0.11745298589999287,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1608.4,
+                    1736.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4286319095448022,
+                  "offset_from_global_px": 0.016157726828402552,
+                  "inlier_fraction": 0.984251968503937
+                }
+              ],
+              "source_columns": 638,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.0889239159962501,
+                674.6708477703082
+              ],
+              "retained_columns": 634,
+              "pooled_rms_px": 0.3820239089635478,
+              "holdout_p95_px": 0.8248141284766461,
+              "observed_axial_interval_px": [
+                1098.0,
+                1736.0
+              ],
+              "reference_u_px": 1416.5,
+              "edge_v_at_reference_px": 548.7101207616199
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "full_span_audit": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "left",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1098.0,
+                    1225.6
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4437884495645304,
+                  "offset_from_global_px": 0.06809556555435403,
+                  "inlier_fraction": 0.9921875
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1225.6,
+                    1353.2
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.39425502577601856,
+                  "offset_from_global_px": 0.0842374455119228,
+                  "inlier_fraction": 0.9609375
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1353.2,
+                    1480.8
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.47680461948420927,
+                  "offset_from_global_px": 0.12672302203373853,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1480.8,
+                    1608.4
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3783204723478127,
+                  "offset_from_global_px": 0.13998500006683878,
+                  "inlier_fraction": 0.9921875
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1608.4,
+                    1736.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.34730379415845325,
+                  "offset_from_global_px": 0.03624183728387109,
+                  "inlier_fraction": 0.984251968503937
+                }
+              ],
+              "source_columns": 638,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08692442693728852,
+                631.7435178819352
+              ],
+              "retained_columns": 626,
+              "pooled_rms_px": 0.42927947550688933,
+              "holdout_p95_px": 0.8970812490702201,
+              "observed_axial_interval_px": [
+                1098.0,
+                1736.0
+              ],
+              "reference_u_px": 1416.5,
+              "edge_v_at_reference_px": 508.615067125266
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1098.0,
+                    1225.6
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.34871236870923394,
+                  "offset_from_global_px": 0.08303065933642262,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1225.6,
+                    1353.2
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.340742338764513,
+                  "offset_from_global_px": 0.08158309314356305,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1353.2,
+                    1480.8
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.379772366502438,
+                  "offset_from_global_px": 0.11054069338535744,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1480.8,
+                    1608.4
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3425078492505858,
+                  "offset_from_global_px": 0.11745298589999287,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1608.4,
+                    1736.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4286319095448022,
+                  "offset_from_global_px": 0.016157726828402552,
+                  "inlier_fraction": 0.984251968503937
+                }
+              ],
+              "source_columns": 638,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.0889239159962501,
+                674.6708477703082
+              ],
+              "retained_columns": 634,
+              "pooled_rms_px": 0.3820239089635478,
+              "holdout_p95_px": 0.8248141284766461,
+              "observed_axial_interval_px": [
+                1098.0,
+                1736.0
+              ],
+              "reference_u_px": 1416.5,
+              "edge_v_at_reference_px": 548.7101207616199
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "span_attempts": [
+          {
+            "span": "FULL",
+            "stable_boundary_count": 2
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-L21",
+        "region_px": [
+          1094,
+          526,
+          661,
+          154
+        ],
+        "appearance": "hue-105",
+        "width_px": 104.70849609375,
+        "boundary_status": "UNSTABLE",
+        "edge_extraction": null,
+        "aggregation": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "left",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1109.0,
+                    1237.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5972301794129106,
+                  "offset_from_global_px": 0.070559319187875,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1237.0,
+                    1365.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6215940125951058,
+                  "offset_from_global_px": 0.030017054609036697,
+                  "inlier_fraction": 0.96875
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1365.0,
+                    1493.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6698421712037291,
+                  "offset_from_global_px": 0.007792828497150239,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 384,
+              "total_windows": 3,
+              "accepted_windows": 3,
+              "line_slope_intercept": [
+                -0.09017166507210443,
+                677.9355301846451
+              ],
+              "retained_columns": 380,
+              "pooled_rms_px": 0.6406528484952287,
+              "holdout_p95_px": 1.2046398190059961,
+              "observed_axial_interval_px": [
+                1109.0,
+                1493.0
+              ],
+              "reference_u_px": 1300.5,
+              "edge_v_at_reference_px": 560.6672797583733
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "UNSTABLE",
+              "reason_codes": [
+                "TOO_FEW_CONSISTENT_AXIAL_WINDOWS"
+              ],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1109.0,
+                    1237.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9864907731507895,
+                  "offset_from_global_px": 0.1377973200522824,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1237.0,
+                    1365.0
+                  ],
+                  "columns": 128,
+                  "accepted": false,
+                  "reason": "LOCAL_BOUNDARY_INCONSISTENT",
+                  "edge_rms_px": 1.2586928587546513,
+                  "offset_from_global_px": 0.14606220612495235,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1365.0,
+                    1493.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7026082983977309,
+                  "offset_from_global_px": 0.08811281026769713,
+                  "inlier_fraction": 0.9296875
+                }
+              ],
+              "source_columns": 384,
+              "total_windows": 3,
+              "accepted_windows": 2
+            }
+          ],
+          "stable_boundary_count": 1,
+          "occluded_boundary_count": 0
+        },
+        "full_span_audit": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "left",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "UNSTABLE",
+              "reason_codes": [
+                "CROSS_WINDOW_BOUNDARY_UNSTABLE"
+              ],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1109.0,
+                    1235.2
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.593479452623029,
+                  "offset_from_global_px": 0.1209054744819773,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1235.2,
+                    1361.4
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6039696818434983,
+                  "offset_from_global_px": 0.010180330879771216,
+                  "inlier_fraction": 0.9761904761904762
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1361.4,
+                    1487.6
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6828103159796689,
+                  "offset_from_global_px": 0.18740972197978678,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1487.6,
+                    1613.8
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4891502803431861,
+                  "offset_from_global_px": 0.26918816338988316,
+                  "inlier_fraction": 0.9444444444444444
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1613.8,
+                    1740.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.951174572356079,
+                  "offset_from_global_px": 0.8193106600041773,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 631,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08885501021310292,
+                676.2391709544005
+              ],
+              "retained_columns": 595,
+              "pooled_rms_px": 0.6683760439672153,
+              "holdout_p95_px": 2.0517523185877735,
+              "observed_axial_interval_px": [
+                1109.0,
+                1740.0
+              ],
+              "reference_u_px": 1424.0,
+              "edge_v_at_reference_px": 549.7096364109419
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "UNSTABLE",
+              "reason_codes": [
+                "TOO_FEW_CONSISTENT_AXIAL_WINDOWS"
+              ],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1109.0,
+                    1235.2
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9879869142415173,
+                  "offset_from_global_px": 0.06632562622544924,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1235.2,
+                    1361.4
+                  ],
+                  "columns": 126,
+                  "accepted": false,
+                  "reason": "LOCAL_BOUNDARY_INCONSISTENT",
+                  "edge_rms_px": 1.2697497904806914,
+                  "offset_from_global_px": 0.06299144049932881,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1361.4,
+                    1487.6
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7063128865830481,
+                  "offset_from_global_px": 0.36943082288144424,
+                  "inlier_fraction": 0.9285714285714286
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1487.6,
+                    1613.8
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.2119892429151025,
+                  "offset_from_global_px": 0.4004240106709043,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1613.8,
+                    1740.0
+                  ],
+                  "columns": 126,
+                  "accepted": false,
+                  "reason": "LOCAL_BOUNDARY_INCONSISTENT",
+                  "edge_rms_px": 1.3190108496655368,
+                  "offset_from_global_px": 0.40755080342625033,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 631,
+              "total_windows": 5,
+              "accepted_windows": 3
+            }
+          ],
+          "stable_boundary_count": 0,
+          "occluded_boundary_count": 0
+        },
+        "span_attempts": [
+          {
+            "span": "FULL",
+            "stable_boundary_count": 0
+          },
+          {
+            "span": [
+              1109.0,
+              1493.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1232.5,
+              1616.5
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1356.0,
+              1740.0
+            ],
+            "stable_boundary_count": 0
+          }
+        ]
+      }
+    ],
+    "right": [
+      {
+        "candidate_id": "POOL-R19",
+        "region_px": [
+          817,
+          261,
+          907,
+          145
+        ],
+        "appearance": "hue-0",
+        "width_px": 71.04750061035156,
+        "boundary_status": "STABLE",
+        "edge_extraction": null,
+        "aggregation": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "right",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    951.0,
+                    1079.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4819206742130694,
+                  "offset_from_global_px": 0.05002964991332948,
+                  "inlier_fraction": 0.9765625
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1079.0,
+                    1207.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.36313321824153644,
+                  "offset_from_global_px": 0.0026626602105448427,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1207.0,
+                    1335.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3826675879495787,
+                  "offset_from_global_px": 0.12301904494516425,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1335.0,
+                    1463.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.35071451513967516,
+                  "offset_from_global_px": 0.03254924989900321,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1463.0,
+                    1591.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4322039804528048,
+                  "offset_from_global_px": 0.03968004474328929,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 640,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.0869697718347204,
+                408.33686416095713
+              ],
+              "retained_columns": 637,
+              "pooled_rms_px": 0.42089822640861485,
+              "holdout_p95_px": 0.8201467496699365,
+              "observed_axial_interval_px": [
+                951.0,
+                1591.0
+              ],
+              "reference_u_px": 1270.5,
+              "edge_v_at_reference_px": 297.84176904494484
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    951.0,
+                    1079.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8321136480745239,
+                  "offset_from_global_px": 0.4083567463691864,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1079.0,
+                    1207.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.46097285635113927,
+                  "offset_from_global_px": 0.324039577705733,
+                  "inlier_fraction": 0.96875
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1207.0,
+                    1335.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6626748757195928,
+                  "offset_from_global_px": 0.08428534760860096,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1335.0,
+                    1463.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6834845687346182,
+                  "offset_from_global_px": 0.041529399531031075,
+                  "inlier_fraction": 0.984375
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1463.0,
+                    1591.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7608315329555693,
+                  "offset_from_global_px": 0.09770534044784185,
+                  "inlier_fraction": 0.9921875
+                }
+              ],
+              "source_columns": 640,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08919443588067875,
+                481.5932287100147
+              ],
+              "retained_columns": 621,
+              "pooled_rms_px": 0.7049611424668233,
+              "holdout_p95_px": 1.777027129055284,
+              "observed_axial_interval_px": [
+                951.0,
+                1591.0
+              ],
+              "reference_u_px": 1270.5,
+              "edge_v_at_reference_px": 368.27169792361235
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "full_span_audit": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "right",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    827.0,
+                    953.7142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.37447798681682565,
+                  "offset_from_global_px": 0.8069268645178624,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    953.7142857142857,
+                    1080.4285714285713
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.46416012924254474,
+                  "offset_from_global_px": 0.38562909915528687,
+                  "inlier_fraction": 0.9763779527559056
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1080.4285714285713,
+                    1207.142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.36421021508786927,
+                  "offset_from_global_px": 0.315613544240791,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1207.142857142857,
+                    1333.857142857143
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.38183400047787225,
+                  "offset_from_global_px": 0.3521236925911406,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1333.857142857143,
+                    1460.5714285714284
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3533020000170329,
+                  "offset_from_global_px": 0.10066983644202132,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1460.5714285714284,
+                    1587.2857142857142
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4264647665138683,
+                  "offset_from_global_px": 0.01522531350936518,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1587.2857142857142,
+                    1714.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.46376244739364264,
+                  "offset_from_global_px": 0.4152231016668928,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 887,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.08771273383618448,
+                409.5054377457496
+              ],
+              "retained_columns": 878,
+              "pooled_rms_px": 0.5942838167079881,
+              "holdout_p95_px": 1.5406395172622667,
+              "observed_axial_interval_px": [
+                827.0,
+                1714.0
+              ],
+              "reference_u_px": 1270.0,
+              "edge_v_at_reference_px": 298.1102657737953
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "UNSTABLE",
+              "reason_codes": [
+                "CROSS_WINDOW_BOUNDARY_UNSTABLE"
+              ],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    827.0,
+                    953.7142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9277050133576391,
+                  "offset_from_global_px": 0.20733796326673115,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    953.7142857142857,
+                    1080.4285714285713
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8211563812482096,
+                  "offset_from_global_px": 0.5162423556298261,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1080.4285714285713,
+                    1207.142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4774668115471784,
+                  "offset_from_global_px": 0.32288096735200966,
+                  "inlier_fraction": 0.9763779527559056
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1207.142857142857,
+                    1333.857142857143
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.648768802277607,
+                  "offset_from_global_px": 0.2274669297485592,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1333.857142857143,
+                    1460.5714285714284
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7422628183409948,
+                  "offset_from_global_px": 0.15709598056859253,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1460.5714285714284,
+                    1587.2857142857142
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7565475280556518,
+                  "offset_from_global_px": 0.3018722118951729,
+                  "inlier_fraction": 0.9921259842519685
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1587.2857142857142,
+                    1714.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.1515598809289067,
+                  "offset_from_global_px": 0.6055064450889666,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 887,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.08823865660796446,
+                480.5170247467993
+              ],
+              "retained_columns": 865,
+              "pooled_rms_px": 0.8787320570165857,
+              "holdout_p95_px": 2.343908167059544,
+              "observed_axial_interval_px": [
+                827.0,
+                1714.0
+              ],
+              "reference_u_px": 1270.0,
+              "edge_v_at_reference_px": 368.4539308546844
+            }
+          ],
+          "stable_boundary_count": 1,
+          "occluded_boundary_count": 0
+        },
+        "span_attempts": [
+          {
+            "span": "FULL",
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              827.0,
+              1211.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1078.5,
+              1462.5
+            ],
+            "stable_boundary_count": 2
+          },
+          {
+            "span": [
+              1330.0,
+              1714.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              827.0,
+              1467.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              950.5,
+              1590.5
+            ],
+            "stable_boundary_count": 2
+          },
+          {
+            "span": [
+              1074.0,
+              1714.0
+            ],
+            "stable_boundary_count": 1
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R20",
+        "region_px": [
+          822,
+          339,
+          911,
+          159
+        ],
+        "appearance": "hue-0",
+        "width_px": 85.18968963623047,
+        "boundary_status": "STABLE",
+        "edge_extraction": null,
+        "aggregation": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "right",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1081.0,
+                    1209.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8969308923015197,
+                  "offset_from_global_px": 0.093818081068477,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1209.0,
+                    1337.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9792625476026341,
+                  "offset_from_global_px": 0.3304347094656883,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1337.0,
+                    1465.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7710274852808827,
+                  "offset_from_global_px": 0.09687500000010285,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1465.0,
+                    1593.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7845194853878669,
+                  "offset_from_global_px": 0.08804190389289523,
+                  "inlier_fraction": 0.9765625
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1593.0,
+                    1721.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.755043228455028,
+                  "offset_from_global_px": 0.26649837161552625,
+                  "inlier_fraction": 0.9765625
+                }
+              ],
+              "source_columns": 640,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08705714580920745,
+                486.5583880859959
+              ],
+              "retained_columns": 634,
+              "pooled_rms_px": 0.9893013083390464,
+              "holdout_p95_px": 1.8405093239824826,
+              "observed_axial_interval_px": [
+                1081.0,
+                1721.0
+              ],
+              "reference_u_px": 1400.5,
+              "edge_v_at_reference_px": 364.63485538020086
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    1081.0,
+                    1209.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4232232249652068,
+                  "offset_from_global_px": 0.0573652268876641,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    1209.0,
+                    1337.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4138377945289673,
+                  "offset_from_global_px": 0.0805562156187527,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1337.0,
+                    1465.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.38495890608608613,
+                  "offset_from_global_px": 0.07839734187467684,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1465.0,
+                    1593.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.47093372956442264,
+                  "offset_from_global_px": 0.18452410063192648,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1593.0,
+                    1721.0
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6462262224066359,
+                  "offset_from_global_px": 0.17170045988257576,
+                  "inlier_fraction": 0.984375
+                }
+              ],
+              "source_columns": 640,
+              "total_windows": 5,
+              "accepted_windows": 5,
+              "line_slope_intercept": [
+                -0.08705725435541815,
+                570.4390373828883
+              ],
+              "retained_columns": 635,
+              "pooled_rms_px": 0.5051868938789658,
+              "holdout_p95_px": 1.1024004027324052,
+              "observed_axial_interval_px": [
+                1081.0,
+                1721.0
+              ],
+              "reference_u_px": 1400.5,
+              "edge_v_at_reference_px": 448.51535265812515
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "full_span_audit": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "right",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "UNSTABLE",
+              "reason_codes": [
+                "CROSS_WINDOW_BOUNDARY_UNSTABLE"
+              ],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    834.0,
+                    960.7142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.1479240190944122,
+                  "offset_from_global_px": 0.2460511951703559,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    960.7142857142857,
+                    1087.4285714285713
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6082791981888745,
+                  "offset_from_global_px": 0.806621807954528,
+                  "inlier_fraction": 0.968503937007874
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1087.4285714285713,
+                    1214.142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9866006613197104,
+                  "offset_from_global_px": 0.6495684299139395,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1214.142857142857,
+                    1340.857142857143
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.0396175171508686,
+                  "offset_from_global_px": 0.8361264863713131,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1340.857142857143,
+                    1467.5714285714284
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7408897911678854,
+                  "offset_from_global_px": 0.11392313800433307,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1467.5714285714284,
+                    1594.2857142857142
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7888636859753804,
+                  "offset_from_global_px": 0.005225014397399197,
+                  "inlier_fraction": 0.9763779527559056
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1594.2857142857142,
+                    1721.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.7485614402585022,
+                  "offset_from_global_px": 0.6354327385819616,
+                  "inlier_fraction": 0.9841269841269841
+                }
+              ],
+              "source_columns": 887,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.08478016903387636,
+                483.1713170625708
+              ],
+              "retained_columns": 878,
+              "pooled_rms_px": 1.1415176746095104,
+              "holdout_p95_px": 2.4231835406529454,
+              "observed_axial_interval_px": [
+                834.0,
+                1721.0
+              ],
+              "reference_u_px": 1277.0,
+              "edge_v_at_reference_px": 374.9070412063107
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    834.0,
+                    960.7142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5338286729737941,
+                  "offset_from_global_px": 0.11615858936349088,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    960.7142857142857,
+                    1087.4285714285713
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5477159122402399,
+                  "offset_from_global_px": 0.33887421200117274,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1087.4285714285713,
+                    1214.142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.41028974091094644,
+                  "offset_from_global_px": 0.31242591339287173,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1214.142857142857,
+                    1340.857142857143
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.407552586333402,
+                  "offset_from_global_px": 0.2939686894086915,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1340.857142857143,
+                    1467.5714285714284
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.39300275577302096,
+                  "offset_from_global_px": 0.04179068052222057,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1467.5714285714284,
+                    1594.2857142857142
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.46823677565382343,
+                  "offset_from_global_px": 0.11828765630994198,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1594.2857142857142,
+                    1721.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6491421483950658,
+                  "offset_from_global_px": 0.3760328375456884,
+                  "inlier_fraction": 0.9841269841269841
+                }
+              ],
+              "source_columns": 887,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.08818183917632699,
+                572.1049983958965
+              ],
+              "retained_columns": 881,
+              "pooled_rms_px": 0.5754879840540494,
+              "holdout_p95_px": 1.274196802180131,
+              "observed_axial_interval_px": [
+                834.0,
+                1721.0
+              ],
+              "reference_u_px": 1277.0,
+              "edge_v_at_reference_px": 459.4967897677269
+            }
+          ],
+          "stable_boundary_count": 1,
+          "occluded_boundary_count": 0
+        },
+        "span_attempts": [
+          {
+            "span": "FULL",
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              834.0,
+              1218.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1085.5,
+              1469.5
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1337.0,
+              1721.0
+            ],
+            "stable_boundary_count": 2
+          },
+          {
+            "span": [
+              834.0,
+              1474.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              957.5,
+              1597.5
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1081.0,
+              1721.0
+            ],
+            "stable_boundary_count": 2
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R21",
+        "region_px": [
+          836,
+          475,
+          907,
+          112
+        ],
+        "appearance": "neutral",
+        "width_px": 37.194522857666016,
+        "boundary_status": "STABLE",
+        "edge_extraction": null,
+        "aggregation": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "right",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    844.0,
+                    971.2857142857143
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6906361488706375,
+                  "offset_from_global_px": 0.2900402878848105,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    971.2857142857143,
+                    1098.5714285714287
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3620638348603382,
+                  "offset_from_global_px": 0.01327433678534451,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1098.5714285714287,
+                    1225.857142857143
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3727250685628296,
+                  "offset_from_global_px": 0.16913469409121995,
+                  "inlier_fraction": 0.9606299212598425
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1225.857142857143,
+                    1353.142857142857
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.35943814926851286,
+                  "offset_from_global_px": 0.010899461425823986,
+                  "inlier_fraction": 0.9921875
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1353.142857142857,
+                    1480.4285714285716
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.34197584215095117,
+                  "offset_from_global_px": 0.07555774631258938,
+                  "inlier_fraction": 0.984251968503937
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1480.4285714285716,
+                    1607.7142857142858
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.33665439331963004,
+                  "offset_from_global_px": 0.1036497734488977,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1607.7142857142858,
+                    1735.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.483722782056234,
+                  "offset_from_global_px": 0.21315376329957303,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 891,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.0883063979553566,
+                625.6107136282064
+              ],
+              "retained_columns": 850,
+              "pooled_rms_px": 0.38015942801710106,
+              "holdout_p95_px": 0.942798471328831,
+              "observed_axial_interval_px": [
+                844.0,
+                1735.0
+              ],
+              "reference_u_px": 1289.0,
+              "edge_v_at_reference_px": 511.7837666637518
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    844.0,
+                    971.2857142857143
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3887737675453653,
+                  "offset_from_global_px": 0.0033972058311496356,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    971.2857142857143,
+                    1098.5714285714287
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.31554331880097436,
+                  "offset_from_global_px": 0.09570660091367778,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1098.5714285714287,
+                    1225.857142857143
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3256071674829135,
+                  "offset_from_global_px": 0.030695722931956215,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1225.857142857143,
+                    1353.142857142857
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.31513581362730936,
+                  "offset_from_global_px": 0.11745994104156487,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1353.142857142857,
+                    1480.4285714285716
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.32860394212871114,
+                  "offset_from_global_px": 0.091033912100553,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1480.4285714285716,
+                    1607.7142857142858
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.32446288604611606,
+                  "offset_from_global_px": 0.06943061685414076,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1607.7142857142858,
+                    1735.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.36724068892280615,
+                  "offset_from_global_px": 0.14902307209330257,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 891,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.0870322784113281,
+                660.9315204524488
+              ],
+              "retained_columns": 891,
+              "pooled_rms_px": 0.36296309431509594,
+              "holdout_p95_px": 0.719141186227148,
+              "observed_axial_interval_px": [
+                844.0,
+                1735.0
+              ],
+              "reference_u_px": 1289.0,
+              "edge_v_at_reference_px": 548.7469135802469
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "full_span_audit": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "right",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    844.0,
+                    971.2857142857143
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6906361488706375,
+                  "offset_from_global_px": 0.2900402878848105,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    971.2857142857143,
+                    1098.5714285714287
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3620638348603382,
+                  "offset_from_global_px": 0.01327433678534451,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1098.5714285714287,
+                    1225.857142857143
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3727250685628296,
+                  "offset_from_global_px": 0.16913469409121995,
+                  "inlier_fraction": 0.9606299212598425
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1225.857142857143,
+                    1353.142857142857
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.35943814926851286,
+                  "offset_from_global_px": 0.010899461425823986,
+                  "inlier_fraction": 0.9921875
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1353.142857142857,
+                    1480.4285714285716
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.34197584215095117,
+                  "offset_from_global_px": 0.07555774631258938,
+                  "inlier_fraction": 0.984251968503937
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1480.4285714285716,
+                    1607.7142857142858
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.33665439331963004,
+                  "offset_from_global_px": 0.1036497734488977,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1607.7142857142858,
+                    1735.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.483722782056234,
+                  "offset_from_global_px": 0.21315376329957303,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 891,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.0883063979553566,
+                625.6107136282064
+              ],
+              "retained_columns": 850,
+              "pooled_rms_px": 0.38015942801710106,
+              "holdout_p95_px": 0.942798471328831,
+              "observed_axial_interval_px": [
+                844.0,
+                1735.0
+              ],
+              "reference_u_px": 1289.0,
+              "edge_v_at_reference_px": 511.7837666637518
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    844.0,
+                    971.2857142857143
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3887737675453653,
+                  "offset_from_global_px": 0.0033972058311496356,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    971.2857142857143,
+                    1098.5714285714287
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.31554331880097436,
+                  "offset_from_global_px": 0.09570660091367778,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1098.5714285714287,
+                    1225.857142857143
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3256071674829135,
+                  "offset_from_global_px": 0.030695722931956215,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1225.857142857143,
+                    1353.142857142857
+                  ],
+                  "columns": 128,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.31513581362730936,
+                  "offset_from_global_px": 0.11745994104156487,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1353.142857142857,
+                    1480.4285714285716
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.32860394212871114,
+                  "offset_from_global_px": 0.091033912100553,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1480.4285714285716,
+                    1607.7142857142858
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.32446288604611606,
+                  "offset_from_global_px": 0.06943061685414076,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1607.7142857142858,
+                    1735.0
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.36724068892280615,
+                  "offset_from_global_px": 0.14902307209330257,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 891,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.0870322784113281,
+                660.9315204524488
+              ],
+              "retained_columns": 891,
+              "pooled_rms_px": 0.36296309431509594,
+              "holdout_p95_px": 0.719141186227148,
+              "observed_axial_interval_px": [
+                844.0,
+                1735.0
+              ],
+              "reference_u_px": 1289.0,
+              "edge_v_at_reference_px": 548.7469135802469
+            }
+          ],
+          "stable_boundary_count": 2,
+          "occluded_boundary_count": 0
+        },
+        "span_attempts": [
+          {
+            "span": "FULL",
+            "stable_boundary_count": 2
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R22",
+        "region_px": [
+          840,
+          513,
+          914,
+          179
+        ],
+        "appearance": "hue-105",
+        "width_px": 106.10844421386719,
+        "boundary_status": "UNSTABLE",
+        "edge_extraction": null,
+        "aggregation": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "right",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    855.0,
+                    981.2857142857143
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.41437202697779496,
+                  "offset_from_global_px": 0.14339574898205565,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    981.2857142857143,
+                    1107.5714285714287
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.40591119296764994,
+                  "offset_from_global_px": 0.0668817584718262,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1107.5714285714287,
+                    1233.857142857143
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3575178057423816,
+                  "offset_from_global_px": 0.031042986302680653,
+                  "inlier_fraction": 0.9365079365079365
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1233.857142857143,
+                    1360.142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3801821976733884,
+                  "offset_from_global_px": 0.19170343434526949,
+                  "inlier_fraction": 0.968503937007874
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1360.142857142857,
+                    1486.4285714285716
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4037805287512909,
+                  "offset_from_global_px": 0.2051720984601162,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1486.4285714285716,
+                    1612.7142857142858
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3724492974882854,
+                  "offset_from_global_px": 0.09224037819459685,
+                  "inlier_fraction": 0.9841269841269841
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1612.7142857142858,
+                    1739.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5739013834311886,
+                  "offset_from_global_px": 0.6453900729748021,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 884,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.08703476254036234,
+                661.5483162125286
+              ],
+              "retained_columns": 848,
+              "pooled_rms_px": 0.44923516330479346,
+              "holdout_p95_px": 1.0664721971027398,
+              "observed_axial_interval_px": [
+                855.0,
+                1739.0
+              ],
+              "reference_u_px": 1296.5,
+              "edge_v_at_reference_px": 548.7077465789488
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "UNSTABLE",
+              "reason_codes": [
+                "CROSS_WINDOW_BOUNDARY_UNSTABLE"
+              ],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    855.0,
+                    981.2857142857143
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8934027728252217,
+                  "offset_from_global_px": 0.11386036704831426,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    981.2857142857143,
+                    1107.5714285714287
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.1891417893197427,
+                  "offset_from_global_px": 0.2986297185702451,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1107.5714285714287,
+                    1233.857142857143
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6970726775889518,
+                  "offset_from_global_px": 0.32389019493609217,
+                  "inlier_fraction": 0.9761904761904762
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1233.857142857143,
+                    1360.142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.100332576363357,
+                  "offset_from_global_px": 0.2018919359878666,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1360.142857142857,
+                    1486.4285714285716
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9335991806035553,
+                  "offset_from_global_px": 0.12258835709609839,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1486.4285714285716,
+                    1612.7142857142858
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.038973525835234,
+                  "offset_from_global_px": 0.062012450769461935,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1612.7142857142858,
+                    1739.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9868726170326576,
+                  "offset_from_global_px": 0.20924405305477478,
+                  "inlier_fraction": 0.9682539682539683
+                }
+              ],
+              "source_columns": 884,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.087488552513767,
+                767.7506657138438
+              ],
+              "retained_columns": 877,
+              "pooled_rms_px": 1.1504510490325757,
+              "holdout_p95_px": 2.298178958266748,
+              "observed_axial_interval_px": [
+                855.0,
+                1739.0
+              ],
+              "reference_u_px": 1296.5,
+              "edge_v_at_reference_px": 654.3217573797449
+            }
+          ],
+          "stable_boundary_count": 1,
+          "occluded_boundary_count": 0
+        },
+        "full_span_audit": {
+          "revision": "axial-boundary-aggregation-v1",
+          "policy_sha256": "4417747ae17d4ef65ec7e46b8c9e1eabfd147ad7413c6c50f0e8669076f642bb",
+          "policy": {
+            "window_px": 128,
+            "minimum_windows": 3,
+            "maximum_windows": 16,
+            "minimum_points_per_window": 48,
+            "minimum_window_fraction": 0.75,
+            "maximum_edge_rms_px": 1.25,
+            "maximum_window_offset_px": 1.5,
+            "maximum_holdout_p95_px": 2.0,
+            "minimum_width_px": 8.0,
+            "adaptive_lengths_px": [
+              384,
+              640,
+              1024
+            ],
+            "adaptive_positions": 3,
+            "adaptive_selection": "stable-edge-count-then-longest-v2",
+            "maximum_fit_points_per_boundary": 128,
+            "maximum_reprojection_rms_px": 2.0,
+            "maximum_axis_nullspace_ratio": 0.25,
+            "assumed_coherent_edge_sigma_px": 0.5
+          },
+          "scope": "IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY",
+          "boundaries": [
+            {
+              "role": "right",
+              "edge": "top",
+              "boundary_kind": "visible",
+              "status": "STABLE",
+              "reason_codes": [],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    855.0,
+                    981.2857142857143
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.41437202697779496,
+                  "offset_from_global_px": 0.14339574898205565,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    981.2857142857143,
+                    1107.5714285714287
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.40591119296764994,
+                  "offset_from_global_px": 0.0668817584718262,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1107.5714285714287,
+                    1233.857142857143
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3575178057423816,
+                  "offset_from_global_px": 0.031042986302680653,
+                  "inlier_fraction": 0.9365079365079365
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1233.857142857143,
+                    1360.142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3801821976733884,
+                  "offset_from_global_px": 0.19170343434526949,
+                  "inlier_fraction": 0.968503937007874
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1360.142857142857,
+                    1486.4285714285716
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.4037805287512909,
+                  "offset_from_global_px": 0.2051720984601162,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1486.4285714285716,
+                    1612.7142857142858
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.3724492974882854,
+                  "offset_from_global_px": 0.09224037819459685,
+                  "inlier_fraction": 0.9841269841269841
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1612.7142857142858,
+                    1739.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.5739013834311886,
+                  "offset_from_global_px": 0.6453900729748021,
+                  "inlier_fraction": 1.0
+                }
+              ],
+              "source_columns": 884,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.08703476254036234,
+                661.5483162125286
+              ],
+              "retained_columns": 848,
+              "pooled_rms_px": 0.44923516330479346,
+              "holdout_p95_px": 1.0664721971027398,
+              "observed_axial_interval_px": [
+                855.0,
+                1739.0
+              ],
+              "reference_u_px": 1296.5,
+              "edge_v_at_reference_px": 548.7077465789488
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "boundary_kind": "visible",
+              "status": "UNSTABLE",
+              "reason_codes": [
+                "CROSS_WINDOW_BOUNDARY_UNSTABLE"
+              ],
+              "windows": [
+                {
+                  "index": 0,
+                  "axial_interval_px": [
+                    855.0,
+                    981.2857142857143
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.8934027728252217,
+                  "offset_from_global_px": 0.11386036704831426,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 1,
+                  "axial_interval_px": [
+                    981.2857142857143,
+                    1107.5714285714287
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.1891417893197427,
+                  "offset_from_global_px": 0.2986297185702451,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 2,
+                  "axial_interval_px": [
+                    1107.5714285714287,
+                    1233.857142857143
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.6970726775889518,
+                  "offset_from_global_px": 0.32389019493609217,
+                  "inlier_fraction": 0.9761904761904762
+                },
+                {
+                  "index": 3,
+                  "axial_interval_px": [
+                    1233.857142857143,
+                    1360.142857142857
+                  ],
+                  "columns": 127,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.100332576363357,
+                  "offset_from_global_px": 0.2018919359878666,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 4,
+                  "axial_interval_px": [
+                    1360.142857142857,
+                    1486.4285714285716
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9335991806035553,
+                  "offset_from_global_px": 0.12258835709609839,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 5,
+                  "axial_interval_px": [
+                    1486.4285714285716,
+                    1612.7142857142858
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 1.038973525835234,
+                  "offset_from_global_px": 0.062012450769461935,
+                  "inlier_fraction": 1.0
+                },
+                {
+                  "index": 6,
+                  "axial_interval_px": [
+                    1612.7142857142858,
+                    1739.0
+                  ],
+                  "columns": 126,
+                  "accepted": true,
+                  "reason": "CONSISTENT",
+                  "edge_rms_px": 0.9868726170326576,
+                  "offset_from_global_px": 0.20924405305477478,
+                  "inlier_fraction": 0.9682539682539683
+                }
+              ],
+              "source_columns": 884,
+              "total_windows": 7,
+              "accepted_windows": 7,
+              "line_slope_intercept": [
+                -0.087488552513767,
+                767.7506657138438
+              ],
+              "retained_columns": 877,
+              "pooled_rms_px": 1.1504510490325757,
+              "holdout_p95_px": 2.298178958266748,
+              "observed_axial_interval_px": [
+                855.0,
+                1739.0
+              ],
+              "reference_u_px": 1296.5,
+              "edge_v_at_reference_px": 654.3217573797449
+            }
+          ],
+          "stable_boundary_count": 1,
+          "occluded_boundary_count": 0
+        },
+        "span_attempts": [
+          {
+            "span": "FULL",
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              855.0,
+              1239.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1105.0,
+              1489.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1355.0,
+              1739.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              855.0,
+              1495.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              977.0,
+              1617.0
+            ],
+            "stable_boundary_count": 1
+          },
+          {
+            "span": [
+              1099.0,
+              1739.0
+            ],
+            "stable_boundary_count": 1
+          }
+        ]
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "POOL-L18-POOL-R19",
+      "fit": {
+        "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+        "accepted_diameter_mm": null,
+        "axis": [
+          0.9961643767572302,
+          -0.08749991322178832,
+          0.000547417627199579
+        ],
+        "baseline_perpendicular_to_axis_mm": 5.234575647549658,
+        "diameter_source": "IMAGE_FIT",
+        "known_diameter_mm": null,
+        "ignored_occlusion_boundaries": [],
+        "observed_boundary_count": 4,
+        "status": "CONDITIONAL_FIT",
+        "trial_diameter_mm": 38.71826449853411,
+        "section_center_parameters_mm": [
+          -81.6378024291621,
+          1016.109125375983
+        ],
+        "center_at_reference_column_mm": [
+          234.432573752325,
+          -102.5439399763895,
+          1016.2420297022153
+        ],
+        "reference_left_column_px": 1397.0410742496051,
+        "reprojection_rms_px": 0.6435016041343236,
+        "linear_condition": 385.1686767257395,
+        "predicted_lines": {
+          "left": [
+            [
+              0.08744567261324744,
+              0.9961692900010604,
+              -417.2327210572943
+            ],
+            [
+              -0.087466522495107,
+              -0.9961674595381105,
+              487.3877623814548
+            ]
+          ],
+          "right": [
+            [
+              0.08744285979071904,
+              0.9961695369120763,
+              -407.76823216454613
+            ],
+            [
+              -0.08746371785335927,
+              -0.9961677057901787,
+              477.95078258205996
+            ]
+          ]
+        }
+      },
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.6931710829938567,
+        "center_difference_mm": 20.268651269264005,
+        "center_difference_components_mm": [
+          1.7378188328060276,
+          -20.194014211626722
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      },
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE"
+      ],
+      "pixel_error": {
+        "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumed_vertical_pixel_sigma_px": 0.5,
+        "point_counts_per_edge": [
+          128,
+          128,
+          128,
+          128
+        ],
+        "edge_order": [
+          [
+            "left",
+            "top"
+          ],
+          [
+            "left",
+            "bottom"
+          ],
+          [
+            "right",
+            "top"
+          ],
+          [
+            "right",
+            "bottom"
+          ]
+        ],
+        "diameter_and_z_jacobian_mm_per_px": [
+          [
+            -2.318925584745699,
+            -1.7629973978970526,
+            1.7696906486330732,
+            2.3139616724363776
+          ],
+          [
+            -53.664539796234294,
+            -53.497808108057825,
+            53.653828498332814,
+            53.50847647981709
+          ]
+        ],
+        "section_parameters_jacobian_mm_per_px": [
+          [
+            4.586648362704864,
+            4.5737066860239395,
+            -4.310788431063912,
+            -4.297882481181432
+          ],
+          [
+            -53.657508285068616,
+            -53.490798380342994,
+            53.64681161090857,
+            53.50147866067118
+          ],
+          [
+            -1.1594627923728495,
+            -0.8814986989485263,
+            0.8848453243165366,
+            1.1569808362181888
+          ]
+        ],
+        "scenarios": {
+          "IID_PIXELS_OPTIMISTIC": {
+            "assumed_effective_samples_per_edge": [
+              128,
+              128,
+              128,
+              128
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                0.15431587303058505,
+                -1.8592777253240707,
+                -0.0354227619462038
+              ],
+              [
+                -1.859277725324336,
+                22.423136957216677,
+                0.427211658114917
+              ],
+              [
+                -0.03542276194620408,
+                0.4272116581148594,
+                0.008286890014229118
+              ]
+            ],
+            "diameter_sigma_mm": 0.18206471392589085,
+            "radius_sigma_mm": 0.09103235696294543,
+            "center_z_sigma_mm": 4.735927434558361,
+            "normal_95_halfwidth_diameter_mm": 0.3568468392947461,
+            "normal_95_halfwidth_radius_mm": 0.17842341964737304,
+            "normal_95_halfwidth_center_z_mm": 9.282417771734387
+          },
+          "COHERENT_EDGE_OFFSETS": {
+            "assumed_effective_samples_per_edge": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                19.752706693081006,
+                -237.99061685605915,
+                -4.534178316436484
+              ],
+              [
+                -237.99061685605915,
+                2870.1955804058202,
+                54.68381737602518
+              ],
+              [
+                -4.534178316436484,
+                54.68381737602518,
+                1.0607374566214915
+              ]
+            ],
+            "diameter_sigma_mm": 2.059842184849598,
+            "radius_sigma_mm": 1.029921092424799,
+            "center_z_sigma_mm": 53.58122029131999,
+            "normal_95_halfwidth_diameter_mm": 4.037290682305212,
+            "normal_95_halfwidth_radius_mm": 2.018645341152606,
+            "normal_95_halfwidth_center_z_mm": 105.01919177098718
+          }
+        },
+        "excluded": [
+          "CALIBRATION_SCALE_AND_RECTIFICATION",
+          "MISIDENTIFIED_SILHOUETTE",
+          "OCCLUSION_CLASSIFICATION",
+          "AXIS_ERROR",
+          "GENERAL_PIXEL_NOISE_CORRELATION"
+        ]
+      }
+    },
+    {
+      "candidate_id": "POOL-L19-POOL-R20",
+      "fit": {
+        "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+        "accepted_diameter_mm": null,
+        "axis": [
+          0.9961643767572302,
+          -0.08749991322178832,
+          0.000547417627199579
+        ],
+        "baseline_perpendicular_to_axis_mm": 5.234575647549658,
+        "diameter_source": "IMAGE_FIT",
+        "known_diameter_mm": null,
+        "ignored_occlusion_boundaries": [],
+        "observed_boundary_count": 4,
+        "status": "CONDITIONAL_FIT",
+        "trial_diameter_mm": 40.335412403243964,
+        "section_center_parameters_mm": [
+          -29.54950257733073,
+          883.3788603456175
+        ],
+        "center_at_reference_column_mm": [
+          208.67378997293983,
+          -47.99251788119699,
+          883.4950850942951
+        ],
+        "reference_left_column_px": 1407.1401273885351,
+        "reprojection_rms_px": 0.7876819341091229,
+        "linear_condition": 325.6358081161706,
+        "predicted_lines": {
+          "left": [
+            [
+              0.08746921566618156,
+              0.9961672230658581,
+              -496.44967098173174
+            ],
+            [
+              -0.08749413556208617,
+              -0.996165034641471,
+              580.2995591313089
+            ]
+          ],
+          "right": [
+            [
+              0.08746598125098448,
+              0.9961675070608369,
+              -485.56659917457284
+            ],
+            [
+              -0.0874909056047618,
+              -0.9961653183264607,
+              569.43146321827
+            ]
+          ]
+        }
+      },
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.575203582526342,
+        "center_difference_mm": 13.90486056558423,
+        "center_difference_components_mm": [
+          0.46728448155235824,
+          -13.897006604360513
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      },
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE"
+      ],
+      "pixel_error": {
+        "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumed_vertical_pixel_sigma_px": 0.5,
+        "point_counts_per_edge": [
+          128,
+          128,
+          128,
+          128
+        ],
+        "edge_order": [
+          [
+            "left",
+            "top"
+          ],
+          [
+            "left",
+            "bottom"
+          ],
+          [
+            "right",
+            "top"
+          ],
+          [
+            "right",
+            "bottom"
+          ]
+        ],
+        "diameter_and_z_jacobian_mm_per_px": [
+          [
+            -2.0889309754273455,
+            -1.6068178374323594,
+            1.6097036868457337,
+            2.0868249169619446
+          ],
+          [
+            -40.51356962828436,
+            -40.446517788279834,
+            40.50213880857882,
+            40.45758256504314
+          ]
+        ],
+        "section_parameters_jacobian_mm_per_px": [
+          [
+            1.5946890835090244,
+            1.5926623233785264,
+            -1.3548972337321175,
+            -1.3528929181077132
+          ],
+          [
+            -40.50822849972519,
+            -40.44118547008338,
+            40.49681069538565,
+            40.45226033799281
+          ],
+          [
+            -1.0444654877136728,
+            -0.8034089187161797,
+            0.8048518434228669,
+            1.0434124584809723
+          ]
+        ],
+        "scenarios": {
+          "IID_PIXELS_OPTIMISTIC": {
+            "assumed_effective_samples_per_edge": [
+              128,
+              128,
+              128,
+              128
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                0.017081186696758486,
+                -0.46601812597107556,
+                -0.010639073741123974
+              ],
+              [
+                -0.4660181259710786,
+                12.798290213122408,
+                0.29218934137519287
+              ],
+              [
+                -0.01063907374112402,
+                0.29218934137519215,
+                0.006782861695507486
+              ]
+            ],
+            "diameter_sigma_mm": 0.16471626143775223,
+            "radius_sigma_mm": 0.08235813071887611,
+            "center_z_sigma_mm": 3.577940997485106,
+            "normal_95_halfwidth_diameter_mm": 0.32284387241799434,
+            "normal_95_halfwidth_radius_mm": 0.16142193620899717,
+            "normal_95_halfwidth_center_z_mm": 7.012764355070807
+          },
+          "COHERENT_EDGE_OFFSETS": {
+            "assumed_effective_samples_per_edge": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                2.1864180778033213,
+                -59.650943877659266,
+                -1.3618184221066418
+              ],
+              [
+                -59.650943877659266,
+                1638.1957753405698,
+                37.40064521945199
+              ],
+              [
+                -1.3618184221066418,
+                37.40064521945199,
+                0.8682175235180388
+              ]
+            ],
+            "diameter_sigma_mm": 1.8635638154010599,
+            "radius_sigma_mm": 0.9317819077005299,
+            "center_z_sigma_mm": 40.47996220446652,
+            "normal_95_halfwidth_diameter_mm": 3.6525850781860774,
+            "normal_95_halfwidth_radius_mm": 1.8262925390930387,
+            "normal_95_halfwidth_center_z_mm": 79.34072592075437
+          }
+        },
+        "excluded": [
+          "CALIBRATION_SCALE_AND_RECTIFICATION",
+          "MISIDENTIFIED_SILHOUETTE",
+          "OCCLUSION_CLASSIFICATION",
+          "AXIS_ERROR",
+          "GENERAL_PIXEL_NOISE_CORRELATION"
+        ]
+      }
+    },
+    {
+      "candidate_id": "POOL-L20-POOL-R21",
+      "fit": {
+        "scope": "CONDITIONAL_PROJECTION_NOT_MEASUREMENT",
+        "accepted_diameter_mm": null,
+        "axis": [
+          0.9961643767572302,
+          -0.08749991322178832,
+          0.000547417627199579
+        ],
+        "baseline_perpendicular_to_axis_mm": 5.234575647549658,
+        "diameter_source": "IMAGE_FIT",
+        "known_diameter_mm": null,
+        "ignored_occlusion_boundaries": [],
+        "observed_boundary_count": 4,
+        "status": "CONDITIONAL_FIT",
+        "trial_diameter_mm": 20.92507422150859,
+        "section_center_parameters_mm": [
+          27.70032418623186,
+          1000.4640165125957
+        ],
+        "center_at_reference_column_mm": [
+          241.74853739457293,
+          6.572553832533103,
+          1000.595681450143
+        ],
+        "reference_left_column_px": 1417.070287539936,
+        "reprojection_rms_px": 0.881381629856402,
+        "linear_condition": 372.2059052856987,
+        "predicted_lines": {
+          "left": [
+            [
+              0.0875093211981835,
+              0.9961637007557709,
+              -631.3959256626553
+            ],
+            [
+              -0.08752073170602115,
+              -0.9961626983187248,
+              669.7898506386348
+            ]
+          ],
+          "right": [
+            [
+              0.08750646829368265,
+              0.996163951368833,
+              -621.7965165751413
+            ],
+            [
+              -0.08751787693627193,
+              -0.996162949128589,
+              660.1841557480057
+            ]
+          ]
+        }
+      },
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.03328373821044295,
+        "center_difference_mm": 1.636336468938346,
+        "center_difference_components_mm": [
+          0.02245500742800388,
+          1.6361823896555734
+        ],
+        "stable": true,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      },
+      "reason_codes": [],
+      "pixel_error": {
+        "status": "ASSUMPTION_CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumed_vertical_pixel_sigma_px": 0.5,
+        "point_counts_per_edge": [
+          128,
+          128,
+          128,
+          128
+        ],
+        "edge_order": [
+          [
+            "left",
+            "top"
+          ],
+          [
+            "left",
+            "bottom"
+          ],
+          [
+            "right",
+            "top"
+          ],
+          [
+            "right",
+            "bottom"
+          ]
+        ],
+        "diameter_and_z_jacobian_mm_per_px": [
+          [
+            -1.357156961613235,
+            -0.8146210298716028,
+            0.8137948959963381,
+            1.3576797666787144
+          ],
+          [
+            -51.90752414760709,
+            -51.93716244926463,
+            51.90273641106387,
+            51.94101057438729
+          ]
+        ],
+        "section_parameters_jacobian_mm_per_px": [
+          [
+            -1.1653079230265462,
+            -1.166185753271023,
+            1.4369917217238992,
+            1.4378014520822546
+          ],
+          [
+            -51.90068075153363,
+            -51.930315155947255,
+            51.89590671485348,
+            51.93417582979919
+          ],
+          [
+            -0.6785784808066175,
+            -0.4073105149358014,
+            0.40689744799816907,
+            0.6788398833393572
+          ]
+        ],
+        "scenarios": {
+          "IID_PIXELS_OPTIMISTIC": {
+            "assumed_effective_samples_per_edge": [
+              128,
+              128,
+              128,
+              128
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                0.013379046351286998,
+                0.5278957493864318,
+                0.005520471473738128
+              ],
+              [
+                0.5278957493864385,
+                21.055977276603826,
+                0.22019747604234813
+              ],
+              [
+                0.005520471473738145,
+                0.22019747604234613,
+                0.002446794145290556
+              ]
+            ],
+            "diameter_sigma_mm": 0.09893016011895575,
+            "radius_sigma_mm": 0.049465080059477876,
+            "center_z_sigma_mm": 4.5892837167849265,
+            "normal_95_halfwidth_diameter_mm": 0.19390311383315326,
+            "normal_95_halfwidth_radius_mm": 0.09695155691657663,
+            "normal_95_halfwidth_center_z_mm": 8.994996084898457
+          },
+          "COHERENT_EDGE_OFFSETS": {
+            "assumed_effective_samples_per_edge": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "section_parameter_order": [
+              "u_mm",
+              "v_mm",
+              "radius_mm"
+            ],
+            "section_parameter_covariance_mm2": [
+              [
+                1.7125374976284005,
+                67.57142248733851,
+                0.7066244585288775
+              ],
+              [
+                67.57142248733851,
+                2695.195511886473,
+                28.185437592400934
+              ],
+              [
+                0.7066244585288775,
+                28.185437592400934,
+                0.31318993264767486
+              ]
+            ],
+            "diameter_sigma_mm": 1.119267497335065,
+            "radius_sigma_mm": 0.5596337486675325,
+            "center_z_sigma_mm": 51.92211121685227,
+            "normal_95_halfwidth_diameter_mm": 2.1937642947767273,
+            "normal_95_halfwidth_radius_mm": 1.0968821473883636,
+            "normal_95_halfwidth_center_z_mm": 101.76733798503045
+          }
+        },
+        "excluded": [
+          "CALIBRATION_SCALE_AND_RECTIFICATION",
+          "MISIDENTIFIED_SILHOUETTE",
+          "OCCLUSION_CLASSIFICATION",
+          "AXIS_ERROR",
+          "GENERAL_PIXEL_NOISE_CORRELATION"
+        ]
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "ids": [
+        "POOL-L18-POOL-R19",
+        "POOL-L19-POOL-R20"
+      ],
+      "delta_uv_mm": [
+        52.088299851831366,
+        -132.73026503036556
+      ],
+      "center_distance_mm": 142.58511225399857,
+      "surface_clearance_mm": 103.05827380310954,
+      "status": "CONDITIONAL_ESTIMATE",
+      "accepted_measurement": false,
+      "pixel_error": {
+        "status": "CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumes_independent_candidate_edge_errors": true,
+        "excluded": [
+          "SHARED_CALIBRATION_AND_AXIS_ERRORS",
+          "EDGE_MISIDENTIFICATION",
+          "CROSS_CANDIDATE_CORRELATION",
+          "SUPPLIED_DIAMETER_TOLERANCE"
+        ],
+        "scenarios": {
+          "COHERENT_EDGE_OFFSETS": {
+            "center_distance_sigma_mm": 64.125585241021,
+            "center_distance_normal_95_halfwidth_mm": 125.68614707240116,
+            "surface_clearance_sigma_mm": 63.871155864676155,
+            "surface_clearance_normal_95_halfwidth_mm": 125.18746549476526
+          },
+          "IID_PIXELS_OPTIMISTIC": {
+            "center_distance_sigma_mm": 5.6679236923709,
+            "center_distance_normal_95_halfwidth_mm": 11.109130437046964,
+            "surface_clearance_sigma_mm": 5.645435389623666,
+            "surface_clearance_normal_95_halfwidth_mm": 11.065053363662384
+          }
+        }
+      }
+    },
+    {
+      "ids": [
+        "POOL-L18-POOL-R19",
+        "POOL-L20-POOL-R21"
+      ],
+      "delta_uv_mm": [
+        109.33812661539395,
+        -15.64510886338735
+      ],
+      "center_distance_mm": 110.45177845155396,
+      "surface_clearance_mm": 80.63010909153262,
+      "status": "CONDITIONAL_ESTIMATE",
+      "accepted_measurement": false,
+      "pixel_error": {
+        "status": "CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumes_independent_candidate_edge_errors": true,
+        "excluded": [
+          "SHARED_CALIBRATION_AND_AXIS_ERRORS",
+          "EDGE_MISIDENTIFICATION",
+          "CROSS_CANDIDATE_CORRELATION",
+          "SUPPLIED_DIAMETER_TOLERANCE"
+        ],
+        "scenarios": {
+          "COHERENT_EDGE_OFFSETS": {
+            "center_distance_sigma_mm": 13.434615189937633,
+            "center_distance_normal_95_halfwidth_mm": 26.33184577227776,
+            "surface_clearance_sigma_mm": 12.80547086206006,
+            "surface_clearance_normal_95_halfwidth_mm": 25.098722889637717
+          },
+          "IID_PIXELS_OPTIMISTIC": {
+            "center_distance_sigma_mm": 1.1874561102878107,
+            "center_distance_normal_95_halfwidth_mm": 2.327413976164109,
+            "surface_clearance_sigma_mm": 1.1318476907681332,
+            "surface_clearance_normal_95_halfwidth_mm": 2.218421473905541
+          }
+        }
+      }
+    },
+    {
+      "ids": [
+        "POOL-L19-POOL-R20",
+        "POOL-L20-POOL-R21"
+      ],
+      "delta_uv_mm": [
+        57.249826763562595,
+        117.08515616697821
+      ],
+      "center_distance_mm": 130.3321773742141,
+      "surface_clearance_mm": 99.70193406183782,
+      "status": "CONDITIONAL_ESTIMATE",
+      "accepted_measurement": false,
+      "pixel_error": {
+        "status": "CONDITIONAL_LINEAR_PROPAGATION",
+        "total_accuracy_known": false,
+        "assumes_independent_candidate_edge_errors": true,
+        "excluded": [
+          "SHARED_CALIBRATION_AND_AXIS_ERRORS",
+          "EDGE_MISIDENTIFICATION",
+          "CROSS_CANDIDATE_CORRELATION",
+          "SUPPLIED_DIAMETER_TOLERANCE"
+        ],
+        "scenarios": {
+          "COHERENT_EDGE_OFFSETS": {
+            "center_distance_sigma_mm": 59.1968435877042,
+            "center_distance_normal_95_halfwidth_mm": 116.02581343190023,
+            "surface_clearance_sigma_mm": 59.33116942784349,
+            "surface_clearance_normal_95_halfwidth_mm": 116.28909207857325
+          },
+          "IID_PIXELS_OPTIMISTIC": {
+            "center_distance_sigma_mm": 5.232283957547517,
+            "center_distance_normal_95_halfwidth_mm": 10.255276556793133,
+            "surface_clearance_sigma_mm": 5.24415653042705,
+            "surface_clearance_normal_95_halfwidth_mm": 10.278546799637018
+          }
+        }
+      }
+    }
+  ]
+}

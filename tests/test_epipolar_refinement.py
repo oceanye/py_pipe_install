@@ -63,5 +63,6 @@ def test_refined_boundary_overlay_is_mapped_back_to_original_image():
     h = np.array([[1., 0, 2], [0, 1., -3], [0, 0, 1.]])
     stage = {'epipolar_refinement': {'applied': True, 'right_refined_to_original': h.tolist()},
              'views': {'right': [{'aggregation': {'boundaries': [{'status': 'STABLE',
-                 'line_slope_intercept': [.1, 20], 'windows': [{'accepted': True, 'axial_interval_px': [10, 50]}]}]}}]}}
+                 'retained_column_runs_px': [[10, 51]],
+                 'line_slope_intercept': [.1, 20], 'windows': [{'accepted': True, 'axial_interval_px': [10, 51]}]}]}}]}}
     assert boundary_overlay_segments({'section_evaluation': stage}, 'right') == [(12., 18., 52., 22.)]

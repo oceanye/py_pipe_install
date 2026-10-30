@@ -9,7 +9,7 @@ import pytest
 
 from pipe_twin.ground_check import check_ground
 from pipe_twin.ground_visualization import (checked_ground, decode_support, paint_support,
-                                          tilt_angles, tilt_label_lines)
+                                          tilt_angles, tilt_label_lines, ground_evidence_image)
 from test_ground_check import scene
 
 
@@ -77,6 +77,16 @@ def test_unobservable_and_missing_angles_are_not_published_as_zero_roll():
     assert '倾角暂无有效解' in tilt_label_lines(empty)
 
 
+def test_tilt_from_ground_normal_is_distinct_from_optical_axis_to_plane():
+    pitch = np.deg2rad(75.45)
+    result = {'status': 'GROUND_PLANE_INCONSISTENT',
+        'left_plane': {'candidate_plane': {'normal_camera': [0, -np.cos(pitch), -np.sin(pitch)]}}}
+    full = '\n'.join(tilt_label_lines(result))
+    assert '光轴偏离地面法线 14.55°（0° 为垂直地面）' in full
+    assert '光轴与地面夹角 75.45°（0° 为平行）' in full
+    assert '光轴偏离地面法线 14.55°' in '\n'.join(tilt_label_lines(result, compact=True))
+
+
 @pytest.mark.parametrize('damage', ['size', 'bounds', 'data', 'bomb', 'count'])
 def test_bad_or_stale_serialized_support_is_not_painted(damage):
     group, calibration, region, _ = scene()
@@ -95,3 +105,24 @@ def test_bad_or_stale_serialized_support_is_not_painted(damage):
     assert decode_support(result, (640, 480)) is None
     image = np.full((480, 640, 3), 100, np.uint8)
     np.testing.assert_array_equal(paint_support(image, result), image)
+
+
+@pytest.mark.parametrize('trial', [False, True])
+def test_current_pair_source_is_visible_in_gui_and_evidence_even_when_ground_passes(monkeypatch, trial):
+    group, calibration, region, _ = scene()
+    result = check_ground(group, calibration, region)
+    result.update(source_scope='REFERENCE_STEREO_PAIR_ONLY', source_burst_status='INVALID')
+    if trial:
+        result['status'] = 'GROUND_PLANE_INCONSISTENT'
+        result['corrections'] = [{'trial_mode': True, 'applied': True}]
+    full = '\n'.join(tilt_label_lines(result))
+    compact = tilt_label_lines(result, compact=True)
+    assert '地面仅使用当前帧；连拍仍未通过' in full
+    assert len(compact) == 2
+    assert '仅当前帧' in compact[0] and '连拍未通过' in compact[0]
+    assert ('候选试验未验证' if trial else '地面通过') in compact[0]
+    drawn = []
+    monkeypatch.setattr(cv2, 'putText', lambda image, text, *a, **k: drawn.append(text))
+    ground_evidence_image(np.zeros((480, 640, 3), np.uint8), result)
+    assert 'GROUND: CURRENT PAIR ONLY / BURST STILL REJECTED' in drawn
+    assert ('TRIAL GROUND CORRECTION APPLIED - NOT VALIDATED' if trial else 'GROUND CHECK PASSED') in drawn

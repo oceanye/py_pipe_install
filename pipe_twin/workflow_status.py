@@ -52,4 +52,10 @@ def workflow_summary(report, registration, *, loaded_pairs=0, ground_inspection=
     counts = ((report or {}).get('position_assessment') or {}).get('counts')
     position = (f"相对就位：符合 {counts.get('IN_POSITION', 0)} / 不符 {counts.get('OUT_OF_POSITION', 0)} / 待定 {counts.get('UNKNOWN', 0)}"
                 if counts else '相对就位：待评估')
-    return f'{sampling} · {viewing} · {sections}\n地面：{plane} / {applied} · {position}'
+    source = '地面'
+    if ground.get('source_scope') == 'REFERENCE_STEREO_PAIR_ONLY':
+        source += '（仅当前帧'
+        if ground.get('source_burst_status') == 'INVALID':
+            source += '；连拍未通过'
+        source += '）'
+    return f'{sampling} · {viewing} · {sections}\n{source}：{plane} / {applied} · {position}'

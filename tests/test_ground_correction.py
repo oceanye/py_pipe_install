@@ -157,13 +157,15 @@ def test_trial_free_radius_fits_remain_diagnostic_even_with_validated_calibratio
 @pytest.mark.parametrize('zones', [False, True])
 def test_real_ground_plane_flows_before_section_fit_in_full_and_cropped_pipeline(monkeypatch, zones):
     from test_elevation_auto import _groups
-    from test_ground_check import scene
+    from test_ground_check import scene, add_ground_images
     from pipe_twin.elevation_auto import analyze_elevation_auto_groups, analyze_elevation_auto_zones
     import pipe_twin.pooled_sections as module
     calibration, specs, groups = _groups()
-    ground_group, _, region, _ = scene([-.35, -1., 0.])
+    ground_group, ground_calibration, region, normal = scene([-.35, -1., 0.])
+    add_ground_images(ground_group, ground_calibration, normal)
     ground_group['depth'].audit = {'status': 'VALID'}
     groups[0]['depth'] = ground_group['depth']
+    groups[0]['left'], groups[0]['right'] = ground_group['left'], ground_group['right']
     views, source_k = synthetic_views()
     target_k = calibration.left.rectified_intrinsic
     # Supply independently projected pipe silhouettes at the actual K. The

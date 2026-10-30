@@ -1,0 +1,45 @@
+{
+  "suite": {
+    "passed": 942,
+    "skipped": 1,
+    "subtests_passed": 272,
+    "seconds": 426.53,
+    "log": "outputs/ground-color-boundaries-tests-final.log"
+  },
+  "isolated_skip": {
+    "test": "tests/test_gui.py -k module_import_does_not_eagerly_import_tkinter",
+    "passed": 1,
+    "seconds": 0.2
+  },
+  "source_files_unchanged": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": true,
+    "outputs\\elevation_workbench\\last_scene.json": true,
+    "outputs\\measurement_workbench\\calibration_current.json": true,
+    "outputs\\measurement_workbench\\workbench_profile.json": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\000_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\000_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\001_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\001_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\002_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\002_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\003_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\003_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\004_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\004_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\005_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\005_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\006_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\006_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\007_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\007_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\008_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\008_right.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\009_left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\009_right.png": true
+  },
+  "final_gui_report_hash_verified": true,
+  "scope": "SOFTWARE_AND_SAME_IMAGE_REPLAY;FIELD_DIMENSIONS_NOT_ACCEPTED"
+}

@@ -1,0 +1,202 @@
+{
+  "scope": "FROZEN_LAST_FRAME_CONDITIONAL_SECTIONS_NOT_INSTALLATION_ACCEPTANCE",
+  "before_count": 3,
+  "after_count": 4,
+  "aggregation_thresholds_unchanged": true,
+  "source_scene_unchanged": true,
+  "edge_extraction_revision": "colour-supported-local-gradient-v1",
+  "edge_extraction_policy_sha256": "d413def4d2c80e3832f0e48ade6249a8959a55dd47d91c91cf7d3e369f902c19",
+  "candidates": [
+    {
+      "candidate_id": "POOL-L18-POOL-R19",
+      "before_diameter_mm": 38.71826449853411,
+      "after_diameter_mm": 38.854836759657516,
+      "before_center_subset_difference_mm": 20.268651269264005,
+      "after_center_subset_difference_mm": 14.498416113794624,
+      "after_reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE"
+      ],
+      "after_accepted_measurement": false
+    },
+    {
+      "candidate_id": "POOL-L19-POOL-R20",
+      "before_diameter_mm": 40.335412403243964,
+      "after_diameter_mm": 40.48341741947546,
+      "before_center_subset_difference_mm": 13.90486056558423,
+      "after_center_subset_difference_mm": 17.09918489856056,
+      "after_reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE"
+      ],
+      "after_accepted_measurement": false
+    },
+    {
+      "candidate_id": "POOL-L20-POOL-R21",
+      "before_diameter_mm": 20.92507422150859,
+      "after_diameter_mm": 20.92549733811334,
+      "before_center_subset_difference_mm": 1.636336468938346,
+      "after_center_subset_difference_mm": 1.6405294841079614,
+      "after_reason_codes": [],
+      "after_accepted_measurement": false
+    },
+    {
+      "candidate_id": "POOL-L21-POOL-R22",
+      "before_diameter_mm": null,
+      "after_diameter_mm": 45.27419694609011,
+      "before_center_subset_difference_mm": null,
+      "after_center_subset_difference_mm": 8.19616575762697,
+      "after_reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+      ],
+      "after_accepted_measurement": false
+    }
+  ],
+  "blue_boundaries": {
+    "left": {
+      "before": {
+        "stable_count": 1,
+        "edges": [
+          {
+            "edge": "top",
+            "status": "STABLE",
+            "source_columns": 384,
+            "retained_columns": 380,
+            "accepted_windows": 3,
+            "total_windows": 3,
+            "holdout_p95_px": 1.2046398190059961,
+            "observed_axial_interval_px": [
+              1109.0,
+              1493.0
+            ],
+            "reason_codes": []
+          },
+          {
+            "edge": "bottom",
+            "status": "UNSTABLE",
+            "source_columns": 384,
+            "retained_columns": null,
+            "accepted_windows": 2,
+            "total_windows": 3,
+            "holdout_p95_px": null,
+            "observed_axial_interval_px": null,
+            "reason_codes": [
+              "TOO_FEW_CONSISTENT_AXIAL_WINDOWS"
+            ]
+          }
+        ]
+      },
+      "after": {
+        "stable_count": 1,
+        "edges": [
+          {
+            "edge": "top",
+            "status": "STABLE",
+            "source_columns": 631,
+            "retained_columns": 604,
+            "accepted_windows": 5,
+            "total_windows": 5,
+            "holdout_p95_px": 0.7252647164514201,
+            "observed_axial_interval_px": [
+              1109.0,
+              1740.0
+            ],
+            "reason_codes": []
+          },
+          {
+            "edge": "bottom",
+            "status": "UNSTABLE",
+            "source_columns": 631,
+            "retained_columns": 626,
+            "accepted_windows": 5,
+            "total_windows": 5,
+            "holdout_p95_px": 2.208982848873528,
+            "observed_axial_interval_px": [
+              1109.0,
+              1740.0
+            ],
+            "reason_codes": [
+              "CROSS_WINDOW_BOUNDARY_UNSTABLE"
+            ]
+          }
+        ]
+      }
+    },
+    "right": {
+      "before": {
+        "stable_count": 1,
+        "edges": [
+          {
+            "edge": "top",
+            "status": "STABLE",
+            "source_columns": 884,
+            "retained_columns": 848,
+            "accepted_windows": 7,
+            "total_windows": 7,
+            "holdout_p95_px": 1.0664721971027398,
+            "observed_axial_interval_px": [
+              855.0,
+              1739.0
+            ],
+            "reason_codes": []
+          },
+          {
+            "edge": "bottom",
+            "status": "UNSTABLE",
+            "source_columns": 884,
+            "retained_columns": 877,
+            "accepted_windows": 7,
+            "total_windows": 7,
+            "holdout_p95_px": 2.298178958266748,
+            "observed_axial_interval_px": [
+              855.0,
+              1739.0
+            ],
+            "reason_codes": [
+              "CROSS_WINDOW_BOUNDARY_UNSTABLE"
+            ]
+          }
+        ]
+      },
+      "after": {
+        "stable_count": 2,
+        "edges": [
+          {
+            "edge": "top",
+            "status": "STABLE",
+            "source_columns": 640,
+            "retained_columns": 631,
+            "accepted_windows": 5,
+            "total_windows": 5,
+            "holdout_p95_px": 0.4842185331571155,
+            "observed_axial_interval_px": [
+              855.0,
+              1495.0
+            ],
+            "reason_codes": []
+          },
+          {
+            "edge": "bottom",
+            "status": "STABLE",
+            "source_columns": 640,
+            "retained_columns": 612,
+            "accepted_windows": 5,
+            "total_windows": 5,
+            "holdout_p95_px": 1.956391716293956,
+            "observed_axial_interval_px": [
+              855.0,
+              1495.0
+            ],
+            "reason_codes": []
+          }
+        ]
+      }
+    }
+  },
+  "limitations": [
+    "Blue remains partial: one left and two right silhouettes, no missing edge is reconstructed",
+    "Both red centres and blue centre fail unchanged 5 mm independent-subset consistency gate",
+    "White conditional diameter remains 20.925 mm; physical procurement nominal is not forced into fitting",
+    "Axial local averaging correlates neighboring pixels; optimistic IID scenario is not an accuracy certificate",
+    "No camera capture, calibration change, active scene update or CAD installation promotion"
+  ]
+}

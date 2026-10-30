@@ -5,15 +5,78 @@ from collections.abc import Mapping
 import hashlib
 import json
 import math
+import cv2
 import numpy as np
 
-REVISION = 'stereo-ground-plane-check-v3'
+REVISION = 'stereo-ground-plane-check-v4'
 POLICY = {'maximum_points': 4096, 'ransac_trials': 96, 'plane_tolerance_mm': 5.,
           'minimum_points': 256, 'minimum_valid_fraction': .25, 'minimum_plane_fraction': .7,
           'minimum_spatial_cells': 8, 'minimum_second_spread_mm': 20.,
           'maximum_holdout_rms_mm': 3., 'maximum_eye_angle_deg': 2., 'maximum_eye_offset_mm': 10.,
           'minimum_roll_normal_projection': .08715574274765817}  # sin(5 degrees)
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
+SUBPIXEL_POLICY = {'revision': 'ground-bidirectional-subpixel-v1', 'window_px': 21, 'pyramid_levels': 1,
+                  'maximum_epipolar_error_px': .5, 'maximum_roundtrip_error_px': .5,
+                  'maximum_seed_change_px': 2., 'minimum_retained_fraction': .25}
+
+
+def _refine_ground_samples(images, pixels, depths, intrinsic, baseline, role):
+    """Refine observed correspondences before fitting; no planar depth filling."""
+    source = images[role]
+    other = images['right' if role == 'left' else 'left']
+    gray = lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+    source, other = gray(source), gray(other)
+    audit = {'policy': dict(SUBPIXEL_POLICY), 'input_sample_count': len(pixels),
+             'kept_sample_count': 0, 'retained_fraction': 0., 'status': 'INSUFFICIENT_SUBPIXEL_SUPPORT',
+             'selection_uses_plane': False, 'inferred_pixels': 0}
+    empty = np.zeros(len(pixels), bool)
+    if not len(pixels):
+        return np.empty((0, 3)), empty, audit
+    sign = -1. if role == 'left' else 1.
+    seed_disparity = float(intrinsic[0, 0])*baseline/np.asarray(depths)
+    start = np.asarray(pixels, np.float32).reshape(-1, 1, 2)
+    guess = start.copy(); guess[:, 0, 0] += sign*seed_disparity
+    options = dict(winSize=(SUBPIXEL_POLICY['window_px'],)*2, maxLevel=SUBPIXEL_POLICY['pyramid_levels'],
+                   criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 40, .001),
+                   flags=cv2.OPTFLOW_USE_INITIAL_FLOW, minEigThreshold=1e-4)
+    try:
+        matched, forward, _ = cv2.calcOpticalFlowPyrLK(source, other, start, guess, **options)
+        if matched is None:
+            return np.empty((0, 3)), empty, audit
+        finite = np.isfinite(matched).all(axis=(1, 2))
+        safe_matched = matched.copy(); safe_matched[~finite] = 0.
+        returned, reverse, _ = cv2.calcOpticalFlowPyrLK(other, source, safe_matched, start.copy(), **options)
+        if returned is None:
+            return np.empty((0, 3)), empty, audit
+    except cv2.error:
+        audit['status'] = 'SUBPIXEL_MATCH_FAILED'
+        return np.empty((0, 3)), empty, audit
+    finite &= np.isfinite(returned).all(axis=(1, 2))
+    difference = matched[:, 0]-start[:, 0]
+    disparity = sign*difference[:, 0]
+    border = SUBPIXEL_POLICY['window_px']//2
+    h, w = source.shape
+    inside = ((start[:, 0, 0] >= border) & (start[:, 0, 0] < w-border)
+              & (start[:, 0, 1] >= border) & (start[:, 0, 1] < h-border)
+              & (matched[:, 0, 0] >= border) & (matched[:, 0, 0] < w-border)
+              & (matched[:, 0, 1] >= border) & (matched[:, 0, 1] < h-border))
+    reasons = {
+        'TRACKING_FAILED': ~(forward.ravel().astype(bool) & reverse.ravel().astype(bool) & finite),
+        'PATCH_OUTSIDE_IMAGE': ~inside,
+        'EPIPOLAR_MISMATCH': abs(difference[:, 1]) > SUBPIXEL_POLICY['maximum_epipolar_error_px'],
+        'ROUNDTRIP_MISMATCH': np.linalg.norm(returned[:, 0]-start[:, 0], axis=1) > SUBPIXEL_POLICY['maximum_roundtrip_error_px'],
+        'DISPARITY_SEED_MISMATCH': abs(disparity-seed_disparity) > SUBPIXEL_POLICY['maximum_seed_change_px'],
+        'NON_POSITIVE_DISPARITY': disparity <= 0,
+    }
+    valid = ~np.logical_or.reduce(list(reasons.values()))
+    audit.update(kept_sample_count=int(valid.sum()), retained_fraction=float(valid.mean()),
+                 rejection_counts={key: int(mask.sum()) for key, mask in reasons.items()},
+                 rejection_counts_overlap=True)
+    if valid.sum() >= POLICY['minimum_points'] and valid.mean() >= SUBPIXEL_POLICY['minimum_retained_fraction']:
+        audit['status'] = 'REFINED_MATCHES'
+    z = float(intrinsic[0, 0])*baseline/disparity[valid]
+    origin = np.array([baseline if role == 'right' else 0., 0., 0.])
+    return _backproject(np.asarray(pixels)[valid], z, intrinsic, origin), valid, audit
 
 
 def normalize_ground_region(payload, *, image_size=None):
@@ -147,29 +210,76 @@ def check_ground(group, calibration, region, *, section_stages=()):
     cells = np.minimum(3, xx*4//w)+4*np.minimum(3, yy*4//h)
     kl, kr = calibration.left.rectified_intrinsic, calibration.right.rectified_intrinsic
     points = _backproject(np.c_[xx+x, yy+y], z[yy, xx], kl, np.zeros(3))
+    images = {role: group.get(role) for role in ('left', 'right')}
+    refine = any(image is not None for image in images.values())
+    if refine and (not np.allclose(kl, kr, atol=1e-9, rtol=0)
+                   or (calibration.left.height, calibration.left.width)
+                   != (calibration.right.height, calibration.right.width)):
+        return result | {'status': 'GROUND_RECTIFIED_GEOMETRY_UNSUPPORTED'}
+    if refine and not all(isinstance(image, np.ndarray) and image.dtype == np.uint8
+                 and (image.ndim == 2 or (image.ndim == 3 and image.shape[2] == 3))
+                 and image.shape[:2] == (calibration.left.height, calibration.left.width)
+                 for image in images.values()):
+        return result | {'status': 'GROUND_IMAGE_PAIR_INVALID'}
+    if refine:
+        result['raw_depth_plane'] = _fit_plane(points, cells)[0]
+        points, kept, audit = _refine_ground_samples(images, np.c_[xx+x, yy+y], z[yy, xx],
+                                                    kl, calibration.baseline_mm, 'left')
+        result['subpixel_refinement'] = {'scope': 'OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING',
+                                        'left': audit}
+        result['estimated_refined_depth_fraction'] = result['valid_depth_fraction']*audit['retained_fraction']
+        xx, yy, cells = xx[kept], yy[kept], cells[kept]
+        if (audit['status'] != 'REFINED_MATCHES'
+                or result['estimated_refined_depth_fraction'] < POLICY['minimum_valid_fraction']):
+            return result | {'status': 'INSUFFICIENT_GROUND_SUBPIXEL_SUPPORT'}
     left, inliers = _fit_plane(points, cells)
     result['left_plane'] = left
     from .ground_visualization import observed_support
     plane = left if left['status'] == 'PLANE_FIT' else left.get('candidate_plane')
     if plane:
-        result['observed_support'] = observed_support(z, valid, kl, region, plane, POLICY['plane_tolerance_mm'])
+        if refine:
+            # Show only the measured refined samples. Never paint an entire
+            # ROI or reuse noisy dense pixels as refined-plane evidence.
+            support_z = np.full(z.shape, np.nan)
+            support_valid = np.zeros(z.shape, bool)
+            support_z[yy, xx] = points[:, 2]; support_valid[yy, xx] = True
+        else:
+            support_z, support_valid = z, valid
+        result['observed_support'] = observed_support(support_z, support_valid, kl, region, plane, POLICY['plane_tolerance_mm'])
+        if refine:
+            result['observed_support']['sampling'] = 'SPARSE_REFINED_STEREO_MATCHES'
     if inliers is None:
         return result | {'status': left['status']}
     base = np.array([calibration.baseline_mm, 0., 0.])
-    projected = (points[inliers]-base)@kr.T
+    # With patch refinement, the independent right-plane solve samples all
+    # retained left correspondences, not only the left plane's inliers.
+    selected_points = points if refine else points[inliers]
+    selected_cells = cells if refine else cells[inliers]
+    projected = (selected_points-base)@kr.T
     uv = np.round(projected[:, :2]/projected[:, 2:]).astype(int)
     eligible = (uv[:, 0] >= 0) & (uv[:, 0] < calibration.right.width) & (uv[:, 1] >= 0) & (uv[:, 1] < calibration.right.height)
-    uv, right_cells = uv[eligible], cells[inliers][eligible]
+    uv, right_cells = uv[eligible], selected_cells[eligible]
     # A right pixel counts once, even when several left samples round to it.
     _, unique = np.unique(uv, axis=0, return_index=True)
     uv, right_cells = uv[unique], right_cells[unique]
     rz = np.asarray(depth.right_depth_mm)[uv[:, 1], uv[:, 0]]
     good = np.asarray(depth.right_valid)[uv[:, 1], uv[:, 0]] & np.isfinite(rz) & (rz > 0)
-    result['right_confirmed_fraction'] = float(good.sum()/max(1, inliers.sum()))
+    result['right_confirmed_fraction'] = float(good.sum()/max(1, len(selected_points)))
     if result['right_confirmed_fraction'] < .5:
         return result | {'status': 'INSUFFICIENT_RIGHT_GROUND_SUPPORT'}
-    right_points = _backproject(uv[good], rz[good], kr, base)
-    right, _ = _fit_plane(right_points, right_cells[good])
+    if refine:
+        right_points, kept_right, right_audit = _refine_ground_samples(images, uv[good], rz[good],
+                                                                      kr, calibration.baseline_mm, 'right')
+        result['subpixel_refinement']['right'] = right_audit
+        right_cells = right_cells[good][kept_right]
+        result['raw_right_confirmed_fraction'] = result['right_confirmed_fraction']
+        result['right_confirmed_fraction'] *= right_audit['retained_fraction']
+        if right_audit['status'] != 'REFINED_MATCHES' or result['right_confirmed_fraction'] < .5:
+            return result | {'status': 'INSUFFICIENT_RIGHT_GROUND_SUBPIXEL_SUPPORT'}
+    else:
+        right_points = _backproject(uv[good], rz[good], kr, base)
+        right_cells = right_cells[good]
+    right, _ = _fit_plane(right_points, right_cells)
     result['right_plane'] = right
     if right['status'] != 'PLANE_FIT':
         return result | {'status': 'RIGHT_GROUND_PLANE_INCONSISTENT'}
@@ -204,6 +314,19 @@ def ground_summary_lines(check):
         return lines+['已设置地面区域；点击“倾角检查”单独计算。点击⑤保存并评估，通过检查后自动约束水平管轴并重新计算断面。']
     from .ground_visualization import tilt_label_lines
     lines += tilt_label_lines(check)
+    if check.get('source_scope') == 'REFERENCE_STEREO_PAIR_ONLY':
+        lines.append('地面仅使用当前末帧双目照片；原连拍未通过，本次地面检查不恢复多帧或安装验收。')
+        if check.get('source_capture_id'):
+            lines.append('地面来源帧：'+str(check['source_capture_id']))
+        if check.get('source_burst_reason_codes'):
+            lines.append('连拍未通过原因：'+'、'.join(check['source_burst_reason_codes']))
+    if check.get('subpixel_refinement'):
+        lines.append('地面采用图像块双向子像素匹配；涂色仅为真实稀疏匹配样本，不填充整块地面。')
+        for role, name in [('left', '左目'), ('right', '右目')]:
+            audit = check['subpixel_refinement'].get(role)
+            if audit:
+                lines.append(f"{name}精化保留 {audit['kept_sample_count']}/{audit['input_sample_count']} 点"
+                             f"（{audit['retained_fraction']:.1%}）；筛选不使用平面拟合残差。")
     policy = check.get('policy') or POLICY
     coverage = check.get('valid_depth_fraction')
     if coverage is not None:
@@ -237,6 +360,10 @@ def ground_summary_lines(check):
         for item in check.get('corrections', []):
             lines.append((item.get('zone_id') or '全幅')+'：'+correction_summary(item))
     labels = {'INSUFFICIENT_GROUND_DEPTH': '地面有效深度不足', 'CAPTURE_UNHEALTHY': '拍摄质量未通过',
+        'GROUND_IMAGE_PAIR_INVALID': '地面精化图像缺失或尺寸不匹配',
+        'GROUND_RECTIFIED_GEOMETRY_UNSUPPORTED': '地面精化要求左右矫正内参及图像尺寸一致',
+        'INSUFFICIENT_GROUND_SUBPIXEL_SUPPORT': '左目地面子像素匹配支持不足',
+        'INSUFFICIENT_RIGHT_GROUND_SUBPIXEL_SUPPORT': '右目地面子像素匹配支持不足',
         'INSUFFICIENT_GROUND_SUPPORT': '地面二维采样覆盖不足', 'GROUND_PLANE_INCONSISTENT': '地面样本不符合稳定平面',
         'GROUND_SUPPORT_TOO_NARROW': '地面区域过窄，法向不可靠', 'INSUFFICIENT_RIGHT_GROUND_SUPPORT': '右目对应地面支持不足',
         'RIGHT_GROUND_PLANE_INCONSISTENT': '右目地面平面未通过', 'LEFT_RIGHT_GROUND_INCONSISTENT': '左右目地面结果不一致'}

@@ -1,0 +1,107 @@
+{
+  "scope": "INDEPENDENT_SYNTHETIC_IMAGE_CONTOURS_NOT_FIELD_ACCURACY",
+  "controls": [
+    {
+      "colour_bgr": [
+        235,
+        105,
+        15
+      ],
+      "true_vertical_width_px": 60.0,
+      "edges": {
+        "top": {
+          "threshold_error_std_px": 0.33222943622611156,
+          "refined_error_std_px": 0.06113144772506767,
+          "threshold_median_bias_px": -0.4449999999999932,
+          "refined_median_bias_px": -0.25469507865163266,
+          "maximum_shift_px": 1.3524762569246889,
+          "same_observed_columns": true
+        },
+        "bottom": {
+          "threshold_error_std_px": 0.32519096192022806,
+          "refined_error_std_px": 0.06094516828907352,
+          "threshold_median_bias_px": 0.4399999999999977,
+          "refined_median_bias_px": 0.25420276361718663,
+          "maximum_shift_px": 1.15312003838865,
+          "same_observed_columns": true
+        }
+      },
+      "refined_vertical_width_px": 60.511687648609986
+    },
+    {
+      "colour_bgr": [
+        20,
+        40,
+        235
+      ],
+      "true_vertical_width_px": 60.0,
+      "edges": {
+        "top": {
+          "threshold_error_std_px": 0.32669319714413214,
+          "refined_error_std_px": 0.05818348546088388,
+          "threshold_median_bias_px": -0.4799999999999933,
+          "refined_median_bias_px": -0.25922807772765566,
+          "maximum_shift_px": 1.123814100957297,
+          "same_observed_columns": true
+        },
+        "bottom": {
+          "threshold_error_std_px": 0.3248603521686262,
+          "refined_error_std_px": 0.06098927008507798,
+          "threshold_median_bias_px": 0.46000000000000796,
+          "refined_median_bias_px": 0.25649101959152176,
+          "maximum_shift_px": 1.169770647651859,
+          "same_observed_columns": true
+        }
+      },
+      "refined_vertical_width_px": 60.52195976777144
+    }
+  ],
+  "tests": {
+    "passed": 72,
+    "seconds": 31.59,
+    "preserved_guards": [
+      "Real occluder and sampling cut keep missing columns",
+      "Bright interior highlight does not move outer contours",
+      "Bent outline stays unstable",
+      "Neutral boundary unchanged",
+      "True column runs survive accepted windows without bridging gaps",
+      "Independent projected cylinder recovers free diameter with correct tilted axis",
+      "Only two tangents cannot determine a free circle"
+    ]
+  },
+  "hard_step_oblique_selection_control": {
+    "true_edge_y_px": [
+      79.5,
+      179.5
+    ],
+    "cut_axes_tested": [
+      [
+        350,
+        100
+      ],
+      [
+        350,
+        -100
+      ]
+    ],
+    "samples_per_edge_per_cut": 345,
+    "maximum_true_interface_bias_px": 0.2924768274370706,
+    "maximum_change_from_unmasked_same_image_px": 0.028513585724823542,
+    "maximum_observed_edge_slope": 4.494309423692675e-06,
+    "required_interface_bias_bound_px": 0.35,
+    "required_change_from_unmasked_bound_px": 0.04,
+    "required_horizontal_slope_bound": 1e-05,
+    "cut_plane_station_margin_preserved_px": 1.0,
+    "interpretation": "Continuous-colour threshold has measurable localization bias; neither sign of manual cut becomes the pipe edge. Production algorithm unchanged."
+  },
+  "additional_tests_after_full_suite_failure": {
+    "files": [
+      "tests/test_axial_selection.py",
+      "tests/test_color_boundaries.py",
+      "tests/test_axial_aggregation.py"
+    ],
+    "passed": 38,
+    "seconds": 3.85,
+    "reason": "Replace obsolete exact binary-threshold coordinate assertion with physical interface bound and tighter independent unmasked-image comparison; preserve oblique-cut exclusion and station margin."
+  }
+}

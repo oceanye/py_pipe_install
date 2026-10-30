@@ -40,6 +40,16 @@ def _fit(points):
     return np.array([slope, intercept-slope*origin]), error, keep
 
 
+def _column_runs(points):
+    """Half-open runs of actual sampled columns, with holes left untouched."""
+    columns = np.unique(np.floor(np.asarray(points)[:, 0]).astype(int))
+    if not len(columns):
+        return []
+    starts = np.r_[0, np.flatnonzero(np.diff(columns) > 1)+1]
+    ends = np.r_[starts[1:]-1, len(columns)-1]
+    return [[int(columns[a]), int(columns[b])+1] for a, b in zip(starts, ends)]
+
+
 def aggregate_boundaries(observations):
     """Pool top/bottom edge samples independently for one proposed instance.
 
@@ -68,6 +78,7 @@ def aggregate_boundaries(observations):
             _, indices = np.unique(np.floor(points[:, 0]), return_index=True)
             points = points[np.sort(indices)]
         audit['source_columns'] = len(points)
+        audit['observed_column_runs_px'] = _column_runs(points)
         if len(points) < POLICY['minimum_points_per_window']*POLICY['minimum_windows']:
             audit['reason_codes'] = ['TOO_FEW_AXIAL_WINDOWS']
             output.append(audit)
@@ -112,6 +123,7 @@ def aggregate_boundaries(observations):
             holdout_errors.extend(abs(test[:, 1]-test[:, 0]*predicted[0]-predicted[1]))
         p95 = float(np.percentile(holdout_errors, 95))
         audit.update(line_slope_intercept=line.tolist(), retained_columns=int(inliers.sum()),
+                     retained_column_runs_px=_column_runs(joined[inliers]),
                      pooled_rms_px=float(np.sqrt(np.mean(residual[inliers]**2))), holdout_p95_px=p95,
                      observed_axial_interval_px=[x0, x1], reference_u_px=(x0+x1-1)/2,
                      edge_v_at_reference_px=float(line@[(x0+x1-1)/2, 1.]))

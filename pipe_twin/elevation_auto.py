@@ -283,11 +283,11 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
     matcher = groups[-1]['depth'].audit.get('matcher', {})
     disparity_min = float(matcher.get('min_disparity', 0))
     disparity_max = disparity_min+float(matcher.get('num_disparities', 256))-1
-    from .ground_check import check_ground
+    from .ground_source import check_current_ground
     from .ground_correction import finish_ground_correction
     ground = ground_result
     if ground is None and not groups[-1].get('image_offsets'):
-        ground = check_ground(groups[-1], calibration, settings.get('ground_region'), section_stages=())
+        ground = check_current_ground(groups[-1], calibration, settings.get('ground_region'), section_stages=())
     # Current image evidence only: historical images cannot fill today's hidden
     # boundaries. This independent stage precedes dense-surface recognition.
     section = analyze_pooled_sections(groups[-1]['left'], groups[-1]['right'], calibration,
@@ -784,9 +784,9 @@ def analyze_elevation_auto_zones(groups: list[Mapping], *, calibration: Any, pip
         raise ValueError("分区模式至少需要一个启用分区")
     from .elevation_dataset import normalize_registration_settings
     global_registration = normalize_registration_settings(registration_settings)
-    from .ground_check import check_ground
+    from .ground_source import check_current_ground
     from .ground_correction import finish_ground_correction
-    ground = check_ground(groups[-1], calibration, global_registration.get('ground_region'), section_stages=())
+    ground = check_current_ground(groups[-1], calibration, global_registration.get('ground_region'), section_stages=())
     zone_registration = dict(global_registration, anchors={})
     matching_payload = {"color_filter_enabled": True} if matching_settings is None else matching_settings
     from .matching_config import normalize_matching_settings
@@ -884,6 +884,14 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
         # Only the current burst contributes to section repeatability, never
         # previous installation-state history. Bound decoding to seven pairs.
         burst_audit = depth.audit.get('temporal_fusion') or {}
+        if capture is captures[-1] and loaded['registration_settings'].get('ground_region'):
+            from .ground_source import reference_ground_source
+            reference_ground = reference_ground_source(groups[-1], capture, bursts[capture['capture_id']],
+                compute_depth=lambda left, right: _compute_stereo_depth(left, right, calibration, config))
+            if reference_ground is not None:
+                groups[-1]['reference_ground_pair'] = reference_ground
+                if progress:
+                    progress('连拍未通过；单独检查当前末帧地面，连拍及安装状态仍保持未通过。')
         if capture is captures[-1] and burst_audit.get('status') == 'VALID':
             from .temporal_sections import sample_indices
             accepted = {f['capture_id'] for f in burst_audit['frames'] if f['accepted']}
@@ -932,8 +940,8 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                 continue
             overlay = group[role].copy()
             if role == 'left' and group is groups[-1]:
-                from .ground_visualization import ground_evidence_image
-                overlay = ground_evidence_image(overlay, result.get('ground_check'))
+                from .ground_visualization import paint_support
+                overlay = paint_support(overlay, result.get('ground_check'))
             for pipe_id, evidence in audit["pipes"].items():
                 box = evidence.get(role, {}).get("region_xywh")
                 if box:
@@ -960,6 +968,9 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                 from .section_display import boundary_overlay_segments
                 for x1, y1, x2, y2 in boundary_overlay_segments(result, role):
                     cv2.line(overlay, (round(x1), round(y1)), (round(x2), round(y2)), (239, 232, 103), 2)
+            if role == 'left' and group is groups[-1]:
+                from .ground_visualization import ground_evidence_labels
+                overlay = ground_evidence_labels(overlay, result.get('ground_check'))
             ok, encoded = cv2.imencode(".png", overlay)
             if not ok:
                 raise ValueError("无法保存匹配叠图")

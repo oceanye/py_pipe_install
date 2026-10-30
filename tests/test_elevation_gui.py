@@ -389,9 +389,13 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertNotIn('ground_region', self.dialog.registration_settings)
 
     def test_standalone_tilt_draws_angles_without_cad_and_clears_on_input_change(self):
-        from test_ground_check import scene
-        group, _, region, _ = scene()
+        from test_ground_check import scene, add_ground_images
+        group, calibration, region, normal = scene()
+        add_ground_images(group, calibration, normal)
         group['depth'].audit = {'status': 'VALID'}
+        for role in ('left', 'right'):
+            cv2.imwrite(self.dialog.fields[role].get(), group[role])
+        self.dialog.load_images()
         self.dialog.pipes = []
         self.dialog.fields['model'].set('')
         self.dialog.set_ground_region(region['rect_px'])
@@ -404,7 +408,7 @@ class ElevationGuiTests(unittest.TestCase):
         canvas = self.dialog.views['left'].canvas
         labels = canvas.find_withtag('ground-angle')
         self.assertEqual(len(labels), 1)
-        self.assertIn('光轴与地面夹角', canvas.itemcget(labels[0], 'text'))
+        self.assertIn('光轴偏离地面法线', canvas.itemcget(labels[0], 'text'))
         self.assertIn('地面检查通过', canvas.itemcget(labels[0], 'text'))
         self.assertFalse(self.dialog.views['right'].canvas.find_withtag('ground-angle'))
         np.testing.assert_array_equal(original, self.dialog.views['left'].image)

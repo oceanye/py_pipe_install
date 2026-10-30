@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 import math
+import cv2
 import numpy as np
 import pytest
 
@@ -20,6 +21,20 @@ def scene(normal=(.1, -.8, -.4), distance=500.):
         values[role+'_valid'] = depth > 0
     region = normalize_ground_region({'image_size': [640, 480], 'rect_px': [160, 300, 400, 160]})
     return {'depth': SimpleNamespace(**values), 'pair_healthy': True}, calibration, region, normal
+
+
+def add_ground_images(group, calibration, normal, distance=500.):
+    """Independently render matching texture using the analytic plane homography."""
+    k = calibration.left.rectified_intrinsic
+    yy, xx = np.indices((calibration.left.height, calibration.left.width), dtype=np.float32)
+    rng = np.random.default_rng(613)
+    left = cv2.GaussianBlur(rng.integers(0, 256, xx.shape, dtype=np.uint8), (3, 3), .7)
+    a = -calibration.baseline_mm*normal[0]/distance
+    b = -k[0, 0]*calibration.baseline_mm*normal[1]/(k[1, 1]*distance)
+    c = -k[0, 0]*calibration.baseline_mm/distance*(normal[2]-normal[0]*k[0, 2]/k[0, 0]-normal[1]*k[1, 2]/k[1, 1])
+    right = cv2.remap(left, ((xx+b*yy+c)/(1-a)).astype(np.float32), yy, cv2.INTER_LINEAR)
+    group.update(left=cv2.cvtColor(left, cv2.COLOR_GRAY2BGR), right=cv2.cvtColor(right, cv2.COLOR_GRAY2BGR))
+    return group
 
 
 @pytest.mark.parametrize('normal', [(0, -1, 0), (.1, -.8, -.4), (-.2, -.7, -.5)])
@@ -142,3 +157,51 @@ def test_ground_rejection_reports_failed_metrics_without_hiding_empty_holdout():
                                           'valid_depth_fraction': .8}))
     assert '80.0%' in text and '50.0%' in text and '0.0%' in text and '≥70%' in text
     assert '无可用值' in text and '留出一致点不足' in text
+
+
+def test_patch_refinement_recovers_tilted_plane_from_noisy_depth_without_filling_pixels():
+    group, calibration, region, normal = scene((.05, -.08, -1.), distance=800.)
+    add_ground_images(group, calibration, normal, distance=800.)
+    rng = np.random.default_rng(810)
+    for role in ('left', 'right'):
+        getattr(group['depth'], role+'_depth_mm')[:] += rng.normal(0, 8., (480, 640))
+    original = group['depth'].left_depth_mm.copy()
+    check = check_ground(group, calibration, region)
+    assert check['raw_depth_plane']['status'] == 'GROUND_PLANE_INCONSISTENT'
+    assert check['status'] == 'CONSISTENT_GROUND_PLANE'
+    assert check['camera_to_ground_perpendicular_mm'] == pytest.approx(800., abs=1.)
+    assert np.dot(normal, check['left_plane']['normal_camera']) > .99999
+    for role in ('left', 'right'):
+        assert check['subpixel_refinement'][role]['retained_fraction'] > .8
+        assert check[role+'_plane']['holdout_inlier_fraction'] >= .7
+    assert check['observed_support']['sampling'] == 'SPARSE_REFINED_STEREO_MATCHES'
+    assert check['observed_support']['pixel_count'] <= 4096
+    assert check['observed_support']['inferred_pixels'] == 0
+    np.testing.assert_array_equal(group['depth'].left_depth_mm, original)
+
+
+@pytest.mark.parametrize('fault', ['textureless', 'epipolar', 'unrelated', 'size', 'missing_eye', 'intrinsic', 'camera_size'])
+def test_subpixel_ground_rejects_bad_image_evidence_even_with_perfect_seed_plane(fault):
+    group, calibration, region, normal = scene((.05, -.08, -1.), distance=800.)
+    add_ground_images(group, calibration, normal, distance=800.)
+    if fault == 'textureless':
+        group['left'][:] = 100; group['right'][:] = 100
+    elif fault == 'epipolar':
+        group['right'] = np.roll(group['right'], 3, axis=0)
+    elif fault == 'unrelated':
+        group['right'] = np.random.default_rng(25).integers(0, 256, group['right'].shape, np.uint8)
+    elif fault == 'size':
+        group['right'] = group['right'][:200]
+    elif fault == 'missing_eye':
+        del group['right']
+    elif fault == 'intrinsic':
+        calibration.right = SimpleNamespace(**vars(calibration.right))
+        calibration.right.rectified_intrinsic = calibration.right.rectified_intrinsic.copy()
+        calibration.right.rectified_intrinsic[0, 2] += 10.
+    else:
+        calibration.right = SimpleNamespace(**vars(calibration.right))
+        calibration.right.width -= 20
+    check = check_ground(group, calibration, region)
+    assert check['status'] in {'INSUFFICIENT_GROUND_SUBPIXEL_SUPPORT', 'GROUND_IMAGE_PAIR_INVALID',
+                              'GROUND_RECTIFIED_GEOMETRY_UNSUPPORTED'}
+    assert 'camera_to_ground_perpendicular_mm' not in check

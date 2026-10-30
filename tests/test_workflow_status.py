@@ -29,6 +29,19 @@ def test_standalone_plane_check_does_not_claim_pipe_correction():
     assert '平面检查通过' in text and '未应用修正' in text
 
 
+def test_current_pair_ground_pass_does_not_hide_rejected_burst():
+    report = {'temporal_fusion': {'requested_frames': 10, 'status': 'INVALID'},
+              'ground_check': {'status': 'CONSISTENT_GROUND_PLANE',
+                  'surface_identity_source': 'OPERATOR_MARKED_GROUND',
+                  'source_scope': 'REFERENCE_STEREO_PAIR_ONLY', 'source_burst_status': 'INVALID',
+                  'correction_status': 'APPLIED'}}
+    text = workflow_summary(report, {})
+    assert '10 对，多帧检查未通过' in text
+    assert '地面（仅当前帧；连拍未通过）' in text
+    assert '平面检查通过' in text and '已用于轴向修正' in text
+    assert '相对就位：待评估' in text
+
+
 def test_single_frame_details_do_not_claim_a_burst():
     text = solver_status_rows({'section_evaluation': stage()})[0]['detail']
     assert '单帧断面结果' in text and '仅使用当前连拍' not in text

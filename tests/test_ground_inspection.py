@@ -9,19 +9,20 @@ import pytest
 from pipe_twin.ground_inspection import inspect_ground_pair
 from pipe_twin.ground_visualization import decode_support
 from test_elevation_dataset import _calibration
-from test_ground_check import scene
+from test_ground_check import scene, add_ground_images
 
 
 @pytest.fixture
 def inputs(tmp_path, monkeypatch):
-    group, _, region, _ = scene()
+    group, calibration, region, normal = scene()
+    add_ground_images(group, calibration, normal)
     group['depth'].audit = {'status': 'VALID'}
     monkeypatch.setattr('pipe_twin.ground_inspection._compute_stereo_depth', lambda *args: group['depth'])
     monkeypatch.setattr('pipe_twin.ground_inspection._quality', lambda *args: {'passed': True})
     paths, hashes = {}, {}
     for role in ('left', 'right'):
         path = tmp_path/(role+'.png')
-        cv2.imwrite(str(path), np.full((480, 640, 3), 120, np.uint8))
+        cv2.imwrite(str(path), group[role])
         paths[role] = path
         hashes[role] = hashlib.sha256(path.read_bytes()).hexdigest()
     return dict(paths=paths, expected_hashes=hashes, capture_times={r: '2026-10-23T09:00:00+08:00' for r in paths},

@@ -1,0 +1,53 @@
+{
+  "source_scene": "elevation-20261030-183635-b6b7b875",
+  "replay_report": "outputs\\ground-color-boundaries-20261030\\report.json",
+  "screens": {
+    "1024x720": {
+      "photo_height": 194,
+      "clipped_controls": [],
+      "workflow_text": "照片：10 对，多帧检查未通过 · 观察侧：从 +Y 侧朝 -Y 看 · 条件断面 4/4 · CAD 已对应 0\n地面（仅当前帧；连拍未通过）：平面检查通过 / 试验已应用，未验证 · 相对就位：符合 0 / 不符 0 / 待定 12",
+      "workflow_label_height": 42,
+      "overlays": {
+        "left": {
+          "stable_edge_segments": 28,
+          "ground_labels": [
+            "仅当前帧：候选试验未验证 · 连拍未通过 · 支持 79.2%\n光轴偏离地面法线 14.55° · 横滚 -13.50°"
+          ]
+        },
+        "right": {
+          "stable_edge_segments": 33,
+          "ground_labels": []
+        }
+      }
+    },
+    "1280x860": {
+      "photo_height": 334,
+      "clipped_controls": [],
+      "workflow_text": "照片：10 对，多帧检查未通过 · 观察侧：从 +Y 侧朝 -Y 看 · 条件断面 4/4 · CAD 已对应 0\n地面（仅当前帧；连拍未通过）：平面检查通过 / 试验已应用，未验证 · 相对就位：符合 0 / 不符 0 / 待定 12",
+      "workflow_label_height": 42,
+      "overlays": {
+        "left": {
+          "stable_edge_segments": 28,
+          "ground_labels": [
+            "仅当前帧：候选试验未验证 · 连拍未通过 · 支持 79.2%\n光轴偏离地面法线 14.55° · 横滚 -13.50°"
+          ]
+        },
+        "right": {
+          "stable_edge_segments": 33,
+          "ground_labels": []
+        }
+      }
+    }
+  },
+  "source_unchanged": true,
+  "protected_source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\ground-color-boundaries-20261030\\report.json": "a4171f71230f1288d58bf7ee62fd5436c22774193e3599626d9362a16742e6fd",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\measurement_workbench\\workbench_profile.json": "12bc0e6359bcae983a47b9b5da31b93ffa2a068214955cf813be779962f835d7",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660"
+  }
+}

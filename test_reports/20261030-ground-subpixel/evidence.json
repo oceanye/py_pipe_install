@@ -1,0 +1,1422 @@
+{
+  "scope": "INDEPENDENT_SINGLE_PAIR_GROUND_REPLAY_NOT_BURST_ACCEPTANCE",
+  "new_capture": false,
+  "source_files_unchanged": true,
+  "source_sha256": {
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\manifest.json": "8a0213d99a3d79e9cc6f9878b613c2a0c884677dc90eed4903f8dbf76c69da00",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\report.json": "f2eb7af75f19b0fd4ad5b02b0df5192f46d08bb965d0b3bc31e217b826a10b12"
+  },
+  "policy_sha256": "6cb4616ff1da7ca6aa0962246dfc965e193368f13a91bf1c32776982c2942095",
+  "plane_thresholds_unchanged": true,
+  "elapsed_seconds": 47.296000000002095,
+  "rows": [
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 1,
+      "captured_at": "2026-10-30T18:32:43.556+08:00",
+      "photo_sha256": {
+        "left": "d3a44d13e8413492854cc5c65baf536a3240a487ff3196ceb1bdc33fa724a55d",
+        "right": "48a6f2047e247758981242595a91b19d9b06bea4550665fbb0ae34255fbee993"
+      },
+      "individual_ground": {
+        "status": "CONSISTENT_GROUND_PLANE",
+        "valid_depth_fraction": 0.649453391150425,
+        "estimated_refined_depth_fraction": 0.33550863663923325,
+        "right_confirmed_fraction": 0.8497164461247637,
+        "left_right_normal_angle_deg": 0.5160349067834055,
+        "left_right_plane_offset_difference_mm": 3.687460524462267,
+        "camera_to_ground_perpendicular_mm": 1210.3680157359508,
+        "optical_axis_to_ground_deg": 75.94548291407793,
+        "image_roll_relative_to_ground_deg": -13.28175547378372,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 2116,
+            "retained_fraction": 0.5166015625,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 4,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1841,
+              "ROUNDTRIP_MISMATCH": 329,
+              "DISPARITY_SEED_MISMATCH": 61,
+              "NON_POSITIVE_DISPARITY": 5
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 2096,
+            "kept_sample_count": 1798,
+            "retained_fraction": 0.857824427480916,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 279,
+              "ROUNDTRIP_MISMATCH": 42,
+              "DISPARITY_SEED_MISMATCH": 1,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2021,
+          "holdout_sample_count": 2075,
+          "inlier_fraction": 0.49462890625,
+          "holdout_inlier_fraction": 0.45831325301204817,
+          "holdout_rms_mm": 2.827355560762817,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 2116,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1039,
+          "holdout_sample_count": 1077,
+          "inlier_fraction": 0.7830812854442344,
+          "holdout_inlier_fraction": 0.7437325905292479,
+          "holdout_rms_mm": 2.618907504638415,
+          "normal_camera": [
+            -0.05579117693465926,
+            -0.23634942499418676,
+            -0.9700650977543533
+          ],
+          "offset_mm": 1210.3680157359508,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1798,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 885,
+          "holdout_sample_count": 913,
+          "inlier_fraction": 0.753615127919911,
+          "holdout_inlier_fraction": 0.7152245345016429,
+          "holdout_rms_mm": 2.6733307612511665,
+          "normal_camera": [
+            -0.054564646589744754,
+            -0.24502496701121665,
+            -0.9679800952931256
+          ],
+          "offset_mm": 1206.6805552114886,
+          "failure_reasons": []
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1657,
+          "valid_pixel_count": 2116,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 2,
+      "captured_at": "2026-10-30T18:32:44.102+08:00",
+      "photo_sha256": {
+        "left": "b995ad6b04b641088e713a988f5b5a5e79777ce881e268ac759f49a1fb15fa07",
+        "right": "adcf66bae243832535fa20d2a559febbeea2adbcffa195f203dfb80589b1462b"
+      },
+      "individual_ground": {
+        "status": "CONSISTENT_GROUND_PLANE",
+        "valid_depth_fraction": 0.6503780031347808,
+        "estimated_refined_depth_fraction": 0.3517058781600438,
+        "right_confirmed_fraction": 0.8469525959367946,
+        "left_right_normal_angle_deg": 0.4196275008874221,
+        "left_right_plane_offset_difference_mm": 3.950158079904213,
+        "camera_to_ground_perpendicular_mm": 1210.4610063672635,
+        "optical_axis_to_ground_deg": 75.9533069526313,
+        "image_roll_relative_to_ground_deg": -13.610241354040141,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 2215,
+            "retained_fraction": 0.540771484375,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 2,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1756,
+              "ROUNDTRIP_MISMATCH": 319,
+              "DISPARITY_SEED_MISMATCH": 69,
+              "NON_POSITIVE_DISPARITY": 3
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 2194,
+            "kept_sample_count": 1876,
+            "retained_fraction": 0.8550592525068368,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 295,
+              "ROUNDTRIP_MISMATCH": 35,
+              "DISPARITY_SEED_MISMATCH": 6,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2061,
+          "holdout_sample_count": 2035,
+          "inlier_fraction": 0.4931640625,
+          "holdout_inlier_fraction": 0.4918918918918919,
+          "holdout_rms_mm": 2.7906626312941896,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 2215,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1125,
+          "holdout_sample_count": 1090,
+          "inlier_fraction": 0.7724604966139955,
+          "holdout_inlier_fraction": 0.7458715596330275,
+          "holdout_rms_mm": 2.529057698641603,
+          "normal_camera": [
+            -0.05711410949082322,
+            -0.2358969328636546,
+            -0.9700982504687814
+          ],
+          "offset_mm": 1210.4610063672635,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1876,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 951,
+          "holdout_sample_count": 925,
+          "inlier_fraction": 0.7420042643923241,
+          "holdout_inlier_fraction": 0.7232432432432433,
+          "holdout_rms_mm": 2.5646330853654296,
+          "normal_camera": [
+            -0.053121128751750936,
+            -0.2299819886615619,
+            -0.9717440149398469
+          ],
+          "offset_mm": 1214.4111644471677,
+          "failure_reasons": []
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1711,
+          "valid_pixel_count": 2215,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 3,
+      "captured_at": "2026-10-30T18:32:44.867+08:00",
+      "photo_sha256": {
+        "left": "836ea8cf012c4218b42f513bfef5a9941ed87ae72be6fc075180385f9dc148f3",
+        "right": "89c961158ad35a962b20db2292512602ae65cbfcbf7726e958e70f9c182c21ee"
+      },
+      "individual_ground": {
+        "status": "LEFT_RIGHT_GROUND_INCONSISTENT",
+        "valid_depth_fraction": 0.6508328924532873,
+        "estimated_refined_depth_fraction": 0.3033300760970033,
+        "right_confirmed_fraction": 0.8454688318491357,
+        "left_right_normal_angle_deg": 1.5334106073508313,
+        "left_right_plane_offset_difference_mm": 14.180842787128768,
+        "camera_to_ground_perpendicular_mm": null,
+        "optical_axis_to_ground_deg": null,
+        "image_roll_relative_to_ground_deg": null,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 1909,
+            "retained_fraction": 0.466064453125,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 3,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 2048,
+              "ROUNDTRIP_MISMATCH": 330,
+              "DISPARITY_SEED_MISMATCH": 68,
+              "NON_POSITIVE_DISPARITY": 5
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 1883,
+            "kept_sample_count": 1614,
+            "retained_fraction": 0.8571428571428571,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 252,
+              "ROUNDTRIP_MISMATCH": 32,
+              "DISPARITY_SEED_MISMATCH": 1,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2056,
+          "holdout_sample_count": 2040,
+          "inlier_fraction": 0.5087890625,
+          "holdout_inlier_fraction": 0.5083333333333333,
+          "holdout_rms_mm": 2.7809888261455544,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1909,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 957,
+          "holdout_sample_count": 952,
+          "inlier_fraction": 0.7705605028810896,
+          "holdout_inlier_fraction": 0.7027310924369747,
+          "holdout_rms_mm": 2.51105939736824,
+          "normal_camera": [
+            -0.057391880645268484,
+            -0.21935787725744105,
+            -0.9739549752021952
+          ],
+          "offset_mm": 1218.7248570158051,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1614,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 818,
+          "holdout_sample_count": 796,
+          "inlier_fraction": 0.7850061957868649,
+          "holdout_inlier_fraction": 0.757537688442211,
+          "holdout_rms_mm": 2.5030780449786816,
+          "normal_camera": [
+            -0.05923632173399115,
+            -0.24529801561148745,
+            -0.9676362651970489
+          ],
+          "offset_mm": 1204.5440142286764,
+          "failure_reasons": []
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1471,
+          "valid_pixel_count": 1909,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 4,
+      "captured_at": "2026-10-30T18:32:45.722+08:00",
+      "photo_sha256": {
+        "left": "a6fd56bd4645d633c2682222132340db7bac9e71a434a09ae511e345218f345e",
+        "right": "a70bf93b99b702f85a872394f9e906f9c4b7602203f289112b672f47bccb4827"
+      },
+      "individual_ground": {
+        "status": "CONSISTENT_GROUND_PLANE",
+        "valid_depth_fraction": 0.6470009443897808,
+        "estimated_refined_depth_fraction": 0.32808128942811887,
+        "right_confirmed_fraction": 0.868078960038517,
+        "left_right_normal_angle_deg": 0.3457107466779851,
+        "left_right_plane_offset_difference_mm": 3.9755743982659624,
+        "camera_to_ground_perpendicular_mm": 1205.6631845624343,
+        "optical_axis_to_ground_deg": 75.4911959612353,
+        "image_roll_relative_to_ground_deg": -13.462743147337696,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 2077,
+            "retained_fraction": 0.507080078125,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 8,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1880,
+              "ROUNDTRIP_MISMATCH": 344,
+              "DISPARITY_SEED_MISMATCH": 73,
+              "NON_POSITIVE_DISPARITY": 4
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 2065,
+            "kept_sample_count": 1803,
+            "retained_fraction": 0.8731234866828087,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 246,
+              "ROUNDTRIP_MISMATCH": 36,
+              "DISPARITY_SEED_MISMATCH": 4,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2016,
+          "holdout_sample_count": 2080,
+          "inlier_fraction": 0.52490234375,
+          "holdout_inlier_fraction": 0.5230769230769231,
+          "holdout_rms_mm": 2.8262339152350853,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 2077,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1050,
+          "holdout_sample_count": 1027,
+          "inlier_fraction": 0.7727491574386134,
+          "holdout_inlier_fraction": 0.7692307692307693,
+          "holdout_rms_mm": 2.647026083242783,
+          "normal_camera": [
+            -0.058326360243814615,
+            -0.2436446148943877,
+            -0.9681091556914819
+          ],
+          "offset_mm": 1205.6631845624343,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1803,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 912,
+          "holdout_sample_count": 891,
+          "inlier_fraction": 0.7210205213533001,
+          "holdout_inlier_fraction": 0.7138047138047138,
+          "holdout_rms_mm": 2.7561790862110302,
+          "normal_camera": [
+            -0.057344124929569196,
+            -0.23788102652019244,
+            -0.9696000559806921
+          ],
+          "offset_mm": 1209.6387589607002,
+          "failure_reasons": []
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1605,
+          "valid_pixel_count": 2077,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 5,
+      "captured_at": "2026-10-30T18:32:46.576+08:00",
+      "photo_sha256": {
+        "left": "20e08cddc9e2d6ef3714635f0b0072165ce65c46558b3c047603e0170ca44a8d",
+        "right": "4e0adaf7040ae57ebefa3cd07688c2cfac5937ff21b035de48ca713a17523e46"
+      },
+      "individual_ground": {
+        "status": "RIGHT_GROUND_PLANE_INCONSISTENT",
+        "valid_depth_fraction": 0.6538490064129505,
+        "estimated_refined_depth_fraction": 0.3468783913416361,
+        "right_confirmed_fraction": 0.8485964104924067,
+        "left_right_normal_angle_deg": null,
+        "left_right_plane_offset_difference_mm": null,
+        "camera_to_ground_perpendicular_mm": null,
+        "optical_axis_to_ground_deg": null,
+        "image_roll_relative_to_ground_deg": null,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 2173,
+            "retained_fraction": 0.530517578125,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 5,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1790,
+              "ROUNDTRIP_MISMATCH": 306,
+              "DISPARITY_SEED_MISMATCH": 64,
+              "NON_POSITIVE_DISPARITY": 10
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 2156,
+            "kept_sample_count": 1844,
+            "retained_fraction": 0.8552875695732839,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 289,
+              "ROUNDTRIP_MISMATCH": 32,
+              "DISPARITY_SEED_MISMATCH": 4,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2034,
+          "holdout_sample_count": 2062,
+          "inlier_fraction": 0.501220703125,
+          "holdout_inlier_fraction": 0.4859359844810863,
+          "holdout_rms_mm": 2.7535174421895436,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 2173,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1045,
+          "holdout_sample_count": 1128,
+          "inlier_fraction": 0.8007363092498849,
+          "holdout_inlier_fraction": 0.7606382978723404,
+          "holdout_rms_mm": 2.6444372078505594,
+          "normal_camera": [
+            -0.058608707106537025,
+            -0.22534428193533973,
+            -0.9725147680371472
+          ],
+          "offset_mm": 1215.6229369722475,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 1844,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 881,
+          "holdout_sample_count": 963,
+          "inlier_fraction": 0.7554229934924078,
+          "holdout_inlier_fraction": 0.6915887850467289,
+          "holdout_rms_mm": 2.685619870024176,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1740,
+          "valid_pixel_count": 2173,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 6,
+      "captured_at": "2026-10-30T18:32:47.443+08:00",
+      "photo_sha256": {
+        "left": "637e1385f38d934ecbf64f77c9479bde889490c800e1061cd0dde158d3e08d36",
+        "right": "5d28a8cc3bf7eec29739ef03c33fd15ee08e13ebcdbdf319a76bfa0eab18e89c"
+      },
+      "individual_ground": {
+        "status": "CONSISTENT_GROUND_PLANE",
+        "valid_depth_fraction": 0.6475794449361424,
+        "estimated_refined_depth_fraction": 0.3426036760685109,
+        "right_confirmed_fraction": 0.8574065528380248,
+        "left_right_normal_angle_deg": 0.4440238796026125,
+        "left_right_plane_offset_difference_mm": 3.470944653659899,
+        "camera_to_ground_perpendicular_mm": 1208.1633218600875,
+        "optical_axis_to_ground_deg": 75.7193150477152,
+        "image_roll_relative_to_ground_deg": -13.010918401122034,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 2167,
+            "retained_fraction": 0.529052734375,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 1,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1769,
+              "ROUNDTRIP_MISMATCH": 339,
+              "DISPARITY_SEED_MISMATCH": 52,
+              "NON_POSITIVE_DISPARITY": 2
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 2149,
+            "kept_sample_count": 1858,
+            "retained_fraction": 0.8645881805490926,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 266,
+              "ROUNDTRIP_MISMATCH": 35,
+              "DISPARITY_SEED_MISMATCH": 4,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2056,
+          "holdout_sample_count": 2040,
+          "inlier_fraction": 0.493896484375,
+          "holdout_inlier_fraction": 0.47990196078431374,
+          "holdout_rms_mm": 2.819882729404603,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 2167,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1114,
+          "holdout_sample_count": 1053,
+          "inlier_fraction": 0.8251038301799724,
+          "holdout_inlier_fraction": 0.8262108262108262,
+          "holdout_rms_mm": 2.562742813544533,
+          "normal_camera": [
+            -0.05553500191585652,
+            -0.24033955825425374,
+            -0.969098942472004
+          ],
+          "offset_mm": 1208.1633218600875,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1858,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 937,
+          "holdout_sample_count": 921,
+          "inlier_fraction": 0.7890204520990313,
+          "holdout_inlier_fraction": 0.7871878393051032,
+          "holdout_rms_mm": 2.547535928935009,
+          "normal_camera": [
+            -0.05499874082740017,
+            -0.24784326313024185,
+            -0.967237745039116
+          ],
+          "offset_mm": 1204.6923772064276,
+          "failure_reasons": []
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1788,
+          "valid_pixel_count": 2167,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 7,
+      "captured_at": "2026-10-30T18:32:48.304+08:00",
+      "photo_sha256": {
+        "left": "80fc7793fee30748d102d368c8424e8debdfb12a0549297213e54f78da294271",
+        "right": "ae5bc57a5fe9640ad42c30cc5862d8da6e93ffbc70a285b75aa09e59850d2190"
+      },
+      "individual_ground": {
+        "status": "RIGHT_GROUND_PLANE_INCONSISTENT",
+        "valid_depth_fraction": 0.6470998333720649,
+        "estimated_refined_depth_fraction": 0.32655160048341264,
+        "right_confirmed_fraction": 0.8364779874213837,
+        "left_right_normal_angle_deg": null,
+        "left_right_plane_offset_difference_mm": null,
+        "camera_to_ground_perpendicular_mm": null,
+        "optical_axis_to_ground_deg": null,
+        "image_roll_relative_to_ground_deg": null,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 2067,
+            "retained_fraction": 0.504638671875,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 2,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1857,
+              "ROUNDTRIP_MISMATCH": 378,
+              "DISPARITY_SEED_MISMATCH": 63,
+              "NON_POSITIVE_DISPARITY": 7
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 2049,
+            "kept_sample_count": 1729,
+            "retained_fraction": 0.8438262567105905,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 293,
+              "ROUNDTRIP_MISMATCH": 43,
+              "DISPARITY_SEED_MISMATCH": 2,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2075,
+          "holdout_sample_count": 2021,
+          "inlier_fraction": 0.521240234375,
+          "holdout_inlier_fraction": 0.5190499752597724,
+          "holdout_rms_mm": 2.7542767781921635,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 2067,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1090,
+          "holdout_sample_count": 977,
+          "inlier_fraction": 0.7319787131107885,
+          "holdout_inlier_fraction": 0.7082906857727738,
+          "holdout_rms_mm": 2.598506772715883,
+          "normal_camera": [
+            -0.05932100050988538,
+            -0.22950822084438588,
+            -0.9714972956541623
+          ],
+          "offset_mm": 1212.216023528686,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 1729,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 918,
+          "holdout_sample_count": 811,
+          "inlier_fraction": 0.7079236552920763,
+          "holdout_inlier_fraction": 0.6757090012330457,
+          "holdout_rms_mm": 2.5966029907376122,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1513,
+          "valid_pixel_count": 2067,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 8,
+      "captured_at": "2026-10-30T18:32:49.169+08:00",
+      "photo_sha256": {
+        "left": "afc656fc03de6d942e95c67d3a12fe572705a5577b7c2afc659faf3b2e1e32a3",
+        "right": "e201302b00c42200581933a71d77b49ac424e44c0df49c647311c249d7e6a2bd"
+      },
+      "individual_ground": {
+        "status": "RIGHT_GROUND_PLANE_INCONSISTENT",
+        "valid_depth_fraction": 0.6455522207993196,
+        "estimated_refined_depth_fraction": 0.3366453963933952,
+        "right_confirmed_fraction": 0.8426966292134831,
+        "left_right_normal_angle_deg": null,
+        "left_right_plane_offset_difference_mm": null,
+        "camera_to_ground_perpendicular_mm": null,
+        "optical_axis_to_ground_deg": null,
+        "image_roll_relative_to_ground_deg": null,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 2136,
+            "retained_fraction": 0.521484375,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 4,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1779,
+              "ROUNDTRIP_MISMATCH": 397,
+              "DISPARITY_SEED_MISMATCH": 54,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 2116,
+            "kept_sample_count": 1800,
+            "retained_fraction": 0.8506616257088847,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 290,
+              "ROUNDTRIP_MISMATCH": 56,
+              "DISPARITY_SEED_MISMATCH": 1,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2040,
+          "holdout_sample_count": 2056,
+          "inlier_fraction": 0.49365234375,
+          "holdout_inlier_fraction": 0.4722762645914397,
+          "holdout_rms_mm": 2.892513424969636,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 2136,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1080,
+          "holdout_sample_count": 1056,
+          "inlier_fraction": 0.7790262172284644,
+          "holdout_inlier_fraction": 0.7537878787878788,
+          "holdout_rms_mm": 2.623090442539373,
+          "normal_camera": [
+            -0.05769218633177083,
+            -0.23732381777903266,
+            -0.9697159466313032
+          ],
+          "offset_mm": 1208.870684464172,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 1800,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 908,
+          "holdout_sample_count": 892,
+          "inlier_fraction": 0.7338888888888889,
+          "holdout_inlier_fraction": 0.6973094170403588,
+          "holdout_rms_mm": 2.7115565990962827,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1664,
+          "valid_pixel_count": 2136,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 9,
+      "captured_at": "2026-10-30T18:32:50.025+08:00",
+      "photo_sha256": {
+        "left": "2e49a4d9717cdcd51c5fa00afbb6e14f8787345dc725c3fa57987a0684630463",
+        "right": "9a07ca2af135a955af9e80a82a8f79ca91916d6a3d5db74dc7b5fe9fd0b4c97e"
+      },
+      "individual_ground": {
+        "status": "CONSISTENT_GROUND_PLANE",
+        "valid_depth_fraction": 0.662234792110637,
+        "estimated_refined_depth_fraction": 0.3621596519355046,
+        "right_confirmed_fraction": 0.8473214285714286,
+        "left_right_normal_angle_deg": 0.5242371694716045,
+        "left_right_plane_offset_difference_mm": 2.5231378301243694,
+        "camera_to_ground_perpendicular_mm": 1216.6846268125057,
+        "optical_axis_to_ground_deg": 76.67281852384328,
+        "image_roll_relative_to_ground_deg": -15.145505471861302,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 2240,
+            "retained_fraction": 0.546875,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 3,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1676,
+              "ROUNDTRIP_MISMATCH": 352,
+              "DISPARITY_SEED_MISMATCH": 62,
+              "NON_POSITIVE_DISPARITY": 5
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 2227,
+            "kept_sample_count": 1898,
+            "retained_fraction": 0.8522676246070947,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 304,
+              "ROUNDTRIP_MISMATCH": 36,
+              "DISPARITY_SEED_MISMATCH": 3,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2050,
+          "holdout_sample_count": 2046,
+          "inlier_fraction": 0.522705078125,
+          "holdout_inlier_fraction": 0.5420332355816226,
+          "holdout_rms_mm": 2.777035814919151,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 2240,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1182,
+          "holdout_sample_count": 1058,
+          "inlier_fraction": 0.7808035714285714,
+          "holdout_inlier_fraction": 0.7580340264650284,
+          "holdout_rms_mm": 2.6149951770270836,
+          "normal_camera": [
+            -0.060225993992986074,
+            -0.22250467893343373,
+            -0.9730696262345705
+          ],
+          "offset_mm": 1216.6846268125057,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1898,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 1001,
+          "holdout_sample_count": 897,
+          "inlier_fraction": 0.7423603793466808,
+          "holdout_inlier_fraction": 0.7313266443701226,
+          "holdout_rms_mm": 2.6953501279945136,
+          "normal_camera": [
+            -0.05474595297526556,
+            -0.22970613418668417,
+            -0.9717190810876563
+          ],
+          "offset_mm": 1214.1614889823813,
+          "failure_reasons": []
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1749,
+          "valid_pixel_count": 2240,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-183635-b6b7b875",
+      "frame": 10,
+      "captured_at": "2026-10-30T18:32:50.882+08:00",
+      "photo_sha256": {
+        "left": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+        "right": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660"
+      },
+      "individual_ground": {
+        "status": "CONSISTENT_GROUND_PLANE",
+        "valid_depth_fraction": 0.6446374977131922,
+        "estimated_refined_depth_fraction": 0.3004426228355674,
+        "right_confirmed_fraction": 0.8538501833420639,
+        "left_right_normal_angle_deg": 0.17979096638471698,
+        "left_right_plane_offset_difference_mm": 1.4498797660658056,
+        "camera_to_ground_perpendicular_mm": 1204.6180863453937,
+        "optical_axis_to_ground_deg": 75.44877555095434,
+        "image_roll_relative_to_ground_deg": -13.495139938646203,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 1909,
+            "retained_fraction": 0.466064453125,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 5,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 2029,
+              "ROUNDTRIP_MISMATCH": 363,
+              "DISPARITY_SEED_MISMATCH": 49,
+              "NON_POSITIVE_DISPARITY": 10
+            },
+            "rejection_counts_overlap": true
+          },
+          "right": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 1899,
+            "kept_sample_count": 1630,
+            "retained_fraction": 0.8583464981569247,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 243,
+              "ROUNDTRIP_MISMATCH": 43,
+              "DISPARITY_SEED_MISMATCH": 0,
+              "NON_POSITIVE_DISPARITY": 0
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2057,
+          "holdout_sample_count": 2039,
+          "inlier_fraction": 0.516845703125,
+          "holdout_inlier_fraction": 0.5203531142717018,
+          "holdout_rms_mm": 2.7343548990168616,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1909,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 984,
+          "holdout_sample_count": 925,
+          "inlier_fraction": 0.7915138816134102,
+          "holdout_inlier_fraction": 0.7535135135135135,
+          "holdout_rms_mm": 2.554411243576893,
+          "normal_camera": [
+            -0.05863136527049905,
+            -0.2443085041489207,
+            -0.9679234049278043
+          ],
+          "offset_mm": 1204.6180863453937,
+          "failure_reasons": []
+        },
+        "right_plane": {
+          "status": "PLANE_FIT",
+          "sample_count": 1630,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 824,
+          "holdout_sample_count": 806,
+          "inlier_fraction": 0.756441717791411,
+          "holdout_inlier_fraction": 0.7220843672456576,
+          "holdout_rms_mm": 2.6426192082285263,
+          "normal_camera": [
+            -0.05930087827015482,
+            -0.2472698282479905,
+            -0.9671303106999583
+          ],
+          "offset_mm": 1203.168206579328,
+          "failure_reasons": []
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1511,
+          "valid_pixel_count": 1909,
+          "inferred_pixels": 0
+        }
+      }
+    },
+    {
+      "scene": "elevation-20261030-161444-3ab7011e",
+      "frame": 1,
+      "captured_at": "2026-10-30T16:12:37.780+08:00",
+      "photo_sha256": {
+        "left": "df6012d327df5602cf9a08f69fee9c9c910e8cec9710a01f2b4836292cd48ccd",
+        "right": "c774c3f4fbf112b5a978004ac019ff6317616d93804096bce0b02ca8219b4f08"
+      },
+      "individual_ground": {
+        "status": "GROUND_PLANE_INCONSISTENT",
+        "valid_depth_fraction": 0.7237500496406021,
+        "estimated_refined_depth_fraction": 0.33466371924299326,
+        "right_confirmed_fraction": null,
+        "left_right_normal_angle_deg": null,
+        "left_right_plane_offset_difference_mm": null,
+        "camera_to_ground_perpendicular_mm": null,
+        "optical_axis_to_ground_deg": null,
+        "image_roll_relative_to_ground_deg": null,
+        "subpixel_refinement": {
+          "scope": "OBSERVED_STEREO_PATCHES_NOT_PLANAR_DEPTH_FILLING",
+          "left": {
+            "policy": {
+              "revision": "ground-bidirectional-subpixel-v1",
+              "window_px": 21,
+              "pyramid_levels": 1,
+              "maximum_epipolar_error_px": 0.5,
+              "maximum_roundtrip_error_px": 0.5,
+              "maximum_seed_change_px": 2.0,
+              "minimum_retained_fraction": 0.25
+            },
+            "input_sample_count": 4096,
+            "kept_sample_count": 1894,
+            "retained_fraction": 0.46240234375,
+            "status": "REFINED_MATCHES",
+            "selection_uses_plane": false,
+            "inferred_pixels": 0,
+            "rejection_counts": {
+              "TRACKING_FAILED": 0,
+              "PATCH_OUTSIDE_IMAGE": 0,
+              "EPIPOLAR_MISMATCH": 1814,
+              "ROUNDTRIP_MISMATCH": 1011,
+              "DISPARITY_SEED_MISMATCH": 86,
+              "NON_POSITIVE_DISPARITY": 1
+            },
+            "rejection_counts_overlap": true
+          }
+        },
+        "raw_depth_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 2022,
+          "holdout_sample_count": 2074,
+          "inlier_fraction": 0.568359375,
+          "holdout_inlier_fraction": 0.5568948891031823,
+          "holdout_rms_mm": 2.809941040400567,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "left_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 1894,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "training_sample_count": 983,
+          "holdout_sample_count": 911,
+          "inlier_fraction": 0.6884899683210137,
+          "holdout_inlier_fraction": 0.6673984632272228,
+          "holdout_rms_mm": 2.522534008125646,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ]
+        },
+        "right_plane": {
+          "status": null,
+          "sample_count": null,
+          "fit_scope": null,
+          "training_sample_count": null,
+          "holdout_sample_count": null,
+          "inlier_fraction": null,
+          "holdout_inlier_fraction": null,
+          "holdout_rms_mm": null,
+          "normal_camera": null,
+          "offset_mm": null,
+          "failure_reasons": null
+        },
+        "support": {
+          "sampling": "SPARSE_REFINED_STEREO_MATCHES",
+          "pixel_count": 1304,
+          "valid_pixel_count": 1894,
+          "inferred_pixels": 0
+        }
+      }
+    }
+  ]
+}

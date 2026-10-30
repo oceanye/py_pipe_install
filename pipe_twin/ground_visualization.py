@@ -100,6 +100,7 @@ def tilt_label_lines(check, *, compact=False):
     if angles:
         pitch, roll = angles
         prefix = '试验采用 / 未验证：' if trial else '' if passed else '候选 / 不用于修正：'
+        lines.append(f'{prefix}光轴偏离地面法线 {90-pitch:.2f}°（0° 为垂直地面）')
         lines.append(f'{prefix}光轴与地面夹角 {pitch:.2f}°（0° 为平行）')
         lines.append(f'画面横滚 {roll:+.2f}°' if roll is not None else '横滚不可可靠观测')
     else:
@@ -113,17 +114,30 @@ def tilt_label_lines(check, *, compact=False):
                     '地面检查通过 · 无涂色记录' if passed else '地面未通过或未确认 · 无可涂色支持')
     if not check.get('calibration_validated'):
         lines.append('暂用标定：角度精度未验证')
+    source = ''
+    if check.get('source_scope') == 'REFERENCE_STEREO_PAIR_ONLY':
+        source = '地面仅使用当前帧'
+        if check.get('source_burst_status') == 'INVALID':
+            source += '；连拍仍未通过'
+        lines.insert(0, source)
     if compact:
         state = ('候选倾角已用于试验 · 未验证' if trial else
                  '地面检查通过 · 绿色支持' if passed else '候选 / 不用于修正 · 橙色支持')
         if support:
             state += f" {support['pixel_count']/max(1, support['valid_pixel_count']):.1%}"
         else:
-            state = lines[0]
+            state = ('候选倾角已用于试验 · 无可涂色支持' if trial else
+                     '地面检查通过 · 无涂色记录' if passed else '地面未通过或未确认 · 无可涂色支持')
+        if source:
+            state = '仅当前帧：'+('候选试验未验证' if trial else '地面通过' if passed else '地面未通过/未确认')
+            if check.get('source_burst_status') == 'INVALID':
+                state += ' · 连拍未通过'
+            if support:
+                state += f" · 支持 {support['pixel_count']/max(1, support['valid_pixel_count']):.1%}"
         angle_text = '倾角暂无有效解'
         if angles:
             pitch, roll = angles
-            angle_text = f'光轴与地面夹角 {pitch:.2f}° · '+(f'横滚 {roll:+.2f}°' if roll is not None else '横滚不可观测')
+            angle_text = f'光轴偏离地面法线 {90-pitch:.2f}° · '+(f'横滚 {roll:+.2f}°' if roll is not None else '横滚不可观测')
         if not check.get('calibration_validated'):
             angle_text += ' · 暂用标定'
         return [state, angle_text]
@@ -151,7 +165,12 @@ def paint_support(image, check, *, transform=None, image_size=None):
 
 
 def ground_evidence_image(image, check):
-    out = paint_support(image, check)
+    return ground_evidence_labels(paint_support(image, check), check)
+
+
+def ground_evidence_labels(image, check):
+    """Draw final labels above other annotations without painting samples twice."""
+    out = image.copy()
     if not check or not check.get('selection'):
         return out
     x, y, w, h = check['selection']['rect_px']
@@ -162,9 +181,15 @@ def ground_evidence_image(image, check):
         status = 'TRIAL GROUND CORRECTION APPLIED - NOT VALIDATED'
     angles = tilt_angles(check)
     lines = [status]
+    if check.get('source_scope') == 'REFERENCE_STEREO_PAIR_ONLY':
+        scope = 'GROUND: CURRENT PAIR ONLY'
+        if check.get('source_burst_status') == 'INVALID':
+            scope += ' / BURST STILL REJECTED'
+        lines.insert(0, scope)
     if angles:
         pitch, roll = angles
-        lines += [f'Optical axis / plane: {pitch:.2f} deg (0 = parallel)',
+        lines += [f'Off ground normal: {90-pitch:.2f} deg (0 = perpendicular)',
+                  f'Optical axis / plane: {pitch:.2f} deg (0 = parallel)',
                   f'Image roll: {roll:+.2f} deg' if roll is not None else 'Image roll: unobservable']
     else:
         lines += ['Tilt: unavailable']

@@ -49,7 +49,7 @@ def inspect_ground_pair(*, paths, expected_hashes, capture_times, calibration,
         raise ValueError('视差搜索范围必须小于每目图像宽度')
     depth = _compute_stereo_depth(images['left'], images['right'], parsed, config)
     healthy = depth.audit['status'] == 'VALID' and all(q['passed'] for q in quality.values())
-    check = check_ground({'depth': depth, 'pair_healthy': healthy}, parsed, selection)
+    check = check_ground({'depth': depth, 'pair_healthy': healthy, **images}, parsed, selection)
     result = {'revision': 'standalone-ground-inspection-v1', 'generated_at': datetime.now(timezone.utc).isoformat(),
               'scope': 'CURRENT_STEREO_PAIR_ONLY', 'ground_check': check,
               'sources': sources, 'calibration': calibration, 'analysis_settings': config,

@@ -6,6 +6,9 @@ silently promotes a colour envelope to an accepted cylinder observation.
 """
 from __future__ import annotations
 
+import hashlib
+import json
+
 import cv2
 import numpy as np
 
@@ -16,6 +19,81 @@ from .section_diagnostics import axis_from_image_lines
 from .section_model import build_section_model
 from .axial_consistency import synchronize_axial_blocks
 from .ground_correction import correct_pipe_axis
+
+
+EDGE_EXTRACTION_REVISION = 'colour-supported-local-gradient-v1'
+EDGE_EXTRACTION_POLICY = {'search_radius_px': 3., 'gaussian_sigma_px': .7, 'axial_sigma_px': 4.,
+    'axial_kernel_radius_px': 12, 'minimum_colour_gradient': 4.,
+    'hue_half_width': 15., 'saturation_min': 120., 'value_min': 40.,
+    'hue_margin_scale': 4., 'value_margin_scale': 3.,
+    'localization': 'COLOUR_MEMBERSHIP_ZERO_CROSSING',
+    'neutral_refinement': False, 'fill_missing_columns': False,
+    'filtered_pixel_samples_independent': False,
+    'geometric_line_used_for_localization': False}
+EDGE_EXTRACTION_POLICY_SHA256 = hashlib.sha256(json.dumps(EDGE_EXTRACTION_POLICY, sort_keys=True).encode()).hexdigest()
+
+
+def _colour_gradient(image, proposal, sampling_mask=None):
+    """Localize the outer colour transition, without a fitted-line prior.
+
+    The continuous margin has exactly the same HSV decision boundary as the
+    original mask. Local axial averaging suppresses isolated colour noise;
+    a directed zero crossing then supplies a subpixel edge. No radius, CAD
+    size, fitted straight line, missing column or occluded gap is supplied.
+    """
+    if proposal['appearance'] == 'neutral':
+        return None
+    hue = int(proposal['appearance'].split('-')[1])
+    x, y, w, h = proposal['region_px']
+    radius = EDGE_EXTRACTION_POLICY['axial_kernel_radius_px']
+    pad = radius+2
+    x0, y0 = max(0, x-pad), max(0, y-pad)
+    x1, y1 = min(image.shape[1], x+w+pad), min(image.shape[0], y+h+pad)
+    hsv = cv2.cvtColor(image[y0:y1, x0:x1], cv2.COLOR_BGR2HSV).astype(np.float32)
+    delta = np.abs(hsv[:, :, 0]-hue)
+    delta = np.minimum(delta, 180-delta)
+    score = np.minimum(np.minimum(hsv[:, :, 1]-EDGE_EXTRACTION_POLICY['saturation_min'],
+        EDGE_EXTRACTION_POLICY['hue_margin_scale']*(EDGE_EXTRACTION_POLICY['hue_half_width']-delta)),
+        EDGE_EXTRACTION_POLICY['value_margin_scale']*(hsv[:, :, 2]-EDGE_EXTRACTION_POLICY['value_min']))
+    ax, ay = np.asarray(proposal['axis_image'], float)/np.linalg.norm(proposal['axis_image'])
+    rows, columns = np.mgrid[-radius:radius+1, -radius:radius+1]
+    along, across = columns*ax+rows*ay, -columns*ay+rows*ax
+    kernel = np.exp(-.5*((along/EDGE_EXTRACTION_POLICY['axial_sigma_px'])**2
+                         +(across/EDGE_EXTRACTION_POLICY['gaussian_sigma_px'])**2))
+    kernel /= kernel.sum()
+    kernel = kernel.astype(np.float32)
+    if sampling_mask is None:
+        score = cv2.filter2D(score, -1, kernel)
+    else:
+        allowed = sampling_mask[y0:y1, x0:x1].astype(np.float32)
+        weights = cv2.filter2D(allowed, -1, kernel)
+        score = cv2.filter2D(score*allowed, -1, kernel)/np.maximum(weights, 1e-6)
+    # Values retain original integer pixel centres; interpolation between
+    # adjacent samples therefore preserves the threshold's half-pixel rule.
+    return score, x0, y0
+
+
+def _gradient_edge(gradient, x, seed_y, edge):
+    if gradient is None:
+        return seed_y, False
+    score, x0, y0 = gradient
+    column = x-x0
+    seed = seed_y-y0-.5
+    radius = EDGE_EXTRACTION_POLICY['search_radius_px']
+    low = max(1, int(np.ceil(seed-radius)))
+    high = min(len(score)-2, int(np.floor(seed+radius)))
+    if high < low:
+        return seed_y, False
+    sign = 1. if edge == 'top' else -1.
+    profile = score[:, column]*sign
+    choices = []
+    for index in range(low, high+1):
+        delta = float(profile[index+1]-profile[index])
+        if profile[index] <= 0 < profile[index+1] and delta >= EDGE_EXTRACTION_POLICY['minimum_colour_gradient']:
+            located = y0+index-float(profile[index])/delta
+            if abs(located-seed_y) <= radius:
+                choices.append(located)
+    return (min(choices, key=lambda value: abs(value-seed_y)), True) if choices else (seed_y, False)
 
 
 def _observed_edges(image, proposal, role, sampling_mask=None):
@@ -40,6 +118,12 @@ def _observed_edges(image, proposal, role, sampling_mask=None):
         interior = cv2.erode(sampling_mask.astype(np.uint8), np.ones((5, 5), np.uint8),
                              borderType=cv2.BORDER_CONSTANT, borderValue=0)[y:y+height, x:x+width]
     points = {'top': [], 'bottom': []}
+    gradient = _colour_gradient(image, proposal, sampling_mask)
+    extraction = {'revision': EDGE_EXTRACTION_REVISION, 'policy': dict(EDGE_EXTRACTION_POLICY),
+                  'policy_sha256': EDGE_EXTRACTION_POLICY_SHA256,
+                  'source': 'LOCAL_COLOUR_GRADIENT' if gradient is not None else 'ORIGINAL_NEUTRAL_THRESHOLD',
+                  'edges': {edge: {'refined_columns': 0, 'threshold_columns': 0, 'shifts': []}
+                            for edge in points}}
     profiles = []
     trim = max(8, int(proposal['width_px']*.15))
     for column in range(trim, max(trim, width-trim)):
@@ -49,8 +133,23 @@ def _observed_edges(image, proposal, role, sampling_mask=None):
         low, high = rows[0], rows[-1]
         if interior is not None and not (interior[low, column] and interior[high, column]):
             continue
-        points['top'].append([x+column, y+low-.5])
-        points['bottom'].append([x+column, y+high+.5])
+        search_rows = np.flatnonzero(proposal['mask'][:, column])
+        for edge, seed in [('top', y+low-.5), ('bottom', y+high+.5)]:
+            search_seed = (y+search_rows[0]-.5 if edge == 'top' else y+search_rows[-1]+.5) if len(search_rows) else seed
+            located, refined = _gradient_edge(gradient, x+column, search_seed, edge)
+            if not refined or abs(located-seed) > EDGE_EXTRACTION_POLICY['search_radius_px']:
+                located = seed
+                refined = False
+            # An adjusted sample must remain inside the actual selection.
+            # Neither a cut-plane nor pixels beyond it can become a silhouette.
+            if sampling_mask is not None:
+                row = int(round(located))
+                if not (0 <= row < sampling_mask.shape[0] and sampling_mask[row, x+column]):
+                    located, refined = seed, False
+            points[edge].append([x+column, located])
+            extraction['edges'][edge]['refined_columns' if refined else 'threshold_columns'] += 1
+            if refined:
+                extraction['edges'][edge]['shifts'].append(located-seed)
         if high-low >= 8 and appearance != 'neutral':
             indexes = np.linspace(low, high, 100).round().astype(int)
             profiles.append((hsv[indexes, column, 1] < 100) & (hsv[indexes, column, 2] >= 180))
@@ -74,9 +173,14 @@ def _observed_edges(image, proposal, role, sampling_mask=None):
         reasons.append('VISIBLE_BAND_TOO_NARROW')
     if highlights >= 2:
         reasons.append('MULTIPLE_BANDS_OR_OCCLUDED_INSTANCES')
+    for audit in extraction['edges'].values():
+        shifts = audit.pop('shifts')
+        audit['median_shift_px'] = float(np.median(shifts)) if shifts else None
+        audit['absolute_shift_p95_px'] = float(np.percentile(np.abs(shifts), 95)) if shifts else None
     return {'role': role, 'region_px': list(proposal['region_px']), 'appearance': appearance,
             'color_srgb': proposal['sampled_color_srgb'], 'width_px': proposal['width_px'],
-            'edges': edges, 'reason_codes': reasons, 'highlight_band_count': highlights}
+            'edges': edges, 'reason_codes': reasons, 'highlight_band_count': highlights,
+            'edge_extraction': extraction}
 
 
 def _join_disjoint(items):
@@ -106,6 +210,14 @@ def _join_disjoint(items):
                 continue
             for first, second in zip(previous['edges'], item['edges']):
                 first['points'] = np.vstack([first['points'], second['points']])
+            if previous.get('edge_extraction') is not None and item.get('edge_extraction') is not None:
+                sources = previous['edge_extraction'].get('source_extractions')
+                if sources is None:
+                    sources = [{'region_px': list(previous['region_px']), 'extraction': previous['edge_extraction']}]
+                sources = sources+[{'region_px': list(item['region_px']), 'extraction': item['edge_extraction']}]
+                previous['edge_extraction'] = {'revision': EDGE_EXTRACTION_REVISION,
+                    'policy_sha256': EDGE_EXTRACTION_POLICY_SHA256, 'source': 'DISJOINT_VISIBLE_PIECES',
+                    'source_extractions': sources}
             previous['source_regions_px'] += item['source_regions_px']
             previous['reason_codes'] = sorted(set(previous['reason_codes']+item['reason_codes']))
             boxes = np.asarray(previous['source_regions_px'])
@@ -312,6 +424,9 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
             axis_hint_image=band_audit['axis_image']) if band_audit else aggregate_image(image, role))
     result = {'revision': REVISION, 'policy_sha256': POLICY_SHA256, 'policy': dict(POLICY),
               'section_revision': 'pooled-sections-ground-constrained-v3',
+              'edge_extraction_revision': EDGE_EXTRACTION_REVISION,
+              'edge_extraction_policy_sha256': EDGE_EXTRACTION_POLICY_SHA256,
+              'edge_extraction_policy': dict(EDGE_EXTRACTION_POLICY),
               'stages': ['BOUNDARY_AGGREGATION', 'SECTION_DIMENSIONS', 'MODEL_RELATIVE_POSITION'],
               'occlusion_recovered': False, 'nominal_dimensions_used_in_fitting': False,
               'views': {role: [_compact(i) for i in items] for role, items in views.items()},
