@@ -768,6 +768,25 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertNotIn("camera_side_world", self.dialog.registration_settings)
         self.assertEqual(self.dialog.camera_side_label.get(), "自动判断（未指定）")
 
+    def test_unapplied_view_direction_is_not_silently_discarded_by_save(self):
+        self.dialog.open_model_viewer()
+        viewer = self.dialog.model_viewer
+        viewer.view_mode.set("从 -Y 侧朝 +Y 看")
+        viewer.preview_side()
+        self.dialog.submit(True)
+        self.assertFalse(self.dialog.busy)
+        self.assertIsNone(self.dialog.last_manifest)
+        self.assertIn('方向仍是预览', self.dialog.message.get())
+        self.assertTrue(viewer.has_pending_camera_side())
+        self.assertNotIn('camera_side_world', self.dialog.registration_settings)
+        # Reverting is explicit and does not silently apply the preview.
+        viewer.restore_camera_side()
+        self.assertFalse(viewer.has_pending_camera_side())
+        self.assertNotIn('camera_side_world', self.dialog.registration_settings)
+        self.dialog.submit(False)
+        self.finish_worker()
+        self.assertIsNotNone(self.dialog.last_manifest)
+
     def test_viewer_separates_preview_from_applied_model_camera_side(self):
         self.dialog.report = {"registration": {"status": "MATCHED",
             "rotation_model_to_camera": [[0, 0, 1], [1, 0, 0], [0, 1, 0]],
@@ -1029,6 +1048,8 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.capture_camera()
         camera = self.dialog.camera_dialog
         camera.window.withdraw()
+        self.assertEqual(camera.burst_count.get(), "10")
+        camera.burst_count.set("20")
         frames = []
         for i in range(20):
             left = np.full((480, 640, 3), 80+i, np.uint8)

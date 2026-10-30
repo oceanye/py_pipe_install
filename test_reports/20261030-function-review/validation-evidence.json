@@ -1,0 +1,26 @@
+{
+  "full_suite": {
+    "passed": 904,
+    "skipped": 1,
+    "subtests_passed": 272,
+    "seconds": 347.22,
+    "log": "outputs/function-review-20261030/final-tests.log"
+  },
+  "isolated_skipped_test": {
+    "selection": "tests/test_gui.py -k module_import_does_not_eagerly_import_tkinter",
+    "passed": 1,
+    "seconds": 0.18
+  },
+  "protected_files_unchanged": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\manifest.json": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\report.json": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\left.png": true,
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\right.png": true,
+    "outputs\\elevation_workbench\\last_scene.json": true,
+    "outputs\\measurement_workbench\\calibration_current.json": true,
+    "outputs\\measurement_workbench\\workbench_profile.json": true
+  },
+  "report_local_links_valid": true,
+  "independent_capture_code_review": "NO_BLOCKING_FINDINGS",
+  "scope": "SOFTWARE_FUNCTION_VERIFIED_FIELD_DIMENSION_ACCURACY_NOT_ACCEPTED"
+}

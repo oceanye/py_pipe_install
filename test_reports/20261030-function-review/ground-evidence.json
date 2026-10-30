@@ -1,0 +1,336 @@
+{
+  "scope": "SAME_CAPTURE_CONFIGURATION_DIAGNOSTIC_NOT_METRIC_VALIDATION",
+  "new_capture": false,
+  "source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\manifest.json": "8a0213d99a3d79e9cc6f9878b613c2a0c884677dc90eed4903f8dbf76c69da00",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\report.json": "f2eb7af75f19b0fd4ad5b02b0df5192f46d08bb965d0b3bc31e217b826a10b12",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\left.png": "df6012d327df5602cf9a08f69fee9c9c910e8cec9710a01f2b4836292cd48ccd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\right.png": "c774c3f4fbf112b5a978004ac019ff6317616d93804096bce0b02ca8219b4f08",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\elevation_workbench\\last_scene.json": "b8ce4a449f34e0d1debef25954aae538c128456d76c522ae051c078e24bbb5e8"
+  },
+  "baseline_commit": "e663f6e",
+  "source_inputs_unchanged": true,
+  "threshold_policy_unchanged": true,
+  "rows": [
+    {
+      "preprocessing": "low_light",
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "low_light",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.46370370370370373,
+        "valid_right_fraction": 0.46195457175925925,
+        "searchable_depth_min_mm": 430.34047577773515,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "before": {
+        "revision": "stereo-ground-plane-check-v2",
+        "policy_sha256": "6cb4616ff1da7ca6aa0962246dfc965e193368f13a91bf1c32776982c2942095",
+        "status": "GROUND_PLANE_INCONSISTENT",
+        "accepted_measurement": false,
+        "total_accuracy_known": false,
+        "pipe_axis_constrained_by_ground": false,
+        "calibration_validated": true,
+        "selection": {
+          "coordinate_space": "rectified_left",
+          "image_size": [
+            1920,
+            1080
+          ],
+          "rect_px": [
+            172,
+            109,
+            596,
+            338
+          ]
+        },
+        "surface_identity_source": "OPERATOR_MARKED_GROUND",
+        "valid_depth_fraction": 0.7237500496406021,
+        "left_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "inlier_fraction": 0.568359375,
+          "holdout_inlier_fraction": 0.5568948891031823,
+          "holdout_rms_mm": 2.809941040400567,
+          "occupied_cells": 16,
+          "candidate_plane": {
+            "normal_camera": [
+              -0.056398870152488734,
+              -0.23359895352213855,
+              -0.9706959855479389
+            ],
+            "offset_mm": 1211.550108623256
+          }
+        }
+      },
+      "after": {
+        "revision": "stereo-ground-plane-check-v3",
+        "policy_sha256": "6cb4616ff1da7ca6aa0962246dfc965e193368f13a91bf1c32776982c2942095",
+        "status": "GROUND_PLANE_INCONSISTENT",
+        "accepted_measurement": false,
+        "total_accuracy_known": false,
+        "pipe_axis_constrained_by_ground": false,
+        "calibration_validated": true,
+        "selection": {
+          "coordinate_space": "rectified_left",
+          "image_size": [
+            1920,
+            1080
+          ],
+          "rect_px": [
+            172,
+            109,
+            596,
+            338
+          ]
+        },
+        "surface_identity_source": "OPERATOR_MARKED_GROUND",
+        "valid_depth_fraction": 0.7237500496406021,
+        "left_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "validation_scope": "SPATIAL_HELD_OUT_CELLS",
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ],
+          "quality_checks": [
+            {
+              "reason_code": "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+              "value": 0.568359375,
+              "limit": 0.7,
+              "comparison": ">=",
+              "passed": false
+            },
+            {
+              "reason_code": "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW",
+              "value": 0.5568948891031823,
+              "limit": 0.7,
+              "comparison": ">=",
+              "passed": false
+            },
+            {
+              "reason_code": "GROUND_SPATIAL_COVERAGE_LOW",
+              "value": 16,
+              "limit": 8,
+              "comparison": ">=",
+              "passed": true
+            },
+            {
+              "reason_code": "GROUND_HOLDOUT_RMS_HIGH",
+              "value": 2.809941040400567,
+              "limit": 3.0,
+              "comparison": "<=",
+              "passed": true
+            }
+          ],
+          "training_sample_count": 2022,
+          "holdout_sample_count": 2074,
+          "inlier_fraction": 0.568359375,
+          "training_inlier_fraction": 0.5801186943620178,
+          "holdout_inlier_fraction": 0.5568948891031823,
+          "holdout_rms_mm": 2.809941040400567,
+          "occupied_cells": 16,
+          "candidate_plane": {
+            "normal_camera": [
+              -0.056398870152488734,
+              -0.23359895352213855,
+              -0.9706959855479389
+            ],
+            "offset_mm": 1211.550108623256
+          }
+        }
+      },
+      "gui_detail_lines": [
+        "请在左图框选确定的裸露地面，避开管道、支架和其他物体。",
+        "垂直离地距离与沿视线的深度是两个不同量；水平放管不等于两端到相机等距。",
+        "地面未通过或未确认 · 橙色仅为候选支持",
+        "候选 / 不用于修正：光轴与地面夹角 76.10°（0° 为平行）",
+        "画面横滚 -13.57°",
+        "涂色支持 84,006 / 145,798 有效像素（57.6%）；空洞不填充",
+        "选区有效深度：72.4%；要求至少 25%。",
+        "左目平面一致点 56.8%；留出一致点 55.7%（均需 ≥70%，点到平面 ≤5 mm）。",
+        "左目留出一致点 RMS：2.81 mm；要求 ≤3 mm。",
+        "左目未通过项目：平面一致点不足、留出一致点不足。",
+        "检查未通过：地面样本不符合稳定平面",
+        "尚不输出确定的地面距离或相机倾斜角。"
+      ]
+    },
+    {
+      "preprocessing": "none",
+      "depth_audit": {
+        "algorithm_revision": "sgbm-low-light-v1",
+        "opencv_version": "4.13.0",
+        "matcher": {
+          "preprocessing": "none",
+          "min_disparity": 0,
+          "num_disparities": 256,
+          "block_size": 5,
+          "uniqueness_ratio": 5,
+          "speckle_window_size": 50,
+          "speckle_range": 2,
+          "disp12_max_diff": 2
+        },
+        "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
+        "status": "VALID",
+        "reason_codes": [],
+        "valid_left_fraction": 0.5097410300925926,
+        "valid_right_fraction": 0.5087866512345679,
+        "searchable_depth_min_mm": 430.34047577773515,
+        "warning_codes": [],
+        "left_right_consistency_px": 2.0,
+        "depth_convention": "camera_z_mm"
+      },
+      "before": {
+        "revision": "stereo-ground-plane-check-v2",
+        "policy_sha256": "6cb4616ff1da7ca6aa0962246dfc965e193368f13a91bf1c32776982c2942095",
+        "status": "GROUND_PLANE_INCONSISTENT",
+        "accepted_measurement": false,
+        "total_accuracy_known": false,
+        "pipe_axis_constrained_by_ground": false,
+        "calibration_validated": true,
+        "selection": {
+          "coordinate_space": "rectified_left",
+          "image_size": [
+            1920,
+            1080
+          ],
+          "rect_px": [
+            172,
+            109,
+            596,
+            338
+          ]
+        },
+        "surface_identity_source": "OPERATOR_MARKED_GROUND",
+        "valid_depth_fraction": 0.8388864620150113,
+        "left_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "inlier_fraction": 0.654541015625,
+          "holdout_inlier_fraction": 0.6699029126213593,
+          "holdout_rms_mm": 2.700062712066894,
+          "occupied_cells": 16,
+          "candidate_plane": {
+            "normal_camera": [
+              -0.0459565534038059,
+              -0.23267916558388554,
+              -0.9714671384573078
+            ],
+            "offset_mm": 1216.0104839844598
+          }
+        }
+      },
+      "after": {
+        "revision": "stereo-ground-plane-check-v3",
+        "policy_sha256": "6cb4616ff1da7ca6aa0962246dfc965e193368f13a91bf1c32776982c2942095",
+        "status": "GROUND_PLANE_INCONSISTENT",
+        "accepted_measurement": false,
+        "total_accuracy_known": false,
+        "pipe_axis_constrained_by_ground": false,
+        "calibration_validated": true,
+        "selection": {
+          "coordinate_space": "rectified_left",
+          "image_size": [
+            1920,
+            1080
+          ],
+          "rect_px": [
+            172,
+            109,
+            596,
+            338
+          ]
+        },
+        "surface_identity_source": "OPERATOR_MARKED_GROUND",
+        "valid_depth_fraction": 0.8388864620150113,
+        "left_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "validation_scope": "SPATIAL_HELD_OUT_CELLS",
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ],
+          "quality_checks": [
+            {
+              "reason_code": "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+              "value": 0.654541015625,
+              "limit": 0.7,
+              "comparison": ">=",
+              "passed": false
+            },
+            {
+              "reason_code": "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW",
+              "value": 0.6699029126213593,
+              "limit": 0.7,
+              "comparison": ">=",
+              "passed": false
+            },
+            {
+              "reason_code": "GROUND_SPATIAL_COVERAGE_LOW",
+              "value": 16,
+              "limit": 8,
+              "comparison": ">=",
+              "passed": true
+            },
+            {
+              "reason_code": "GROUND_HOLDOUT_RMS_HIGH",
+              "value": 2.700062712066894,
+              "limit": 3.0,
+              "comparison": "<=",
+              "passed": true
+            }
+          ],
+          "training_sample_count": 2036,
+          "holdout_sample_count": 2060,
+          "inlier_fraction": 0.654541015625,
+          "training_inlier_fraction": 0.6389980353634578,
+          "holdout_inlier_fraction": 0.6699029126213593,
+          "holdout_rms_mm": 2.700062712066894,
+          "occupied_cells": 16,
+          "candidate_plane": {
+            "normal_camera": [
+              -0.0459565534038059,
+              -0.23267916558388554,
+              -0.9714671384573078
+            ],
+            "offset_mm": 1216.0104839844598
+          }
+        }
+      },
+      "gui_detail_lines": [
+        "请在左图框选确定的裸露地面，避开管道、支架和其他物体。",
+        "垂直离地距离与沿视线的深度是两个不同量；水平放管不等于两端到相机等距。",
+        "地面未通过或未确认 · 橙色仅为候选支持",
+        "候选 / 不用于修正：光轴与地面夹角 76.28°（0° 为平行）",
+        "画面横滚 -11.17°",
+        "涂色支持 110,988 / 168,992 有效像素（65.7%）；空洞不填充",
+        "选区有效深度：83.9%；要求至少 25%。",
+        "左目平面一致点 65.5%；留出一致点 67.0%（均需 ≥70%，点到平面 ≤5 mm）。",
+        "左目留出一致点 RMS：2.70 mm；要求 ≤3 mm。",
+        "左目未通过项目：平面一致点不足、留出一致点不足。",
+        "检查未通过：地面样本不符合稳定平面",
+        "尚不输出确定的地面距离或相机倾斜角。"
+      ]
+    }
+  ],
+  "interpretation": "None improves depth and plane support in this normally lit pair; both configurations still fail. No source settings changed."
+}

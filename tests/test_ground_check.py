@@ -3,7 +3,7 @@ import math
 import numpy as np
 import pytest
 
-from pipe_twin.ground_check import check_ground, normalize_ground_region, ground_summary_lines
+from pipe_twin.ground_check import check_ground, normalize_ground_region, ground_summary_lines, _fit_plane
 
 
 def scene(normal=(.1, -.8, -.4), distance=500.):
@@ -98,3 +98,47 @@ def test_top_down_ground_can_give_height_but_not_image_roll():
     assert result['image_roll_relative_to_ground_deg'] is None
     assert not result['roll_observable']
     assert '横滚不可可靠观测' in '\n'.join(ground_summary_lines(result))
+
+
+def test_held_out_depths_never_change_the_plane_used_for_ground_correction():
+    yy, xx = np.mgrid[0:64, 0:64]
+    cells = (xx//16+4*(yy//16)).ravel()
+    held_out = (cells % 4+cells//4) % 2 != 0
+    points = np.c_[xx.ravel()*4., yy.ravel()*4., np.full(xx.size, 1000.)]
+    points[:, 2] += np.random.default_rng(36).normal(0, .15, len(points))
+    first, _ = _fit_plane(points, cells)
+    # Simulate an independently observed, slightly biased validation region.
+    # It is within the existing checks but must not pull the published normal.
+    changed = points.copy()
+    changed[held_out, 2] += 2.0 + (changed[held_out, 0]-128.)*.004
+    second, mask = _fit_plane(changed, cells)
+    assert first['status'] == second['status'] == 'PLANE_FIT'
+    assert first['normal_camera'] == second['normal_camera']
+    assert first['offset_mm'] == second['offset_mm']
+    assert second['holdout_rms_mm'] > first['holdout_rms_mm']+1.5
+    assert second['fit_scope'] == 'TRAINING_CELLS_ONLY'
+    residual = changed@second['normal_camera']+second['offset_mm']
+    np.testing.assert_array_equal(mask, abs(residual) <= 5.)
+    expected = residual[held_out & mask]
+    assert second['holdout_rms_mm'] == pytest.approx(np.sqrt(np.mean(expected**2)))
+    assert second['inlier_fraction'] == pytest.approx(mask.mean())
+
+
+def test_ground_rejection_reports_failed_metrics_without_hiding_empty_holdout():
+    yy, xx = np.mgrid[0:64, 0:64]
+    cells = (xx//16+4*(yy//16)).ravel()
+    held_out = (cells % 4+cells//4) % 2 != 0
+    points = np.c_[xx.ravel()*4., yy.ravel()*4., 1000.+held_out*8.]
+    result, mask = _fit_plane(points, cells)
+    assert result['status'] == 'GROUND_PLANE_INCONSISTENT' and mask is None
+    assert result['failure_reasons'] == ['GROUND_PLANE_SUPPORT_FRACTION_LOW',
+        'GROUND_HOLDOUT_SUPPORT_FRACTION_LOW', 'GROUND_HOLDOUT_RMS_HIGH']
+    assert result['holdout_rms_mm'] is None
+    assert result['inlier_fraction'] == .5 and result['holdout_inlier_fraction'] == 0.
+    checks = {item['reason_code']: item for item in result['quality_checks']}
+    assert checks['GROUND_SPATIAL_COVERAGE_LOW']['passed']
+    assert checks['GROUND_HOLDOUT_RMS_HIGH']['value'] is None
+    text = '\n'.join(ground_summary_lines({'status': result['status'], 'left_plane': result,
+                                          'valid_depth_fraction': .8}))
+    assert '80.0%' in text and '50.0%' in text and '0.0%' in text and '≥70%' in text
+    assert '无可用值' in text and '留出一致点不足' in text

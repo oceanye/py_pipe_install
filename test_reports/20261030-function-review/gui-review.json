@@ -1,0 +1,54 @@
+{
+  "platform": "Windows desktop, Python Tk/ttk",
+  "scope": "Fixed field scene, actual Tk controls and two window sizes; no camera access or source mutation",
+  "design_thesis": "Photographs, conditional section estimates and CAD acceptance remain distinct, with the next necessary step visible beside evaluation.",
+  "overall_after_changes": "Good",
+  "findings": [
+    {
+      "severity": "High",
+      "problem": "Workflow quality states were hidden below long saved-path messages in the scrolling status area.",
+      "fix": "Persistent two-line summary beside the existing evaluate button distinguishes loaded pairs from repetition checks, viewing side, solved conditional sections, CAD correspondence, plane validation, applied trial and relative-position acceptance.",
+      "reference": "apple-design references/hig/feedback.md > Best practices",
+      "quote": "Consider integrating status feedback into your interface."
+    },
+    {
+      "severity": "High",
+      "problem": "Saving with a pending camera-side preview silently discarded that preview when the viewer synchronized with saved settings.",
+      "fix": "An inline message returns focus to the viewer before saving; the operator can apply the side or restore the already applied direction. Neither action is silently selected by software.",
+      "reference": "apple-design references/hig/writing.md > Best practices",
+      "quote": "Give clear guidance and use consistent language throughout processes with multiple steps."
+    },
+    {
+      "severity": "High",
+      "problem": "Single-frame candidate details claimed they were using a burst; unresolved top red pipe was described only as unpaired.",
+      "fix": "Single-frame and rejected-burst text are separate. New pairing audit shows independent edge counts, width mismatch and why two visible lines cannot determine a free circle.",
+      "reference": "apple-design references/hig/writing.md > Getting started",
+      "quote": "Be clear."
+    },
+    {
+      "severity": "Critical",
+      "problem": "CAD table text colors on the production white background had contrast ratios 4.29, 4.22 and 2.69, all below 4.5 for small text.",
+      "fix": "Separate table text colors from photo-outline colors. New text ratios are 7.13, 6.57 and 6.65. State names remain explicit. Scrolling diagnostic text increased from 9 pt to 10 pt, with two lines retained to preserve photograph height.",
+      "reference": "apple-design references/hig/accessibility.md > Vision",
+      "quote": "Strive to meet color contrast minimum standards.",
+      "actual_background": "#ffffff",
+      "new_table_foregrounds": {"INSTALLED": "#166534", "NOT_INSTALLED": "#B42318", "UNKNOWN": "#7A5600"}
+    },
+    {
+      "severity": "Medium",
+      "problem": "Long rejection strings on every image proposal covered the actual pipe silhouettes.",
+      "fix": "Photo labels now retain proposal IDs; detailed rejection text remains in diagnostics. Candidate rectangles and algorithm output remain intact.",
+      "remaining": "Dense overlapping proposals remain crowded at 1024x720; opening the scene model and selecting a row provides the clearer per-candidate view.",
+      "reference": "Reviewer judgment from actual screenshots"
+    }
+  ],
+  "verification": {
+    "command": ".venv/Scripts/python.exe -m pytest tests/test_workflow_status.py tests/test_elevation_gui.py tests/test_temporal_sections.py tests/test_camera_view.py -q",
+    "result": "83 passed, 5 subtests passed, 32.78 seconds",
+    "real_gui_command": ".venv/Scripts/python.exe test_reports/20261030-function-review/gui-verify.py",
+    "photo_heights_px": {"1024x720": 194, "1280x860": 334},
+    "clipped_controls": 0,
+    "source_scene_calibration_photos_default_pointer_unchanged": true
+  },
+  "limitations": "No screen-reader certification, operating-system high-contrast audit or universal DPI certification. Apple references are applied as cross-platform principles, not as a claim of macOS HIG compliance for Windows Tk. Current numerical results are still conditional and have not become accepted by these presentation changes."
+}

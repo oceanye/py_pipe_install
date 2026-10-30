@@ -67,6 +67,76 @@ def test_two_remaining_tangents_do_not_create_a_free_radius(monkeypatch):
         item['pooled_edges'] = item['pooled_edges'][1:]
     result = run_views(monkeypatch, views, k)
     assert result['boundary_pair_count'] == 0
+    row = result['pairing_audit']['left'][0]
+    assert row['status'] == 'INSUFFICIENT_INDEPENDENT_SILHOUETTES'
+    assert row['stable_boundary_count'] == 1
+    assert row['compatible_candidate_ids'] == []
+    assert row['nearby_candidates'][0]['combined_stable_boundary_count'] == 2
+    assert row['nearby_candidates'][0]['reason_codes'] == ['INSUFFICIENT_INDEPENDENT_SILHOUETTES']
+
+
+def test_partial_disjoint_sections_do_not_crash_or_merge_from_one_shared_edge(monkeypatch):
+    views, k = synthetic_views()
+    for role in views:
+        original = views[role][0]
+        items = []
+        for index, (low, high) in enumerate([(400, 800), (1000, 1400)]):
+            item = copy.deepcopy(original)
+            item['candidate_id'] += str(index)
+            item['region_px'] = [low, 200, high-low, 400]
+            edges = [{**e, 'points': e['points'][(e['points'][:, 0] >= low) & (e['points'][:, 0] < high)]}
+                     for e in item['pooled_edges']]
+            # Different second boundaries are not known on the left. They
+            # cannot be replaced by either the first edge or a failed fit.
+            if role == 'left':
+                edges[1]['points'] = np.empty((0, 2))
+            item['aggregation'], item['pooled_edges'] = aggregate_boundaries(edges)
+            items.append(item)
+        views[role] = items
+    result = run_views(monkeypatch, views, k)
+    assert result['boundary_pair_count'] == 2
+    assert all(c['boundary_status'] == 'PARTIAL' for c in result['candidates'])
+    assert all(c['included_in_section_model'] for c in result['candidates'])
+    assert not any('POSSIBLE_SHARED_PIPE_INSTANCE' in c['reason_codes'] for c in result['candidates'])
+    assert all(not c['accepted_measurement'] for c in result['model']['candidates'])
+
+
+def test_pairing_audit_preserves_ambiguity_instead_of_assigning_by_order(monkeypatch):
+    views, k = synthetic_views()
+    views['right'].append(copy.deepcopy(views['right'][0]))
+    views['right'][1]['candidate_id'] += '-duplicate'
+    result = run_views(monkeypatch, views, k)
+    assert result['boundary_pair_count'] == 0
+    assert result['pairing_audit']['left'][0]['status'] == 'AMBIGUOUS_STEREO_CANDIDATES'
+    assert len(result['pairing_audit']['left'][0]['compatible_candidate_ids']) == 2
+    assert all(row['status'] == 'AMBIGUOUS_STEREO_CANDIDATES' for row in result['pairing_audit']['right'])
+
+
+def test_unobservable_pixel_perturbation_is_a_candidate_failure_not_pipeline_crash(monkeypatch):
+    from test_projection_diagnostics import independent_contours
+    axis = np.array([1., .0003, 0.])
+    observations, k = independent_contours(axis, [0., 50., 1800.], 20.)
+    views = {}
+    for role in ('left', 'right'):
+        edges = []
+        for observation in observations:
+            if observation['role'] != role:
+                continue
+            line = np.polyfit(observation['points'][:, 0], observation['points'][:, 1], 1)
+            x = np.arange(400, 1400)
+            edges.append({**observation, 'points': np.c_[x, np.polyval(line, x)]})
+        audit, pooled = aggregate_boundaries(edges)
+        views[role] = [{'candidate_id': 'POOL-'+role, 'role': role, 'region_px': [400, 200, 1000, 400],
+                       'width_px': 34., 'appearance': 'hue-105', 'color_srgb': '#0066CC',
+                       'reason_codes': [], 'boundary_status': 'STABLE', 'boundary_stable': True,
+                       'aggregation': audit, 'pooled_edges': pooled}]
+    result = run_views(monkeypatch, views, k)
+    candidate = result['candidates'][0]
+    assert candidate['fit']['status'] == 'CONDITIONAL_FIT'
+    assert candidate['pixel_error']['status'] == 'PIXEL_UNCERTAINTY_UNRESOLVED'
+    assert candidate['pixel_error']['scenarios'] == {}
+    assert 'PIXEL_UNCERTAINTY_UNRESOLVED' in candidate['reason_codes']
+    assert not result['model']['candidates'][0]['accepted_measurement']
 
 
 def test_separated_pieces_of_the_same_outline_do_not_create_an_inter_pipe_gap(monkeypatch):

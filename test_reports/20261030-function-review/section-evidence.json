@@ -1,0 +1,890 @@
+{
+  "scope": "FROZEN_GROUND_SECTION_ONLY_REPLAY_NOT_NEW_CAPTURE_OR_ACCEPTANCE",
+  "dataset_id": "elevation-20261030-161444-3ab7011e",
+  "source_hashes": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\manifest.json": "8a0213d99a3d79e9cc6f9878b613c2a0c884677dc90eed4903f8dbf76c69da00",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\report.json": "f2eb7af75f19b0fd4ad5b02b0df5192f46d08bb965d0b3bc31e217b826a10b12",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\left.png": "df6012d327df5602cf9a08f69fee9c9c910e8cec9710a01f2b4836292cd48ccd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\right.png": "c774c3f4fbf112b5a978004ac019ff6317616d93804096bce0b02ca8219b4f08"
+  },
+  "before": {
+    "POOL-L02-POOL-R17": {
+      "diameter_mm": 45.23591303366609,
+      "section_center_parameters_mm": [
+        59.41116607852928,
+        963.7990789566518
+      ],
+      "boundary_count": 3,
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL",
+        "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+      ],
+      "window_sensitivity": {
+        "diameter_difference_mm": 1.8146879160574017,
+        "center_difference_mm": 41.17541761902308,
+        "center_difference_components_mm": [
+          -2.45628772441696,
+          -41.102088349813016
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    },
+    "POOL-L03-POOL-R18": {
+      "diameter_mm": 21.523514650538633,
+      "section_center_parameters_mm": [
+        97.90265871987701,
+        984.6543705503053
+      ],
+      "boundary_count": 4,
+      "reason_codes": [
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL"
+      ],
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.139057460874227,
+        "center_difference_mm": 3.34208766376297,
+        "center_difference_components_mm": [
+          -0.380126719844867,
+          -3.32039961889177
+        ],
+        "stable": true,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    },
+    "POOL-L04-POOL-R19": {
+      "diameter_mm": 40.22604704601691,
+      "section_center_parameters_mm": [
+        118.89060818501048,
+        713.0055719715835
+      ],
+      "boundary_count": 4,
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL"
+      ],
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.2505762689192821,
+        "center_difference_mm": 5.734512584121437,
+        "center_difference_components_mm": [
+          -0.8554218889391905,
+          -5.670351661878726
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    }
+  },
+  "after": {
+    "POOL-L02-POOL-R17": {
+      "diameter_mm": 45.23591303366609,
+      "section_center_parameters_mm": [
+        59.41116607852928,
+        963.7990789566518
+      ],
+      "boundary_count": 3,
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL",
+        "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+      ],
+      "window_sensitivity": {
+        "diameter_difference_mm": 1.8146879160574017,
+        "center_difference_mm": 41.17541761902308,
+        "center_difference_components_mm": [
+          -2.45628772441696,
+          -41.102088349813016
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    },
+    "POOL-L03-POOL-R18": {
+      "diameter_mm": 21.523514650538633,
+      "section_center_parameters_mm": [
+        97.90265871987701,
+        984.6543705503053
+      ],
+      "boundary_count": 4,
+      "reason_codes": [
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL"
+      ],
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.139057460874227,
+        "center_difference_mm": 3.34208766376297,
+        "center_difference_components_mm": [
+          -0.380126719844867,
+          -3.32039961889177
+        ],
+        "stable": true,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    },
+    "POOL-L04-POOL-R19": {
+      "diameter_mm": 40.22604704601691,
+      "section_center_parameters_mm": [
+        118.89060818501048,
+        713.0055719715835
+      ],
+      "boundary_count": 4,
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL"
+      ],
+      "window_sensitivity": {
+        "diameter_difference_mm": 0.2505762689192821,
+        "center_difference_mm": 5.734512584121437,
+        "center_difference_components_mm": [
+          -0.8554218889391905,
+          -5.670351661878726
+        ],
+        "stable": false,
+        "method": "COMMON_STATION_ALTERNATING_BLOCKS"
+      }
+    }
+  },
+  "relative_center_distances_mm": [
+    {
+      "ids": [
+        "POOL-L02-POOL-R17",
+        "POOL-L03-POOL-R18"
+      ],
+      "before": 43.77828449374463,
+      "after": 43.77828449374463
+    },
+    {
+      "ids": [
+        "POOL-L02-POOL-R17",
+        "POOL-L04-POOL-R19"
+      ],
+      "before": 257.7502418605416,
+      "after": 257.7502418605416
+    },
+    {
+      "ids": [
+        "POOL-L03-POOL-R18",
+        "POOL-L04-POOL-R19"
+      ],
+      "before": 272.45837075049457,
+      "after": 272.45837075049457
+    }
+  ],
+  "pairing_audit": {
+    "revision": "stereo-boundary-pairing-v1",
+    "minimum_independent_boundaries": 3,
+    "nominal_dimensions_used": false,
+    "left": [
+      {
+        "candidate_id": "POOL-L01",
+        "stable_boundary_count": 1,
+        "status": "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-R16",
+            "stable_boundary_count": 1,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-L02",
+        "stable_boundary_count": 1,
+        "status": "PAIRED",
+        "compatible_candidate_ids": [
+          "POOL-R17"
+        ],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-R17",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 3,
+            "reason_codes": []
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-L03",
+        "stable_boundary_count": 2,
+        "status": "PAIRED",
+        "compatible_candidate_ids": [
+          "POOL-R18"
+        ],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-R01",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R02",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R03",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R04",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R07",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R08",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R09",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R10",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R11",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R12",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R13",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R14",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R15",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R18",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 4,
+            "reason_codes": []
+          },
+          {
+            "candidate_id": "POOL-R20",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-L04",
+        "stable_boundary_count": 2,
+        "status": "PAIRED",
+        "compatible_candidate_ids": [
+          "POOL-R19"
+        ],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-R19",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 4,
+            "reason_codes": []
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-L05",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-R03",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R10",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R11",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R12",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R13",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R14",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R15",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R18",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-R20",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      }
+    ],
+    "right": [
+      {
+        "candidate_id": "POOL-R01",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R02",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R03",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R04",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R05",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R06",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": []
+      },
+      {
+        "candidate_id": "POOL-R07",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R08",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R09",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R10",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R11",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R12",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R13",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R14",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R15",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R16",
+        "stable_boundary_count": 1,
+        "status": "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L01",
+            "stable_boundary_count": 1,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R17",
+        "stable_boundary_count": 2,
+        "status": "PAIRED",
+        "compatible_candidate_ids": [
+          "POOL-L02"
+        ],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L02",
+            "stable_boundary_count": 1,
+            "combined_stable_boundary_count": 3,
+            "reason_codes": []
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R18",
+        "stable_boundary_count": 2,
+        "status": "PAIRED",
+        "compatible_candidate_ids": [
+          "POOL-L03"
+        ],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 4,
+            "reason_codes": []
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R19",
+        "stable_boundary_count": 2,
+        "status": "PAIRED",
+        "compatible_candidate_ids": [
+          "POOL-L04"
+        ],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L04",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 4,
+            "reason_codes": []
+          }
+        ]
+      },
+      {
+        "candidate_id": "POOL-R20",
+        "stable_boundary_count": 0,
+        "status": "NO_STABLE_BOUNDARY",
+        "compatible_candidate_ids": [],
+        "nearby_candidates": [
+          {
+            "candidate_id": "POOL-L03",
+            "stable_boundary_count": 2,
+            "combined_stable_boundary_count": 2,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES"
+            ]
+          },
+          {
+            "candidate_id": "POOL-L05",
+            "stable_boundary_count": 0,
+            "combined_stable_boundary_count": 0,
+            "reason_codes": [
+              "INSUFFICIENT_INDEPENDENT_SILHOUETTES",
+              "PROJECTED_WIDTH_MISMATCH"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "original_and_replayed_geometry_identical_at_1e_minus_8_mm": true,
+  "source_unchanged": true,
+  "synthetic_regressions": [
+    "partial disjoint outlines do not crash or merge from one shared edge",
+    "two tangents cannot create free circle radius",
+    "two compatible candidates remain ambiguous",
+    "near-parallel baseline uncertainty failure is contained to candidate",
+    "independently projected tilted cylinders recover free radius and same-station centre",
+    "asymmetric crops preserve camera coordinate offsets"
+  ]
+}

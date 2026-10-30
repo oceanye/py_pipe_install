@@ -3,6 +3,29 @@ from __future__ import annotations
 
 from .section_display import REASONS, section_evaluations
 
+PAIRING_REASONS = {
+    'INSUFFICIENT_INDEPENDENT_SILHOUETTES': '稳定的独立轮廓不足，无法自由求解圆心和半径',
+    'PROJECTED_WIDTH_MISMATCH': '左右可见宽度不一致',
+    'AMBIGUOUS_STEREO_CANDIDATES': '有多个可能的左右对应，不能唯一配对',
+    'NO_COMPATIBLE_STEREO_CANDIDATE': '未找到同时满足几何检查的右目候选',
+    'NO_STABLE_BOUNDARY': '没有通过子段一致性检查的边界',
+}
+STATUS_REASONS = {'PIXEL_UNCERTAINTY_UNRESOLVED': '几何条件过弱，像素误差估计无法稳定求解'}
+
+
+def pairing_detail_lines(audit):
+    if not audit or audit.get('status') == 'PAIRED':
+        return []
+    lines = [PAIRING_REASONS.get(audit.get('status'), '左右候选尚未唯一配对')+'。']
+    for other in audit.get('nearby_candidates', [])[:3]:
+        lines.append(f"邻近右目候选 {other['candidate_id']}：左 {audit['stable_boundary_count']} 条、"
+                     f"右 {other['stable_boundary_count']} 条稳定轮廓，合计 {other['combined_stable_boundary_count']} 条。")
+        codes = other.get('reason_codes', [])
+        lines.extend(PAIRING_REASONS.get(code, code)+'。' for code in codes)
+        if 'INSUFFICIENT_INDEPENDENT_SILHOUETTES' in codes:
+            lines.append('自由圆心与半径至少需要 3 条独立切线约束；增加同一条边的像素不能补出缺失的另一条轮廓。')
+    return lines
+
 
 def _box(stage, role, box):
     if box is None:
@@ -42,6 +65,8 @@ def solver_status_rows(report):
                     'left_region_px': view.get('region_px'), 'reason_codes': ['STEREO_SECTION_PAIR_UNRESOLVED']})
         for index, candidate in enumerate(candidates):
             identity = candidate['candidate_id']
+            pairing = next((row for row in stage.get('pairing_audit', {}).get('left', [])
+                            if row['candidate_id'] == candidate.get('left_candidate_id')), None)
             left = views['left'].get(candidate.get('left_candidate_id'), {})
             right = views['right'].get(candidate.get('right_candidate_id'), {})
             edge_counts = [v.get('aggregation', {}).get('stable_boundary_count', 0) for v in (left, right)]
@@ -71,13 +96,21 @@ def solver_status_rows(report):
                     repeat, frames = '连拍未通过', '无有效连拍'
             label = labels.get(identity, f'C{index+1}')
             current = '断面已解（条件估计）' if solved else '断面未解'
+            if not solved and pairing and pairing.get('status') == 'INSUFFICIENT_INDEPENDENT_SILHOUETTES':
+                current = '断面未解（稳定轮廓不足）'
             if temporal and temporal.get('reason_codes'):
                 current = '断面已解，重复性待改善' if solved else '断面未解'
             correction = stage.get('ground_correction') or {}
             if correction.get('trial_mode'):
                 current = ('倾角试验 · ' if correction.get('applied') else '倾角试验未应用 · ')+current
+            source_text = ('仅使用当前连拍；表中尺寸来自最后一帧，未将历史或采购尺寸补入拟合。' if temporal else
+                           '本次多帧已复核；该候选尚无可比较的重复解。'
+                           if (stage.get('temporal_sections') or {}).get('status') == 'CHECKED' else
+                           '本次连拍未通过；以下是单帧条件结果，未完成重复性复核。'
+                           if (stage.get('temporal_sections') or {}).get('status') == 'BURST_REJECTED' else
+                           '本次仅有单帧断面结果，未完成多帧重复性复核；采购尺寸未参与拟合。')
             detail = [f'{zone} / {label}：{current}。',
-                      '仅使用当前连拍；表中尺寸来自最后一帧，未将历史或采购尺寸补入拟合。',
+                      source_text,
                       '重复性仅反映本次帧间变化，不代表绝对精度或已完成安装。']
             if temporal:
                 detail += [f"解出 {frames} 帧，至少要求 {temporal['required_frames']} 帧。"]
@@ -88,7 +121,9 @@ def solver_status_rows(report):
                         ids = ' / '.join(labels.get(i, i) for i in pair['ids'])
                         distance = pair['distance']
                         detail.append(f"{ids} 心距范围 {distance['min_mm']:.1f}～{distance['max_mm']:.1f} mm；极差 {distance['span_mm']:.1f} mm。")
-            detail.extend(REASONS.get(r, r) for r in reasons)
+            detail.extend(STATUS_REASONS.get(r, REASONS.get(r, r)) for r in reasons)
+            if not solved:
+                detail.extend(pairing_detail_lines(pairing))
             if correction.get('trial_mode'):
                 from .ground_correction import correction_summary
                 detail.append(correction_summary(correction))

@@ -1,0 +1,28 @@
+{
+  "source_dataset": "elevation-20261030-161444-3ab7011e",
+  "screens": {
+    "1024x720": {
+      "photo_height": 194,
+      "clipped_controls": [],
+      "workflow_text": "照片：单帧，未做重复性复核 · 观察侧：未指定 · 条件断面 3/4 · CAD 已对应 0\n地面：平面未通过或未确认 / 试验已应用，未验证 · 相对就位：符合 0 / 不符 0 / 待定 12",
+      "workflow_label_height": 42
+    },
+    "1280x860": {
+      "photo_height": 334,
+      "clipped_controls": [],
+      "workflow_text": "照片：单帧，未做重复性复核 · 观察侧：未指定 · 条件断面 3/4 · CAD 已对应 0\n地面：平面未通过或未确认 / 试验已应用，未验证 · 相对就位：符合 0 / 不符 0 / 待定 12",
+      "workflow_label_height": 42
+    }
+  },
+  "pending_direction": "观察方向仍是预览，尚未用于匹配。请在模型窗口应用相机观察侧，或恢复已应用方向后再保存。",
+  "preview_reverted_without_changing_field_direction": true,
+  "protected_source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\manifest.json": "8a0213d99a3d79e9cc6f9878b613c2a0c884677dc90eed4903f8dbf76c69da00",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\report.json": "f2eb7af75f19b0fd4ad5b02b0df5192f46d08bb965d0b3bc31e217b826a10b12",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\left.png": "df6012d327df5602cf9a08f69fee9c9c910e8cec9710a01f2b4836292cd48ccd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\right.png": "c774c3f4fbf112b5a978004ac019ff6317616d93804096bce0b02ca8219b4f08",
+    "outputs\\elevation_workbench\\last_scene.json": "b8ce4a449f34e0d1debef25954aae538c128456d76c522ae051c078e24bbb5e8",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e"
+  },
+  "source_unchanged": true
+}

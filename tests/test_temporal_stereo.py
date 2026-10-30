@@ -80,6 +80,37 @@ def test_uniform_scene_cannot_certify_static_camera():
     assert static_pair_check(image, image)["reason"] == "BURST_MOTION_UNVERIFIABLE"
 
 
+def _textured_stationary_image():
+    rng = np.random.default_rng(3010)
+    gray = cv2.GaussianBlur(rng.normal(120, 10, (240, 320)).astype(np.float32), (5, 5), .8)
+    return cv2.cvtColor(np.rint(gray).astype(np.uint8), cv2.COLOR_GRAY2BGR)
+
+
+@pytest.mark.parametrize('offset', [-9, 9])
+def test_uniform_brightness_offset_does_not_invent_motion_or_modify_images(offset):
+    reference = _textured_stationary_image()
+    changed = np.clip(reference.astype(int)+offset, 0, 255).astype(np.uint8)
+    before = [reference.copy(), changed.copy()]
+    check = static_pair_check(reference, changed)
+    assert check['passed']
+    assert check['median_motion_px'] < .001 and check['p95_motion_px'] < .001
+    assert check['brightness_shift'] == offset
+    assert check['tracking_brightness_offset_removed'] == offset
+    np.testing.assert_array_equal(reference, before[0])
+    np.testing.assert_array_equal(changed, before[1])
+
+
+@pytest.mark.parametrize('displacement', [1., 2.])
+def test_brightness_normalization_does_not_remove_actual_spatial_motion(displacement):
+    reference = _textured_stationary_image()
+    transformed = cv2.warpAffine(reference, np.array([[1., 0., displacement], [0., 1., 0.]]),
+        (reference.shape[1], reference.shape[0]), borderMode=cv2.BORDER_REFLECT)
+    changed = np.clip(transformed.astype(int)-9, 0, 255).astype(np.uint8)
+    check = static_pair_check(reference, changed)
+    assert not check['passed'] and check['reason'] == 'BURST_SCENE_MOVED'
+    assert check['median_motion_px'] == pytest.approx(displacement, abs=.05)
+
+
 def test_persistent_bias_is_not_reported_as_accuracy():
     frames, cal = _burst(bias=3.)
     result = _run(frames, cal)

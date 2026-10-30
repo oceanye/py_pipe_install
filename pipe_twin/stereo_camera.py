@@ -36,6 +36,8 @@ SUPPORTED_LAYOUTS = {
     LAYOUT_SIDE_BY_SIDE_RL,
     LAYOUT_SEPARATE,
 }
+SBS_READ_ATTEMPTS = 3
+SBS_READ_RETRY_DELAY_S = .05
 
 
 class StereoCameraError(ValueError):
@@ -433,11 +435,26 @@ class StereoCameraSession:
         capture = self.left_capture
         if capture is None:
             raise StereoCameraError("相机预览尚未打开")
-        started = self.clock_ns()
-        ok, frame = capture.read()
-        finished = self.clock_ns()
-        if not ok or not isinstance(frame, np.ndarray):
-            raise StereoCameraError(f"相机索引 {self.left_index} 读取失败")
+        # A UVC read may return an empty result between valid frames. Retry
+        # only that transient condition, never a malformed frame or exception.
+        # Each attempt gets its own interval: failed reads must not pull the
+        # successful SBS frame's host timestamp backwards.
+        for attempt in range(1, SBS_READ_ATTEMPTS + 1):
+            started = self.clock_ns()
+            ok, frame = capture.read()
+            finished = self.clock_ns()
+            if ok and frame is not None:
+                break
+            event = "camera_frame_read_retry" if attempt < SBS_READ_ATTEMPTS else "camera_frame_read_failed"
+            log_event(get_logger("stereo_camera"), event, device_index=self.left_index,
+                      attempt=attempt, maximum_attempts=SBS_READ_ATTEMPTS,
+                      reason="READ_FALSE" if not ok else "EMPTY_FRAME")
+            if attempt == SBS_READ_ATTEMPTS:
+                raise StereoCameraError(f"相机索引 {self.left_index} 连续 {SBS_READ_ATTEMPTS} 次读取失败；"
+                                        "未返回可用帧，请检查相机连接或驱动")
+            time.sleep(SBS_READ_RETRY_DELAY_S)
+        if not isinstance(frame, np.ndarray):
+            raise StereoCameraError(f"相机索引 {self.left_index} 返回了无效帧类型")
         expected_shape = (self.eye_height, self.eye_width * 2)
         if frame.ndim != 3 or frame.shape[:2] != expected_shape or frame.shape[2] != 3:
             raise StereoCameraError(
@@ -445,6 +462,10 @@ class StereoCameraSession:
                 f"{frame.shape[0] if frame.ndim >= 2 else '?'}；标定要求 "
                 f"{self.eye_width * 2}×{self.eye_height}"
             )
+        if attempt > 1:
+            log_event(get_logger("stereo_camera"), "camera_frame_read_recovered",
+                      device_index=self.left_index, attempt=attempt, maximum_attempts=SBS_READ_ATTEMPTS,
+                      capture_sync_method="SAME_UVC_FRAME")
         first = frame[:, : self.eye_width].copy()
         second = frame[:, self.eye_width :].copy()
         left, right = (

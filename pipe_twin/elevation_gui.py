@@ -26,13 +26,14 @@ from .camera_view import CAMERA_SIDE_PRESETS, camera_side_label, normalize_camer
 
 ROOT = Path(__file__).resolve().parents[1] / "outputs" / "elevation_workbench"
 STATE_COLORS = {"INSTALLED": "#228B55", "NOT_INSTALLED": "#D84A40", "UNKNOWN": "#CC941C"}
+STATE_TEXT_COLORS = {"INSTALLED": "#166534", "NOT_INSTALLED": "#B42318", "UNKNOWN": "#7A5600"}
 PALETTE = ("#E74C3C", "#3498DB", "#FFFFFF", "#2ECC71", "#F1C40F", "#9B59B6")
 LOGGER = get_logger("elevation_gui")
 REASON_TEXT = {
     "BURST_IMAGE_SIZE_CHANGED": "序列中图像尺寸改变",
     "BURST_EXPOSURE_UNSTABLE": "曝光变化过大，该帧已排除",
     "BURST_MOTION_UNVERIFIABLE": "可跟踪纹理不足，无法确认相机和场景静止",
-    "BURST_SCENE_MOVED": "帧间位移检查未通过，可能有运动或噪声；请稳定画面后重试",
+    "BURST_SCENE_MOVED": "图像变化检查未通过；可能涉及运动、曝光、背景或反光变化，不能仅据此认定管道移动",
     "BURST_FRAME_QUALITY_FAILED": "该帧清晰度或曝光未通过",
     "BURST_DUPLICATE_FRAME": "重复画面，不计作新增样本",
     "BURST_FRAME_DEPTH_INVALID": "该帧没有可用双目深度",
@@ -376,10 +377,9 @@ class RegionCanvas:
             x,y,bw,bh = candidate["region_px"]
             canvas.create_rectangle(ox+x*scale,oy+y*scale,ox+(x+bw)*scale,oy+(y+bh)*scale,
                                     outline="#FFD166",width=2,dash=(5,3),tags="image-candidate")
-            label = str(candidate.get("candidate_id","")) + " · 图像候选"
-            reasons = candidate.get("reason_codes") or []
-            if reasons:
-                label += " · " + REASON_TEXT.get(reasons[0],reasons[0])
+            # Long failure explanations obscure the silhouettes on scaled
+            # previews. Keep the ID here; full reasons remain in diagnostics.
+            label = str(candidate.get("candidate_id",""))
             canvas.create_text(ox+x*scale+2,oy+y*scale+2,anchor="nw",text=label,
                                fill="#FFD166",tags="image-candidate")
         if self.owner.report is not None:
@@ -932,8 +932,12 @@ class ElevationCaptureDialog:
         self.run_button = ttk.Button(run_bar, text="⑤ 保存并评估", command=lambda: self.submit(True))
         self.run_button.pack(side='left', padx=3)
         self.setup_summary = tk.StringVar()
-        self.setup_label = ttk.Label(run_bar, textvariable=self.setup_summary, foreground='#355371')
-        self.setup_label.pack(side='left', padx=8)
+        self.workflow_status = tk.StringVar()
+        self.workflow_label = ttk.Label(run_bar, textvariable=self.workflow_status,
+                                        justify='left', foreground='#355371', wraplength=820)
+        self.workflow_label.pack(side='left', padx=8, fill='x', expand=True)
+        self.workflow_label.bind('<Configure>', lambda event: self.workflow_label.configure(wraplength=max(200, event.width-4)))
+        self.setup_label = self.workflow_label
         self.region_conflict_button = ttk.Button(run_bar, text='重画当前区域', command=self.toggle_region_selection)
         self.window.bind("<Escape>", lambda _e: self.cancel_image_selections())
         ttk.Label(self.controls, textvariable=self.calibration_status, foreground="#355371").pack(anchor="w")
@@ -1078,7 +1082,7 @@ class ElevationCaptureDialog:
         self.tree.configure(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
         self.tree.pack(side="left", fill="x", expand=True)
-        for state, color in STATE_COLORS.items():
+        for state, color in STATE_TEXT_COLORS.items():
             self.tree.tag_configure(state, foreground=color)
         self.tree.bind("<<TreeviewSelect>>", lambda _e: self._cad_selected())
         self.tree.bind("<Double-1>", lambda _e: self.show_analysis_details('cad'))
@@ -1093,8 +1097,8 @@ class ElevationCaptureDialog:
         # consume the photo pane. All text stays selectable and scrollable.
         status_frame = ttk.Frame(footer)
         status_frame.pack(fill='x', pady=3)
-        self.status_text = tk.Text(status_frame, height=3, width=1, wrap='word',
-                                   font=('Microsoft YaHei UI', 9), foreground='#355371',
+        self.status_text = tk.Text(status_frame, height=2, width=1, wrap='word',
+                                   font=('Microsoft YaHei UI', 10), foreground='#355371',
                                    relief='flat', state='disabled')
         status_scroll = ttk.Scrollbar(status_frame, command=self.status_text.yview)
         self.status_text.configure(yscrollcommand=status_scroll.set)
@@ -1161,6 +1165,16 @@ class ElevationCaptureDialog:
         self.status_text.insert('1.0', '\n'.join(v.get() for v in (self.message, self.summary, self.solver_detail)))
         self.status_text.configure(state='disabled')
 
+    def _refresh_workflow_status(self) -> None:
+        if not hasattr(self, 'workflow_status'):
+            return
+        from .workflow_status import workflow_summary
+        pairs = len(getattr(self, 'temporal_frames', []))
+        if not pairs and self.image_hashes.get('left') and self.image_hashes.get('right'):
+            pairs = 1
+        self.workflow_status.set(workflow_summary(self.report, self.registration_settings,
+            loaded_pairs=pairs, ground_inspection=getattr(self, 'ground_inspection', None)))
+
     def invalidate(self) -> None:
         self.generation += 1
         details = getattr(self, 'analysis_details_window', None)
@@ -1182,6 +1196,7 @@ class ElevationCaptureDialog:
             self.summary.set("输入已改变，请重新评估")
         elif had_inspection:
             self.redraw()
+        self._refresh_workflow_status()
 
     def _field_changed(self, key: str) -> None:
         self.invalidate()
@@ -1582,6 +1597,7 @@ class ElevationCaptureDialog:
         return next((row for row in self.pipes if row["pipe_id"] == self.selected_id()), None)
 
     def redraw(self) -> None:
+        self._refresh_workflow_status()
         if hasattr(self, 'setup_summary'):
             trial = '地面试验：开' if self.registration_settings.get('ground_candidate_trial') else '地面：默认规则'
             mode = self.registration_settings.get('local_observation_mode', 'auto')
@@ -1589,6 +1605,7 @@ class ElevationCaptureDialog:
             problem = self.assessment_region_problem()
             if problem:
                 self.setup_summary.set('范围冲突：管道绿框与橙色汇聚范围无交集；请调整④')
+                self.workflow_status.set(self.setup_summary.get())
                 self.region_conflict_button.pack(side='right', padx=3)
             else:
                 self.region_conflict_button.pack_forget()
@@ -2241,6 +2258,12 @@ class ElevationCaptureDialog:
 
     def submit(self, analyze: bool) -> None:
         if self.busy:
+            return
+        viewer = self.model_viewer
+        if viewer is not None and viewer.window.winfo_exists() and viewer.has_pending_camera_side():
+            self.message.set('观察方向仍是预览，尚未用于匹配。请在模型窗口应用相机观察侧，或恢复已应用方向后再保存。')
+            viewer.info.set(viewer.camera_side_status() + ' 请应用或恢复方向后再保存。')
+            viewer.window.lift()
             return
         try:
             calibration = copy.deepcopy(self.current_calibration())

@@ -173,28 +173,39 @@ def _possible_same_instance(first, second):
     a, b = first['region_px'], second['region_px']
     if min(a[0]+a[2], b[0]+b[2]) >= max(a[0], b[0]):
         return False
+    boundaries = [item['aggregation']['boundaries'] for item in (first, second)]
+    # A single surviving tangent cannot distinguish two cylinders sharing an
+    # apparent edge. Missing/unstable edges must neither crash this check nor
+    # cause a second physical pipe to be merged out of the section model.
+    if any({b['edge'] for b in rows if b['status'] == 'STABLE'
+            and b.get('line_slope_intercept') is not None} != {'top', 'bottom'}
+           for rows in boundaries):
+        return False
     station = (min(a[0]+a[2], b[0]+b[2])+max(a[0], b[0]))/2
-    for x, y in zip(first['aggregation']['boundaries'], second['aggregation']['boundaries']):
+    first_edges, second_edges = [{b['edge']: b for b in rows} for rows in boundaries]
+    for edge in ('top', 'bottom'):
+        x, y = first_edges[edge], second_edges[edge]
         delta = np.asarray(x['line_slope_intercept'])-y['line_slope_intercept']
         if abs(delta@[station, 1]) > max(8., .4*min(first['width_px'], second['width_px'])):
             return False
     return True
 
 
-def _compatible(first, second, offset=(0., 0.)):
+def _compatibility_reasons(first, second, offset=(0., 0.)):
+    reasons = []
     stable_counts = [item['aggregation']['stable_boundary_count'] for item in (first, second)]
     # Three independent tangents can determine a conditional free circle.
     # An unstable fourth contour is omitted, never replaced by a prediction.
     if min(stable_counts) < 1 or sum(stable_counts) < 3:
-        return False
+        reasons.append('INSUFFICIENT_INDEPENDENT_SILHOUETTES')
     if not _compatible_appearance(first, second):
-        return False
+        reasons.append('APPEARANCE_MISMATCH')
     if abs(first['width_px']-second['width_px']) > max(6, .25*max(first['width_px'], second['width_px'])):
-        return False
+        reasons.append('PROJECTED_WIDTH_MISMATCH')
     x, y, w, h = first['region_px']; u, v, s, t = second['region_px']
     u += offset[0]; v += offset[1]
     if min(x+w, u+s)-max(x, u) < .4*min(w, s):
-        return False
+        reasons.append('INSUFFICIENT_AXIAL_IMAGE_OVERLAP')
     # Rectified parallel axes: this is a bounded proposal association only,
     # not point correspondence or depth. Multiple choices stay ambiguous.
     station = (max(x, u)+min(x+w, u+s))/2
@@ -205,8 +216,48 @@ def _compatible(first, second, offset=(0., 0.)):
         right_line[1] += offset[1]-right_line[0]*offset[0]
         delta = np.asarray(a['line_slope_intercept'])-right_line
         if abs(delta@[station, 1]) > max(24, first['width_px']*.4):
-            return False
-    return True
+            reasons.append('TRANSVERSE_POSITION_MISMATCH')
+            break
+    return reasons
+
+
+def _compatible(first, second, offset=(0., 0.)):
+    return not _compatibility_reasons(first, second, offset)
+
+
+def _pairing_audit(views, reasons, comparisons):
+    """Explain rejected/ambiguous pairings without inventing missing tangents."""
+    audit = {'revision': 'stereo-boundary-pairing-v1',
+             'minimum_independent_boundaries': 3, 'nominal_dimensions_used': False}
+    distant = {'APPEARANCE_MISMATCH', 'INSUFFICIENT_AXIAL_IMAGE_OVERLAP', 'TRANSVERSE_POSITION_MISMATCH'}
+    for role, other in [('left', 'right'), ('right', 'left')]:
+        rows = []
+        for index, item in enumerate(views[role]):
+            compatible, nearby, unique = [], [], False
+            for opposite, counterpart in enumerate(views[other]):
+                i, j = (index, opposite) if role == 'left' else (opposite, index)
+                codes = reasons[i][j]
+                if comparisons[i, j]:
+                    compatible.append(counterpart['candidate_id'])
+                    unique = comparisons[i].sum() == 1 and comparisons[:, j].sum() == 1
+                if not distant.intersection(codes):
+                    nearby.append({'candidate_id': counterpart['candidate_id'],
+                        'stable_boundary_count': counterpart['aggregation']['stable_boundary_count'],
+                        'combined_stable_boundary_count': item['aggregation']['stable_boundary_count']
+                            + counterpart['aggregation']['stable_boundary_count'],
+                        'reason_codes': codes})
+            stable = item['aggregation']['stable_boundary_count']
+            status = ('PAIRED' if unique and len(compatible) == 1 else
+                      'AMBIGUOUS_STEREO_CANDIDATES' if compatible else
+                      'NO_STABLE_BOUNDARY' if stable == 0 else
+                      'INSUFFICIENT_INDEPENDENT_SILHOUETTES' if nearby and all(
+                          'INSUFFICIENT_INDEPENDENT_SILHOUETTES' in c['reason_codes'] for c in nearby) else
+                      'NO_COMPATIBLE_STEREO_CANDIDATE')
+            rows.append({'candidate_id': item['candidate_id'], 'stable_boundary_count': stable,
+                         'status': status, 'compatible_candidate_ids': compatible,
+                         'nearby_candidates': nearby})
+        audit[role] = rows
+    return audit
 
 
 def _compatible_appearance(first, second):
@@ -274,7 +325,10 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
     if not np.allclose(k[:2, :2], kr[:2, :2], atol=1e-7):
         return result | {'status': 'UNSUPPORTED_RECTIFIED_INTRINSICS'}
     offset = k[:2, 2]-kr[:2, 2]
-    comparisons = np.array([[_compatible(a, b, offset) for b in views['right']] for a in views['left']], bool)
+    reasons = [[_compatibility_reasons(a, b, offset) for b in views['right']] for a in views['left']]
+    comparisons = np.array([[not codes for codes in row] for row in reasons], bool).reshape(
+        len(views['left']), len(views['right']))
+    result['pairing_audit'] = _pairing_audit(views, reasons, comparisons)
     if comparisons.ndim != 2 or not comparisons.size:
         return result | {'status': 'NO_STABLE_STEREO_BOUNDARIES'}
     pair_indexes = [(i, j) for i, j in zip(*np.nonzero(comparisons))
@@ -328,8 +382,17 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                     fit = fit_silhouettes(_bounded(common), k, calibration.baseline_mm, axis, reference)
             if fit['status'] == 'CONDITIONAL_FIT':
                 fitted_observations = common if common else observations
-                error = pixel_error_scenarios(_bounded(fitted_observations), k, calibration.baseline_mm, axis, reference,
-                                               sigma_px=POLICY['assumed_coherent_edge_sigma_px'])
+                try:
+                    error = pixel_error_scenarios(_bounded(fitted_observations), k, calibration.baseline_mm, axis, reference,
+                                                  sigma_px=POLICY['assumed_coherent_edge_sigma_px'])
+                except (ValueError, np.linalg.LinAlgError, FloatingPointError) as exc:
+                    # A nearly parallel baseline may admit a finite trial fit
+                    # but lose its solution under a subpixel perturbation.
+                    # Keep that candidate diagnostic and withhold acceptance;
+                    # it must not abort the assessment of all other pipes.
+                    error = {'status': 'PIXEL_UNCERTAINTY_UNRESOLVED',
+                             'total_accuracy_known': False, 'scenarios': {}, 'reason': str(exc)}
+                    candidate['reason_codes'].append('PIXEL_UNCERTAINTY_UNRESOLVED')
                 if correction['applied']:
                     error['ground_normal_uncertainty_included'] = False
                 if fit['reprojection_rms_px'] > POLICY['maximum_reprojection_rms_px']:

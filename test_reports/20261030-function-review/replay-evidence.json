@@ -1,0 +1,360 @@
+{
+  "source_scene": "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\manifest.json",
+  "source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\manifest.json": "8a0213d99a3d79e9cc6f9878b613c2a0c884677dc90eed4903f8dbf76c69da00",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\report.json": "f2eb7af75f19b0fd4ad5b02b0df5192f46d08bb965d0b3bc31e217b826a10b12",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\left.png": "df6012d327df5602cf9a08f69fee9c9c910e8cec9710a01f2b4836292cd48ccd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\right.png": "c774c3f4fbf112b5a978004ac019ff6317616d93804096bce0b02ca8219b4f08",
+    "outputs\\elevation_workbench\\last_scene.json": "b8ce4a449f34e0d1debef25954aae538c128456d76c522ae051c078e24bbb5e8",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\measurement_workbench\\workbench_profile.json": "3f6724df683a57b192cb73a195beea61619ea786b5e58fcff6ccbd7a22d788d5"
+  },
+  "runs": [
+    {
+      "variant": "same_user_photos",
+      "seconds": 17.73400000000038,
+      "report": "outputs\\function-review-20261030\\replay\\report.json",
+      "counts": {
+        "INSTALLED": 0,
+        "NOT_INSTALLED": 0,
+        "UNKNOWN": 12
+      },
+      "registration": {
+        "status": "INSUFFICIENT_OBSERVATIONS",
+        "rotation_model_to_camera": null,
+        "translation_model_to_camera_mm": null,
+        "model_axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "camera_axis": null,
+        "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+        "matches": [],
+        "rms_mm": null,
+        "reason_codes": [
+          "NO_LOCAL_SURFACE_OBSERVATIONS"
+        ],
+        "alternatives": [],
+        "relative_layout": null,
+        "axial_translation_observable": false,
+        "scale": 1.0,
+        "hypotheses_explored": 0,
+        "rejected_observation_ids": [],
+        "camera_view": {
+          "revision": "camera-side-hemisphere-v1",
+          "coordinate_frame": "MODEL",
+          "side_vector_convention": "SCENE_TO_CAMERA_VIEWING_HEMISPHERE",
+          "minimum_facing_cosine_exclusive": 1e-06,
+          "policy_sha256": "00f5cfc51b5fb37123e02ce74e220fe635332d44d7b81224171dfce8234b213e",
+          "camera_side_world": null,
+          "rejected_pose_count": 0
+        },
+        "zone_id": "Z01",
+        "zone_registrations": [
+          {
+            "zone_id": "Z01",
+            "status": "INSUFFICIENT_OBSERVATIONS",
+            "match_count": 0,
+            "reason_codes": [
+              "NO_LOCAL_SURFACE_OBSERVATIONS"
+            ]
+          }
+        ]
+      },
+      "position_counts": {
+        "IN_POSITION": 0,
+        "OUT_OF_POSITION": 0,
+        "UNKNOWN": 12
+      },
+      "ground": {
+        "revision": "stereo-ground-plane-check-v3",
+        "status": "GROUND_PLANE_INCONSISTENT",
+        "valid_depth_fraction": 0.7237500496406021,
+        "left_plane": {
+          "status": "GROUND_PLANE_INCONSISTENT",
+          "sample_count": 4096,
+          "fit_scope": "TRAINING_CELLS_ONLY",
+          "validation_scope": "SPATIAL_HELD_OUT_CELLS",
+          "failure_reasons": [
+            "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+            "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW"
+          ],
+          "quality_checks": [
+            {
+              "reason_code": "GROUND_PLANE_SUPPORT_FRACTION_LOW",
+              "value": 0.568359375,
+              "limit": 0.7,
+              "comparison": ">=",
+              "passed": false
+            },
+            {
+              "reason_code": "GROUND_HOLDOUT_SUPPORT_FRACTION_LOW",
+              "value": 0.5568948891031823,
+              "limit": 0.7,
+              "comparison": ">=",
+              "passed": false
+            },
+            {
+              "reason_code": "GROUND_SPATIAL_COVERAGE_LOW",
+              "value": 16,
+              "limit": 8,
+              "comparison": ">=",
+              "passed": true
+            },
+            {
+              "reason_code": "GROUND_HOLDOUT_RMS_HIGH",
+              "value": 2.809941040400567,
+              "limit": 3.0,
+              "comparison": "<=",
+              "passed": true
+            }
+          ],
+          "training_sample_count": 2022,
+          "holdout_sample_count": 2074,
+          "inlier_fraction": 0.568359375,
+          "training_inlier_fraction": 0.5801186943620178,
+          "holdout_inlier_fraction": 0.5568948891031823,
+          "holdout_rms_mm": 2.809941040400567,
+          "occupied_cells": 16,
+          "candidate_plane": {
+            "normal_camera": [
+              -0.056398870152488734,
+              -0.23359895352213855,
+              -0.9706959855479389
+            ],
+            "offset_mm": 1211.550108623256
+          }
+        },
+        "right_plane": null,
+        "correction_status": "TRIAL_APPLIED",
+        "corrections": [
+          {
+            "zone_id": "Z01",
+            "revision": "ground-constrained-pipe-axis-v1",
+            "policy": {
+              "maximum_nullspace_ratio": 0.25,
+              "maximum_boundary_p95_px": 2.0,
+              "minimum_boundaries": 3,
+              "minimum_direction_strength": 1e-06
+            },
+            "policy_sha256": "f8ba3fa18c6239f79510846a7e2b463c822df89c696080befc44e73e3f00ae90",
+            "status": "TRIAL_APPLIED",
+            "applied": true,
+            "assumption": "PIPE_AXES_PARALLEL_TO_GROUND",
+            "calibration_modified": false,
+            "nominal_dimensions_used": false,
+            "trial_mode": true,
+            "ground_status": "GROUND_PLANE_INCONSISTENT",
+            "scope": "EXPERIMENTAL_GROUND_CONSTRAINT_NOT_ACCEPTED_MEASUREMENT",
+            "trial_revision": "candidate-ground-hypothesis-v1",
+            "ground_quality_bypassed": true,
+            "ground_identity_bypassed": false,
+            "original_ground_status": "GROUND_PLANE_INCONSISTENT",
+            "normal_camera": [
+              -0.05639887015248874,
+              -0.23359895352213858,
+              -0.970695985547939
+            ],
+            "proposed_axis": [
+              0.9979579483583633,
+              -0.04238897350920208,
+              -0.047781881850782124
+            ],
+            "nullspace_ratio": 0.0028169962801632615,
+            "axis_change_deg": 2.71920526918784,
+            "boundary_residuals": [
+              {
+                "role": "left",
+                "edge": "top",
+                "p95_px": 2.4429092246327215
+              },
+              {
+                "role": "right",
+                "edge": "top",
+                "p95_px": 2.475129816691404
+              },
+              {
+                "role": "right",
+                "edge": "bottom",
+                "p95_px": 1.3854154007852635
+              },
+              {
+                "role": "left",
+                "edge": "top",
+                "p95_px": 0.8994616673881004
+              },
+              {
+                "role": "left",
+                "edge": "bottom",
+                "p95_px": 0.8082555090615664
+              },
+              {
+                "role": "right",
+                "edge": "top",
+                "p95_px": 1.4723364870060527
+              },
+              {
+                "role": "right",
+                "edge": "bottom",
+                "p95_px": 0.9601216096273312
+              },
+              {
+                "role": "left",
+                "edge": "top",
+                "p95_px": 1.7939715690788183
+              },
+              {
+                "role": "left",
+                "edge": "bottom",
+                "p95_px": 1.0739526149972054
+              },
+              {
+                "role": "right",
+                "edge": "top",
+                "p95_px": 1.1604208678206116
+              },
+              {
+                "role": "right",
+                "edge": "bottom",
+                "p95_px": 1.762677456176299
+              }
+            ],
+            "boundary_check_passed": false,
+            "boundary_consistency_bypassed": true
+          }
+        ]
+      },
+      "temporal_fusion": {
+        "status": null,
+        "requested_frames": null,
+        "accepted_frames": null,
+        "reason_codes": null,
+        "left": null,
+        "right": null
+      },
+      "temporal_frame_rejections": [],
+      "solver_status": [
+        {
+          "label": "S1",
+          "candidate_id": "POOL-L02-POOL-R17",
+          "solved": true,
+          "diameter_mm": 45.23591303366609,
+          "pipe_id": null,
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE",
+            "GROUND_AXIS_CONFLICT",
+            "GROUND_CORRECTION_EXPERIMENTAL",
+            "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+          ],
+          "temporal_consistency": {}
+        },
+        {
+          "label": "S2",
+          "candidate_id": "POOL-L03-POOL-R18",
+          "solved": true,
+          "diameter_mm": 21.523514650538633,
+          "pipe_id": null,
+          "reason_codes": [
+            "GROUND_AXIS_CONFLICT",
+            "GROUND_CORRECTION_EXPERIMENTAL"
+          ],
+          "temporal_consistency": {}
+        },
+        {
+          "label": "S3",
+          "candidate_id": "POOL-L04-POOL-R19",
+          "solved": true,
+          "diameter_mm": 40.22604704601691,
+          "pipe_id": null,
+          "reason_codes": [
+            "POOLED_DIMENSIONS_UNSTABLE",
+            "GROUND_AXIS_CONFLICT",
+            "GROUND_CORRECTION_EXPERIMENTAL"
+          ],
+          "temporal_consistency": {}
+        },
+        {
+          "label": "C4",
+          "candidate_id": "POOL-L01",
+          "solved": false,
+          "diameter_mm": null,
+          "pipe_id": null,
+          "reason_codes": [
+            "STEREO_SECTION_PAIR_UNRESOLVED"
+          ],
+          "temporal_consistency": {}
+        }
+      ],
+      "sections": [
+        {
+          "zone_id": "Z01",
+          "status": "ANALYZED",
+          "axis": {
+            "status": "STABLE",
+            "axis": [
+              0.9979579483583633,
+              -0.04238897350920208,
+              -0.047781881850782124
+            ],
+            "source": "GROUND_PLANE_CONSTRAINED",
+            "singular_values": [
+              3.2851491077332393,
+              0.009254252816266193
+            ],
+            "nullspace_ratio": 0.0028169962801632615,
+            "line_residual_degrees": [
+              0.36233950670527365,
+              0.2834494278451122,
+              0.01809412808995339,
+              0.04279079912755248,
+              0.024407331154143494,
+              0.03064294504961983,
+              0.06295441247266839,
+              0.10477327582101113,
+              0.13987345555512753,
+              0.03947395610091202,
+              0.17249892781841822
+            ]
+          },
+          "temporal_sections": {
+            "status": "NOT_CHECKED",
+            "requested_frames": 1,
+            "sampled_frames": 1,
+            "reason_codes": []
+          },
+          "pairs": [
+            {
+              "ids": [
+                "POOL-L02-POOL-R17",
+                "POOL-L03-POOL-R18"
+              ],
+              "center_distance_mm": 43.77828449374463,
+              "surface_clearance_mm": 10.398570651642268,
+              "accepted_measurement": false
+            },
+            {
+              "ids": [
+                "POOL-L02-POOL-R17",
+                "POOL-L04-POOL-R19"
+              ],
+              "center_distance_mm": 257.7502418605416,
+              "surface_clearance_mm": 215.01926182070014,
+              "accepted_measurement": false
+            },
+            {
+              "ids": [
+                "POOL-L03-POOL-R18",
+                "POOL-L04-POOL-R19"
+              ],
+              "center_distance_mm": 272.45837075049457,
+              "surface_clearance_mm": 241.58358990221677,
+              "accepted_measurement": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "source_unchanged": true
+}

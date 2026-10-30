@@ -229,6 +229,117 @@ class CaptureInputTests(unittest.TestCase):
         dialog.close.assert_called_once()
         dialog.app.messagebox.showerror.assert_not_called()
 
+    def _burst_dialog(self):
+        dialog = object.__new__(StereoCameraDialog)
+        dialog._opening = dialog._burst_active = False
+        dialog._burst_records = []
+        dialog.burst_count = mock.Mock(get=mock.Mock(return_value="20"))
+        dialog.after_id = dialog._burst_after_id = None
+        dialog.window = mock.Mock()
+        dialog.message = mock.Mock()
+        dialog.app = SimpleNamespace(messagebox=mock.Mock())
+        dialog._layout = lambda: LAYOUT_SIDE_BY_SIDE_LR
+        dialog._indices = lambda: (0, None)
+        dialog.exposure_preset = mock.Mock(get=mock.Mock(return_value="自动曝光"))
+        dialog._calibration_payload = {"calibration_id": "ARCHIVE-TEST"}
+        eye = SimpleNamespace(width=12, height=8)
+        dialog.calibration = SimpleNamespace(max_sync_delta_ms=1., left=eye, right=eye)
+        dialog.rectifier = SimpleNamespace(recipe={"calibration_id": "ARCHIVE-TEST"},
+                                          rectify=lambda role, image: image.copy())
+        frames = [CapturedStereoPair(
+            np.full((8, 12, 3), 20+i, np.uint8), np.full((8, 12, 3), 70+i, np.uint8),
+            f"2026-10-30T10:00:{i:02d}+08:00", f"2026-10-30T10:00:{i:02d}+08:00",
+            0., "HOST_SYSTEM_CLOCK", {"left": {"capture_sync_method": "SAME_UVC_FRAME"},
+                                      "right": {"capture_sync_method": "SAME_UVC_FRAME"}})
+                  for i in range(20)]
+        dialog.session = mock.Mock(exposure_ms=None)
+        dialog.session.read_pair.side_effect = frames
+        dialog.owner = SimpleNamespace(
+            fields={key: mock.Mock() for key in ("left", "right", "left_time", "right_time")},
+            confirmed=mock.Mock(), message=mock.Mock(), _persist_profile=mock.Mock(), temporal_frames=[])
+        dialog._show_pair = mock.Mock()
+        dialog.on_capture = None
+        dialog.close = mock.Mock()
+        return dialog
+
+    def test_burst_archive_survives_stop_without_adopting_partial_pair_sequence(self):
+        dialog = self._burst_dialog()
+        with tempfile.TemporaryDirectory() as temp, mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(temp)):
+            dialog.capture_burst()
+            dialog._burst_tick()
+            archive_path = dialog._burst_directory / "capture.json"
+            saved = json.loads(archive_path.read_text(encoding="utf8"))
+            self.assertEqual(saved["status"], "INCOMPLETE")
+            self.assertEqual(saved["captured_pairs"], 1)
+            self.assertEqual(saved["image_space"], "RECTIFIED")
+            self.assertEqual(saved["rectification_recipe"]["calibration_id"], "ARCHIVE-TEST")
+            self.assertEqual(saved["frames"][0]["left_time"], "2026-10-30T10:00:00+08:00")
+            for role in ("left", "right"):
+                frame = saved["frames"][0]
+                self.assertFalse(Path(frame[f"{role}_path"]).is_absolute())
+                self.assertEqual(hashlib.sha256((archive_path.parent / frame[f"{role}_path"]).read_bytes()).hexdigest(),
+                                 frame["sha256"][role])
+            dialog.stop()
+            self.assertEqual(dialog.owner.temporal_frames, [])
+            self.assertEqual(json.loads(archive_path.read_text(encoding="utf8")), saved)
+
+    def test_complete_burst_archive_keeps_all_pair_metadata_without_claiming_quality(self):
+        dialog = self._burst_dialog()
+        with tempfile.TemporaryDirectory() as temp, mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(temp)):
+            dialog.capture_burst()
+            for _ in range(20):
+                dialog._burst_tick()
+            saved = json.loads((dialog._burst_directory / "capture.json").read_text(encoding="utf8"))
+            self.assertEqual((saved["status"], saved["captured_pairs"]), ("COMPLETE", 20))
+            self.assertFalse(saved["quality_validated"])
+            self.assertEqual(saved["frames"][-1]["sync_delta_ms"], 0.)
+            self.assertEqual(len(dialog.owner.temporal_frames), 20)
+            self.assertEqual(saved["frames"][-1]["sha256"], dialog.owner.temporal_frames[-1]["sha256"])
+            dialog.app.messagebox.showerror.assert_not_called()
+
+    def test_burst_archive_write_failure_retains_previous_checkpoint_and_old_inputs(self):
+        dialog = self._burst_dialog()
+        with tempfile.TemporaryDirectory() as temp, mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(temp)):
+            dialog.capture_burst()
+            dialog._burst_tick()
+            archive_path = dialog._burst_directory / "capture.json"
+            previous = archive_path.read_bytes()
+            with mock.patch("pipe_twin.capture_gui.atomic_write_text", side_effect=OSError("disk unavailable")):
+                dialog._burst_tick()
+            self.assertEqual(archive_path.read_bytes(), previous)
+            self.assertEqual(dialog.owner.temporal_frames, [])
+            for field in dialog.owner.fields.values():
+                field.set.assert_not_called()
+            self.assertFalse(dialog._burst_active)
+            dialog.app.messagebox.showerror.assert_called_once()
+
+    def test_short_burst_freezes_target_and_preference_failure_keeps_old_inputs(self):
+        dialog = self._burst_dialog()
+        dialog.burst_count.get.return_value = "10"
+        dialog.owner._persist_profile.side_effect = OSError("profile read only")
+        with tempfile.TemporaryDirectory() as temp, mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(temp)):
+            dialog.capture_burst()
+            dialog.burst_count.get.return_value = "20"  # next run, not this sequence
+            for _ in range(10):
+                dialog._burst_tick()
+            saved = json.loads((dialog._burst_directory / "capture.json").read_text(encoding="utf8"))
+            self.assertEqual((saved["status"], saved["expected_pairs"], saved["captured_pairs"]), ("COMPLETE", 10, 10))
+            for field in dialog.owner.fields.values():
+                field.set.assert_not_called()
+            self.assertEqual(dialog.owner.temporal_frames, [])
+            dialog.app.messagebox.showerror.assert_called_once()
+
+    def test_single_capture_preference_failure_does_not_mix_new_paths_with_old_preview(self):
+        dialog = self._burst_dialog()
+        dialog.owner._persist_profile.side_effect = OSError("profile read only")
+        dialog.on_capture = mock.Mock()
+        with tempfile.TemporaryDirectory() as temp, mock.patch("pipe_twin.measurement_gui.OUTPUT_ROOT", Path(temp)):
+            dialog.capture()
+            for field in dialog.owner.fields.values():
+                field.set.assert_not_called()
+            dialog.on_capture.assert_not_called()
+            dialog.app.messagebox.showerror.assert_called_once()
+
     def test_qr_print_export_does_not_require_cad_coordinates_first(self):
         dialog = object.__new__(QrRegistrationDialog)
         dialog.marker_id = mock.Mock()

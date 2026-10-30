@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest import mock
 
 import cv2
 import numpy as np
@@ -14,6 +15,8 @@ from pipe_twin.stereo_camera import (
     apply_frame_transform,
     probe_video_devices,
     probe_video_modes,
+    SBS_READ_ATTEMPTS,
+    _host_timestamp,
 )
 
 
@@ -54,6 +57,62 @@ class FakeCapture:
 
 
 class StereoCameraTests(unittest.TestCase):
+    def test_missing_sbs_frame_recovers_without_reusing_previous_pixels_or_timestamp(self):
+        capture = FakeCapture(np.full((2, 6, 3), 17, dtype=np.uint8))
+        latest = np.concatenate((np.full((2, 3, 3), 41, np.uint8),
+                                 np.full((2, 3, 3), 82, np.uint8)), axis=1)
+        capture.read = mock.Mock(side_effect=[(True, capture.frame), (False, capture.frame),
+                                               (True, None), (True, latest)])
+        times = iter(n*1_000_000_000 for n in range(1, 9))
+        with mock.patch('pipe_twin.stereo_camera.time.sleep') as sleep, \
+             mock.patch('pipe_twin.stereo_camera.log_event') as log, \
+             StereoCameraSession(layout=LAYOUT_SIDE_BY_SIDE_LR, left_index=0, right_index=None,
+                 eye_width=3, eye_height=2, capture_factory=lambda *_: capture,
+                 clock_ns=lambda: next(times)) as session:
+            first = session.read_pair()
+            recovered = session.read_pair()
+        self.assertEqual(capture.read.call_count, 4)
+        self.assertEqual(sleep.call_count, 2)
+        self.assertEqual(int(first.left[0, 0, 0]), 17)
+        np.testing.assert_array_equal(recovered.left, latest[:, :3])
+        np.testing.assert_array_equal(recovered.right, latest[:, 3:])
+        self.assertEqual(recovered.left_captured_at, _host_timestamp(7_500_000_000))
+        self.assertEqual(recovered.left_captured_at, recovered.right_captured_at)
+        self.assertEqual(recovered.sync_delta_ms, 0.)
+        self.assertEqual(recovered.provenance['left']['capture_sync_method'], 'SAME_UVC_FRAME')
+        events = [call.args[1] for call in log.call_args_list]
+        self.assertEqual(events[-3:], ['camera_frame_read_retry', 'camera_frame_read_retry',
+                                      'camera_frame_read_recovered'])
+        self.assertEqual(log.call_args.kwargs['attempt'], 3)
+
+    def test_persistently_empty_sbs_reads_fail_after_bounded_attempts(self):
+        capture = FakeCapture(None)
+        capture.read = mock.Mock(return_value=(False, None))
+        with mock.patch('pipe_twin.stereo_camera.time.sleep') as sleep, \
+             mock.patch('pipe_twin.stereo_camera.log_event') as log, \
+             StereoCameraSession(layout=LAYOUT_SIDE_BY_SIDE_LR, left_index=0, right_index=None,
+                 eye_width=3, eye_height=2, capture_factory=lambda *_: capture) as session:
+            with self.assertRaisesRegex(StereoCameraError, f'连续 {SBS_READ_ATTEMPTS} 次读取失败'):
+                session.read_pair()
+        self.assertEqual(capture.read.call_count, SBS_READ_ATTEMPTS)
+        self.assertEqual(sleep.call_count, SBS_READ_ATTEMPTS-1)
+        self.assertEqual(log.call_args.args[1], 'camera_frame_read_failed')
+        self.assertTrue(capture.released)
+
+    def test_malformed_sbs_frames_and_driver_exceptions_are_not_retried(self):
+        for bad in [np.zeros((2, 3, 3), np.uint8), 'bad frame', cv2.error('driver failure')]:
+            with self.subTest(bad=type(bad).__name__):
+                capture = FakeCapture(np.zeros((2, 6, 3), np.uint8))
+                capture.read = (mock.Mock(side_effect=bad) if isinstance(bad, Exception)
+                                else mock.Mock(return_value=(True, bad)))
+                with mock.patch('pipe_twin.stereo_camera.time.sleep') as sleep, \
+                     StereoCameraSession(layout=LAYOUT_SIDE_BY_SIDE_LR, left_index=0, right_index=None,
+                         eye_width=3, eye_height=2, capture_factory=lambda *_: capture) as session:
+                    with self.assertRaises((StereoCameraError, cv2.error)):
+                        session.read_pair()
+                self.assertEqual(capture.read.call_count, 1)
+                sleep.assert_not_called()
+
     def test_side_by_side_frame_is_split_without_resizing(self):
         left = np.full((2, 3, 3), 17, dtype=np.uint8)
         right = np.full((2, 3, 3), 91, dtype=np.uint8)

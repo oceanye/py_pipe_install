@@ -1,0 +1,48 @@
+[
+  {
+    "path": "outputs\\function-review-20261030\\raw-burst\\capture.json",
+    "sha256": "5c58512bccd509a03a04f9ac0a37c70f02681ae47d46d94e65d842f720a31485",
+    "status": "FAILED",
+    "requested_pair_count": 20,
+    "pair_count": 2,
+    "usable_pair_count": 1,
+    "started_at": "2026-10-30T16:54:15.605+08:00",
+    "first_frame_at": "2026-10-30T16:54:41.776+08:00",
+    "finished_at": "2026-10-30T16:54:44.118+08:00",
+    "span_seconds": 1.751,
+    "error": {
+      "stage": "drain_interval_frames",
+      "type": "StereoCameraError",
+      "message": "相机索引 0 读取失败"
+    },
+    "scope": "INTERRUPTED_REAL_DEVICE_CAPTURE"
+  },
+  {
+    "path": "outputs\\function-review-20261030\\raw-burst-retry\\capture.json",
+    "sha256": "3270abca537ffd9e1e669d8c7675e41bbb72166c0bbf4ffde8f8c06ff41e1d7a",
+    "status": "COMPLETED",
+    "requested_pair_count": 20,
+    "pair_count": 20,
+    "usable_pair_count": 20,
+    "started_at": "2026-10-30T17:03:25.717+08:00",
+    "first_frame_at": "2026-10-30T17:03:51.877+08:00",
+    "finished_at": "2026-10-30T17:04:25.482+08:00",
+    "span_seconds": 32.671,
+    "error": null,
+    "scope": "FUNCTIONAL_CAPTURE_ONLY_SCENE_MOVING_AND_OVER_30S"
+  },
+  {
+    "path": "outputs\\function-review-20261030\\raw-static-10\\capture.json",
+    "sha256": "34be4c09385b40a929e8bc7af0ca8400895cd9d0de64ba153fcd4fde2a404425",
+    "status": "COMPLETED",
+    "requested_pair_count": 10,
+    "pair_count": 10,
+    "usable_pair_count": 10,
+    "started_at": "2026-10-30T17:12:04.992+08:00",
+    "first_frame_at": "2026-10-30T17:12:38.861+08:00",
+    "finished_at": "2026-10-30T17:12:47.522+08:00",
+    "span_seconds": 7.841,
+    "error": null,
+    "scope": "USER_CONFIRMED_STATIC_CAPTURE_WHOLE_FRAME_STABILITY_FAILED_2_OF_10"
+  }
+]

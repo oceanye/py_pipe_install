@@ -17,12 +17,13 @@ import numpy as np
 
 from .stereo_analyzer import StereoDepthResult
 
-REVISION = "static-burst-majority-consensus-v2"
+REVISION = "static-burst-photometric-consensus-v3"
 POLICY = {"max_frames": 24, "min_frames": 3, "max_duration_s": 30,
           "min_support_fraction": .5, "inlier_delta_px": 1., "max_mad_px": .6,
           "motion_median_px": .35, "motion_p95_px": .9,
           "min_tracks": 24, "min_track_tiles": 6, "max_brightness_shift": 12.,
           "max_changed_fraction": .02, "max_tile_difference": 20.,
+          "motion_photometric_normalization": "GLOBAL_MEDIAN_OFFSET_BEFORE_LK",
           "require_observed_majority": True, "majority_interval_reseed": True}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
 
@@ -70,13 +71,18 @@ def static_pair_check(reference: np.ndarray, image: np.ndarray) -> dict:
     brightness = float(np.median(b.astype(np.float32) - a))
     if abs(brightness) > POLICY["max_brightness_shift"]:
         return {"passed": False, "reason": "BURST_EXPOSURE_UNSTABLE", "brightness_shift": brightness}
+    # LK assumes brightness constancy. Apply the same measured offset already
+    # removed by the pixel-difference check to the tracking copy only. Even a
+    # stationary textured patch can otherwise acquire spurious displacement.
+    # No coordinates are aligned; original images and depth stay unchanged.
+    tracking_b = np.rint(np.clip(b.astype(np.float32)-brightness, 0, 255)).astype(np.uint8)
     points = cv2.goodFeaturesToTrack(a, maxCorners=500, qualityLevel=.01, minDistance=12)
     if points is None or len(points) < POLICY["min_tracks"]:
         return {"passed": False, "reason": "BURST_MOTION_UNVERIFIABLE"}
-    tracked, status, _ = cv2.calcOpticalFlowPyrLK(a, b, points, None)
+    tracked, status, _ = cv2.calcOpticalFlowPyrLK(a, tracking_b, points, None)
     if tracked is None:
         return {"passed": False, "reason": "BURST_MOTION_UNVERIFIABLE"}
-    back, back_status, _ = cv2.calcOpticalFlowPyrLK(b, a, tracked, None)
+    back, back_status, _ = cv2.calcOpticalFlowPyrLK(tracking_b, a, tracked, None)
     if back is None:
         return {"passed": False, "reason": "BURST_MOTION_UNVERIFIABLE"}
     valid = status.ravel().astype(bool) & back_status.ravel().astype(bool)
@@ -99,6 +105,7 @@ def static_pair_check(reference: np.ndarray, image: np.ndarray) -> dict:
             "track_count": len(positions), "track_tiles": len(tiles),
             "median_motion_px": median, "p95_motion_px": p95,
             "brightness_shift": brightness, "changed_fraction": changed,
+            "tracking_brightness_offset_removed": brightness,
             "maximum_tile_difference": tile_difference}
 
 

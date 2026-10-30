@@ -686,6 +686,7 @@ class StereoCameraDialog:
         self._burst_active = False
         self._burst_after_id = None
         self._burst_records = []
+        self.burst_count = tk.StringVar(value="10")
         self.last_pair: CapturedStereoPair | None = None
         self.preview_images: list[Any] = []
 
@@ -735,7 +736,11 @@ class StereoCameraDialog:
         if hasattr(owner, "temporal_frames"):
             burst_row = ttk.Frame(main)
             burst_row.pack(fill="x", pady=(0, 6))
-            ttk.Button(burst_row, text="多帧采集 20 对并使用", command=self.capture_burst).pack(side="left")
+            ttk.Label(burst_row, text="多帧数量").pack(side="left")
+            ttk.Combobox(burst_row, textvariable=self.burst_count, values=("10", "20"),
+                         state="readonly", width=4).pack(side="left", padx=5)
+            ttk.Label(burst_row, text="对").pack(side="left")
+            ttk.Button(burst_row, text="多帧采集并使用", command=self.capture_burst).pack(side="left", padx=5)
             ttk.Label(burst_row, text="保持相机和管道静止；采集后回主界面点⑤保存并评估。",
                       foreground="#355371").pack(side="left", padx=8)
         previews = ttk.Frame(main)
@@ -1031,6 +1036,16 @@ class StereoCameraDialog:
             }
             for role in ("left", "right"):
                 paths[role].write_bytes(encoded[role])
+            try:
+                left_index, right_index = self._indices()
+            except StereoCameraError:
+                left_index, right_index = 0, None
+            self.owner._persist_profile(
+                ("camera",),
+                camera={"layout": self._layout(), "left_index": left_index,
+                        "right_index": right_index,
+                        "exposure_ms": EXPOSURE_PRESETS[self.exposure_preset.get()]},
+            )
             for role in ("left", "right"):
                 self.owner.fields[role].set(str(paths[role]))
             self.owner.fields["left_time"].set(pair.left_captured_at)
@@ -1042,19 +1057,6 @@ class StereoCameraDialog:
             self.owner.camera_capture_provenance = pair.provenance
             if hasattr(self.owner, "temporal_frames"):
                 self.owner.temporal_frames = []
-            try:
-                left_index, right_index = self._indices()
-            except StereoCameraError:
-                left_index, right_index = 0, None
-            self.owner._persist_profile(
-                ("camera",),
-                camera={
-                    "layout": self._layout(),
-                    "left_index": left_index,
-                    "right_index": right_index,
-                    "exposure_ms": EXPOSURE_PRESETS[self.exposure_preset.get()],
-                },
-            )
             if self._layout() in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}:
                 self.owner.confirmed.set(True)
                 confirmation = "同一并排视频帧，已自动确认配对"
@@ -1082,6 +1084,13 @@ class StereoCameraDialog:
         if self.session is None:
             self.start(auto_burst=True)
             return
+        try:
+            self._burst_target_count = int(self.burst_count.get())
+            if self._burst_target_count not in (10, 20):
+                raise ValueError("连续采集数量请选择 10 或 20 对")
+        except ValueError as error:
+            self.app.messagebox.showerror("连续采集参数无效", str(error), parent=self.window)
+            return
         from .measurement_gui import OUTPUT_ROOT
         import time
         if self.after_id is not None:
@@ -1092,9 +1101,42 @@ class StereoCameraDialog:
         self._burst_controls = (self._layout(), self._indices(), self.exposure_preset.get())
         self._burst_started = time.monotonic()
         self._burst_directory = OUTPUT_ROOT / "camera_intake" / f"burst-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}"
-        self._burst_directory.mkdir(parents=True, exist_ok=False)
+        try:
+            self._burst_directory.mkdir(parents=True, exist_ok=False)
+            self._write_burst_archive()
+        except Exception as error:
+            self.stop()
+            self.app.messagebox.showerror("连续采集归档失败", str(error), parent=self.window)
+            return
         self.message.set("连续采集预热中，请保持相机和管道静止……")
         self._burst_after_id = self.window.after(1000, self._burst_tick)
+
+    def _write_burst_archive(self) -> None:
+        """Persist explicit pair evidence before it can be lost on GUI exit.
+
+        This is an intake archive, not an accepted measurement or a scene to
+        restore automatically. Only pairs with both PNGs saved are listed.
+        """
+        frames = copy.deepcopy(self._burst_records)
+        for frame in frames:
+            for role in ("left", "right"):
+                frame[f"{role}_path"] = Path(frame[f"{role}_path"]).relative_to(self._burst_directory).as_posix()
+        calibration = copy.deepcopy(self._calibration_payload)
+        calibration_bytes = json.dumps(calibration, sort_keys=True, allow_nan=False).encode("utf8")
+        archive = {
+            "schema_version": "stereo-burst-intake-v1",
+            "status": "COMPLETE" if len(frames) == self._burst_target_count else "INCOMPLETE",
+            "expected_pairs": self._burst_target_count,
+            "captured_pairs": len(frames),
+            "quality_validated": False,
+            "image_space": "RECTIFIED" if self.rectifier is not None else "CAMERA_OUTPUT",
+            "stereo_calibration": calibration,
+            "calibration_sha256": hashlib.sha256(calibration_bytes).hexdigest(),
+            "rectification_recipe": copy.deepcopy(getattr(self.rectifier, "recipe", None)),
+            "frames": frames,
+        }
+        atomic_write_text(self._burst_directory / "capture.json",
+                          json.dumps(archive, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
 
     def _burst_tick(self) -> None:
         import time
@@ -1106,7 +1148,7 @@ class StereoCameraDialog:
             if (self._layout(), self._indices(), self.exposure_preset.get()) != self._burst_controls:
                 raise StereoCameraError("连续采集时设备或快门选项改变，请重新采集。")
             if time.monotonic()-self._burst_started > 25:
-                raise StereoCameraError("连续采集超时；请检查相机后重试，未使用不完整序列。")
+                raise StereoCameraError("连续采集超时；设备较慢时请选择 10 对重试，未使用不完整序列。")
             pair = self.session.read_pair()
             if np.array_equal(pair.left, pair.right) or pair.sync_delta_ms > self.calibration.max_sync_delta_ms:
                 raise StereoCameraError("连续采集出现相同左右图或不同步帧，请等待画面稳定后重试。")
@@ -1115,7 +1157,8 @@ class StereoCameraDialog:
                       else getattr(pair, role) for role in ("left", "right")}
             index = len(self._burst_records)
             record = {"timestamp_sources": {role: pair.timestamp_source for role in images},
-                      "camera_capture_provenance": copy.deepcopy(pair.provenance), "sha256": {}}
+                      "camera_capture_provenance": copy.deepcopy(pair.provenance), "sha256": {},
+                      "sync_delta_ms": pair.sync_delta_ms}
             for role, frame in images.items():
                 camera = getattr(self.calibration, role)
                 if frame.shape[:2] != (camera.height, camera.width):
@@ -1130,10 +1173,16 @@ class StereoCameraDialog:
                 record[f"{role}_time"] = getattr(pair, f"{role}_captured_at")
                 record["sha256"][role] = hashlib.sha256(data).hexdigest()
             self._burst_records.append(record)
-            self.message.set(f"连续采集 {index+1}/20 对；请保持静止。采集完毕后将检查运动、重复帧和深度一致性。")
-            if index+1 < 20:
+            self._write_burst_archive()
+            self.message.set(f"连续采集 {index+1}/{self._burst_target_count} 对；请保持静止。采集完毕后将检查运动、重复帧和深度一致性。")
+            if index+1 < self._burst_target_count:
                 self._burst_after_id = self.window.after(150, self._burst_tick)
                 return
+            # Preferences are saved before adopting images. A filesystem error
+            # must not leave new paths/metadata paired with an old GUI preview.
+            left_index, right_index = self._indices()
+            self.owner._persist_profile(("camera",), camera={"layout": self._layout(),
+                "left_index": left_index, "right_index": right_index, "exposure_ms": self.session.exposure_ms})
             for role in ("left", "right"):
                 self.owner.fields[role].set(record[f"{role}_path"])
                 self.owner.fields[f"{role}_time"].set(record[f"{role}_time"])
@@ -1142,10 +1191,7 @@ class StereoCameraDialog:
             self.owner.temporal_frames = list(self._burst_records)
             same_frame = self._layout() in {LAYOUT_SIDE_BY_SIDE_LR, LAYOUT_SIDE_BY_SIDE_RL}
             self.owner.confirmed.set(same_frame)
-            left_index, right_index = self._indices()
-            self.owner._persist_profile(("camera",), camera={"layout": self._layout(),
-                "left_index": left_index, "right_index": right_index, "exposure_ms": self.session.exposure_ms})
-            self.owner.message.set("已采集 20 对图像；预览为末帧。核对④管段范围和可选选区，再点击⑤保存并评估。"
+            self.owner.message.set(f"已采集 {self._burst_target_count} 对图像；预览为末帧。核对④管段范围和可选选区，再点击⑤保存并评估。"
                                    + ("" if same_frame else "独立设备需先确认硬件同步。"))
             self._burst_active = False
             if self.on_capture is not None:

@@ -72,6 +72,7 @@ class ElevationModelViewer:
         self.view_box.pack(side="left", padx=5)
         self.view_box.bind("<<ComboboxSelected>>", lambda _e: self.preview_side())
         ttk.Button(view_controls, text="应用相机观察侧", command=self.apply_camera_side).pack(side="left", padx=5)
+        ttk.Button(view_controls, text="恢复已应用方向", command=self.restore_camera_side).pack(side="left", padx=5)
         self.info = tk.StringVar(value="右键拖动只改变预览，滚轮缩放。X/Y/Z 为模型坐标；选择观察侧后点击应用保存。")
         ttk.Label(self.window, textvariable=self.info, wraplength=830).pack(fill="x", padx=8, pady=(3, 8))
         self.zoom, self.yaw, self.pitch, self.drag_start = 1.0, 0.0, 0.0, None
@@ -138,17 +139,27 @@ class ElevationModelViewer:
         self.section_canvas.focus_set()
         self.info.set("左右视图和主列表共享管道选择；截面固定沿管长轴。" + self.camera_side_status())
 
-    def camera_side_status(self) -> str:
-        """Distinguish the preview arrow from the constraint sent to matching."""
-        if not self._is_current():
-            return "现场输入已改变，请重新打开方向预览。"
+    def has_pending_camera_side(self) -> bool:
         selected = self.view_choices[self.view_mode.get()]
         applied = self.owner.registration_settings.get("camera_side_world")
         same = ((selected is None and applied is None) or
                 (selected is not None and applied is not None
                  and np.allclose(selected, applied, atol=1e-9, rtol=0)))
-        if not same:
+        return not same
+
+    def restore_camera_side(self) -> None:
+        if getattr(self.owner, 'busy', False):
+            return
+        self.sync_from_owner()
+        self.info.set('已恢复当前匹配方向；预览选择已撤回。' + self.camera_side_status())
+
+    def camera_side_status(self) -> str:
+        """Distinguish the preview arrow from the constraint sent to matching."""
+        if not self._is_current():
+            return "现场输入已改变，请重新打开方向预览。"
+        if self.has_pending_camera_side():
             return f"仅预览：{self.view_mode.get()}；尚未用于匹配，请点击“应用相机观察侧”。"
+        applied = self.owner.registration_settings.get("camera_side_world")
         if applied is None:
             return "模型匹配观察侧：未指定（自动判断）。"
         return f"模型匹配观察侧已应用：{self.view_mode.get()}。"

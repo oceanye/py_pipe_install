@@ -7,7 +7,7 @@ import json
 import math
 import numpy as np
 
-REVISION = 'stereo-ground-plane-check-v2'
+REVISION = 'stereo-ground-plane-check-v3'
 POLICY = {'maximum_points': 4096, 'ransac_trials': 96, 'plane_tolerance_mm': 5.,
           'minimum_points': 256, 'minimum_valid_fraction': .25, 'minimum_plane_fraction': .7,
           'minimum_spatial_cells': 8, 'minimum_second_spread_mm': 20.,
@@ -52,11 +52,16 @@ def _plane(points):
 
 
 def _fit_plane(points, cells):
-    result = {'status': 'INSUFFICIENT_GROUND_SUPPORT', 'sample_count': len(points)}
+    result = {'status': 'INSUFFICIENT_GROUND_SUPPORT', 'sample_count': len(points),
+              'fit_scope': 'TRAINING_CELLS_ONLY', 'validation_scope': 'SPATIAL_HELD_OUT_CELLS',
+              'failure_reasons': [], 'quality_checks': []}
     if len(points) < POLICY['minimum_points']:
+        result['failure_reasons'] = ['GROUND_TOO_FEW_SAMPLES']
         return result, None
     train = (cells % 4+cells//4) % 2 == 0
+    result.update(training_sample_count=int(train.sum()), holdout_sample_count=int((~train).sum()))
     if min(train.sum(), (~train).sum()) < 64:
+        result['failure_reasons'] = ['GROUND_SPATIAL_SPLIT_SUPPORT_LOW']
         return result, None
     rng = np.random.default_rng(221026)
     training = points[train]
@@ -71,26 +76,41 @@ def _fit_plane(points, cells):
         if selected.sum() > score:
             best, score = selected, int(selected.sum())
     if best is None or score < 64:
+        result['failure_reasons'] = ['GROUND_NO_TRAINING_CONSENSUS']
         return result, None
-    normal, offset, _ = _plane(training[best])
+    normal, offset, spread = _plane(training[best])
     residual = points@normal+offset
     inliers = np.abs(residual) <= POLICY['plane_tolerance_mm']
     holdout = residual[~train]
-    # Holdout majority has to agree with the training plane, before refitting.
+    # Holdout majority must agree with the training plane. Keep this same plane
+    # for output and correction: refitting on holdout would invalidate its audit.
     holdout_inliers = abs(holdout) <= POLICY['plane_tolerance_mm']
     rms = float(np.sqrt(np.mean(holdout[holdout_inliers]**2))) if holdout_inliers.any() else float('inf')
     cell_count = len(np.unique(cells[inliers]))
-    result.update(inlier_fraction=float(inliers.mean()), holdout_inlier_fraction=float(holdout_inliers.mean()),
+    result.update(inlier_fraction=float(inliers.mean()), training_inlier_fraction=float(inliers[train].mean()),
+                  holdout_inlier_fraction=float(holdout_inliers.mean()),
                   holdout_rms_mm=rms if np.isfinite(rms) else None, occupied_cells=cell_count)
     # Preserve a rejected hypothesis for inspection, never as an accepted plane.
     result['candidate_plane'] = {'normal_camera': normal.tolist(), 'offset_mm': offset}
-    if (inliers.mean() < POLICY['minimum_plane_fraction'] or holdout_inliers.mean() < POLICY['minimum_plane_fraction']
-            or cell_count < POLICY['minimum_spatial_cells'] or rms > POLICY['maximum_holdout_rms_mm']):
+    checks = [
+        ('GROUND_PLANE_SUPPORT_FRACTION_LOW', float(inliers.mean()), POLICY['minimum_plane_fraction'], '>='),
+        ('GROUND_HOLDOUT_SUPPORT_FRACTION_LOW', float(holdout_inliers.mean()), POLICY['minimum_plane_fraction'], '>='),
+        ('GROUND_SPATIAL_COVERAGE_LOW', cell_count, POLICY['minimum_spatial_cells'], '>='),
+        ('GROUND_HOLDOUT_RMS_HIGH', rms if np.isfinite(rms) else None, POLICY['maximum_holdout_rms_mm'], '<='),
+    ]
+    result['quality_checks'] = [dict(reason_code=code, value=value, limit=limit, comparison=comparison,
+        passed=bool(value is not None and (value >= limit if comparison == '>=' else value <= limit)))
+        for code, value, limit, comparison in checks]
+    result['failure_reasons'] = [item['reason_code'] for item in result['quality_checks'] if not item['passed']]
+    if result['failure_reasons']:
         result['status'] = 'GROUND_PLANE_INCONSISTENT'
         return result, None
-    normal, offset, spread = _plane(points[inliers])
+    result['quality_checks'].append(dict(reason_code='GROUND_SECOND_SPREAD_LOW', value=float(spread[1]),
+        limit=POLICY['minimum_second_spread_mm'], comparison='>=',
+        passed=bool(spread[1] >= POLICY['minimum_second_spread_mm'])))
     if spread[1] < POLICY['minimum_second_spread_mm']:
         result['status'] = 'GROUND_SUPPORT_TOO_NARROW'
+        result['failure_reasons'] = ['GROUND_SECOND_SPREAD_LOW']
         return result, None
     result.update(status='PLANE_FIT', normal_camera=normal.tolist(), offset_mm=offset,
                   second_spread_mm=float(spread[1]))
@@ -184,6 +204,32 @@ def ground_summary_lines(check):
         return lines+['已设置地面区域；点击“倾角检查”单独计算。点击⑤保存并评估，通过检查后自动约束水平管轴并重新计算断面。']
     from .ground_visualization import tilt_label_lines
     lines += tilt_label_lines(check)
+    policy = check.get('policy') or POLICY
+    coverage = check.get('valid_depth_fraction')
+    if coverage is not None:
+        lines.append(f"选区有效深度：{coverage:.1%}；要求至少 {policy['minimum_valid_fraction']:.0%}。")
+    failure_labels = {
+        'GROUND_PLANE_SUPPORT_FRACTION_LOW': '平面一致点不足',
+        'GROUND_HOLDOUT_SUPPORT_FRACTION_LOW': '留出一致点不足',
+        'GROUND_SPATIAL_COVERAGE_LOW': '平面空间覆盖不足',
+        'GROUND_HOLDOUT_RMS_HIGH': '留出残差过大',
+        'GROUND_SECOND_SPREAD_LOW': '平面第二方向跨度不足',
+        'GROUND_TOO_FEW_SAMPLES': '有效采样点不足',
+        'GROUND_SPATIAL_SPLIT_SUPPORT_LOW': '训练或留出分区采样不足',
+        'GROUND_NO_TRAINING_CONSENSUS': '训练点未找到平面共识',
+    }
+    for key, name in [('left_plane', '左目'), ('right_plane', '右目')]:
+        plane = check.get(key) or {}
+        if 'inlier_fraction' in plane:
+            lines.append(f"{name}平面一致点 {plane['inlier_fraction']:.1%}；留出一致点 "
+                         f"{plane['holdout_inlier_fraction']:.1%}（均需 ≥{policy['minimum_plane_fraction']:.0%}，"
+                         f"点到平面 ≤{policy['plane_tolerance_mm']:g} mm）。")
+            rms = plane.get('holdout_rms_mm')
+            lines.append(f"{name}留出一致点 RMS：" + (f"{rms:.2f} mm" if rms is not None else '无可用值')
+                         + f"；要求 ≤{policy['maximum_holdout_rms_mm']:g} mm。")
+        failures = plane.get('failure_reasons', [])
+        if failures:
+            lines.append(name+'未通过项目：'+'、'.join(failure_labels.get(code, code) for code in failures)+'。')
     if check.get('surface_identity_source') == 'ASSISTANT_SUGGESTED_GROUND_NOT_CONFIRMED':
         lines.append('当前选区是离线分析建议，尚未经你确认是地面；请核对紫色框。')
     if check.get('correction_revision'):
