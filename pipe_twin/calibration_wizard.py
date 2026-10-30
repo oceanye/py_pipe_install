@@ -464,7 +464,7 @@ class BoardStabilityGate:
 
     # Full-resolution stereo SB detection takes about 2.6 s per preview cycle
     # on the field PC. A shorter timeout would reset every stationary sample.
-    policy = {"minimum_seconds": 0.8, "minimum_observations": 3,
+    policy = {"minimum_seconds": 6.0, "minimum_observations": 3,
               "maximum_gap_seconds": 5.0, "median_motion_px": 0.4,
               "p95_motion_px": 0.8, "maximum_motion_px": 1.5}
 
@@ -474,8 +474,19 @@ class BoardStabilityGate:
     def reset(self) -> None:
         self.reference: dict[str, np.ndarray] = {}
         self.detectors: tuple[str, ...] = ()
+        self.zones: tuple[tuple[int, int], ...] = ()
         self.started = self.last = 0.0
         self.samples = 0
+
+    @property
+    def elapsed_seconds(self) -> float:
+        """Only time confirmed by detections, never time since a stale frame."""
+        return max(0.0, self.last - self.started) if self.samples else 0.0
+
+    @property
+    def ready(self) -> bool:
+        return (self.samples >= self.policy["minimum_observations"]
+                and self.elapsed_seconds >= self.policy["minimum_seconds"])
 
     def observe(self, observations: Mapping[str, BoardObservation], now: float) -> bool:
         roles = ("left", "right")
@@ -488,7 +499,9 @@ class BoardStabilityGate:
             self.reset()
             return False
         detectors = tuple(observations[role].detector for role in roles)
+        zones = tuple(observations[role].centroid_zone for role in roles)
         restart = (not self.reference or detectors != self.detectors
+                   or zones != self.zones
                    or now <= self.last or now-self.last > self.policy["maximum_gap_seconds"])
         if not restart:
             for role in roles:
@@ -504,12 +517,12 @@ class BoardStabilityGate:
         if restart:
             self.reference = {role: value.copy() for role, value in points.items()}
             self.detectors = detectors
+            self.zones = zones
             self.started = now
             self.samples = 0
         self.last = now
         self.samples += 1
-        return (self.samples >= self.policy["minimum_observations"]
-                and now-self.started >= self.policy["minimum_seconds"])
+        return self.ready
 
 
 class CalibrationCaptureArchive:
@@ -2833,6 +2846,55 @@ def zone_coverage_report(zones: Any) -> dict[str, Any]:
     }
 
 
+def zone_capture_guidance(
+    pairs: list[tuple[BoardObservation, BoardObservation]],
+    observations: Mapping[str, BoardObservation],
+    stability: BoardStabilityGate,
+) -> list[dict[str, Any]]:
+    """Left-image coverage comes from retained pairs, not elapsed time alone."""
+    current = observations.get("left")
+    current_zone = current.centroid_zone if current is not None else None
+    cells = []
+    for number, (zone, name) in enumerate(_ZONE_NAMES.items(), start=1):
+        count = sum(left.centroid_zone == zone for left, _right in pairs)
+        active = zone == current_zone
+        if count:
+            state, detail = "captured", f"已采集 {count} 组"
+        elif active and stability.samples:
+            state = "ready" if stability.ready else "timing"
+            detail = ("停稳，待采集" if stability.ready else
+                      f"{stability.elapsed_seconds:.1f} / {stability.policy['minimum_seconds']:g} 秒")
+        elif active:
+            state, detail = "blocked", "已识别，待停稳"
+        else:
+            state, detail = "pending", "待采集"
+        cells.append({"zone": zone, "number": number, "name": name,
+                      "count": count, "active": active, "state": state,
+                      "text": f"{number} {name}\n{detail}"})
+    return cells
+
+
+def draw_zone_guidance(frame: np.ndarray, cells: list[dict[str, Any]]) -> np.ndarray:
+    """Draw on the resized preview only; detector/archive images stay raw."""
+    display = frame.copy()
+    height, width = display.shape[:2]
+    for cell in cells:
+        col, row = cell["zone"]
+        x0, y0 = round(col * width / 3), round(row * height / 3)
+        x1, y1 = round((col + 1) * width / 3) - 1, round((row + 1) * height / 3) - 1
+        color = ((80, 200, 100) if cell["count"] else (185, 185, 185))
+        if cell["active"] and not cell["count"]:
+            color = (0, 200, 255)
+        cv2.rectangle(display, (x0, y0), (x1, y1), (25, 25, 25), 3)
+        cv2.rectangle(display, (x0 + 1, y0 + 1), (x1 - 1, y1 - 1), color, 1)
+        label = str(cell["number"]) + (f" OK:{cell['count']}" if cell["count"] else "")
+        cv2.putText(display, label, (x0 + 5, y0 + 16), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.43, (0, 0, 0), 3, cv2.LINE_AA)
+        cv2.putText(display, label, (x0 + 5, y0 + 16), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.43, color, 1, cv2.LINE_AA)
+    return display
+
+
 def pose_is_novel(
     previous_xy: Any,
     new_xy: Any,
@@ -2968,6 +3030,8 @@ class ChessboardWizardDialog:
         self.preview_images: list[Any] = []
         self._last_auto_time = 0.0
         self._capture_stability = BoardStabilityGate()
+        self._guidance_observations: dict[str, BoardObservation] = {}
+        self._guidance_note = "打开预览后，将棋盘中心移入任一格，两眼都需看全棋盘。"
         self._last_left_observation: BoardObservation | None = None
         self.pairs: list[tuple[BoardObservation, BoardObservation]] = []
         self._pair_capture_ids: list[int | None] = []
@@ -2985,7 +3049,26 @@ class ChessboardWizardDialog:
         main = ttk.Frame(self.window, padding=10)
         main.pack(fill="both", expand=True)
 
-        params = ttk.LabelFrame(main, text="棋盘格与求解参数", padding=8)
+        toolbar = ttk.Frame(main)
+        toolbar.pack(fill="x", pady=(0, 6))
+        self.setup_summary = tk.StringVar()
+        ttk.Label(toolbar, textvariable=self.setup_summary, wraplength=610).pack(
+            side="left", fill="x", expand=True)
+        ttk.Button(toolbar, text="打开预览", command=self.start).pack(side="left", padx=3)
+        ttk.Button(toolbar, text="停止", command=self.stop).pack(side="left", padx=3)
+        self.settings_button = ttk.Button(toolbar, text="展开参数 / 相机设置",
+                                          command=self._toggle_capture_settings)
+        self.settings_button.pack(side="left", padx=3)
+        self.settings_panel = ttk.Frame(main)
+        self.settings_panel.pack(fill="x")
+        self._settings_visible = True
+        for variable in (self.columns, self.rows, self.measured_square_mm,
+                         self.expected_baseline_mm, self.eye_width, self.eye_height,
+                         self.exposure_preset):
+            variable.trace_add("write", lambda *_e: self._update_setup_summary())
+        self._update_setup_summary()
+
+        params = ttk.LabelFrame(self.settings_panel, text="棋盘格与求解参数", padding=8)
         params.pack(fill="x", pady=(0, 6))
         for column, (label, variable, width) in enumerate((
             ("横向方格", self.columns, 5),
@@ -3018,7 +3101,7 @@ class ChessboardWizardDialog:
             variable.trace_add("write", lambda *_e: self._update_fit_hint())
         self._update_fit_hint()
 
-        camera_box = ttk.LabelFrame(main, text="相机", padding=8)
+        camera_box = ttk.LabelFrame(self.settings_panel, text="相机", padding=8)
         camera_box.pack(fill="x", pady=(0, 6))
         camera_row = ttk.Frame(camera_box)
         camera_row.pack(fill="x")
@@ -3040,8 +3123,6 @@ class ChessboardWizardDialog:
         ttk.Label(camera_row, text="右索引：").pack(side="left")
         ttk.Entry(camera_row, textvariable=self.right_index, width=4).pack(side="left", padx=(3, 8))
         ttk.Button(camera_row, text="检测设备", command=self.detect).pack(side="left", padx=3)
-        ttk.Button(camera_row, text="打开预览", command=self.start).pack(side="left", padx=3)
-        ttk.Button(camera_row, text="停止", command=self.stop).pack(side="left", padx=3)
         mode_row = ttk.Frame(camera_box)
         mode_row.pack(fill="x", pady=(6, 0))
         ttk.Label(mode_row, text="流分辨率：").pack(side="left")
@@ -3104,7 +3185,7 @@ class ChessboardWizardDialog:
         shutter.pack(side="left", padx=(3, 10))
         shutter.bind("<<ComboboxSelected>>", lambda _e: self._apply_exposure())
         ttk.Label(shutter_row, text="预览中可直接切换；自动或慢快门下请保持棋盘静止。").pack(side="left")
-        self.exposure_status = tk.StringVar(value="快门待连接；默认不慢于 1/200 秒")
+        self.exposure_status = tk.StringVar(value="快门待连接；按所选档位应用，采集时请保持棋盘静止。")
         ttk.Label(camera_box, textvariable=self.exposure_status, foreground="#8A4E00", wraplength=1040).pack(
             anchor="w", pady=(2, 0)
         )
@@ -3115,7 +3196,7 @@ class ChessboardWizardDialog:
         previews.columnconfigure(1, weight=1)
         self.left_status = tk.StringVar(value="左目：未打开预览")
         self.right_status = tk.StringVar(value="右目：未打开预览")
-        ttk.Label(previews, text="左目原始帧").grid(row=0, column=0, pady=3)
+        ttk.Label(previews, text="左目原始帧 · 九宫格按棋盘中心定位").grid(row=0, column=0, pady=3)
         ttk.Label(previews, text="右目原始帧").grid(row=0, column=1, pady=3)
         ttk.Label(previews, textvariable=self.left_status, foreground="#355371").grid(
             row=2, column=0, pady=(2, 0)
@@ -3131,6 +3212,15 @@ class ChessboardWizardDialog:
 
         bottom = ttk.Frame(main)
         bottom.pack(fill="x", pady=(6, 0), before=previews)
+        self._settings_anchor = bottom
+        guidance = ttk.LabelFrame(bottom, text="区域引导 · 对照左目 1～9 格", padding=4)
+        guidance.pack(side="left", fill="y", padx=(0, 8))
+        self.zone_cells: dict[tuple[int, int], Any] = {}
+        for zone in _ZONE_NAMES:
+            cell = tk.Label(guidance, width=13, height=2, font=("Microsoft YaHei UI", 10),
+                            relief="solid", borderwidth=1, padx=2, pady=3)
+            cell.grid(row=zone[1], column=zone[0], padx=1, pady=1, sticky="nsew")
+            self.zone_cells[zone] = cell
         columns = ("index", "left_zone", "right_zone")
         self.tree = ttk.Treeview(bottom, columns=columns, show="headings", height=5)
         for key, title, width in (
@@ -3147,6 +3237,7 @@ class ChessboardWizardDialog:
             actions,
             text="连续抓拍（移动棋盘格自动采集）",
             variable=self.continuous,
+            command=self._capture_mode_changed,
         ).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 3))
         for index, (label, command) in enumerate((
             ("抓拍一组", self.capture_pair), ("完成标定并保存", self.finish),
@@ -3157,11 +3248,59 @@ class ChessboardWizardDialog:
             ttk.Button(actions, text=label, command=command).grid(
                 row=1+index//2, column=index%2, sticky="ew", padx=3, pady=3)
 
+        self.guidance_status = tk.StringVar()
+        ttk.Label(main, textvariable=self.guidance_status, wraplength=1040,
+                  foreground="#243D54").pack(fill="x", pady=(4, 0), before=previews)
+        ttk.Label(main, text="灰：待采集  黄：当前区域 / 停稳计时  绿：已采集。停稳至少 6 秒，通常 6～10 秒；"
+                  "变绿后移到其他区域。还需改变远近和前后 / 左右倾斜，建议 20～30 组。",
+                  foreground="#355371", wraplength=1040).pack(fill="x", before=previews)
         ttk.Label(main, textvariable=self.message, wraplength=1040, foreground="#355371").pack(
             fill="x", pady=(6, 0), before=previews
         )
+        self._refresh_guidance()
+        self._toggle_capture_settings()
 
     # -- helpers -----------------------------------------------------------
+
+    def _update_setup_summary(self) -> None:
+        self.setup_summary.set(
+            f"棋盘 {self.columns.get()} × {self.rows.get()} 格 · 实测格长 {self.measured_square_mm.get()} mm · "
+            f"基线 {self.expected_baseline_mm.get()} mm\n"
+            f"每目 {self.eye_width.get()} × {self.eye_height.get()} · {self.exposure_preset.get()}")
+
+    def _toggle_capture_settings(self) -> None:
+        if self._settings_visible:
+            self.settings_panel.pack_forget()
+        else:
+            self.settings_panel.pack(fill="x", before=self._settings_anchor)
+        self._settings_visible = not self._settings_visible
+        self.settings_button.configure(text=("收起参数 / 相机设置" if self._settings_visible
+                                             else "展开参数 / 相机设置"))
+
+    def _refresh_guidance(self) -> None:
+        if not hasattr(self, "zone_cells"):
+            return
+        cells = zone_capture_guidance(self.pairs, self._guidance_observations,
+                                      self._capture_stability)
+        palette = {"captured": ("#D9F1DF", "#16532B"),
+                   "pending": ("#EEF1F4", "#3D4B59"),
+                   "timing": ("#FFF0C2", "#684300"),
+                   "ready": ("#FFF0C2", "#684300"),
+                   "blocked": ("#FFF0C2", "#684300")}
+        for cell in cells:
+            background, foreground = palette[cell["state"]]
+            self.zone_cells[cell["zone"]].configure(
+                text=cell["text"], background=background, foreground=foreground,
+                relief="sunken" if cell["active"] else "solid")
+        covered = sum(cell["count"] > 0 for cell in cells)
+        self.guidance_status.set(
+            f"区域已采集 {covered}/9 · 共 {len(self.pairs)} 组  |  {self._guidance_note}")
+
+    def _capture_mode_changed(self) -> None:
+        self._capture_stability.reset()
+        self._guidance_note = ("自动采集已开启，请保持棋盘不动，重新计时。" if self.continuous.get()
+                               else "已切换手动：停稳计时完成后，点击“抓拍一组”才会变绿。")
+        self._refresh_guidance()
 
     def _update_fit_hint(self) -> None:
         try:
@@ -3813,12 +3952,14 @@ class ChessboardWizardDialog:
         self._tick = 1
         self._update_preview()
 
-    def _photo(self, frame: np.ndarray) -> Any:
+    def _photo(self, frame: np.ndarray, *, guidance: bool = False) -> Any:
         import base64
 
         height, width = frame.shape[:2]
-        available_height = max(60, self.left_preview.winfo_height()-6)
-        scale = min(470 / width, available_height / height, 1.0)
+        preview = self.left_preview if guidance else self.right_preview
+        available_height = max(1, preview.winfo_height()-6)
+        available_width = max(1, preview.winfo_width()-6)
+        scale = min(available_width / width, available_height / height, 1.0)
         shown = (
             cv2.resize(
                 frame,
@@ -3828,6 +3969,9 @@ class ChessboardWizardDialog:
             if scale < 1
             else frame
         )
+        if guidance:
+            shown = draw_zone_guidance(shown, zone_capture_guidance(
+                self.pairs, self._guidance_observations, self._capture_stability))
         ok, encoded = cv2.imencode(".png", shown)
         if not ok:
             raise ChessboardCalibrationError("无法生成相机预览")
@@ -3843,7 +3987,7 @@ class ChessboardWizardDialog:
             pair = self.session.read_pair()
             stage = "parse_pattern"
             pattern = self._pattern()
-            status = {role: "未检出" for role, _frame in (("left", pair.left), ("right", pair.right))}
+            status: dict[str, str] = {}
             displays = {"left": pair.left, "right": pair.right}
             observations: dict[str, BoardObservation] = {}
             if self._tick % 3 == 0:
@@ -3863,18 +4007,21 @@ class ChessboardWizardDialog:
                         displays[role] = draw_detection_overlay(frame, observation, pattern)
                         status[role] = (
                             f"已检出，清晰度 {observation.sharpness:.0f}，"
-                            f"区域 {observation.centroid_zone}"
+                            f"{_ZONE_NAMES.get(observation.centroid_zone, str(observation.centroid_zone))}区域"
                         )
                     else:
                         status[role] = "未检出，请让整个棋盘格进入画面"
                 self._maybe_auto_capture(pair, observations)
             stage = "encode_preview"
-            self.preview_images = [self._photo(displays["left"]), self._photo(displays["right"])]
+            self.preview_images = [self._photo(displays["left"], guidance=True), self._photo(displays["right"])]
             stage = "update_widgets"
             self.left_preview.configure(image=self.preview_images[0])
             self.right_preview.configure(image=self.preview_images[1])
-            self.left_status.set(f"左目：{status['left']}")
-            self.right_status.set(f"右目：{status['right']}")
+            # Intervening raw preview frames have not been detected; do not
+            # flash a misleading "not found" status between detector cycles.
+            if status:
+                self.left_status.set(f"左目：{status['left']}")
+                self.right_status.set(f"右目：{status['right']}")
             self._tick += 1
             self.after_id = self.window.after(120, self._update_preview)
         except Exception as error:  # native cv2 errors included, never silent
@@ -3936,24 +4083,35 @@ class ChessboardWizardDialog:
     def _maybe_auto_capture(
         self, pair: Any, observations: dict[str, BoardObservation]
     ) -> None:
+        self._guidance_observations = observations
+        try:
+            self._process_capture_observations(pair, observations)
+        finally:
+            self._refresh_guidance()
+
+    def _process_capture_observations(
+        self, pair: Any, observations: dict[str, BoardObservation]
+    ) -> None:
         """Accept a pair automatically when the pose really changed.
 
         A novel pose must settle in both eyes before it enters the solve.
         """
         now = time.monotonic()
-        stable = self._capture_stability.observe(observations, now)
-        if not self.continuous.get() or len(observations) < 2:
-            return
-        if len(self.pairs) >= _MAX_AUTO_PAIRS:
-            self.continuous.set(False)
-            self.message.set(f"已达自动采集上限 {_MAX_AUTO_PAIRS} 组；组数不代表标定合格，请检查区域、远近与倾斜覆盖，必要时手动补拍。")
-            return
-        if now - self._last_auto_time < _AUTO_CAPTURE_COOLDOWN_S:
+        if not all(role in observations for role in ("left", "right")):
+            self._capture_stability.reset()
+            self._guidance_note = "两眼都需检出完整棋盘；未检出或被遮挡会清零计时。"
             return
         left_obs = observations["left"]
         right_obs = observations["right"]
         if left_obs.detector != right_obs.detector:
-            self.message.set("左右目检测器刚完成同步切换；本帧已跳过，请保持棋盘格稳定。")
+            self._capture_stability.reset()
+            self._guidance_note = "左右目检测器刚完成同步切换；请保持棋盘格稳定，重新计时。"
+            self.message.set(self._guidance_note)
+            return
+        max_sync = self._float_value(self.max_sync, "同步容差", positive=False)
+        if np.array_equal(pair.left, pair.right) or pair.sync_delta_ms > max_sync:
+            self._capture_stability.reset()
+            self._guidance_note = "左右帧相同或时间差超限；请检查双目输出，暂不计时采集。"
             return
         # Motion blur (long exposure while the board moves) inflates the
         # reprojection RMS without being visible in the pair count, so blurred
@@ -3966,13 +4124,28 @@ class ChessboardWizardDialog:
             threshold = _DEFAULT_SHARPNESS_GATE
         if threshold > 0 and min(left_obs.sharpness, right_obs.sharpness) < threshold:
             self._capture_stability.reset()
-            self.message.set(
+            self._guidance_note = (
                 f"清晰度不足（左 {left_obs.sharpness:.0f} / 右 {right_obs.sharpness:.0f}"
-                f" < {threshold:g}），已跳过自动抓拍；请放慢移动或增加光照。"
+                f" < {threshold:g}），计时已清零；请停稳或增加光照。"
             )
+            self.message.set(self._guidance_note)
             return
+        stable = self._capture_stability.observe(observations, now)
+        zone_name = _ZONE_NAMES.get(left_obs.centroid_zone, str(left_obs.centroid_zone))
+        elapsed = min(self._capture_stability.elapsed_seconds,
+                      self._capture_stability.policy["minimum_seconds"])
+        self._guidance_note = f"当前{zone_name}：稳定 {elapsed:.1f} / 6 秒；请保持不动，计时随检测结果更新。"
         if not stable:
-            self.message.set("请保持棋盘不动，连续 3 次检测稳定后计入；高分辨率下可能需要 6～10 秒，请等列表新增一组再移动。")
+            return
+        if not self.continuous.get():
+            self._guidance_note = f"当前{zone_name}已停稳，请点击“抓拍一组”；保存成功才会变绿。"
+            return
+        if len(self.pairs) >= _MAX_AUTO_PAIRS:
+            self.continuous.set(False)
+            self._guidance_note = "已达自动采集上限；可改变远近、倾斜后手动补拍。"
+            self.message.set(f"已达自动采集上限 {_MAX_AUTO_PAIRS} 组；组数不代表标定合格，请检查区域、远近与倾斜覆盖，必要时手动补拍。")
+            return
+        if now - self._last_auto_time < _AUTO_CAPTURE_COOLDOWN_S:
             return
         if not observation_is_novel(
             self._last_left_observation,
@@ -3980,6 +4153,7 @@ class ChessboardWizardDialog:
             (pair.left.shape[1], pair.left.shape[0]),
             self._pattern(),
         ):
+            self._guidance_note = "当前姿态已采集；请移到灰色区域，或改变远近和倾斜后再次停稳。"
             return
         try:
             self._accept_pair(
@@ -3989,12 +4163,14 @@ class ChessboardWizardDialog:
                 raw_left=pair.left,
                 raw_right=pair.right,
             )
-        except ChessboardCalibrationError as error:
+        except (ChessboardCalibrationError, OSError) as error:
             self.continuous.set(False)
+            self._guidance_note = f"本次采集未完成：{error}"
             self.message.set(str(error))
             return
         self._last_auto_time = now
         self._last_left_observation = left_obs
+        self._guidance_note = f"{zone_name}已采集；可以移动棋盘，继续覆盖灰色区域并改变远近、倾斜。"
 
     def _accept_pair(
         self,
@@ -4057,6 +4233,8 @@ class ChessboardWizardDialog:
                     "right_sharpness": float(aligned_right.sharpness),
                     "detector": left_obs.detector,
                     "capture_stability_policy": dict(BoardStabilityGate.policy),
+                    "capture_stability_elapsed_seconds": self._capture_stability.elapsed_seconds,
+                    "capture_stability_observations": self._capture_stability.samples,
                     "right_corner_order_rotated_180": orientation_flipped,
                     "median_raw_disparity_px": float(
                         np.median(
@@ -4069,6 +4247,7 @@ class ChessboardWizardDialog:
         self.pairs.append((left_obs, aligned_right))
         self._pair_capture_ids.append(capture_id)
         self._last_left_observation = left_obs
+        self._guidance_note = "照片已采集；请移动到其他区域，或改变远近和倾斜后再次停稳。"
         minimum = self._int_value(self.min_pairs, "最少组数", minimum=3)
         count = len(self.pairs)
         self._refresh_pairs()
@@ -4149,6 +4328,9 @@ class ChessboardWizardDialog:
 
     def stop(self) -> None:
         self._capture_stability.reset()
+        self._guidance_observations = {}
+        self._guidance_note = "预览已停止，计时已清零；已采集区域保留。"
+        self._refresh_guidance()
         # Also interrupts a running device sweep between indices.
         self._probe_cancelled.set()
         self._start_after_probe = False
@@ -4198,6 +4380,7 @@ class ChessboardWizardDialog:
                         f"{role} 目未检出完整棋盘格；请让整个棋盘格平整进入画面后重试。"
                     )
                 observations.append(observation)
+            self._guidance_observations = dict(zip(("left", "right"), observations))
             if observations[0].detector != observations[1].detector:
                 raise ChessboardCalibrationError(
                     "左右目角点检测器刚完成同步切换；请保持棋盘格稳定后重新抓拍"
@@ -4205,6 +4388,8 @@ class ChessboardWizardDialog:
             try:
                 threshold = float(self.sharpness_gate.get())
             except ValueError:
+                threshold = _DEFAULT_SHARPNESS_GATE
+            if not math.isfinite(threshold) or threshold < 0:
                 threshold = _DEFAULT_SHARPNESS_GATE
             if threshold > 0 and min(
                 observations[0].sharpness, observations[1].sharpness
@@ -4218,7 +4403,7 @@ class ChessboardWizardDialog:
             if not self._capture_stability.observe(
                 dict(zip(("left", "right"), observations)), time.monotonic()
             ):
-                raise ChessboardCalibrationError("棋盘尚未停稳；请保持左右画面完整，等待连续 3 次稳定检测后再抓拍，高分辨率下可能需要 6～10 秒。已有照片组已保留。")
+                raise ChessboardCalibrationError("棋盘尚未停稳；请保持左右画面完整，停稳至少 6 秒且通过连续 3 次检测后再抓拍，通常需要 6～10 秒。已有照片组已保留。")
             self._accept_pair(
                 observations[0],
                 observations[1],
@@ -4228,6 +4413,7 @@ class ChessboardWizardDialog:
             )
         except Exception as error:  # native cv2 errors included, never silent
             self._capture_stability.reset()
+            self._guidance_note = f"本次未采集，计时已清零：{error}"
             from .logging_config import get_logger, log_event
 
             log_event(
@@ -4237,6 +4423,8 @@ class ChessboardWizardDialog:
                 error=str(error),
             )
             self.app.messagebox.showerror("抓拍失败", str(error), parent=self.window)
+        finally:
+            self._refresh_guidance()
 
     def _refresh_pairs(self) -> None:
         self.tree.delete(*self.tree.get_children())
@@ -4245,8 +4433,10 @@ class ChessboardWizardDialog:
                 "",
                 "end",
                 iid=str(index - 1),
-                values=(index, f"区域 {left.centroid_zone}", f"区域 {right.centroid_zone}"),
+                values=(index, _ZONE_NAMES.get(left.centroid_zone, str(left.centroid_zone)),
+                        _ZONE_NAMES.get(right.centroid_zone, str(right.centroid_zone))),
             )
+        self._refresh_guidance()
 
     def remove_last(self) -> None:
         if self.pairs:
@@ -4261,6 +4451,8 @@ class ChessboardWizardDialog:
                     reason="操作员移除上一组",
                 )
             self._last_left_observation = self.pairs[-1][0] if self.pairs else None
+            self._capture_stability.reset()
+            self._guidance_note = "照片已移除；绿色区域按剩余照片更新，请重新停稳后补拍。"
             self._refresh_pairs()
             try:
                 self._save_pair_checkpoint()
@@ -4294,6 +4486,8 @@ class ChessboardWizardDialog:
                 reason="操作员移除选中组",
             )
         self._last_left_observation = self.pairs[-1][0] if self.pairs else None
+        self._capture_stability.reset()
+        self._guidance_note = "照片已移除；绿色区域按剩余照片更新，请重新停稳后补拍。"
         self._refresh_pairs()
         try:
             self._save_pair_checkpoint()

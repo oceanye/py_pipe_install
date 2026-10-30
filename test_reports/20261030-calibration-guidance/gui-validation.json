@@ -1,0 +1,940 @@
+{
+  "source": "outputs\\measurement_workbench\\calibration_captures\\20261030_110841_956633_67311fd3",
+  "mode": "saved-pair replay; simulated clock",
+  "timing": {
+    "size": [
+      1080,
+      780
+    ],
+    "bounds": {
+      "left_preview": [
+        10,
+        333,
+        537,
+        414
+      ],
+      "right_preview": [
+        555,
+        333,
+        515,
+        414
+      ],
+      "cell_(0, 0)": [
+        17,
+        84,
+        110,
+        46
+      ],
+      "cell_(1, 0)": [
+        129,
+        84,
+        110,
+        46
+      ],
+      "cell_(2, 0)": [
+        241,
+        84,
+        110,
+        46
+      ],
+      "cell_(0, 1)": [
+        17,
+        132,
+        110,
+        46
+      ],
+      "cell_(1, 1)": [
+        129,
+        132,
+        110,
+        46
+      ],
+      "cell_(2, 1)": [
+        241,
+        132,
+        110,
+        46
+      ],
+      "cell_(0, 2)": [
+        17,
+        180,
+        110,
+        46
+      ],
+      "cell_(1, 2)": [
+        129,
+        180,
+        110,
+        46
+      ],
+      "cell_(2, 2)": [
+        241,
+        180,
+        110,
+        46
+      ]
+    },
+    "status": "区域已采集 0/9 · 共 0 组  |  当前右中：稳定 3.0 / 6 秒；请保持不动，计时随检测结果更新。",
+    "cells": [
+      {
+        "zone": [
+          0,
+          0
+        ],
+        "number": 1,
+        "name": "左上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "1 左上\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          0
+        ],
+        "number": 2,
+        "name": "上中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "2 上中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          0
+        ],
+        "number": 3,
+        "name": "右上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "3 右上\n待采集"
+      },
+      {
+        "zone": [
+          0,
+          1
+        ],
+        "number": 4,
+        "name": "左中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "4 左中\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          1
+        ],
+        "number": 5,
+        "name": "中心",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "5 中心\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          1
+        ],
+        "number": 6,
+        "name": "右中",
+        "count": 0,
+        "active": true,
+        "state": "timing",
+        "text": "6 右中\n3.0 / 6 秒"
+      },
+      {
+        "zone": [
+          0,
+          2
+        ],
+        "number": 7,
+        "name": "左下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "7 左下\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          2
+        ],
+        "number": 8,
+        "name": "下中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "8 下中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          2
+        ],
+        "number": 9,
+        "name": "右下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "9 右下\n待采集"
+      }
+    ],
+    "screenshot": "outputs\\calibration-guidance-20261030\\timing.png"
+  },
+  "captured": {
+    "size": [
+      1080,
+      780
+    ],
+    "bounds": {
+      "left_preview": [
+        10,
+        350,
+        537,
+        397
+      ],
+      "right_preview": [
+        555,
+        350,
+        515,
+        397
+      ],
+      "cell_(0, 0)": [
+        17,
+        84,
+        110,
+        46
+      ],
+      "cell_(1, 0)": [
+        129,
+        84,
+        110,
+        46
+      ],
+      "cell_(2, 0)": [
+        241,
+        84,
+        110,
+        46
+      ],
+      "cell_(0, 1)": [
+        17,
+        132,
+        110,
+        46
+      ],
+      "cell_(1, 1)": [
+        129,
+        132,
+        110,
+        46
+      ],
+      "cell_(2, 1)": [
+        241,
+        132,
+        110,
+        46
+      ],
+      "cell_(0, 2)": [
+        17,
+        180,
+        110,
+        46
+      ],
+      "cell_(1, 2)": [
+        129,
+        180,
+        110,
+        46
+      ],
+      "cell_(2, 2)": [
+        241,
+        180,
+        110,
+        46
+      ]
+    },
+    "status": "区域已采集 1/9 · 共 1 组  |  右中已采集；可以移动棋盘，继续覆盖灰色区域并改变远近、倾斜。",
+    "cells": [
+      {
+        "zone": [
+          0,
+          0
+        ],
+        "number": 1,
+        "name": "左上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "1 左上\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          0
+        ],
+        "number": 2,
+        "name": "上中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "2 上中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          0
+        ],
+        "number": 3,
+        "name": "右上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "3 右上\n待采集"
+      },
+      {
+        "zone": [
+          0,
+          1
+        ],
+        "number": 4,
+        "name": "左中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "4 左中\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          1
+        ],
+        "number": 5,
+        "name": "中心",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "5 中心\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          1
+        ],
+        "number": 6,
+        "name": "右中",
+        "count": 1,
+        "active": true,
+        "state": "captured",
+        "text": "6 右中\n已采集 1 组"
+      },
+      {
+        "zone": [
+          0,
+          2
+        ],
+        "number": 7,
+        "name": "左下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "7 左下\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          2
+        ],
+        "number": 8,
+        "name": "下中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "8 下中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          2
+        ],
+        "number": 9,
+        "name": "右下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "9 右下\n待采集"
+      }
+    ],
+    "screenshot": "outputs\\calibration-guidance-20261030\\captured.png"
+  },
+  "removed": {
+    "size": [
+      1080,
+      780
+    ],
+    "bounds": {
+      "left_preview": [
+        10,
+        333,
+        537,
+        414
+      ],
+      "right_preview": [
+        555,
+        333,
+        515,
+        414
+      ],
+      "cell_(0, 0)": [
+        17,
+        84,
+        110,
+        46
+      ],
+      "cell_(1, 0)": [
+        129,
+        84,
+        110,
+        46
+      ],
+      "cell_(2, 0)": [
+        241,
+        84,
+        110,
+        46
+      ],
+      "cell_(0, 1)": [
+        17,
+        132,
+        110,
+        46
+      ],
+      "cell_(1, 1)": [
+        129,
+        132,
+        110,
+        46
+      ],
+      "cell_(2, 1)": [
+        241,
+        132,
+        110,
+        46
+      ],
+      "cell_(0, 2)": [
+        17,
+        180,
+        110,
+        46
+      ],
+      "cell_(1, 2)": [
+        129,
+        180,
+        110,
+        46
+      ],
+      "cell_(2, 2)": [
+        241,
+        180,
+        110,
+        46
+      ]
+    },
+    "status": "区域已采集 0/9 · 共 0 组  |  照片已移除；绿色区域按剩余照片更新，请重新停稳后补拍。",
+    "cells": [
+      {
+        "zone": [
+          0,
+          0
+        ],
+        "number": 1,
+        "name": "左上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "1 左上\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          0
+        ],
+        "number": 2,
+        "name": "上中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "2 上中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          0
+        ],
+        "number": 3,
+        "name": "右上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "3 右上\n待采集"
+      },
+      {
+        "zone": [
+          0,
+          1
+        ],
+        "number": 4,
+        "name": "左中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "4 左中\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          1
+        ],
+        "number": 5,
+        "name": "中心",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "5 中心\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          1
+        ],
+        "number": 6,
+        "name": "右中",
+        "count": 0,
+        "active": true,
+        "state": "blocked",
+        "text": "6 右中\n已识别，待停稳"
+      },
+      {
+        "zone": [
+          0,
+          2
+        ],
+        "number": 7,
+        "name": "左下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "7 左下\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          2
+        ],
+        "number": 8,
+        "name": "下中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "8 下中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          2
+        ],
+        "number": 9,
+        "name": "右下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "9 右下\n待采集"
+      }
+    ],
+    "screenshot": "outputs\\calibration-guidance-20261030\\removed.png"
+  },
+  "minimum_window": {
+    "size": [
+      960,
+      700
+    ],
+    "bounds": {
+      "left_preview": [
+        10,
+        333,
+        477,
+        334
+      ],
+      "right_preview": [
+        495,
+        333,
+        455,
+        334
+      ],
+      "cell_(0, 0)": [
+        17,
+        84,
+        110,
+        46
+      ],
+      "cell_(1, 0)": [
+        129,
+        84,
+        110,
+        46
+      ],
+      "cell_(2, 0)": [
+        241,
+        84,
+        110,
+        46
+      ],
+      "cell_(0, 1)": [
+        17,
+        132,
+        110,
+        46
+      ],
+      "cell_(1, 1)": [
+        129,
+        132,
+        110,
+        46
+      ],
+      "cell_(2, 1)": [
+        241,
+        132,
+        110,
+        46
+      ],
+      "cell_(0, 2)": [
+        17,
+        180,
+        110,
+        46
+      ],
+      "cell_(1, 2)": [
+        129,
+        180,
+        110,
+        46
+      ],
+      "cell_(2, 2)": [
+        241,
+        180,
+        110,
+        46
+      ]
+    },
+    "status": "区域已采集 0/9 · 共 0 组  |  预览已停止，计时已清零；已采集区域保留。",
+    "cells": [
+      {
+        "zone": [
+          0,
+          0
+        ],
+        "number": 1,
+        "name": "左上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "1 左上\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          0
+        ],
+        "number": 2,
+        "name": "上中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "2 上中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          0
+        ],
+        "number": 3,
+        "name": "右上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "3 右上\n待采集"
+      },
+      {
+        "zone": [
+          0,
+          1
+        ],
+        "number": 4,
+        "name": "左中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "4 左中\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          1
+        ],
+        "number": 5,
+        "name": "中心",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "5 中心\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          1
+        ],
+        "number": 6,
+        "name": "右中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "6 右中\n待采集"
+      },
+      {
+        "zone": [
+          0,
+          2
+        ],
+        "number": 7,
+        "name": "左下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "7 左下\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          2
+        ],
+        "number": 8,
+        "name": "下中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "8 下中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          2
+        ],
+        "number": 9,
+        "name": "右下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "9 右下\n待采集"
+      }
+    ],
+    "screenshot": "outputs\\calibration-guidance-20261030\\minimum-window.png"
+  },
+  "expanded_settings": {
+    "size": [
+      1080,
+      940
+    ],
+    "bounds": {
+      "left_preview": [
+        10,
+        688,
+        526,
+        219
+      ],
+      "right_preview": [
+        544,
+        688,
+        526,
+        219
+      ],
+      "cell_(0, 0)": [
+        17,
+        439,
+        110,
+        46
+      ],
+      "cell_(1, 0)": [
+        129,
+        439,
+        110,
+        46
+      ],
+      "cell_(2, 0)": [
+        241,
+        439,
+        110,
+        46
+      ],
+      "cell_(0, 1)": [
+        17,
+        487,
+        110,
+        46
+      ],
+      "cell_(1, 1)": [
+        129,
+        487,
+        110,
+        46
+      ],
+      "cell_(2, 1)": [
+        241,
+        487,
+        110,
+        46
+      ],
+      "cell_(0, 2)": [
+        17,
+        535,
+        110,
+        46
+      ],
+      "cell_(1, 2)": [
+        129,
+        535,
+        110,
+        46
+      ],
+      "cell_(2, 2)": [
+        241,
+        535,
+        110,
+        46
+      ]
+    },
+    "status": "区域已采集 0/9 · 共 0 组  |  预览已停止，计时已清零；已采集区域保留。",
+    "cells": [
+      {
+        "zone": [
+          0,
+          0
+        ],
+        "number": 1,
+        "name": "左上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "1 左上\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          0
+        ],
+        "number": 2,
+        "name": "上中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "2 上中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          0
+        ],
+        "number": 3,
+        "name": "右上",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "3 右上\n待采集"
+      },
+      {
+        "zone": [
+          0,
+          1
+        ],
+        "number": 4,
+        "name": "左中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "4 左中\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          1
+        ],
+        "number": 5,
+        "name": "中心",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "5 中心\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          1
+        ],
+        "number": 6,
+        "name": "右中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "6 右中\n待采集"
+      },
+      {
+        "zone": [
+          0,
+          2
+        ],
+        "number": 7,
+        "name": "左下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "7 左下\n待采集"
+      },
+      {
+        "zone": [
+          1,
+          2
+        ],
+        "number": 8,
+        "name": "下中",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "8 下中\n待采集"
+      },
+      {
+        "zone": [
+          2,
+          2
+        ],
+        "number": 9,
+        "name": "右下",
+        "count": 0,
+        "active": false,
+        "state": "pending",
+        "text": "9 右下\n待采集"
+      }
+    ],
+    "screenshot": "outputs\\calibration-guidance-20261030\\expanded-settings.png"
+  },
+  "protected_sha256": {
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_110841_956633_67311fd3\\session.json": "d2ed1087f0c312926784d1b7c5fb839b13da484efa1c262daf1fb16e0002ab34",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_110841_956633_67311fd3\\left\\000001.png": "56ba5349235bef3e2caafc66ba821d009ec8b49b348c399d3ecd496a4a0f0ee2",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_110841_956633_67311fd3\\right\\000001.png": "94ec9508313b8de8344a5bc80d60ccc4d4004b8817ca56bf32e1832ac7147cd9"
+  }
+}

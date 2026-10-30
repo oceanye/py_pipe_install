@@ -1,0 +1,225 @@
+{
+  "mode": "live preview only; no calibration capture",
+  "opened": true,
+  "errors": [],
+  "samples": [
+    {
+      "at": 353156.406,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 151.08065658388486,
+        "right": 204.86274630473474
+      },
+      "stable_seconds": 0.0,
+      "ready": false,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心：稳定 0.0 / 6 秒；请保持不动，计时随检测结果更新。"
+    },
+    {
+      "at": 353158.562,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 151.09517425507428,
+        "right": 210.7798539580167
+      },
+      "stable_seconds": 2.139999999955762,
+      "ready": false,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心：稳定 2.1 / 6 秒；请保持不动，计时随检测结果更新。"
+    },
+    {
+      "at": 353161.14,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 153.57313632445963,
+        "right": 212.48351405014216
+      },
+      "stable_seconds": 4.73399999999674,
+      "ready": false,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心：稳定 4.7 / 6 秒；请保持不动，计时随检测结果更新。"
+    },
+    {
+      "at": 353163.734,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 152.49765952660258,
+        "right": 212.76180092614362
+      },
+      "stable_seconds": 7.327999999979511,
+      "ready": true,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心已停稳，请点击“抓拍一组”；保存成功才会变绿。"
+    },
+    {
+      "at": 353166.375,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 152.33215745071996,
+        "right": 212.11610443598016
+      },
+      "stable_seconds": 9.96899999998277,
+      "ready": true,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心已停稳，请点击“抓拍一组”；保存成功才会变绿。"
+    },
+    {
+      "at": 353168.906,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 152.63472703245023,
+        "right": 212.17633782152413
+      },
+      "stable_seconds": 12.5,
+      "ready": true,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心已停稳，请点击“抓拍一组”；保存成功才会变绿。"
+    },
+    {
+      "at": 353171.484,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 152.81829231725592,
+        "right": 213.11738373178662
+      },
+      "stable_seconds": 15.077999999979511,
+      "ready": true,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心已停稳，请点击“抓拍一组”；保存成功才会变绿。"
+    },
+    {
+      "at": 353174.031,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 151.9613085077473,
+        "right": 212.15979816110854
+      },
+      "stable_seconds": 17.625,
+      "ready": true,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心已停稳，请点击“抓拍一组”；保存成功才会变绿。"
+    },
+    {
+      "at": 353176.609,
+      "eyes": [
+        "left",
+        "right"
+      ],
+      "zones": {
+        "left": [
+          1,
+          1
+        ],
+        "right": [
+          1,
+          1
+        ]
+      },
+      "sharpness": {
+        "left": 151.9847678078648,
+        "right": 211.45343553760932
+      },
+      "stable_seconds": 20.20299999997951,
+      "ready": true,
+      "status": "区域已采集 0/9 · 共 0 组  |  当前中心已停稳，请点击“抓拍一组”；保存成功才会变绿。"
+    }
+  ],
+  "pair_count": 0,
+  "calibration_sha256_unchanged": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+}

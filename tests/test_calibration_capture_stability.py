@@ -20,7 +20,9 @@ def test_stationary_board_needs_three_observations_and_dwell():
     gate=BoardStabilityGate()
     assert not gate.observe(observations(),10.)
     assert not gate.observe(observations(.08),10.4)
-    assert gate.observe(observations(-.05),10.9)
+    assert not gate.observe(observations(-.05),10.9)
+    assert not gate.observe(observations(-.05),13.)
+    assert gate.observe(observations(-.05),16.)
     gate.reset()
     assert not gate.observe(observations(),11.)
 
@@ -55,14 +57,17 @@ def test_interruption_restarts_the_full_dwell(interruption):
     assert not gate.observe(obs,now)
     assert not gate.observe(observations(),now+.2)
     assert not gate.observe(observations(),now+.4)
-    assert gate.observe(observations(),now+1.1)
+    assert not gate.observe(observations(),now+1.1)
+    assert not gate.observe(observations(),now+3.)
+    assert gate.observe(observations(),now+6.5)
 
 
 def test_stationary_board_passes_at_measured_high_resolution_gui_cadence():
     gate=BoardStabilityGate()
     assert not gate.observe(observations(),10.)
     assert not gate.observe(observations(.06),12.6)
-    assert gate.observe(observations(-.06),15.2)
+    assert not gate.observe(observations(-.06),15.2)
+    assert gate.observe(observations(-.06),17.8)
 
 
 def test_auto_capture_does_not_admit_a_moving_board_with_sharp_background():
@@ -75,12 +80,13 @@ def test_auto_capture_does_not_admit_a_moving_board_with_sharp_background():
     dialog._last_auto_time=0.
     dialog._last_left_observation=None
     dialog._pattern=lambda:(8,6)
+    dialog.max_sync=SimpleNamespace(get=lambda:'1.0')
     dialog._accept_pair=Mock()
-    pair=SimpleNamespace(left=np.zeros((480,640,3),np.uint8),right=np.zeros((480,640,3),np.uint8))
-    for t,dx in ((10.,0.),(10.4,4.),(10.9,8.),(11.3,12.),(11.7,12.),(12.2,12.)):
+    pair=SimpleNamespace(left=np.zeros((480,640,3),np.uint8),right=np.ones((480,640,3),np.uint8),sync_delta_ms=0.)
+    for t,dx in ((10.,0.),(10.4,4.),(10.9,8.),(11.3,12.),(11.7,12.),(12.2,12.),(14.3,12.),(17.3,12.)):
         with patch('pipe_twin.calibration_wizard.time.monotonic',return_value=t):
             dialog._maybe_auto_capture(pair,observations(dx))
-        assert dialog._accept_pair.call_count == (1 if t==12.2 else 0)
+        assert dialog._accept_pair.call_count == (1 if t==17.3 else 0)
 
 
 def test_detector_change_retains_existing_pairs_ids_and_archive():
@@ -123,8 +129,8 @@ def test_manual_button_cannot_bypass_stability_and_works_after_preview_settles()
     dialog._accept_pair.assert_not_called()
     assert '尚未停稳' in dialog.app.messagebox.showerror.call_args.args[1]
     dialog._capture_stability.observe(obs,11.)
-    dialog._capture_stability.observe(obs,11.4)
+    dialog._capture_stability.observe(obs,14.)
     with patch('pipe_twin.calibration_wizard.detect_board_corners',side_effect=list(obs.values())), \
-         patch('pipe_twin.calibration_wizard.time.monotonic',return_value=12.):
+         patch('pipe_twin.calibration_wizard.time.monotonic',return_value=17.):
         dialog.capture_pair()
     dialog._accept_pair.assert_called_once()
