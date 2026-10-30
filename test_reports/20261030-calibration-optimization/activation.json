@@ -1,0 +1,13 @@
+{
+  "calibration_path": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\measurement_workbench\\calibration_current.json",
+  "backup_directory": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\calibration-optimization-20261030\\before-activation",
+  "previous_sha256": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+  "active_sha256": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+  "calibration_id": "field-chess-42b9fd287add",
+  "baseline_mm": 59.82261029553183,
+  "training_rms_px": 0.35960273120971753,
+  "holdout_rms_px": 0.6215002599233783,
+  "holdout_status": "PASSED",
+  "scale_verified_independently": false,
+  "running_gui_requires_restart": true
+}

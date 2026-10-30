@@ -661,7 +661,7 @@ class ChessboardWizardTests(unittest.TestCase):
         self.assertTrue(parsed.registration_validated)
         self.assertIn("-pose-", parsed.calibration_id)
 
-    def test_solver_keeps_independent_intrinsics_when_stereo_gate_is_strict(self):
+    def test_joint_refinement_cannot_override_a_strict_training_error_gate(self):
         rng = np.random.default_rng(42)
         noisy = []
         for left, right in _synthetic_pairs():
@@ -679,24 +679,12 @@ class ChessboardWizardTests(unittest.TestCase):
                     ),
                 )
             )
-        object_lists = [_object_points().astype(np.float32)] * len(noisy)
-        left_points = [
-            pair[0].corners_px.reshape(-1, 1, 2).astype(np.float32)
-            for pair in noisy
-        ]
-        _rms, separate_k, _d, _rvecs, _tvecs = cv2.calibrateCamera(
-            object_lists,
-            left_points,
-            SIZE,
-            None,
-            None,
-            flags=cv2.CALIB_FIX_K3,
-        )
         result = _solve(pairs=noisy, max_reprojection_rms_px=0.01)
-        self.assertEqual(result.audit["solve_mode"], "fix_intrinsics")
-        np.testing.assert_allclose(
-            np.asarray(result.recipe["K1"]), separate_k, rtol=1e-4, atol=0.1
-        )
+        self.assertEqual(result.audit["solve_mode"], "joint_intrinsics_scaled_bundle")
+        self.assertTrue(result.audit['joint_refinement']['converged'])
+        self.assertLess(result.stereo_rms_px, result.audit['fixed_intrinsic_stereo_rms_px'])
+        self.assertFalse(result.validated)
+        self.assertTrue(any('重投影误差过大' in reason for reason in result.rejection_reasons))
 
     def test_wizard_calibration_satisfies_contract_and_field_gate(self):
         result = _solve()

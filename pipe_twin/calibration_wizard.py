@@ -2049,6 +2049,55 @@ def solve_stereo_calibration(
         or stereo_rms > max(2.0, quality_target * 4.0)
         or full_vertical_rms > max(2.0, quality_target * 4.0)
     )
+    joint_refinement: dict[str, Any] = {"attempted": False, "selected": False}
+    # Monocular fits are initial estimates, not independently known intrinsics.
+    # Refine the same Brown model on both training images before deciding that
+    # extra captures are needed. Exact synthetic fits need no refinement.
+    if not full_model_problems and best["geometry_compatible"] and stereo_rms > 1e-4:
+        joint_refinement["attempted"] = True
+        try:
+            from .calibration_bundle import refine_stereo_bundle
+
+            refined = refine_stereo_bundle(
+                objects=object_points, left_points=left_points, right_points=right_points,
+                K1=K1, D1=D1, K2=K2, D2=D2, R=R, T=T)
+            joint_refinement.update(refined["audit"])
+            joint_problems = (_intrinsic_problems(refined["K1"], refined["D1"], size, "左")
+                              + _intrinsic_problems(refined["K2"], refined["D2"], size, "右"))
+            joint_baseline = float(np.linalg.norm(refined["T"]))
+            if not _BASELINE_RANGE_MM[0] <= joint_baseline <= _BASELINE_RANGE_MM[1]:
+                joint_problems.append("联合求解基线超出合理范围")
+            if (expected_baseline_mm is not None and abs(joint_baseline - expected_baseline_mm)
+                    > max(3., expected_baseline_mm * .15)):
+                joint_problems.append("联合求解基线与实测值不一致")
+            jr1, jr2, jp1, jp2, *_ = cv2.stereoRectify(
+                refined["K1"], refined["D1"], refined["K2"], refined["D2"], size,
+                refined["R"], refined["T"], alpha=0., flags=cv2.CALIB_ZERO_DISPARITY)
+            joint_geometry = rectification_quality_report(
+                left_points, right_points, refined["K1"], refined["D1"],
+                refined["K2"], refined["D2"], jr1, jr2, jp1, jp2)
+            if (joint_geometry["horizontal_encoded_baseline_mm"] <= 0
+                    or joint_geometry["positive_disparity_ratio"] < .98
+                    or abs(joint_geometry["vertical_projection_mm"]) > max(1e-3, joint_baseline * 1e-4)):
+                joint_problems.append("联合求解未得到有效水平双目几何")
+            joint_problems.extend(_intrinsic_problems(jp1[:, :3], np.zeros(5), size, "矫正"))
+            joint_refinement.update(training_rms_before_px=stereo_rms,
+                                    training_rms_after_px=refined["stereo_rms"],
+                                    baseline_mm=joint_baseline, problems=joint_problems)
+            if (joint_refinement["converged"] and joint_refinement["positive_depth"]
+                    and not joint_problems and refined["stereo_rms"] < stereo_rms - 1e-6):
+                K1, D1, K2, D2, R, T, per_view = (
+                    refined[key] for key in ("K1", "D1", "K2", "D2", "R", "T", "per_view"))
+                stereo_rms, left_rms, right_rms = (
+                    refined[key] for key in ("stereo_rms", "left_rms", "right_rms"))
+                selected_per_pair_rms = np.max(per_view, axis=1)
+                solve_mode = "joint_intrinsics_scaled_bundle"
+                joint_refinement["selected"] = True
+                full_model_unstable = bool(
+                    stereo_rms > max(2., quality_target * 4.)
+                    or joint_geometry["vertical_rms_px"] > max(2., quality_target * 4.))
+        except (ImportError, cv2.error, ValueError, FloatingPointError, np.linalg.LinAlgError) as error:
+            joint_refinement["error"] = f"{type(error).__name__}: {error}"
     if expected_baseline_mm is not None and full_model_unstable:
         try:
             anchored = _baseline_anchored_pinhole_attempt(
@@ -2220,6 +2269,7 @@ def solve_stereo_calibration(
         "right_frame_transform": right_frame_transform,
         "right_frame_transform_candidates": transform_audit,
         "intrinsic_model_candidates": intrinsic_model_audit,
+        "joint_refinement": joint_refinement,
         "outlier_pruning": dict(_pruning_audit or {}),
         "baseline_mm": baseline,
         "expected_baseline_mm": (
@@ -2410,6 +2460,7 @@ def solve_stereo_calibration(
         "left_rms_px": float(left_rms), "right_rms_px": float(right_rms),
         "per_pair_rms_px": audit["per_pair_rms_px"], "diversity": audit["diversity"],
         "image_pose_geometry": image_pose_geometry, "calibration_pose_geometry": pose_geometry,
+        "joint_refinement": copy.deepcopy(joint_refinement),
         "scale_verified_independently": False, "holdout": {"status": "NOT_RUN"}}
     return WizardResult(
         calibration=calibration,
@@ -2427,7 +2478,7 @@ def solve_stereo_calibration(
 
 def solve_stereo_calibration_checked(*, pairs, **kwargs) -> WizardResult:
     """Reserve images before any model selection; never refit on holdout."""
-    from .calibration_quality import POLICY, holdout_quality
+    from .calibration_quality import POLICY, holdout_quality, holdout_failure_summary
     minimum = int(kwargs["min_pairs"])
     holdout_count = max(POLICY["minimum_holdout_pairs"], int(len(pairs)*POLICY["holdout_fraction"]))
     if len(pairs)-holdout_count < minimum:
@@ -2448,13 +2499,15 @@ def solve_stereo_calibration_checked(*, pairs, **kwargs) -> WizardResult:
     else:
         check = {"status": "FAILED", "reason": "NO_RECTIFICATION_RECIPE"}
     check["input_pair_indices"] = [i+1 for i in validation_indices]
+    for record, index in zip(check.get("pairs", []), validation_indices):
+        record["input_pair_index"] = index + 1
     result.audit["holdout"] = check
     result.audit["training_input_indices"] = [i+1 for i in train_indices]
     result.audit["input_pair_count"] = len(pairs)
     result.audit["discarded_pair_indices"] = [train_indices[i-1]+1 for i in result.audit.get("discarded_pair_indices", [])]
     result.calibration["quality_audit"]["holdout"] = copy.deepcopy(check)
     if check["status"] != "PASSED":
-        result.rejection_reasons.append("未参与求解的照片验证失败：请检查格板平整、同步、清晰度和边缘/倾斜覆盖；不要通过放宽 RMS 跳过此检查")
+        result.rejection_reasons.append(holdout_failure_summary(check))
     result = replace(result, validated=not result.rejection_reasons)
     result.calibration["validated"] = result.validated
     # The holdout evidence is part of calibration identity and recipe binding.
@@ -3021,6 +3074,8 @@ class ChessboardWizardDialog:
         self.open_after_id: str | None = None
         self._opening = False
         self._closing = False
+        self._solving = False
+        self.solve_after_id: str | None = None
         self._probing_modes = False
         self._probe_cancelled = threading.Event()
         self._start_after_probe = False
@@ -4505,7 +4560,38 @@ class ChessboardWizardDialog:
 
         LogViewerDialog(self.app, parent=self.window)
 
-    def finish(self) -> None:
+    def _set_solve_busy(self, busy: bool) -> None:
+        if busy:
+            self._solve_widget_states = []
+            def disable(parent):
+                for widget in parent.winfo_children():
+                    if widget.winfo_class() in ("TButton", "TEntry", "TCombobox", "TCheckbutton", "Treeview"):
+                        self._solve_widget_states.append((widget, widget.state()))
+                        widget.state(["disabled"])
+                    disable(widget)
+            disable(self.window)
+        else:
+            for widget, state in self._solve_widget_states:
+                widget.state(["!disabled"])
+                widget.state(state)
+
+    def _poll_solve(self, outcome: dict) -> None:
+        if self._closing:
+            return
+        if "done" not in outcome:
+            self.solve_after_id = self.window.after(150, lambda: self._poll_solve(outcome))
+            return
+        self.solve_after_id = None
+        self._solving = False
+        self._set_solve_busy(False)
+        self.finish(_outcome=outcome["done"])
+
+    def finish(self, *, _outcome=None) -> None:
+        if self._solving or self._closing:
+            return
+        if self._opening or self._probing_modes:
+            self.message.set("相机正在打开或检测；请等待完成后再开始解算。")
+            return
         eye_size: tuple[int, int] | None = None
         square_mm: float | None = None
         solve_options: dict[str, Any] = {}
@@ -4524,7 +4610,7 @@ class ChessboardWizardDialog:
                 self.capture_archive.update_session(
                     self._capture_session_metadata()
                 )
-            result = solve_stereo_calibration_checked(
+            solve_arguments = dict(
                 pairs=list(self.pairs),
                 image_size=eye_size,
                 square_mm=square_mm,
@@ -4536,6 +4622,29 @@ class ChessboardWizardDialog:
                 layout=layout,
                 expected_baseline_mm=(expected_baseline or None),
             )
+            if _outcome is None:
+                from .stereo_camera import run_in_background
+
+                self.stop()
+                self._solving = True
+                self._set_solve_busy(True)
+                self._guidance_note = "正在检查采集覆盖、联合优化收敛及留出验证，请稍候。"
+                self._refresh_guidance()
+                self.message.set(f"正在后台解算 {len(self.pairs)} 组照片；完成后分别报告覆盖、收敛和验证结果。")
+                outcome: dict[str, Any] = {}
+                run_in_background(lambda: solve_stereo_calibration_checked(**solve_arguments),
+                                  lambda result, error: outcome.setdefault("done", (result, error)))
+                self._poll_solve(outcome)
+                return
+            result, solve_error = _outcome
+            if solve_error is not None:
+                raise solve_error
+            from .calibration_quality import calibration_solve_summary
+
+            solve_summary = calibration_solve_summary(result)
+            self._guidance_note = ("解算与留出验证通过。" if result.validated else
+                                   "本轮未通过，请查看具体解算 / 验证项；照片已保留。")
+            self._refresh_guidance()
             if not result.validated:
                 from .logging_config import get_logger, log_event
 
@@ -4624,13 +4733,13 @@ class ChessboardWizardDialog:
                         + "；可保持其余组并补拍新的近/中/远和倾斜姿态。"
                     )
                 self.message.set(
-                    "标定未通过门禁，未保存：\n· "
+                    solve_summary + "\n标定未通过，未保存：\n· "
                     + "\n· ".join(result.rejection_reasons)
                     + diagnostic_note
                 )
                 self.app.messagebox.showwarning(
                     "标定未通过",
-                    "请根据提示补充照片组后重试：\n· "
+                    solve_summary + "\n具体未通过项：\n· "
                     + "\n· ".join(result.rejection_reasons)
                     + diagnostic_note,
                     parent=self.window,
@@ -4734,10 +4843,8 @@ class ChessboardWizardDialog:
             )
             self.message.set(
                 f"标定完成并已保存：{path}\n"
-                f"双目 RMS {result.stereo_rms_px:.3f} px，左右目 "
-                f"{result.left_rms_px:.3f}/{result.right_rms_px:.3f} px，"
-                f"基线 {result.calibration['baseline_mm']:.2f} mm，求解 {result.pair_count} 组，留出验证 {result.audit['holdout']['pair_count']} 组。\n"
-                f"右目画面自动修正：{result.audit.get('right_frame_transform', 'none')}。\n"
+                + solve_summary + "\n"
+                + f"右目画面自动修正：{result.audit.get('right_frame_transform', 'none')}。\n"
                 + "留出验证通过仍不代表毫米尺度已验收；请用另一件已知尺寸实物复核。\n"
                 + "基础立面模式无需额外 CAD 标记配准；请重新抓拍并评估。"
                 + checkpoint_note
@@ -4822,6 +4929,12 @@ class ChessboardWizardDialog:
                 diagnostic_path=diagnostic_path,
                 diagnostic_error=diagnostic_error,
             )
+            if self._solving:
+                self._solving = False
+                self._set_solve_busy(False)
+            self._guidance_note = f"解算未完成：{error}"
+            self._refresh_guidance()
+            self.message.set(f"解算未完成，照片已保留：{error}")
             diagnostic_note = (
                 f"\n诊断数据：{diagnostic_path}" if diagnostic_path is not None else ""
             )
@@ -4831,6 +4944,9 @@ class ChessboardWizardDialog:
 
     def close(self) -> None:
         self._closing = True
+        if self.solve_after_id is not None:
+            self.window.after_cancel(self.solve_after_id)
+            self.solve_after_id = None
         self.stop()
         if self.open_after_id is not None:
             try:

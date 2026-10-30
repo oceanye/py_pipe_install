@@ -1,0 +1,274 @@
+{
+  "source": "outputs\\measurement_workbench\\calibration_diagnostics\\calibration_20261030_120105_953411.npz",
+  "capture_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24
+  ],
+  "training_indices": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    13,
+    15,
+    16,
+    17,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "holdout_indices": [
+    5,
+    9,
+    14,
+    18
+  ],
+  "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+  "seconds": 13.875,
+  "validated": true,
+  "reasons": [],
+  "joint_refinement": {
+    "attempted": true,
+    "selected": true,
+    "algorithm": "scaled-stereo-bundle-v1",
+    "converged": true,
+    "positive_depth": true,
+    "training_pair_count": 19,
+    "baseline_constrained": false,
+    "validation_used_for_selection": false,
+    "evaluations": [
+      46,
+      2
+    ],
+    "termination": [
+      "`ftol` termination condition is satisfied.",
+      "`ftol` termination condition is satisfied."
+    ],
+    "restart_parameter_steps": {
+      "intrinsic_px": 0.0010904528314767958,
+      "distortion": 8.181603490600708e-07,
+      "rotation_rad": 1.1807972859819577e-07,
+      "translation_mm": 2.759292036502714e-05
+    },
+    "restart_step_limits": {
+      "intrinsic_px": 0.01,
+      "distortion": 1e-05,
+      "rotation_rad": 1e-06,
+      "translation_mm": 0.001
+    },
+    "restart_rms_change_px": 3.968547712673853e-12,
+    "training_rms_before_px": 0.9138675277955398,
+    "training_rms_after_px": 0.35960273120971753,
+    "baseline_mm": 59.82261029553183,
+    "problems": []
+  },
+  "before": {
+    "stereo_rms_px": 0.9138675277955398,
+    "baseline_mm": 59.43618136485199,
+    "holdout": {
+      "algorithm_revision": "stereo-holdout-quality-v1",
+      "policy": {
+        "minimum_holdout_pairs": 3,
+        "holdout_fraction": 0.2,
+        "max_vertical_rms_px": 0.5,
+        "max_vertical_p95_px": 1.0,
+        "max_cross_reprojection_rms_px": 1.0,
+        "max_pair_cross_rms_px": 1.5
+      },
+      "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+      "status": "FAILED",
+      "pair_count": 4,
+      "pairs": [
+        {
+          "holdout_index": 1,
+          "passed": false,
+          "cross_reprojection_rms_px": 1.6283024209339008,
+          "vertical_rms_px": 0.4628142980830308,
+          "vertical_p95_px": 0.7388715411802778,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 2,
+          "passed": false,
+          "cross_reprojection_rms_px": 1.7201515233740223,
+          "vertical_rms_px": 0.7169561416742932,
+          "vertical_p95_px": 1.3325752253620067,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 3,
+          "passed": true,
+          "cross_reprojection_rms_px": 1.3214941207502175,
+          "vertical_rms_px": 0.2659813315933247,
+          "vertical_p95_px": 0.36928560667092253,
+          "positive_disparity_fraction": 1.0
+        },
+        {
+          "holdout_index": 4,
+          "passed": false,
+          "cross_reprojection_rms_px": 1.6406758658817744,
+          "vertical_rms_px": 0.19118594977286393,
+          "vertical_p95_px": 0.3161714027253367,
+          "positive_disparity_fraction": 1.0
+        }
+      ],
+      "cross_reprojection_rms_px": 1.5849648296925607,
+      "vertical_rms_px": 0.45703427654315154,
+      "vertical_p95_px": 1.0044895535097271,
+      "scale_verified_independently": false,
+      "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY",
+      "input_pair_indices": [
+        5,
+        9,
+        14,
+        18
+      ]
+    }
+  },
+  "after": {
+    "stereo_rms_px": 0.35960273120971753,
+    "baseline_mm": 59.82261029553183,
+    "holdout": {
+      "algorithm_revision": "stereo-holdout-quality-v1",
+      "policy": {
+        "minimum_holdout_pairs": 3,
+        "holdout_fraction": 0.2,
+        "max_vertical_rms_px": 0.5,
+        "max_vertical_p95_px": 1.0,
+        "max_cross_reprojection_rms_px": 1.0,
+        "max_pair_cross_rms_px": 1.5
+      },
+      "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+      "status": "PASSED",
+      "pair_count": 4,
+      "pairs": [
+        {
+          "holdout_index": 1,
+          "passed": true,
+          "cross_reprojection_rms_px": 0.5906970093067527,
+          "vertical_rms_px": 0.33712457033310217,
+          "vertical_p95_px": 0.49459994992540074,
+          "positive_disparity_fraction": 1.0,
+          "input_pair_index": 5
+        },
+        {
+          "holdout_index": 2,
+          "passed": true,
+          "cross_reprojection_rms_px": 0.8701860061091403,
+          "vertical_rms_px": 0.16744939222235003,
+          "vertical_p95_px": 0.3393648615169411,
+          "positive_disparity_fraction": 1.0,
+          "input_pair_index": 9
+        },
+        {
+          "holdout_index": 3,
+          "passed": true,
+          "cross_reprojection_rms_px": 0.5917374229358967,
+          "vertical_rms_px": 0.07045513159636317,
+          "vertical_p95_px": 0.12783938989386454,
+          "positive_disparity_fraction": 1.0,
+          "input_pair_index": 14
+        },
+        {
+          "holdout_index": 4,
+          "passed": true,
+          "cross_reprojection_rms_px": 0.2979101753958268,
+          "vertical_rms_px": 0.1507916006181285,
+          "vertical_p95_px": 0.2639340245763293,
+          "positive_disparity_fraction": 1.0,
+          "input_pair_index": 18
+        }
+      ],
+      "cross_reprojection_rms_px": 0.6215002599233783,
+      "vertical_rms_px": 0.20578769840733385,
+      "vertical_p95_px": 0.42609940774253086,
+      "scale_verified_independently": false,
+      "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY",
+      "input_pair_indices": [
+        5,
+        9,
+        14,
+        18
+      ]
+    }
+  },
+  "protected_sha256": {
+    "outputs\\measurement_workbench\\calibration_diagnostics\\calibration_20261030_120105_953411.npz": "883f0be117dcbf8c57b0b189eb67657d0a3d67bf10f3951dc2f5acc4db853a95",
+    "outputs\\measurement_workbench\\calibration_current.json": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000001.png": "7c857da4acc26d278cc8ac475bfc8684feae9b6e9abda803d722ad04d0c65bc6",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000001.png": "a947fecd0608f8facb40f1237ec46a55d59b3e9f10fb7fb1c50a8e5ddfd9f458",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000002.png": "61be325e209f70f332560d88404bb8d458877bddf7e4ebe58db7f401b3a28666",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000002.png": "088b67f8dd4abdf770525ea4ad16a6f445127216a6c413efa77fb897d97b7bb6",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000003.png": "e6b46af996a21941a6477ce6ef93790e7dd195562654d8267e03cfe4b2ba8cc3",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000003.png": "6e00da8798af58adb88e77ece15695c594f24101bf082927039a106cbbf1e3aa",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000004.png": "79eb7b66e8142163e48fbb9ade7aed54781a8dd04105086801390ebfb09b8b52",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000004.png": "f8383a89f5e4d42a55419d8445084930c0e470b016ce6a9fe26d29c50ca2acb3",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000005.png": "9a5d1c1854ac87ea8658592f873c0aef524121662dc156968f0c0338f64f2309",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000005.png": "da65f8062b1f8a6372b3e21226770380afe9713a83f761f77194245f83c53653",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000006.png": "b727a17ada2d5239036c55d4aa26e4c39f6d0b9c84a4615651b8ef78cb912c33",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000006.png": "acbfde5e6e0d978d42cdc8469eccad9e5cd0dbc7729f16f6e3ef86a0da106128",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000007.png": "b191bc981f18347915c86509e2f342cd8898bc0cb0bb521b48409e651f9508b2",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000007.png": "cf337ef3d00e411999e345a24a9f635ba7503f2894581db27ae582051c9434d4",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000009.png": "b3ba4de89cebf3052ba52b83a1df32469433c73d85cadf2e32f01d88f3a544af",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000009.png": "37773723da2bf8a32a13e5cacb688960281143d332458a9cd2a0f9c30cf86a32",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000010.png": "a617eae6fd28ca2d833da5319df125e87909f8b7c61d98e0828513c45b5168a2",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000010.png": "3950cfc25bdc5e457f1d2632bab3b205d36eb1e3249b703c15025db75d97222e",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000011.png": "74bf10aaab6c2ff4741550c57332bd4d84ce55bc050cbad2f502c3ddfdde5979",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000011.png": "dca42f3e36937003a6a0a35dd5f56851b318288a954a05e970d69047ed94f1b5",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000012.png": "3c9e7775c499affbd6fb2f2dbb5d58f989befc51837a3977c315b1d543c61a3f",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000012.png": "849f4b5309641e270391c455102b4ddbe09d6b743a995ebe71d65c9ee4d5b4f4",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000013.png": "9bff3612fd1f0b36f2d36b5713b6b7039c2d205dd534f9dd0895a7044d1189a8",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000013.png": "b1c610b06ae82c5b09bbf664ed82499e88aff7749ed67464f3b4f21155864173",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000014.png": "be7e255892ba6cb7c4b43d1076d448d9b090ce984d2a38cd4ee32ed7d94cff4f",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000014.png": "e10cb81273d4a0f5f636c4861373e4a9af5eeab5401d2ff39b244b2597799ab4",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000015.png": "e28653b5bb418eb4fc224460cb62fb9c32769497342bbad5464e716a4e5c81df",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000015.png": "91e61fac3ea479568929cff8e000ba16abf6eda4972f699c2d02b14880bffd32",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000016.png": "2f99459197009875e562d4363538e564c349788cdca84ee73a495f9cc3e9fa74",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000016.png": "7ff888c83217a1f2d5d9fd98d19c91ec163558f4c4d47022158593c21f472c63",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000017.png": "c0ea6d7da4181af6a288387add5724c17ca8c9267372b088e31f0906f29ac3ad",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000017.png": "baa7033ccafe9ee5b9a1ce74202742d86c91c2fd803dcec370a014d99cdf86d9",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000018.png": "b002a5c9d3ba106135c32548abe2cbacc7fb81edfe71ed9a634ee3dcccc91727",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000018.png": "16012a7d0b4e481f7501bc9f8fa3e5f43b3a4aefe9956065c5c603db94426507",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000019.png": "f80f0c31e7b437be3bb8493ba3806fe132521cfe56401e81ea5624f727479312",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000019.png": "fcb73aeba6a0fbc9c6ca07b17e6c35f998e7f12f2f4ff35521d3e362e6f46afd",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000020.png": "8ef2e9fcbf1852d66afa54badd25b013bebbb4e676cf8899159f18075ea0674f",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000020.png": "942a6fde3f35b65654361d1e8eb07dbe8358dcdbeb54e8a2aea2a5f3171cc95d",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000021.png": "4b47765b7c7a400b575d95b8db70869446ef70556d3ca5f4384e1cfdf9ad6276",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000021.png": "4a2de657598ab502fb9be431b372dd17adf42ee186450c5d50a5469340c0a036",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000022.png": "0bb5e6ac76278c29b76d6eec3bac028c4eb403ced2675c6ede9bf66c40964592",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000022.png": "e8ff2569f72ecd4c2a749b0ea1b338e8b8da499c7f7f48ca91a5ef23b00af1d8",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000023.png": "e8dc1ffabe55d00c9ff0b393e8c7e2ff5a3e82f5910f2cc4218d54163b7cb849",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000023.png": "867e4a2d38afa1d498a4f0f38ac3929c2825f79c7cd3b92b2c39d084fb1658b3",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\left\\000024.png": "6e7471dccaa263ec2a820d85c52d7480f84d43ba0ecb35ea048c6e1a840043dc",
+    "outputs\\measurement_workbench\\calibration_captures\\20261030_115048_074220_33d9574f\\right\\000024.png": "4fa409548badc40ee39a0ac3a1c287d727ef82d015211536ab55514bfa1a7109"
+  }
+}

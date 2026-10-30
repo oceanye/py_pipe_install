@@ -137,3 +137,20 @@ def test_preview_grid_does_not_change_detector_or_archived_pixels():
     shown = draw_zone_guidance(raw, zone_capture_guidance([], {}, BoardStabilityGate()))
     assert np.array_equal(raw, original)
     assert not np.array_equal(shown, raw)
+
+
+def test_closed_dialog_does_not_apply_a_late_background_solution():
+    dialog = object.__new__(ChessboardWizardDialog)
+    dialog._closing = True
+    dialog.finish = Mock()
+    dialog._poll_solve({'done': (object(), None)})
+    dialog.finish.assert_not_called()
+
+
+def test_solve_does_not_race_a_pending_camera_open():
+    dialog = object.__new__(ChessboardWizardDialog)
+    dialog._solving = dialog._closing = False
+    dialog._opening = True
+    dialog.message = Mock()
+    dialog.finish()
+    assert '相机正在打开' in dialog.message.set.call_args.args[0]

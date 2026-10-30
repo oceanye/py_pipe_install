@@ -1,0 +1,9 @@
+{
+  "heartbeat": 120,
+  "message": "标定完成并已保存：C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\calibration-optimization-20261030\\gui-test\\calibration_current.json\n照片 23 组：求解 19 组，留出 4 组；求解区域覆盖 9/9。\n联合优化已收敛；双目 RMS 0.360 px，基线 59.82 mm。\n留出验证通过：跨目 RMS 0.622 px，垂直 P95 0.426 px。\n右目画面自动修正：none。\n留出验证通过仍不代表毫米尺度已验收；请用另一件已知尺寸实物复核。\n基础立面模式无需额外 CAD 标记配准；请重新抓拍并评估。\n可恢复照片组已保存：C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\calibration-optimization-20261030\\gui-test\\diagnostics\\calibration_autosave.npz。",
+  "guidance": "区域已采集 9/9 · 共 23 组  |  解算与留出验证通过。",
+  "baseline_mm": 59.82261029553183,
+  "calibration_id": "field-chess-0b4c72a7f9f0",
+  "insufficient_photos_error": "解算未完成，照片已保留：需要至少 13 组：10 组求解、至少 3 组留出验证；建议采集 20～30 个不同姿态",
+  "production_calibration_unchanged": "b52e5f311b9dd750cfd022afe603e62780d933799d78fc32c64baeb124e1e83c"
+}

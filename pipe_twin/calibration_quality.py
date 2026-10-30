@@ -15,6 +15,38 @@ POLICY = {"minimum_holdout_pairs": 3, "holdout_fraction": .2,
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
 
 
+def holdout_failure_summary(check: dict) -> str:
+    def metric(key, limit):
+        value = check.get(key)
+        return f"{value:.3f}/{limit:g} px" if isinstance(value, (int, float)) else "无有效结果"
+
+    failed = [str(item.get("input_pair_index", item["holdout_index"]))
+              for item in check.get("pairs", []) if not item.get("passed")]
+    return ("留出验证未通过：跨目预测 RMS "
+            + metric("cross_reprojection_rms_px", POLICY["max_cross_reprojection_rms_px"])
+            + "，垂直 RMS " + metric("vertical_rms_px", POLICY["max_vertical_rms_px"])
+            + "，垂直 P95 " + metric("vertical_p95_px", POLICY["max_vertical_p95_px"])
+            + (f"；需检查本次输入第 {'、'.join(failed)} 组" if failed else "")
+            + "。这是验证误差，不能仅用增加照片数量判断是否解决。")
+
+
+def calibration_solve_summary(result) -> str:
+    audit = result.audit
+    check = audit.get("holdout", {})
+    count = audit.get("input_pair_count", result.pair_count)
+    zones = audit.get("diversity", {}).get("unique_zones", 0)
+    joint = audit.get("joint_refinement", {})
+    solve = ("联合优化已收敛" if joint.get("selected") else
+             "联合优化未收敛，沿用初始解" if joint.get("attempted") and not joint.get("converged") else
+             "初始解检查完成")
+    return (f"照片 {count} 组：求解 {result.pair_count} 组，留出 {check.get('pair_count', 0)} 组；"
+            f"求解区域覆盖 {zones}/9。\n{solve}；双目 RMS {result.stereo_rms_px:.3f} px，"
+            f"基线 {result.calibration['baseline_mm']:.2f} mm。\n"
+            + (f"留出验证通过：跨目 RMS {check['cross_reprojection_rms_px']:.3f} px，"
+               f"垂直 P95 {check['vertical_p95_px']:.3f} px。"
+               if check.get("status") == "PASSED" else holdout_failure_summary(check)))
+
+
 def holdout_quality(pairs, *, recipe: dict, pattern, square_mm: float, image_size) -> dict:
     """Fit only each board's left pose; predict its unseen right image.
 

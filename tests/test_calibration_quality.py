@@ -82,6 +82,17 @@ def test_checked_solver_keeps_validation_out_of_training():
     assert "毫米尺度待" in calibration_quality_text(result.calibration)
 
 
+def test_failed_validation_message_reports_measured_errors_and_original_indices():
+    from pipe_twin.calibration_quality import holdout_failure_summary
+    report = {"status": "FAILED", "cross_reprojection_rms_px": 1.585,
+              "vertical_rms_px": .457, "vertical_p95_px": 1.004,
+              "pairs": [{"holdout_index": 1, "input_pair_index": 5, "passed": False}]}
+    message = holdout_failure_summary(report)
+    assert "1.585/1 px" in message and "1.004/1 px" in message
+    assert "第 5 组" in message
+    assert "数量不足" not in message
+
+
 def test_legacy_calibration_does_not_claim_precision():
     assert "建议重新标定" in calibration_quality_text({"validated": True})
 
