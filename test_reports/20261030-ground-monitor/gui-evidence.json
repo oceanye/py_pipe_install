@@ -1,0 +1,70 @@
+{
+  "replay_scope": "OFFLINE_UI_REPLAY_TIME_NOT_CURRENT_LIVE_ANGLE",
+  "screens": {
+    "1024x720": {
+      "clipped_controls": [],
+      "left_angle": "14.83°",
+      "detail": "尚未进入辅助容差，请按方向缓慢调整 · 右镜头 15.60° · 稳定 0/3",
+      "sample_caption": "采样 18:32:50 · 帧 1 · 1.0 秒前",
+      "image_heights": {
+        "preview": 358,
+        "sample": 358
+      }
+    },
+    "1280x860": {
+      "clipped_controls": [],
+      "left_angle": "14.83°",
+      "detail": "尚未进入辅助容差，请按方向缓慢调整 · 右镜头 15.60° · 稳定 0/3",
+      "sample_caption": "采样 18:32:50 · 帧 1 · 1.0 秒前",
+      "image_heights": {
+        "preview": 498,
+        "sample": 498
+      }
+    }
+  },
+  "live": {
+    "sequence": 9,
+    "captured_at": "2026-10-30T15:58:32.795000+00:00",
+    "status": "NEAR_BLACK_FRAME",
+    "valid": false,
+    "pose": null,
+    "sources": {
+      "left": {
+        "pixel_sha256": "d747eb0ba1697879a8b092c7eb97b3da3e3bfaa525e2f6511d55f70bf3fe78cf",
+        "captured_at": "2026-10-30T15:58:32.795000+00:00",
+        "shape": [
+          1080,
+          1920,
+          3
+        ]
+      },
+      "right": {
+        "pixel_sha256": "372316d3e89f225e45567dbfbfc350e8d0fc7e6382ba9ec8e28ce4338ce69f21",
+        "captured_at": "2026-10-30T15:58:32.795000+00:00",
+        "shape": [
+          1080,
+          1920,
+          3
+        ]
+      }
+    },
+    "angle_text": "—",
+    "detail": "当前画面接近全黑，无法测角；请检查照明/曝光",
+    "preview_sequence": 11,
+    "sample_is_bound": true,
+    "stop_released_camera": true,
+    "restart_received_new_preview": true
+  },
+  "historical_now_expired": true,
+  "source_unchanged": true,
+  "protected_source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\measurement_workbench\\workbench_profile.json": "12bc0e6359bcae983a47b9b5da31b93ffa2a068214955cf813be779962f835d7",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660"
+  },
+  "callback_errors": []
+}

@@ -845,6 +845,7 @@ class ElevationCaptureDialog:
         self.closed = False
         self.calibration_dialog = None
         self.camera_dialog = None
+        self.ground_monitor = None
         self.model_viewer = None
         self.quality_dialog = None
         self.messages: queue.Queue = queue.Queue()
@@ -985,6 +986,7 @@ class ElevationCaptureDialog:
         self.ground_button = ttk.Button(ground_bar, text='左图框选地面', command=self.toggle_ground_selection)
         self.ground_button.pack(side='left', padx=3)
         ttk.Button(ground_bar, text='倾角检查', command=self.inspect_ground).pack(side='left', padx=3)
+        ttk.Button(ground_bar, text='实时调姿（目标 0°）', command=self.open_ground_monitor).pack(side='left', padx=3)
         ttk.Button(ground_bar, text='查看倾角与修正结果', command=lambda: self.show_analysis_details('ground')).pack(side='left', padx=3)
         ttk.Label(ground_page, text='紫框限定搜索区域；绿色为通过检查的支持，橙色为待验证的候选支持。', wraplength=780).pack(anchor='w', pady=8)
         self.ground_candidate_trial = tk.BooleanVar(value=False)
@@ -1205,6 +1207,8 @@ class ElevationCaptureDialog:
         if key in {"left", "right", "calibration"} and self.quality_dialog is not None and not self.quality_dialog.closed:
             self.quality_dialog.clear_inputs()
         if key == "calibration":
+            if self.ground_monitor is not None and not self.ground_monitor.closed:
+                self.ground_monitor.stop()
             self.calibration_override = None
             self.registration_settings.pop('aggregation_band', None)
             self.registration_settings.pop('ground_region', None)
@@ -2044,6 +2048,8 @@ class ElevationCaptureDialog:
 
     def open_calibration(self) -> None:
         if not self.busy:
+            if not self._release_ground_monitor():
+                return
             if self.camera_dialog is not None and self.camera_dialog.window.winfo_exists():
                 self.camera_dialog.close()
             from .calibration_wizard import ChessboardWizardDialog
@@ -2051,6 +2057,31 @@ class ElevationCaptureDialog:
                 self.calibration_dialog.window.lift()
             else:
                 self.calibration_dialog = ChessboardWizardDialog(self.app, owner=self)
+
+    def open_ground_monitor(self) -> None:
+        if self.busy:
+            return
+        if self.ground_monitor is not None:
+            if not self.ground_monitor.closed:
+                self.ground_monitor.window.lift()
+                return
+            if self.ground_monitor.camera_running:
+                self.message.set('调姿相机仍在释放，请稍候再打开。')
+                return
+        for dialog in (self.camera_dialog, self.calibration_dialog):
+            if dialog is not None and dialog.window.winfo_exists():
+                dialog.close()
+        from .ground_monitor_gui import GroundMonitorDialog
+        self.hide_settings()
+        self.ground_monitor = GroundMonitorDialog(self)
+
+    def _release_ground_monitor(self) -> bool:
+        if self.ground_monitor is not None:
+            self.ground_monitor.close()
+            if self.ground_monitor.camera_running:
+                self.message.set('正在释放调姿相机；释放完成后请再点击抓拍或标定。')
+                return False
+        return True
 
     def _persist_profile(self, sections: tuple, *, camera: dict | None = None, **_kwargs: Any) -> None:
         # Reuse device selection; the elevation scene itself is stored in its
@@ -2062,6 +2093,8 @@ class ElevationCaptureDialog:
 
     def capture_camera(self, *, analyze_after_capture: bool = False) -> None:
         if self.busy:
+            return
+        if not self._release_ground_monitor():
             return
         try:
             from .calibration_wizard import rectifier_for_calibration
@@ -2461,7 +2494,7 @@ class ElevationCaptureDialog:
 
     def close(self) -> None:
         self.closed = True
-        for dialog in (self.camera_dialog, self.calibration_dialog, self.model_viewer, self.quality_dialog):
+        for dialog in (self.ground_monitor, self.camera_dialog, self.calibration_dialog, self.model_viewer, self.quality_dialog):
             if dialog is not None and dialog.window.winfo_exists():
                 dialog.close()
         if getattr(self, "poll_id", None):

@@ -1,0 +1,641 @@
+{
+  "scope": "ARCHIVED_GEOMETRY_REPLAY_AND_NEW_DARK_CAPTURE_REJECTION",
+  "historical": {
+    "sequence": 1,
+    "captured_at": "2026-10-30T10:32:50.882000+00:00",
+    "generated_at": "2026-10-30T15:44:24.173007+00:00",
+    "config_signature": "d48c6cf75f05a72f904336890834b5aaf9d355132b5c4e02339067b686cfa5db",
+    "sources": {
+      "left": {
+        "pixel_sha256": "c8af5cd502dfd85427b2a841ecf8d6ff926a0dfde7c1fa86a36ed482b6ab4edb",
+        "captured_at": "2026-10-30T10:32:50.882000+00:00",
+        "shape": [
+          1080,
+          1920,
+          3
+        ]
+      },
+      "right": {
+        "pixel_sha256": "490110e7df50793af342aa102b2c1a16afef1914a09720dba7b5ba032f472639",
+        "captured_at": "2026-10-30T10:32:50.882000+00:00",
+        "shape": [
+          1080,
+          1920,
+          3
+        ]
+      }
+    },
+    "sync_delta_ms": 0.0,
+    "status": "CONSISTENT_GROUND_PLANE",
+    "pose": {
+      "axis_target_camera": [
+        0.09012836567180349,
+        0.23958002753999974,
+        0.9666841718499702
+      ],
+      "off_normal_deg": 14.831193796905412,
+      "tilt_right_deg": 5.326547952920769,
+      "tilt_down_deg": 13.919539179157692,
+      "normal_camera": [
+        -0.05863136527049905,
+        -0.2443085041489207,
+        -0.9679234049278043
+      ],
+      "normal_coordinate_frame": "RECTIFIED_LEFT_CAMERA",
+      "coordinate_frame": "RAW_LEFT_OPTICAL",
+      "physical_axes_known": true,
+      "right_off_normal_deg": 15.599790082755046,
+      "right_axis_target_camera": [
+        0.0956564403885696,
+        0.2513281071099544,
+        0.9631635520454017
+      ],
+      "rectified_off_normal_deg": 14.551224449045659,
+      "rectified_tilt_right_deg": 3.4664210358400562,
+      "rectified_tilt_down_deg": 14.165849291082782,
+      "yaw_observable": false,
+      "accepted_measurement": false,
+      "direction_definition": "Positive right/down means aim toward camera image right/down; yaw is unobservable"
+    },
+    "valid": true,
+    "quality": {
+      "left": {
+        "passed": true,
+        "reason_codes": [],
+        "focus_laplacian_variance": 74.7662004950796,
+        "luminance_p05": 56.0,
+        "luminance_p50": 129.0,
+        "luminance_p95": 210.0,
+        "dark_pixel_fraction": 0.002130111882716049,
+        "saturated_pixel_fraction": 0.02410108024691358,
+        "high_frequency_noise_estimate": 1.2156316041946411,
+        "textured_fraction": 0.868527199074074,
+        "warning_codes": []
+      },
+      "right": {
+        "passed": true,
+        "reason_codes": [],
+        "focus_laplacian_variance": 90.46064969731084,
+        "luminance_p05": 55.0,
+        "luminance_p50": 129.0,
+        "luminance_p95": 215.0,
+        "dark_pixel_fraction": 0.004056712962962963,
+        "saturated_pixel_fraction": 0.02529465663580247,
+        "high_frequency_noise_estimate": 1.2446650266647339,
+        "textured_fraction": 0.8448505015432098,
+        "warning_codes": []
+      }
+    },
+    "monitor_quality": {
+      "policy": {
+        "maximum_luminance_p95": 8.0,
+        "minimum_dark_fraction": 0.995,
+        "dark_pixel_maximum": 16,
+        "scope": "WHOLE_FRAME_AND_GROUND_SEARCH_REGION"
+      },
+      "left": {
+        "near_black": false,
+        "ground_search_rect_px": [
+          39,
+          41,
+          769,
+          263
+        ],
+        "ground_search_luminance_p95": 167.0,
+        "ground_search_dark_fraction": 0.0
+      },
+      "right": {
+        "near_black": false,
+        "ground_search_rect_px": [
+          0,
+          41,
+          808,
+          263
+        ],
+        "ground_search_luminance_p95": 187.0,
+        "ground_search_dark_fraction": 0.0
+      }
+    },
+    "ground": {
+      "status": "CONSISTENT_GROUND_PLANE",
+      "left_right_normal_angle_deg": 0.17979096638471698,
+      "left_right_plane_offset_difference_mm": 1.4498797660658056,
+      "calibration_validated": true
+    },
+    "support": {
+      "pixel_count": 1511,
+      "valid_pixel_count": 1909,
+      "inferred_pixels": 0
+    }
+  },
+  "historical_analysis_seconds": 4.062000000005355,
+  "historical_state_at_capture_plus_one_second": {
+    "status": "ADJUST_TILT",
+    "valid": true,
+    "green": false,
+    "pose": {
+      "axis_target_camera": [
+        0.09012836567180349,
+        0.23958002753999974,
+        0.9666841718499702
+      ],
+      "off_normal_deg": 14.831193796905412,
+      "tilt_right_deg": 5.326547952920769,
+      "tilt_down_deg": 13.919539179157692,
+      "normal_camera": [
+        -0.05863136527049905,
+        -0.2443085041489207,
+        -0.9679234049278043
+      ],
+      "normal_coordinate_frame": "RECTIFIED_LEFT_CAMERA",
+      "coordinate_frame": "RAW_LEFT_OPTICAL",
+      "physical_axes_known": true,
+      "right_off_normal_deg": 15.599790082755046,
+      "right_axis_target_camera": [
+        0.0956564403885696,
+        0.2513281071099544,
+        0.9631635520454017
+      ],
+      "rectified_off_normal_deg": 14.551224449045659,
+      "rectified_tilt_right_deg": 3.4664210358400562,
+      "rectified_tilt_down_deg": 14.165849291082782,
+      "yaw_observable": false,
+      "accepted_measurement": false,
+      "direction_definition": "Positive right/down means aim toward camera image right/down; yaw is unobservable"
+    },
+    "stable_count": 0,
+    "required_samples": 3,
+    "tolerance_deg": 2.0,
+    "age_s": 1.0,
+    "max_age_s": 8.0,
+    "stability_window_s": 24.0,
+    "accepted_measurement": false,
+    "sequence": 1,
+    "captured_at": "2026-10-30T10:32:50.882000+00:00"
+  },
+  "historical_state_at_present_time": {
+    "status": "EXPIRED",
+    "valid": false,
+    "green": false,
+    "pose": null,
+    "stable_count": 0,
+    "required_samples": 3,
+    "tolerance_deg": 2.0,
+    "age_s": 18693.295993,
+    "max_age_s": 8.0,
+    "stability_window_s": 24.0,
+    "accepted_measurement": false,
+    "sequence": 1,
+    "captured_at": "2026-10-30T10:32:50.882000+00:00"
+  },
+  "live_capture_metadata": "outputs\\ground-monitor-20261030\\live-232451\\capture.json",
+  "dark_pairs": [
+    {
+      "sequence": 1,
+      "captured_at": "2026-10-30T15:25:06.257000+00:00",
+      "generated_at": "2026-10-30T15:44:24.519424+00:00",
+      "config_signature": "d48c6cf75f05a72f904336890834b5aaf9d355132b5c4e02339067b686cfa5db",
+      "sources": {
+        "left": {
+          "pixel_sha256": "d4e50ca8d318ebaeb6f65e03101a5776a3f034cc70cd31fdb6f0fb551a024ffe",
+          "captured_at": "2026-10-30T15:25:06.257000+00:00",
+          "shape": [
+            1080,
+            1920,
+            3
+          ]
+        },
+        "right": {
+          "pixel_sha256": "e76234c14134cb3769318a1f47199bcfb6d686afc2247a009da9ba4f63e9c8b4",
+          "captured_at": "2026-10-30T15:25:06.257000+00:00",
+          "shape": [
+            1080,
+            1920,
+            3
+          ]
+        }
+      },
+      "sync_delta_ms": 0.0,
+      "status": "NEAR_BLACK_FRAME",
+      "pose": null,
+      "valid": false,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 1.0191169916291039,
+          "luminance_p05": 0.0,
+          "luminance_p50": 1.0,
+          "luminance_p95": 1.0,
+          "dark_pixel_fraction": 1.0,
+          "saturated_pixel_fraction": 0.0,
+          "high_frequency_noise_estimate": 0.10491469502449036,
+          "textured_fraction": 0.0,
+          "warning_codes": [
+            "LOW_LIGHT",
+            "DARK_REGION_DOMINANT",
+            "LOW_TEXTURE"
+          ]
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 1.0252700601646079,
+          "luminance_p05": 0.0,
+          "luminance_p50": 1.0,
+          "luminance_p95": 1.0,
+          "dark_pixel_fraction": 0.9999908371913581,
+          "saturated_pixel_fraction": 0.0,
+          "high_frequency_noise_estimate": 0.1081417053937912,
+          "textured_fraction": 0.00019241898148148148,
+          "warning_codes": [
+            "LOW_LIGHT",
+            "DARK_REGION_DOMINANT",
+            "LOW_TEXTURE"
+          ]
+        }
+      },
+      "monitor_quality": {
+        "policy": {
+          "maximum_luminance_p95": 8.0,
+          "minimum_dark_fraction": 0.995,
+          "dark_pixel_maximum": 16,
+          "scope": "WHOLE_FRAME_AND_GROUND_SEARCH_REGION"
+        },
+        "left": {
+          "near_black": true,
+          "ground_search_rect_px": [
+            39,
+            41,
+            769,
+            263
+          ],
+          "ground_search_luminance_p95": 1.0,
+          "ground_search_dark_fraction": 1.0
+        },
+        "right": {
+          "near_black": true,
+          "ground_search_rect_px": [
+            0,
+            41,
+            808,
+            263
+          ],
+          "ground_search_luminance_p95": 1.0,
+          "ground_search_dark_fraction": 1.0
+        }
+      },
+      "ground": {
+        "status": "NEAR_BLACK_FRAME",
+        "left_right_normal_angle_deg": null,
+        "left_right_plane_offset_difference_mm": null,
+        "calibration_validated": null
+      },
+      "support": {
+        "pixel_count": null,
+        "valid_pixel_count": null,
+        "inferred_pixels": null
+      },
+      "seconds": 0.2969999999986612
+    },
+    {
+      "sequence": 2,
+      "captured_at": "2026-10-30T15:25:07.205000+00:00",
+      "generated_at": "2026-10-30T15:44:24.875998+00:00",
+      "config_signature": "d48c6cf75f05a72f904336890834b5aaf9d355132b5c4e02339067b686cfa5db",
+      "sources": {
+        "left": {
+          "pixel_sha256": "8f2971ba535bd4df14d84e2f888da7e7d7e8caa445148cf108b18fb12a7b16ad",
+          "captured_at": "2026-10-30T15:25:07.205000+00:00",
+          "shape": [
+            1080,
+            1920,
+            3
+          ]
+        },
+        "right": {
+          "pixel_sha256": "1b85978ed530f7062ed1eaf2367477a3f6ee1a7430fb9a97f6ce304b36c68955",
+          "captured_at": "2026-10-30T15:25:07.205000+00:00",
+          "shape": [
+            1080,
+            1920,
+            3
+          ]
+        }
+      },
+      "sync_delta_ms": 0.0,
+      "status": "NEAR_BLACK_FRAME",
+      "pose": null,
+      "valid": false,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 1.0285566164935083,
+          "luminance_p05": 0.0,
+          "luminance_p50": 1.0,
+          "luminance_p95": 1.0,
+          "dark_pixel_fraction": 0.9999995177469135,
+          "saturated_pixel_fraction": 0.0,
+          "high_frequency_noise_estimate": 0.1081417053937912,
+          "textured_fraction": 3.520447530864198e-05,
+          "warning_codes": [
+            "LOW_LIGHT",
+            "DARK_REGION_DOMINANT",
+            "LOW_TEXTURE"
+          ]
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 1.030868537585144,
+          "luminance_p05": 0.0,
+          "luminance_p50": 1.0,
+          "luminance_p95": 1.0,
+          "dark_pixel_fraction": 0.9999807098765432,
+          "saturated_pixel_fraction": 0.0,
+          "high_frequency_noise_estimate": 0.1081417053937912,
+          "textured_fraction": 0.00022328317901234567,
+          "warning_codes": [
+            "LOW_LIGHT",
+            "DARK_REGION_DOMINANT",
+            "LOW_TEXTURE"
+          ]
+        }
+      },
+      "monitor_quality": {
+        "policy": {
+          "maximum_luminance_p95": 8.0,
+          "minimum_dark_fraction": 0.995,
+          "dark_pixel_maximum": 16,
+          "scope": "WHOLE_FRAME_AND_GROUND_SEARCH_REGION"
+        },
+        "left": {
+          "near_black": true,
+          "ground_search_rect_px": [
+            39,
+            41,
+            769,
+            263
+          ],
+          "ground_search_luminance_p95": 1.0,
+          "ground_search_dark_fraction": 1.0
+        },
+        "right": {
+          "near_black": true,
+          "ground_search_rect_px": [
+            0,
+            41,
+            808,
+            263
+          ],
+          "ground_search_luminance_p95": 1.0,
+          "ground_search_dark_fraction": 1.0
+        }
+      },
+      "ground": {
+        "status": "NEAR_BLACK_FRAME",
+        "left_right_normal_angle_deg": null,
+        "left_right_plane_offset_difference_mm": null,
+        "calibration_validated": null
+      },
+      "support": {
+        "pixel_count": null,
+        "valid_pixel_count": null,
+        "inferred_pixels": null
+      },
+      "seconds": 0.31300000000192085
+    },
+    {
+      "sequence": 3,
+      "captured_at": "2026-10-30T15:25:08.064000+00:00",
+      "generated_at": "2026-10-30T15:44:25.214882+00:00",
+      "config_signature": "d48c6cf75f05a72f904336890834b5aaf9d355132b5c4e02339067b686cfa5db",
+      "sources": {
+        "left": {
+          "pixel_sha256": "246d299f53a3949811a593b3b42059c5d10542a51a9ac57659642ef7f4ae6868",
+          "captured_at": "2026-10-30T15:25:08.064000+00:00",
+          "shape": [
+            1080,
+            1920,
+            3
+          ]
+        },
+        "right": {
+          "pixel_sha256": "b7ee8b5666ac46c7bf0d93306ff72f3281503c14fbe5d7bdbbf6b47b46323020",
+          "captured_at": "2026-10-30T15:25:08.064000+00:00",
+          "shape": [
+            1080,
+            1920,
+            3
+          ]
+        }
+      },
+      "sync_delta_ms": 0.0,
+      "status": "NEAR_BLACK_FRAME",
+      "pose": null,
+      "valid": false,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 0.750296103380177,
+          "luminance_p05": 0.0,
+          "luminance_p50": 0.0,
+          "luminance_p95": 1.0,
+          "dark_pixel_fraction": 1.0,
+          "saturated_pixel_fraction": 0.0,
+          "high_frequency_noise_estimate": 0.019727816805243492,
+          "textured_fraction": 3.472222222222222e-05,
+          "warning_codes": [
+            "LOW_LIGHT",
+            "DARK_REGION_DOMINANT",
+            "LOW_TEXTURE"
+          ]
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 0.999160397357705,
+          "luminance_p05": 0.0,
+          "luminance_p50": 0.0,
+          "luminance_p95": 1.0,
+          "dark_pixel_fraction": 0.999975887345679,
+          "saturated_pixel_fraction": 0.0,
+          "high_frequency_noise_estimate": 0.08078504353761673,
+          "textured_fraction": 0.0002777777777777778,
+          "warning_codes": [
+            "LOW_LIGHT",
+            "DARK_REGION_DOMINANT",
+            "LOW_TEXTURE"
+          ]
+        }
+      },
+      "monitor_quality": {
+        "policy": {
+          "maximum_luminance_p95": 8.0,
+          "minimum_dark_fraction": 0.995,
+          "dark_pixel_maximum": 16,
+          "scope": "WHOLE_FRAME_AND_GROUND_SEARCH_REGION"
+        },
+        "left": {
+          "near_black": true,
+          "ground_search_rect_px": [
+            39,
+            41,
+            769,
+            263
+          ],
+          "ground_search_luminance_p95": 1.0,
+          "ground_search_dark_fraction": 1.0
+        },
+        "right": {
+          "near_black": true,
+          "ground_search_rect_px": [
+            0,
+            41,
+            808,
+            263
+          ],
+          "ground_search_luminance_p95": 1.0,
+          "ground_search_dark_fraction": 1.0
+        }
+      },
+      "ground": {
+        "status": "NEAR_BLACK_FRAME",
+        "left_right_normal_angle_deg": null,
+        "left_right_plane_offset_difference_mm": null,
+        "calibration_validated": null
+      },
+      "support": {
+        "pixel_count": null,
+        "valid_pixel_count": null,
+        "inferred_pixels": null
+      },
+      "seconds": 0.2969999999986612
+    },
+    {
+      "sequence": 4,
+      "captured_at": "2026-10-30T15:25:08.919000+00:00",
+      "generated_at": "2026-10-30T15:44:25.552925+00:00",
+      "config_signature": "d48c6cf75f05a72f904336890834b5aaf9d355132b5c4e02339067b686cfa5db",
+      "sources": {
+        "left": {
+          "pixel_sha256": "d991396d32fa7520c8c2e48d9aced13c3572429b1eb05309ca0e0fc3c2f01c83",
+          "captured_at": "2026-10-30T15:25:08.919000+00:00",
+          "shape": [
+            1080,
+            1920,
+            3
+          ]
+        },
+        "right": {
+          "pixel_sha256": "36730e7474ac62454133cb5a0de0da0338bc952985fb20c2f3b73c010a7f6cb1",
+          "captured_at": "2026-10-30T15:25:08.919000+00:00",
+          "shape": [
+            1080,
+            1920,
+            3
+          ]
+        }
+      },
+      "sync_delta_ms": 0.0,
+      "status": "NEAR_BLACK_FRAME",
+      "pose": null,
+      "valid": false,
+      "quality": {
+        "left": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 1.0228423994820461,
+          "luminance_p05": 0.0,
+          "luminance_p50": 1.0,
+          "luminance_p95": 1.0,
+          "dark_pixel_fraction": 1.0,
+          "saturated_pixel_fraction": 0.0,
+          "high_frequency_noise_estimate": 0.1081417053937912,
+          "textured_fraction": 9.645061728395062e-07,
+          "warning_codes": [
+            "LOW_LIGHT",
+            "DARK_REGION_DOMINANT",
+            "LOW_TEXTURE"
+          ]
+        },
+        "right": {
+          "passed": true,
+          "reason_codes": [],
+          "focus_laplacian_variance": 0.9821141972927148,
+          "luminance_p05": 0.0,
+          "luminance_p50": 0.0,
+          "luminance_p95": 1.0,
+          "dark_pixel_fraction": 0.9999754050925926,
+          "saturated_pixel_fraction": 0.0,
+          "high_frequency_noise_estimate": 0.07638318091630936,
+          "textured_fraction": 0.00024402006172839506,
+          "warning_codes": [
+            "LOW_LIGHT",
+            "DARK_REGION_DOMINANT",
+            "LOW_TEXTURE"
+          ]
+        }
+      },
+      "monitor_quality": {
+        "policy": {
+          "maximum_luminance_p95": 8.0,
+          "minimum_dark_fraction": 0.995,
+          "dark_pixel_maximum": 16,
+          "scope": "WHOLE_FRAME_AND_GROUND_SEARCH_REGION"
+        },
+        "left": {
+          "near_black": true,
+          "ground_search_rect_px": [
+            39,
+            41,
+            769,
+            263
+          ],
+          "ground_search_luminance_p95": 1.0,
+          "ground_search_dark_fraction": 1.0
+        },
+        "right": {
+          "near_black": true,
+          "ground_search_rect_px": [
+            0,
+            41,
+            808,
+            263
+          ],
+          "ground_search_luminance_p95": 1.0,
+          "ground_search_dark_fraction": 1.0
+        }
+      },
+      "ground": {
+        "status": "NEAR_BLACK_FRAME",
+        "left_right_normal_angle_deg": null,
+        "left_right_plane_offset_difference_mm": null,
+        "calibration_validated": null
+      },
+      "support": {
+        "pixel_count": null,
+        "valid_pixel_count": null,
+        "inferred_pixels": null
+      },
+      "seconds": 0.2960000000020955
+    }
+  ],
+  "source_unchanged": true,
+  "protected_source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\measurement_workbench\\workbench_profile.json": "12bc0e6359bcae983a47b9b5da31b93ffa2a068214955cf813be779962f835d7",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660"
+  },
+  "field_alignment_success_demonstrated": false,
+  "limitations": [
+    "New live images are nearly black; cause not established.",
+    "Historical replay is not a current live angle or independent accuracy validation."
+  ]
+}

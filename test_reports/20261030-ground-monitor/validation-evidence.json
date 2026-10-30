@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-10-30T15:59:45.485875+00:00",
+  "tests": {
+    "result": "208 passed, 11 subtests passed",
+    "seconds": 36.85,
+    "command": ".venv/Scripts/python.exe -m pytest tests/test_ground_monitor.py tests/test_ground_monitor_gui.py tests/test_ground_check.py tests/test_ground_inspection.py tests/test_ground_correction.py tests/test_ground_source.py tests/test_ground_visualization.py tests/test_elevation_gui.py tests/test_capture_gui.py tests/test_stereo_camera.py -q",
+    "log_sha256": "fb57b65c1ef6ed647aaa981be3b4b7398ac9b7ea8ac1ff2ba025a3a0c9ed23aa"
+  },
+  "protected_source_count": 27,
+  "protected_source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\measurement_workbench\\workbench_profile.json": "12bc0e6359bcae983a47b9b5da31b93ffa2a068214955cf813be779962f835d7",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\000_left.png": "d3a44d13e8413492854cc5c65baf536a3240a487ff3196ceb1bdc33fa724a55d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\000_right.png": "48a6f2047e247758981242595a91b19d9b06bea4550665fbb0ae34255fbee993",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\001_left.png": "b995ad6b04b641088e713a988f5b5a5e79777ce881e268ac759f49a1fb15fa07",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\001_right.png": "adcf66bae243832535fa20d2a559febbeea2adbcffa195f203dfb80589b1462b",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\002_left.png": "836ea8cf012c4218b42f513bfef5a9941ed87ae72be6fc075180385f9dc148f3",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\002_right.png": "89c961158ad35a962b20db2292512602ae65cbfcbf7726e958e70f9c182c21ee",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\003_left.png": "a6fd56bd4645d633c2682222132340db7bac9e71a434a09ae511e345218f345e",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\003_right.png": "a70bf93b99b702f85a872394f9e906f9c4b7602203f289112b672f47bccb4827",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\004_left.png": "20e08cddc9e2d6ef3714635f0b0072165ce65c46558b3c047603e0170ca44a8d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\004_right.png": "4e0adaf7040ae57ebefa3cd07688c2cfac5937ff21b035de48ca713a17523e46",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\005_left.png": "637e1385f38d934ecbf64f77c9479bde889490c800e1061cd0dde158d3e08d36",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\005_right.png": "5d28a8cc3bf7eec29739ef03c33fd15ee08e13ebcdbdf319a76bfa0eab18e89c",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\006_left.png": "80fc7793fee30748d102d368c8424e8debdfb12a0549297213e54f78da294271",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\006_right.png": "ae5bc57a5fe9640ad42c30cc5862d8da6e93ffbc70a285b75aa09e59850d2190",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\007_left.png": "afc656fc03de6d942e95c67d3a12fe572705a5577b7c2afc659faf3b2e1e32a3",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\007_right.png": "e201302b00c42200581933a71d77b49ac424e44c0df49c647311c249d7e6a2bd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\008_left.png": "2e49a4d9717cdcd51c5fa00afbb6e14f8787345dc725c3fa57987a0684630463",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\008_right.png": "9a07ca2af135a955af9e80a82a8f79ca91916d6a3d5db74dc7b5fe9fd0b4c97e",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\009_left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\009_right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660"
+  },
+  "source_unchanged": true,
+  "verified_code_sha256": {
+    "pipe_twin/ground_monitor.py": "3d52e4ad8a4c2bf4e0c840d8c49cf5d8710338ccc5b3e19de4c451200de2c8e3",
+    "pipe_twin/ground_monitor_gui.py": "5e05f600dc42ba2a3889495533e2ee6abee851312d28dde63e58c0014082626b",
+    "pipe_twin/elevation_gui.py": "e4595d6bb63b445bb2f24525a5de77dd14a14f5b5560e853e163281710fc1835",
+    "tests/test_ground_monitor.py": "9ce254777e80a7a2e16cceccfa44f5247fb03f6c9726289445e8eea5d38d6a1f",
+    "tests/test_ground_monitor_gui.py": "4c0169e4ee8926319a6bce6ba2df3843ce6e162f5b17e272b79d564ccc796054"
+  },
+  "evidence_sha256": {
+    "evidence.json": "57b8ad2a55a65ec78753fdc28ea19692b58399eb8ed464b5481f08218b34fa48",
+    "gui-evidence.json": "fe125ab6dbe84a9aefbf2a54f11ad8ce5439b0a86d134069c383ca8258bff4bd"
+  },
+  "live_alignment_success_demonstrated": false,
+  "additional_baseline_source": "test_reports/20261030-ground-color-boundaries/evidence.json"
+}
