@@ -1,0 +1,1595 @@
+{
+  "source_scene": "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json",
+  "derived_scene": "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\manifest.json",
+  "source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\000_left.png": "d3a44d13e8413492854cc5c65baf536a3240a487ff3196ceb1bdc33fa724a55d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\000_right.png": "48a6f2047e247758981242595a91b19d9b06bea4550665fbb0ae34255fbee993",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\001_left.png": "b995ad6b04b641088e713a988f5b5a5e79777ce881e268ac759f49a1fb15fa07",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\001_right.png": "adcf66bae243832535fa20d2a559febbeea2adbcffa195f203dfb80589b1462b",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\002_left.png": "836ea8cf012c4218b42f513bfef5a9941ed87ae72be6fc075180385f9dc148f3",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\002_right.png": "89c961158ad35a962b20db2292512602ae65cbfcbf7726e958e70f9c182c21ee",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\003_left.png": "a6fd56bd4645d633c2682222132340db7bac9e71a434a09ae511e345218f345e",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\003_right.png": "a70bf93b99b702f85a872394f9e906f9c4b7602203f289112b672f47bccb4827",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\004_left.png": "20e08cddc9e2d6ef3714635f0b0072165ce65c46558b3c047603e0170ca44a8d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\004_right.png": "4e0adaf7040ae57ebefa3cd07688c2cfac5937ff21b035de48ca713a17523e46",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\005_left.png": "637e1385f38d934ecbf64f77c9479bde889490c800e1061cd0dde158d3e08d36",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\005_right.png": "5d28a8cc3bf7eec29739ef03c33fd15ee08e13ebcdbdf319a76bfa0eab18e89c",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\006_left.png": "80fc7793fee30748d102d368c8424e8debdfb12a0549297213e54f78da294271",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\006_right.png": "ae5bc57a5fe9640ad42c30cc5862d8da6e93ffbc70a285b75aa09e59850d2190",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\007_left.png": "afc656fc03de6d942e95c67d3a12fe572705a5577b7c2afc659faf3b2e1e32a3",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\007_right.png": "e201302b00c42200581933a71d77b49ac424e44c0df49c647311c249d7e6a2bd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\008_left.png": "2e49a4d9717cdcd51c5fa00afbb6e14f8787345dc725c3fa57987a0684630463",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\008_right.png": "9a07ca2af135a955af9e80a82a8f79ca91916d6a3d5db74dc7b5fe9fd0b4c97e",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\009_left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\burst\\009_right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\measurement_workbench\\workbench_profile.json": "12bc0e6359bcae983a47b9b5da31b93ffa2a068214955cf813be779962f835d7"
+  },
+  "sources_unchanged": true,
+  "new_capture": false,
+  "seconds": 78.09399999999732,
+  "purchase_hints": {
+    "appearance_diameter_hints": {
+      "BLUE": 50.0,
+      "RED": 40.0,
+      "WHITE": 25.0
+    },
+    "hint_source": "USER_STATED_PURCHASE_DIAMETERS"
+  },
+  "installation_assist": {
+    "revision": "relative-layout-installation-assist-v1",
+    "policy": {
+      "maximum_assignments": 50000,
+      "maximum_displayed_hypotheses": 5,
+      "near_best_difference": 0.12,
+      "maximum_relative_difference": 0.8,
+      "minimum_layout_observations": 3,
+      "view_sample_step_deg": 5,
+      "hint_diameter_tolerance_mm": 3.0,
+      "hint_diameter_tolerance_ratio": 0.15
+    },
+    "advisory_only": true,
+    "accepted_measurement": false,
+    "installation_acceptance": false,
+    "status": "LIKELY",
+    "observations": [
+      {
+        "observation_id": "POOL-L18-POOL-R19",
+        "label": "S1",
+        "zone_id": "全幅",
+        "left_region_px": [
+          1067,
+          269,
+          658,
+          126
+        ],
+        "right_region_px": [
+          817,
+          261,
+          907,
+          145
+        ],
+        "color_class": "RED",
+        "image_width_px": 70.28413391113281,
+        "image_transverse_px": 452.81794856502415,
+        "image_axis": [
+          0.9961344095084579,
+          -0.08784212083753487
+        ],
+        "source": "CURRENT_POOLED_IMAGE_BOUNDARIES",
+        "metric_fit_required": false,
+        "measurement_reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE",
+          "GROUND_AXIS_CONFLICT",
+          "GROUND_CORRECTION_EXPERIMENTAL"
+        ],
+        "status": "LIKELY",
+        "suggested_pipe_id": "P011",
+        "candidate_pipe_ids": [
+          "P011"
+        ],
+        "reason_codes": [],
+        "prior_diameter_mm": 40.0,
+        "diameter_source": "USER_STATED_PRIOR_NOT_MEASUREMENT",
+        "relative_size_class": "MEDIUM",
+        "prior_position": {
+          "revision": "diameter-prior-observed-boundary-centres-v1",
+          "status": "PRIOR_CONDITIONAL_CENTER",
+          "accepted_measurement": false,
+          "installation_evidence": false,
+          "source": "OBSERVED_BOUNDARY_LINES_WITH_DIAMETER_PRIOR",
+          "independent_pixel_samples": false,
+          "predicted_cylinder_lines_used": false,
+          "axis_source": "FREE_IMAGE_AXIS",
+          "reason_codes": [],
+          "prior_diameter_mm": 40.0,
+          "diameter_source": "USER_STATED_PRIOR",
+          "axis_camera": [
+            0.9961510811399578,
+            -0.0876525449370917,
+            0.00023432828377296477
+          ],
+          "section_center_uv_mm": [
+            -84.50984850415523,
+            1051.701782283484
+          ],
+          "center_camera_mm": [
+            -7.652998436499037,
+            -84.16297786742062,
+            1051.7017534091456
+          ],
+          "reprojection_rms_px": 0.1521505626362341,
+          "boundary_support": [
+            {
+              "role": "left",
+              "edge": "top",
+              "retained_runs": 3,
+              "line_representatives": 128
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "retained_runs": 26,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "top",
+              "retained_runs": 3,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "retained_runs": 38,
+              "line_representatives": 128
+            }
+          ],
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+          "limits": [
+            "DIAMETER_IS_SUPPLIED_PRIOR_NOT_MEASUREMENT",
+            "LINE_SUMMARY_NOT_INDEPENDENT_RAW_PIXELS",
+            "NOT_A_METRIC_OR_INSTALLATION_ACCEPTANCE"
+          ]
+        },
+        "model_layer_index": 2,
+        "model_layer_label": "中间层 2",
+        "model_layer_index_from_camera": 2,
+        "model_layer_count": 3,
+        "model_lateral_rank": 1,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 1,
+        "model_nominal_diameter_mm": 41.000017,
+        "model_size_class": "MEDIUM"
+      },
+      {
+        "observation_id": "POOL-L19-POOL-R20",
+        "label": "S2",
+        "zone_id": "全幅",
+        "left_region_px": [
+          1076,
+          348,
+          659,
+          140
+        ],
+        "right_region_px": [
+          822,
+          339,
+          911,
+          159
+        ],
+        "color_class": "RED",
+        "image_width_px": 83.96788787841797,
+        "image_transverse_px": 538.8191546113634,
+        "image_axis": [
+          0.9961344095084579,
+          -0.08784212083753487
+        ],
+        "source": "CURRENT_POOLED_IMAGE_BOUNDARIES",
+        "metric_fit_required": false,
+        "measurement_reason_codes": [
+          "POOLED_DIMENSIONS_UNSTABLE",
+          "GROUND_AXIS_CONFLICT",
+          "GROUND_CORRECTION_EXPERIMENTAL"
+        ],
+        "status": "LIKELY",
+        "suggested_pipe_id": "P008",
+        "candidate_pipe_ids": [
+          "P008"
+        ],
+        "reason_codes": [],
+        "prior_diameter_mm": 40.0,
+        "diameter_source": "USER_STATED_PRIOR_NOT_MEASUREMENT",
+        "relative_size_class": "MEDIUM",
+        "prior_position": {
+          "revision": "diameter-prior-observed-boundary-centres-v1",
+          "status": "PRIOR_CONDITIONAL_CENTER",
+          "accepted_measurement": false,
+          "installation_evidence": false,
+          "source": "OBSERVED_BOUNDARY_LINES_WITH_DIAMETER_PRIOR",
+          "independent_pixel_samples": false,
+          "predicted_cylinder_lines_used": false,
+          "axis_source": "FREE_IMAGE_AXIS",
+          "reason_codes": [],
+          "prior_diameter_mm": 40.0,
+          "diameter_source": "USER_STATED_PRIOR",
+          "axis_camera": [
+            0.9961510811399578,
+            -0.0876525449370917,
+            0.00023432828377296477
+          ],
+          "section_center_uv_mm": [
+            -29.2624451250669,
+            875.913873888104
+          ],
+          "center_camera_mm": [
+            -2.769389261163964,
+            -29.131826340838455,
+            875.9138498400004
+          ],
+          "reprojection_rms_px": 0.22609046094283458,
+          "boundary_support": [
+            {
+              "role": "left",
+              "edge": "top",
+              "retained_runs": 52,
+              "line_representatives": 128
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "retained_runs": 10,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "top",
+              "retained_runs": 38,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "retained_runs": 4,
+              "line_representatives": 128
+            }
+          ],
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+          "limits": [
+            "DIAMETER_IS_SUPPLIED_PRIOR_NOT_MEASUREMENT",
+            "LINE_SUMMARY_NOT_INDEPENDENT_RAW_PIXELS",
+            "NOT_A_METRIC_OR_INSTALLATION_ACCEPTANCE"
+          ]
+        },
+        "model_layer_index": 1,
+        "model_layer_label": "靠相机层",
+        "model_layer_index_from_camera": 1,
+        "model_layer_count": 3,
+        "model_lateral_rank": 2,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 2,
+        "model_nominal_diameter_mm": 41.000017,
+        "model_size_class": "MEDIUM"
+      },
+      {
+        "observation_id": "POOL-L20-POOL-R21",
+        "label": "S3",
+        "zone_id": "全幅",
+        "left_region_px": [
+          1090,
+          482,
+          654,
+          95
+        ],
+        "right_region_px": [
+          836,
+          475,
+          907,
+          112
+        ],
+        "color_class": "WHITE",
+        "image_width_px": 39.09633255004883,
+        "image_transverse_px": 651.0488883974195,
+        "image_axis": [
+          0.9961344095084579,
+          -0.08784212083753487
+        ],
+        "source": "CURRENT_POOLED_IMAGE_BOUNDARIES",
+        "metric_fit_required": false,
+        "measurement_reason_codes": [
+          "GROUND_AXIS_CONFLICT",
+          "GROUND_CORRECTION_EXPERIMENTAL"
+        ],
+        "status": "LIKELY",
+        "suggested_pipe_id": "P009",
+        "candidate_pipe_ids": [
+          "P009"
+        ],
+        "reason_codes": [],
+        "prior_diameter_mm": 25.0,
+        "diameter_source": "USER_STATED_PRIOR_NOT_MEASUREMENT",
+        "relative_size_class": "SMALL",
+        "prior_position": {
+          "revision": "diameter-prior-observed-boundary-centres-v1",
+          "status": "PRIOR_CONDITIONAL_CENTER",
+          "accepted_measurement": false,
+          "installation_evidence": false,
+          "source": "OBSERVED_BOUNDARY_LINES_WITH_DIAMETER_PRIOR",
+          "independent_pixel_samples": false,
+          "predicted_cylinder_lines_used": false,
+          "axis_source": "FREE_IMAGE_AXIS",
+          "reason_codes": [],
+          "prior_diameter_mm": 25.0,
+          "diameter_source": "USER_STATED_PRIOR",
+          "axis_camera": [
+            0.9961510811399578,
+            -0.0876525449370917,
+            0.00023432828377296477
+          ],
+          "section_center_uv_mm": [
+            32.402986095794354,
+            1185.7442856519615
+          ],
+          "center_camera_mm": [
+            2.5634202770673706,
+            32.302625078037934,
+            1185.7442530975034
+          ],
+          "reprojection_rms_px": 1.0952759200688247,
+          "boundary_support": [
+            {
+              "role": "left",
+              "edge": "top",
+              "retained_runs": 8,
+              "line_representatives": 128
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "retained_runs": 2,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "top",
+              "retained_runs": 6,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "retained_runs": 1,
+              "line_representatives": 128
+            }
+          ],
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+          "limits": [
+            "DIAMETER_IS_SUPPLIED_PRIOR_NOT_MEASUREMENT",
+            "LINE_SUMMARY_NOT_INDEPENDENT_RAW_PIXELS",
+            "NOT_A_METRIC_OR_INSTALLATION_ACCEPTANCE"
+          ]
+        },
+        "model_layer_index": 3,
+        "model_layer_label": "远离相机层",
+        "model_layer_index_from_camera": 3,
+        "model_layer_count": 3,
+        "model_lateral_rank": 2,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 2,
+        "model_nominal_diameter_mm": 26.000124,
+        "model_size_class": "SMALL"
+      },
+      {
+        "observation_id": "POOL-L21-POOL-R22",
+        "label": "S4",
+        "zone_id": "全幅",
+        "left_region_px": [
+          1094,
+          526,
+          661,
+          154
+        ],
+        "right_region_px": [
+          840,
+          513,
+          914,
+          179
+        ],
+        "color_class": "BLUE",
+        "image_width_px": 104.70849609375,
+        "image_transverse_px": 724.9785542467781,
+        "image_axis": [
+          0.9961344095084579,
+          -0.08784212083753487
+        ],
+        "source": "CURRENT_POOLED_IMAGE_BOUNDARIES",
+        "metric_fit_required": false,
+        "measurement_reason_codes": [
+          "GROUND_AXIS_CONFLICT",
+          "GROUND_CORRECTION_EXPERIMENTAL"
+        ],
+        "status": "LIKELY",
+        "suggested_pipe_id": "P004",
+        "candidate_pipe_ids": [
+          "P004"
+        ],
+        "reason_codes": [],
+        "prior_diameter_mm": 50.0,
+        "diameter_source": "USER_STATED_PRIOR_NOT_MEASUREMENT",
+        "relative_size_class": "LARGE",
+        "prior_position": {
+          "revision": "diameter-prior-observed-boundary-centres-v1",
+          "status": "PRIOR_CONDITIONAL_CENTER",
+          "accepted_measurement": false,
+          "installation_evidence": false,
+          "source": "OBSERVED_BOUNDARY_LINES_WITH_DIAMETER_PRIOR",
+          "independent_pixel_samples": false,
+          "predicted_cylinder_lines_used": false,
+          "axis_source": "FREE_IMAGE_AXIS",
+          "reason_codes": [],
+          "prior_diameter_mm": 50.0,
+          "diameter_source": "USER_STATED_PRIOR",
+          "axis_camera": [
+            0.9961510811399578,
+            -0.0876525449370917,
+            0.00023432828377296477
+          ],
+          "section_center_uv_mm": [
+            59.53527912014849,
+            878.9101000729594
+          ],
+          "center_camera_mm": [
+            5.013258069011162,
+            59.32418663824837,
+            878.9100759425946
+          ],
+          "reprojection_rms_px": 0.5019342947021403,
+          "boundary_support": [
+            {
+              "role": "left",
+              "edge": "top",
+              "retained_runs": 12,
+              "line_representatives": 128
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "retained_runs": 26,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "top",
+              "retained_runs": 5,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "retained_runs": 29,
+              "line_representatives": 128
+            }
+          ],
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+          "limits": [
+            "DIAMETER_IS_SUPPLIED_PRIOR_NOT_MEASUREMENT",
+            "LINE_SUMMARY_NOT_INDEPENDENT_RAW_PIXELS",
+            "NOT_A_METRIC_OR_INSTALLATION_ACCEPTANCE"
+          ]
+        },
+        "model_layer_index": 1,
+        "model_layer_label": "靠相机层",
+        "model_layer_index_from_camera": 1,
+        "model_layer_count": 3,
+        "model_lateral_rank": 3,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 3,
+        "model_nominal_diameter_mm": 51.000073,
+        "model_size_class": "LARGE"
+      }
+    ],
+    "pipes": [
+      {
+        "pipe_id": "P001",
+        "status": "NO_OBSERVATION",
+        "observation_ids": [],
+        "model_layer_index": 2,
+        "model_layer_label": "中间层 2",
+        "model_layer_index_from_camera": 2,
+        "model_layer_count": 3,
+        "model_lateral_rank": 4,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 4,
+        "model_nominal_diameter_mm": 51.000073,
+        "model_size_class": "LARGE"
+      },
+      {
+        "pipe_id": "P002",
+        "status": "NO_OBSERVATION",
+        "observation_ids": [],
+        "model_layer_index": 3,
+        "model_layer_label": "远离相机层",
+        "model_layer_index_from_camera": 3,
+        "model_layer_count": 3,
+        "model_lateral_rank": 4,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 4,
+        "model_nominal_diameter_mm": 41.000017,
+        "model_size_class": "MEDIUM"
+      },
+      {
+        "pipe_id": "P003",
+        "status": "NO_OBSERVATION",
+        "observation_ids": [],
+        "model_layer_index": 1,
+        "model_layer_label": "靠相机层",
+        "model_layer_index_from_camera": 1,
+        "model_layer_count": 3,
+        "model_lateral_rank": 4,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 4,
+        "model_nominal_diameter_mm": 26.000124,
+        "model_size_class": "SMALL"
+      },
+      {
+        "pipe_id": "P004",
+        "status": "LIKELY",
+        "observation_ids": [
+          "POOL-L21-POOL-R22"
+        ],
+        "model_layer_index": 1,
+        "model_layer_label": "靠相机层",
+        "model_layer_index_from_camera": 1,
+        "model_layer_count": 3,
+        "model_lateral_rank": 3,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 3,
+        "model_nominal_diameter_mm": 51.000073,
+        "model_size_class": "LARGE"
+      },
+      {
+        "pipe_id": "P005",
+        "status": "NO_OBSERVATION",
+        "observation_ids": [],
+        "model_layer_index": 3,
+        "model_layer_label": "远离相机层",
+        "model_layer_index_from_camera": 3,
+        "model_layer_count": 3,
+        "model_lateral_rank": 3,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 3,
+        "model_nominal_diameter_mm": 41.000017,
+        "model_size_class": "MEDIUM"
+      },
+      {
+        "pipe_id": "P006",
+        "status": "NO_OBSERVATION",
+        "observation_ids": [],
+        "model_layer_index": 2,
+        "model_layer_label": "中间层 2",
+        "model_layer_index_from_camera": 2,
+        "model_layer_count": 3,
+        "model_lateral_rank": 3,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 3,
+        "model_nominal_diameter_mm": 26.000124,
+        "model_size_class": "SMALL"
+      },
+      {
+        "pipe_id": "P007",
+        "status": "NO_OBSERVATION",
+        "observation_ids": [],
+        "model_layer_index": 2,
+        "model_layer_label": "中间层 2",
+        "model_layer_index_from_camera": 2,
+        "model_layer_count": 3,
+        "model_lateral_rank": 2,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 2,
+        "model_nominal_diameter_mm": 51.000073,
+        "model_size_class": "LARGE"
+      },
+      {
+        "pipe_id": "P008",
+        "status": "LIKELY",
+        "observation_ids": [
+          "POOL-L19-POOL-R20"
+        ],
+        "model_layer_index": 1,
+        "model_layer_label": "靠相机层",
+        "model_layer_index_from_camera": 1,
+        "model_layer_count": 3,
+        "model_lateral_rank": 2,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 2,
+        "model_nominal_diameter_mm": 41.000017,
+        "model_size_class": "MEDIUM"
+      },
+      {
+        "pipe_id": "P009",
+        "status": "LIKELY",
+        "observation_ids": [
+          "POOL-L20-POOL-R21"
+        ],
+        "model_layer_index": 3,
+        "model_layer_label": "远离相机层",
+        "model_layer_index_from_camera": 3,
+        "model_layer_count": 3,
+        "model_lateral_rank": 2,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 2,
+        "model_nominal_diameter_mm": 26.000124,
+        "model_size_class": "SMALL"
+      },
+      {
+        "pipe_id": "P010",
+        "status": "NO_OBSERVATION",
+        "observation_ids": [],
+        "model_layer_index": 3,
+        "model_layer_label": "远离相机层",
+        "model_layer_index_from_camera": 3,
+        "model_layer_count": 3,
+        "model_lateral_rank": 1,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 1,
+        "model_nominal_diameter_mm": 51.000073,
+        "model_size_class": "LARGE"
+      },
+      {
+        "pipe_id": "P011",
+        "status": "LIKELY",
+        "observation_ids": [
+          "POOL-L18-POOL-R19"
+        ],
+        "model_layer_index": 2,
+        "model_layer_label": "中间层 2",
+        "model_layer_index_from_camera": 2,
+        "model_layer_count": 3,
+        "model_lateral_rank": 1,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 1,
+        "model_nominal_diameter_mm": 41.000017,
+        "model_size_class": "MEDIUM"
+      },
+      {
+        "pipe_id": "P012",
+        "status": "NO_OBSERVATION",
+        "observation_ids": [],
+        "model_layer_index": 1,
+        "model_layer_label": "靠相机层",
+        "model_layer_index_from_camera": 1,
+        "model_layer_count": 3,
+        "model_lateral_rank": 1,
+        "model_lateral_count": 4,
+        "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+        "model_lateral_order": 1,
+        "model_nominal_diameter_mm": 26.000124,
+        "model_size_class": "SMALL"
+      }
+    ],
+    "ranked_hypotheses": [
+      {
+        "difference_score": 0.14316681458597164,
+        "layout_difference": 0.14316681458597164,
+        "method": "USER_DIAMETER_PRIOR_RELATIVE_SECTION",
+        "size_difference": null,
+        "conditional_layout_rms_mm": 12.885013312737447,
+        "not_a_metric_acceptance_test": true,
+        "camera_side_world_hypothesis": [
+          -0.20231249011815294,
+          0.9793209899887001,
+          -0.00023432828377296458
+        ],
+        "scale_adjusted": false,
+        "prior_position_count": 4,
+        "assignments": [
+          {
+            "observation_id": "POOL-L18-POOL-R19",
+            "pipe_id": "P011",
+            "model_center_mm": [
+              2352.1108194986978,
+              1797.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1797.4565124511719,
+            "model_layer_index": 2,
+            "model_layer_label": "中间层 2",
+            "model_layer_index_from_camera": 2,
+            "model_layer_count": 3,
+            "model_lateral_rank": 1,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 1,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L19-POOL-R20",
+            "pipe_id": "P008",
+            "model_center_mm": [
+              2262.1108194986978,
+              1937.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1937.4565124511719,
+            "model_layer_index": 1,
+            "model_layer_label": "靠相机层",
+            "model_layer_index_from_camera": 1,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L20-POOL-R21",
+            "pipe_id": "P009",
+            "model_center_mm": [
+              2262.11083984375,
+              1657.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 26.000124,
+            "model_depth_coordinate_toward_camera_mm": 1657.4565124511719,
+            "model_layer_index": 3,
+            "model_layer_label": "远离相机层",
+            "model_layer_index_from_camera": 3,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 26.000124,
+            "model_size_class": "SMALL"
+          },
+          {
+            "observation_id": "POOL-L21-POOL-R22",
+            "pipe_id": "P004",
+            "model_center_mm": [
+              2172.11083984375,
+              1937.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 51.000073,
+            "model_depth_coordinate_toward_camera_mm": 1937.4565124511719,
+            "model_layer_index": 1,
+            "model_layer_label": "靠相机层",
+            "model_layer_index_from_camera": 1,
+            "model_layer_count": 3,
+            "model_lateral_rank": 3,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 3,
+            "model_nominal_diameter_mm": 51.000073,
+            "model_size_class": "LARGE"
+          }
+        ],
+        "rank": 1,
+        "near_best": true
+      },
+      {
+        "difference_score": 0.6743259155559777,
+        "layout_difference": 0.6743259155559777,
+        "method": "USER_DIAMETER_PRIOR_RELATIVE_SECTION",
+        "size_difference": null,
+        "conditional_layout_rms_mm": 60.68933240003799,
+        "not_a_metric_acceptance_test": true,
+        "camera_side_world_hypothesis": [
+          -0.48948177420348266,
+          0.8720134963478875,
+          -0.00023432828377296493
+        ],
+        "scale_adjusted": false,
+        "prior_position_count": 4,
+        "assignments": [
+          {
+            "observation_id": "POOL-L18-POOL-R19",
+            "pipe_id": "P011",
+            "model_center_mm": [
+              2352.1108194986978,
+              1797.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1797.4565124511719,
+            "model_layer_index": 2,
+            "model_layer_label": "中间层 2",
+            "model_layer_index_from_camera": 2,
+            "model_layer_count": 3,
+            "model_lateral_rank": 1,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 1,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L19-POOL-R20",
+            "pipe_id": "P008",
+            "model_center_mm": [
+              2262.1108194986978,
+              1937.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1937.4565124511719,
+            "model_layer_index": 1,
+            "model_layer_label": "靠相机层",
+            "model_layer_index_from_camera": 1,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L20-POOL-R21",
+            "pipe_id": "P009",
+            "model_center_mm": [
+              2262.11083984375,
+              1657.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 26.000124,
+            "model_depth_coordinate_toward_camera_mm": 1657.4565124511719,
+            "model_layer_index": 3,
+            "model_layer_label": "远离相机层",
+            "model_layer_index_from_camera": 3,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 26.000124,
+            "model_size_class": "SMALL"
+          },
+          {
+            "observation_id": "POOL-L21-POOL-R22",
+            "pipe_id": "P001",
+            "model_center_mm": [
+              2082.11083984375,
+              1797.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 51.000073,
+            "model_depth_coordinate_toward_camera_mm": 1797.4565124511719,
+            "model_layer_index": 2,
+            "model_layer_label": "中间层 2",
+            "model_layer_index_from_camera": 2,
+            "model_layer_count": 3,
+            "model_lateral_rank": 4,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 4,
+            "model_nominal_diameter_mm": 51.000073,
+            "model_size_class": "LARGE"
+          }
+        ],
+        "rank": 2,
+        "near_best": false
+      },
+      {
+        "difference_score": 0.6979400871149247,
+        "layout_difference": 0.6979400871149247,
+        "method": "USER_DIAMETER_PRIOR_RELATIVE_SECTION",
+        "size_difference": null,
+        "conditional_layout_rms_mm": 62.81460784034323,
+        "not_a_metric_acceptance_test": true,
+        "camera_side_world_hypothesis": [
+          -0.9457910433074433,
+          0.3247756879596645,
+          0.00023432828377296477
+        ],
+        "scale_adjusted": false,
+        "prior_position_count": 4,
+        "assignments": [
+          {
+            "observation_id": "POOL-L18-POOL-R19",
+            "pipe_id": "P005",
+            "model_center_mm": [
+              2172.1108194986978,
+              1657.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1657.4565124511719,
+            "model_layer_index": 3,
+            "model_layer_label": "远离相机层",
+            "model_layer_index_from_camera": 3,
+            "model_layer_count": 3,
+            "model_lateral_rank": 3,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 3,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L19-POOL-R20",
+            "pipe_id": "P002",
+            "model_center_mm": [
+              2082.1108194986978,
+              1657.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1657.4565124511719,
+            "model_layer_index": 3,
+            "model_layer_label": "远离相机层",
+            "model_layer_index_from_camera": 3,
+            "model_layer_count": 3,
+            "model_lateral_rank": 4,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 4,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L20-POOL-R21",
+            "pipe_id": "P009",
+            "model_center_mm": [
+              2262.11083984375,
+              1657.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 26.000124,
+            "model_depth_coordinate_toward_camera_mm": 1657.4565124511719,
+            "model_layer_index": 3,
+            "model_layer_label": "远离相机层",
+            "model_layer_index_from_camera": 3,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 26.000124,
+            "model_size_class": "SMALL"
+          },
+          {
+            "observation_id": "POOL-L21-POOL-R22",
+            "pipe_id": "P001",
+            "model_center_mm": [
+              2082.11083984375,
+              1797.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 51.000073,
+            "model_depth_coordinate_toward_camera_mm": 1797.4565124511719,
+            "model_layer_index": 2,
+            "model_layer_label": "中间层 2",
+            "model_layer_index_from_camera": 2,
+            "model_layer_count": 3,
+            "model_lateral_rank": 4,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 4,
+            "model_nominal_diameter_mm": 51.000073,
+            "model_size_class": "LARGE"
+          }
+        ],
+        "rank": 3,
+        "near_best": false
+      },
+      {
+        "difference_score": 0.7906768169689623,
+        "layout_difference": 0.7906768169689623,
+        "method": "USER_DIAMETER_PRIOR_RELATIVE_SECTION",
+        "size_difference": null,
+        "conditional_layout_rms_mm": 71.1609135272066,
+        "not_a_metric_acceptance_test": true,
+        "camera_side_world_hypothesis": [
+          0.14028400835219443,
+          0.990111277630397,
+          -0.00023432828377296466
+        ],
+        "scale_adjusted": false,
+        "prior_position_count": 4,
+        "assignments": [
+          {
+            "observation_id": "POOL-L18-POOL-R19",
+            "pipe_id": "P011",
+            "model_center_mm": [
+              2352.1108194986978,
+              1797.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1797.4565124511719,
+            "model_layer_index": 2,
+            "model_layer_label": "中间层 2",
+            "model_layer_index_from_camera": 2,
+            "model_layer_count": 3,
+            "model_lateral_rank": 1,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 1,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L19-POOL-R20",
+            "pipe_id": "P008",
+            "model_center_mm": [
+              2262.1108194986978,
+              1937.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1937.4565124511719,
+            "model_layer_index": 1,
+            "model_layer_label": "靠相机层",
+            "model_layer_index_from_camera": 1,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L20-POOL-R21",
+            "pipe_id": "P006",
+            "model_center_mm": [
+              2172.11083984375,
+              1797.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 26.000124,
+            "model_depth_coordinate_toward_camera_mm": 1797.4565124511719,
+            "model_layer_index": 2,
+            "model_layer_label": "中间层 2",
+            "model_layer_index_from_camera": 2,
+            "model_layer_count": 3,
+            "model_lateral_rank": 3,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 3,
+            "model_nominal_diameter_mm": 26.000124,
+            "model_size_class": "SMALL"
+          },
+          {
+            "observation_id": "POOL-L21-POOL-R22",
+            "pipe_id": "P004",
+            "model_center_mm": [
+              2172.11083984375,
+              1937.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 51.000073,
+            "model_depth_coordinate_toward_camera_mm": 1937.4565124511719,
+            "model_layer_index": 1,
+            "model_layer_label": "靠相机层",
+            "model_layer_index_from_camera": 1,
+            "model_layer_count": 3,
+            "model_lateral_rank": 3,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 3,
+            "model_nominal_diameter_mm": 51.000073,
+            "model_size_class": "LARGE"
+          }
+        ],
+        "rank": 4,
+        "near_best": false
+      },
+      {
+        "difference_score": 0.7946411616169041,
+        "layout_difference": 0.7946411616169041,
+        "method": "USER_DIAMETER_PRIOR_RELATIVE_SECTION",
+        "size_difference": null,
+        "conditional_layout_rms_mm": 71.51770454552137,
+        "not_a_metric_acceptance_test": true,
+        "camera_side_world_hypothesis": [
+          -0.25759140035113237,
+          0.9662539084295587,
+          -0.0002343282837729647
+        ],
+        "scale_adjusted": false,
+        "prior_position_count": 4,
+        "assignments": [
+          {
+            "observation_id": "POOL-L18-POOL-R19",
+            "pipe_id": "P011",
+            "model_center_mm": [
+              2352.1108194986978,
+              1797.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1797.4565124511719,
+            "model_layer_index": 2,
+            "model_layer_label": "中间层 2",
+            "model_layer_index_from_camera": 2,
+            "model_layer_count": 3,
+            "model_lateral_rank": 1,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 1,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L19-POOL-R20",
+            "pipe_id": "P008",
+            "model_center_mm": [
+              2262.1108194986978,
+              1937.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 41.000017,
+            "model_depth_coordinate_toward_camera_mm": 1937.4565124511719,
+            "model_layer_index": 1,
+            "model_layer_label": "靠相机层",
+            "model_layer_index_from_camera": 1,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 41.000017,
+            "model_size_class": "MEDIUM"
+          },
+          {
+            "observation_id": "POOL-L20-POOL-R21",
+            "pipe_id": "P009",
+            "model_center_mm": [
+              2262.11083984375,
+              1657.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 26.000124,
+            "model_depth_coordinate_toward_camera_mm": 1657.4565124511719,
+            "model_layer_index": 3,
+            "model_layer_label": "远离相机层",
+            "model_layer_index_from_camera": 3,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 26.000124,
+            "model_size_class": "SMALL"
+          },
+          {
+            "observation_id": "POOL-L21-POOL-R22",
+            "pipe_id": "P007",
+            "model_center_mm": [
+              2262.11083984375,
+              1797.4565124511719,
+              341.538818859375
+            ],
+            "design_diameter_mm": 51.000073,
+            "model_depth_coordinate_toward_camera_mm": 1797.4565124511719,
+            "model_layer_index": 2,
+            "model_layer_label": "中间层 2",
+            "model_layer_index_from_camera": 2,
+            "model_layer_count": 3,
+            "model_lateral_rank": 2,
+            "model_lateral_count": 4,
+            "model_layer_basis": "DESIGN_COORDINATE_ALONG_SPECIFIED_CAMERA_SIDE",
+            "model_lateral_order": 2,
+            "model_nominal_diameter_mm": 51.000073,
+            "model_size_class": "LARGE"
+          }
+        ],
+        "rank": 5,
+        "near_best": false
+      }
+    ],
+    "reason_codes": [],
+    "pairwise_relations": [
+      {
+        "observation_ids": [
+          "POOL-L18-POOL-R19",
+          "POOL-L19-POOL-R20"
+        ],
+        "relation": "IMAGE_TRANSVERSE_ORDER",
+        "second_on_positive_normal_side": true,
+        "image_normal": [
+          0.08784212083753487,
+          0.9961344095084579
+        ],
+        "world_vertical_order_known": false,
+        "relative_width_ratio": 1.1946919340940714
+      },
+      {
+        "observation_ids": [
+          "POOL-L18-POOL-R19",
+          "POOL-L20-POOL-R21"
+        ],
+        "relation": "IMAGE_TRANSVERSE_ORDER",
+        "second_on_positive_normal_side": true,
+        "image_normal": [
+          0.08784212083753487,
+          0.9961344095084579
+        ],
+        "world_vertical_order_known": false,
+        "relative_width_ratio": 0.5562611413762627
+      },
+      {
+        "observation_ids": [
+          "POOL-L18-POOL-R19",
+          "POOL-L21-POOL-R22"
+        ],
+        "relation": "IMAGE_TRANSVERSE_ORDER",
+        "second_on_positive_normal_side": true,
+        "image_normal": [
+          0.08784212083753487,
+          0.9961344095084579
+        ],
+        "world_vertical_order_known": false,
+        "relative_width_ratio": 1.4897885236253081
+      },
+      {
+        "observation_ids": [
+          "POOL-L19-POOL-R20",
+          "POOL-L20-POOL-R21"
+        ],
+        "relation": "IMAGE_TRANSVERSE_ORDER",
+        "second_on_positive_normal_side": true,
+        "image_normal": [
+          0.08784212083753487,
+          0.9961344095084579
+        ],
+        "world_vertical_order_known": false,
+        "relative_width_ratio": 0.4656105272846532
+      },
+      {
+        "observation_ids": [
+          "POOL-L19-POOL-R20",
+          "POOL-L21-POOL-R22"
+        ],
+        "relation": "IMAGE_TRANSVERSE_ORDER",
+        "second_on_positive_normal_side": true,
+        "image_normal": [
+          0.08784212083753487,
+          0.9961344095084579
+        ],
+        "world_vertical_order_known": false,
+        "relative_width_ratio": 1.2470064299505017
+      },
+      {
+        "observation_ids": [
+          "POOL-L20-POOL-R21",
+          "POOL-L21-POOL-R22"
+        ],
+        "relation": "IMAGE_TRANSVERSE_ORDER",
+        "second_on_positive_normal_side": true,
+        "image_normal": [
+          0.08784212083753487,
+          0.9961344095084579
+        ],
+        "world_vertical_order_known": false,
+        "relative_width_ratio": 2.678217859941424
+      }
+    ],
+    "hint_source": "USER_STATED_PURCHASE_DIAMETERS",
+    "appearance_diameter_hints": {
+      "BLUE": 50.0,
+      "RED": 40.0,
+      "WHITE": 25.0
+    },
+    "synthetic_model_colors_ignored": true,
+    "counts": {
+      "LIKELY": 4,
+      "AMBIGUOUS": 0,
+      "NO_OBSERVATION": 8
+    },
+    "known_diameter_used_for_localization": true,
+    "diameter_hint_source": "USER_STATED_PURCHASE_DIAMETERS",
+    "score_definition": "RELATIVE_DIFFERENCE_LOWER_IS_BETTER_NOT_PROBABILITY",
+    "relation_summary": [
+      "图像横向顺序不自动等于世界上下层；设计层位随候选对应显示。",
+      "未观察到不表示未安装；本结果只辅助辨认，不判断尺寸或就位合格。"
+    ],
+    "prior_geometry": {
+      "status": "AVAILABLE",
+      "candidates": {
+        "POOL-L18-POOL-R19": {
+          "revision": "diameter-prior-observed-boundary-centres-v1",
+          "status": "PRIOR_CONDITIONAL_CENTER",
+          "accepted_measurement": false,
+          "installation_evidence": false,
+          "source": "OBSERVED_BOUNDARY_LINES_WITH_DIAMETER_PRIOR",
+          "independent_pixel_samples": false,
+          "predicted_cylinder_lines_used": false,
+          "axis_source": "FREE_IMAGE_AXIS",
+          "reason_codes": [],
+          "prior_diameter_mm": 40.0,
+          "diameter_source": "USER_STATED_PRIOR",
+          "axis_camera": [
+            0.9961510811399578,
+            -0.0876525449370917,
+            0.00023432828377296477
+          ],
+          "section_center_uv_mm": [
+            -84.50984850415523,
+            1051.701782283484
+          ],
+          "center_camera_mm": [
+            -7.652998436499037,
+            -84.16297786742062,
+            1051.7017534091456
+          ],
+          "reprojection_rms_px": 0.1521505626362341,
+          "boundary_support": [
+            {
+              "role": "left",
+              "edge": "top",
+              "retained_runs": 3,
+              "line_representatives": 128
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "retained_runs": 26,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "top",
+              "retained_runs": 3,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "retained_runs": 38,
+              "line_representatives": 128
+            }
+          ],
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+          "limits": [
+            "DIAMETER_IS_SUPPLIED_PRIOR_NOT_MEASUREMENT",
+            "LINE_SUMMARY_NOT_INDEPENDENT_RAW_PIXELS",
+            "NOT_A_METRIC_OR_INSTALLATION_ACCEPTANCE"
+          ]
+        },
+        "POOL-L19-POOL-R20": {
+          "revision": "diameter-prior-observed-boundary-centres-v1",
+          "status": "PRIOR_CONDITIONAL_CENTER",
+          "accepted_measurement": false,
+          "installation_evidence": false,
+          "source": "OBSERVED_BOUNDARY_LINES_WITH_DIAMETER_PRIOR",
+          "independent_pixel_samples": false,
+          "predicted_cylinder_lines_used": false,
+          "axis_source": "FREE_IMAGE_AXIS",
+          "reason_codes": [],
+          "prior_diameter_mm": 40.0,
+          "diameter_source": "USER_STATED_PRIOR",
+          "axis_camera": [
+            0.9961510811399578,
+            -0.0876525449370917,
+            0.00023432828377296477
+          ],
+          "section_center_uv_mm": [
+            -29.2624451250669,
+            875.913873888104
+          ],
+          "center_camera_mm": [
+            -2.769389261163964,
+            -29.131826340838455,
+            875.9138498400004
+          ],
+          "reprojection_rms_px": 0.22609046094283458,
+          "boundary_support": [
+            {
+              "role": "left",
+              "edge": "top",
+              "retained_runs": 52,
+              "line_representatives": 128
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "retained_runs": 10,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "top",
+              "retained_runs": 38,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "retained_runs": 4,
+              "line_representatives": 128
+            }
+          ],
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+          "limits": [
+            "DIAMETER_IS_SUPPLIED_PRIOR_NOT_MEASUREMENT",
+            "LINE_SUMMARY_NOT_INDEPENDENT_RAW_PIXELS",
+            "NOT_A_METRIC_OR_INSTALLATION_ACCEPTANCE"
+          ]
+        },
+        "POOL-L20-POOL-R21": {
+          "revision": "diameter-prior-observed-boundary-centres-v1",
+          "status": "PRIOR_CONDITIONAL_CENTER",
+          "accepted_measurement": false,
+          "installation_evidence": false,
+          "source": "OBSERVED_BOUNDARY_LINES_WITH_DIAMETER_PRIOR",
+          "independent_pixel_samples": false,
+          "predicted_cylinder_lines_used": false,
+          "axis_source": "FREE_IMAGE_AXIS",
+          "reason_codes": [],
+          "prior_diameter_mm": 25.0,
+          "diameter_source": "USER_STATED_PRIOR",
+          "axis_camera": [
+            0.9961510811399578,
+            -0.0876525449370917,
+            0.00023432828377296477
+          ],
+          "section_center_uv_mm": [
+            32.402986095794354,
+            1185.7442856519615
+          ],
+          "center_camera_mm": [
+            2.5634202770673706,
+            32.302625078037934,
+            1185.7442530975034
+          ],
+          "reprojection_rms_px": 1.0952759200688247,
+          "boundary_support": [
+            {
+              "role": "left",
+              "edge": "top",
+              "retained_runs": 8,
+              "line_representatives": 128
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "retained_runs": 2,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "top",
+              "retained_runs": 6,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "retained_runs": 1,
+              "line_representatives": 128
+            }
+          ],
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+          "limits": [
+            "DIAMETER_IS_SUPPLIED_PRIOR_NOT_MEASUREMENT",
+            "LINE_SUMMARY_NOT_INDEPENDENT_RAW_PIXELS",
+            "NOT_A_METRIC_OR_INSTALLATION_ACCEPTANCE"
+          ]
+        },
+        "POOL-L21-POOL-R22": {
+          "revision": "diameter-prior-observed-boundary-centres-v1",
+          "status": "PRIOR_CONDITIONAL_CENTER",
+          "accepted_measurement": false,
+          "installation_evidence": false,
+          "source": "OBSERVED_BOUNDARY_LINES_WITH_DIAMETER_PRIOR",
+          "independent_pixel_samples": false,
+          "predicted_cylinder_lines_used": false,
+          "axis_source": "FREE_IMAGE_AXIS",
+          "reason_codes": [],
+          "prior_diameter_mm": 50.0,
+          "diameter_source": "USER_STATED_PRIOR",
+          "axis_camera": [
+            0.9961510811399578,
+            -0.0876525449370917,
+            0.00023432828377296477
+          ],
+          "section_center_uv_mm": [
+            59.53527912014849,
+            878.9101000729594
+          ],
+          "center_camera_mm": [
+            5.013258069011162,
+            59.32418663824837,
+            878.9100759425946
+          ],
+          "reprojection_rms_px": 0.5019342947021403,
+          "boundary_support": [
+            {
+              "role": "left",
+              "edge": "top",
+              "retained_runs": 12,
+              "line_representatives": 128
+            },
+            {
+              "role": "left",
+              "edge": "bottom",
+              "retained_runs": 26,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "top",
+              "retained_runs": 5,
+              "line_representatives": 128
+            },
+            {
+              "role": "right",
+              "edge": "bottom",
+              "retained_runs": 29,
+              "line_representatives": 128
+            }
+          ],
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+          "limits": [
+            "DIAMETER_IS_SUPPLIED_PRIOR_NOT_MEASUREMENT",
+            "LINE_SUMMARY_NOT_INDEPENDENT_RAW_PIXELS",
+            "NOT_A_METRIC_OR_INSTALLATION_ACCEPTANCE"
+          ]
+        }
+      }
+    },
+    "position_source": "USER_DIAMETER_PRIOR_RELATIVE_SECTION",
+    "method": "USER_DIAMETER_PRIOR_RELATIVE_SECTION",
+    "evaluated_assignments": 192,
+    "search_branches": 260,
+    "search_truncated": false,
+    "plausible_hypothesis_count": 1,
+    "source": {
+      "dataset_id": "elevation-20261031-071031-189194c4",
+      "calibration_id": "field-chess-42b9fd287add",
+      "capture_id": "elevation-20261031-071031-189194c4",
+      "photo_sha256": {
+        "left": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+        "right": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660"
+      },
+      "captured_at": "2026-10-30T18:32:50.882000+08:00",
+      "scope": "CURRENT_CAPTURE_QUALITATIVE_ASSISTANCE"
+    }
+  },
+  "strict_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "strict_position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "temporal_fusion": {
+    "status": "INVALID",
+    "accepted_frames": 4,
+    "requested_frames": 10,
+    "reason_codes": [
+      "BURST_REFERENCE_OR_SCENE_UNSTABLE"
+    ]
+  },
+  "scope": "QUALITATIVE_IDENTIFICATION_USING_STATED_PRIORS_NOT_INDEPENDENT_DIMENSION_VALIDATION"
+}

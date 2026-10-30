@@ -7,6 +7,7 @@ import numpy as np
 
 from .camera_view import CAMERA_SIDE_PRESETS, camera_side_label, preview_rotation
 from .relative_scene import STATE_COLORS, STATE_LABELS, model_states, scene_sections, draw_scene
+from .assist_display import assist_preview_states, hypotheses, hypothesis_assignments
 
 
 def model_section_basis(lines: np.ndarray, axis: np.ndarray | None = None) -> np.ndarray:
@@ -204,6 +205,9 @@ class ElevationModelViewer:
             if any(s['items'] for s in scene_sections(self.report)):
                 self.scene_tabs.select(0)
         self.installation_states = model_states(self.report) if self._is_current() else {}
+        if self._is_current():
+            self.installation_states = assist_preview_states(self.report, self.installation_states,
+                getattr(self.owner, 'assist_hypothesis_index', 0))
         self.canvas.delete("all"); lines = self._project(self.display_lines.reshape(-1, 3)).reshape((-1, 2, 2)) if len(self.display_lines) else np.empty((0, 2, 2))
         self.projected_lines = lines
         selected = self.owner.selected_id()
@@ -242,7 +246,8 @@ class ElevationModelViewer:
         scene = next((s for s in scenes if s['zone_id'] == self.scene_zone.get()), scenes[0] if scenes else None)
         if scene:
             self.scene_zone.set(scene['zone_id'])
-        self.scene_hits = draw_scene(self.scene_canvas, scene, selected_pipe=selected)
+        mapping = hypothesis_assignments(self.report, getattr(self.owner, 'assist_hypothesis_index', 0)) if self._is_current() else {}
+        self.scene_hits = draw_scene(self.scene_canvas, scene, selected_pipe=selected, advisory_assignments=mapping)
         spec = next((p for p in self.pipes if p["pipe_id"] == selected), None)
         self.selection_info.set(f"当前选择：{selected} · 模型外径 {spec['nominal_diameter_mm']:g} mm · {STATE_LABELS[self.installation_states.get(selected, 'UNKNOWN')]}（点击编号只作选择，不创建照片身份）" if spec else "点击任一视图中的管道，与主列表同步选择。")
         if not self._is_current():
@@ -298,7 +303,10 @@ class ElevationModelViewer:
             canvas.create_text(12, h-48, anchor="nw", text=caption, fill="#995200", tags="camera_direction")
         else:
             canvas.create_text(12, h-48, anchor="nw", text="相机侧未指定；求解前不猜测观察方向。", fill="#355371")
-        canvas.create_text(12, h-25, anchor="nw", text="绿：相对就位  蓝：已识别安装  橙：不符  灰：待确认", fill="#355371", tags='installation-legend')
+        choices = hypotheses(self.report) if self._is_current() else []
+        legend = (f"辅助方案 {getattr(self.owner, 'assist_hypothesis_index', 0)+1}/{len(choices)}：黄为候选，待确认；灰为未确认"
+                  if choices else "绿：相对就位  蓝：已识别安装  橙：不符  灰：待确认")
+        canvas.create_text(12, h-25, anchor="nw", text=legend, fill="#355371", tags='installation-legend')
 
     def pick_scene_pipe(self, event) -> None:
         if not self._is_current():
@@ -309,8 +317,12 @@ class ElevationModelViewer:
         row = hits[0]
         if row['pipe_id']:
             self.owner.select_model_pipe(row['pipe_id'])
+        elif row.get('assist_pipe_id'):
+            self.owner.select_model_pipe(row['assist_pipe_id'])
         text = f"{row['label']}：估计外径 {row['diameter_mm']:.2f} mm，来源 {row['diameter_source']}。"
-        text += f"对应 {row['pipe_id']}。" if row['pipe_id'] else '尚未唯一对应 CAD 管号，不点亮确定安装位置。'
+        text += (f"对应 {row['pipe_id']}。" if row['pipe_id'] else
+                 f"辅助候选 {row['assist_pipe_id']}，待确认；不是尺寸验收。" if row.get('assist_pipe_id') else
+                 '尚未唯一对应 CAD 管号，不点亮确定安装位置。')
         self.selection_info.set(text)
 
     def _pick(self, candidates: list[str]) -> None:

@@ -371,7 +371,8 @@ class RegionCanvas:
         report = self.owner.report if isinstance(self.owner.report, dict) else {}
         # Image proposals deliberately have no model ID or measurement. Show
         # their own IDs and failure stage even when every model row is UNKNOWN.
-        for candidate in (report.get("local_surface") or {}).get("image_candidates",[]):
+        assist_active = hasattr(self.owner, 'assist_display_active') and self.owner.assist_display_active()
+        for candidate in [] if assist_active else (report.get("local_surface") or {}).get("image_candidates",[]):
             if candidate.get("role") != self.role:
                 continue
             x,y,bw,bh = candidate["region_px"]
@@ -405,7 +406,19 @@ class RegionCanvas:
         for x1, y1, x2, y2 in boundary_overlay_segments(report, self.role):
             canvas.create_line(ox+x1*scale, oy+y1*scale, ox+x2*scale, oy+y2*scale,
                                fill='#67E8EF', width=2, tags='pooled-boundary')
-        selected_solver = self.owner.selected_solver_row() if hasattr(self.owner, 'selected_solver_row') else None
+        if assist_active:
+            for row in self.owner.assist_rows.values():
+                box = row.get(self.role+'_region_px')
+                if not box:
+                    continue
+                x, y, bw, bh = box
+                canvas.create_rectangle(ox+x*scale, oy+y*scale, ox+(x+bw)*scale, oy+(y+bh)*scale,
+                                        outline='#6DD5FA', width=1, tags='assist-candidate')
+                canvas.create_text(ox+x*scale+3, oy+y*scale+3, anchor='nw',
+                    text=row['label']+' → '+(row.get('preview_pipe_id') or '待对应')+'（候选）',
+                    fill='#6DD5FA', tags='assist-candidate')
+        selected_solver = (self.owner.selected_assist_row() if assist_active else
+                           self.owner.selected_solver_row() if hasattr(self.owner, 'selected_solver_row') else None)
         box = (selected_solver or {}).get(self.role+'_region_px')
         if box:
             x, y, bw, bh = box
@@ -1052,6 +1065,24 @@ class ElevationCaptureDialog:
             self.views[role] = RegionCanvas(view_frame, self, role, assessment_regions=True)
         self.status_tabs = ttk.Notebook(footer)
         self.status_tabs.pack(fill="x", pady=6)
+        assist_frame = ttk.Frame(self.status_tabs)
+        self.assist_status_tab = assist_frame
+        self.status_tabs.add(assist_frame, text='辅助安装识别')
+        self.assist_hypothesis_index = 0
+        self.assist_rows = {}
+        self.assist_tree = ttk.Treeview(assist_frame, columns=('color', 'size', 'preview', 'relation', 'alternatives', 'state'), height=4, selectmode='browse')
+        self.assist_tree.heading('#0', text='现场管道')
+        self.assist_tree.column('#0', width=100, stretch=False)
+        for column, label, width in zip(('color', 'size', 'preview', 'relation', 'alternatives', 'state'),
+                ('颜色', '相对粗细', '当前方案（待确认）', '层位 / 横向关系', '可能管号', '辅助判断'), (55, 85, 140, 160, 180, 160)):
+            self.assist_tree.heading(column, text=label)
+            self.assist_tree.column(column, width=width, stretch=column == 'alternatives')
+        assist_scroll = ttk.Scrollbar(assist_frame, orient='vertical', command=self.assist_tree.yview)
+        self.assist_tree.configure(yscrollcommand=assist_scroll.set)
+        assist_scroll.pack(side='right', fill='y')
+        self.assist_tree.pack(side='left', fill='x', expand=True)
+        self.assist_tree.bind('<<TreeviewSelect>>', lambda _e: self._assist_selected())
+        self.assist_tree.bind('<Double-1>', lambda _e: self.show_analysis_details('assist'))
         solver_frame = ttk.Frame(self.status_tabs)
         table_frame = ttk.Frame(self.status_tabs)
         self.status_tabs.add(solver_frame, text='现场求解状态')
@@ -1092,6 +1123,13 @@ class ElevationCaptureDialog:
         row = ttk.Frame(footer)
         row.pack(fill="x")
         ttk.Button(row, text='查看详情 / 诊断', command=self.show_analysis_details).pack(side='left', padx=2)
+        self.assist_actions = ttk.Frame(row)
+        ttk.Label(self.assist_actions, text='候选方案').pack(side='left', padx=3)
+        self.assist_plan_label = tk.StringVar(value='暂无方案')
+        self.assist_plan_box = ttk.Combobox(self.assist_actions, textvariable=self.assist_plan_label, state='readonly', width=19)
+        self.assist_plan_box.pack(side='left', padx=3)
+        self.assist_plan_box.bind('<<ComboboxSelected>>', lambda _e: self._assist_plan_selected())
+        ttk.Button(self.assist_actions, text='颜色 / 采购规格…', command=self.edit_assist_hints).pack(side='left', padx=3)
         self.cad_actions = ttk.Frame(row)
         for name, action in [('设置所选管颜色', self.edit_pipe), ('同径统一颜色', self.apply_diameter_color)]:
             ttk.Button(self.cad_actions, text=name, command=action).pack(side='left', padx=2)
@@ -1319,6 +1357,11 @@ class ElevationCaptureDialog:
             self.cad_actions.pack(side='left', padx=8)
         else:
             self.cad_actions.pack_forget()
+        if self.status_tabs.select() == str(self.assist_status_tab):
+            self.assist_actions.pack(side='left', padx=4)
+        else:
+            self.assist_actions.pack_forget()
+        self.redraw()
 
     def _cad_selected(self):
         self.redraw()
@@ -1625,6 +1668,14 @@ class ElevationCaptureDialog:
         if self.tree.exists(pipe_id):
             self.tree.selection_set(pipe_id)
             self.tree.see(pipe_id)
+            if self.assist_display_active():
+                keys = [key for key, row in self.assist_rows.items() if row.get('preview_pipe_id') == pipe_id]
+                selected = self.assist_tree.selection()
+                if len(keys) == 1 and selected != (keys[0],):
+                    self.assist_tree.selection_set(keys[0])
+                    self.assist_tree.see(keys[0])
+                elif not keys and selected:
+                    self.assist_tree.selection_remove(*selected)
             self.redraw()
 
     def _local_observation_selected(self) -> None:
@@ -1684,8 +1735,88 @@ class ElevationCaptureDialog:
         if self.solver_rows:
             key = selected_solver[0] if selected_solver and selected_solver[0] in self.solver_rows else next(iter(self.solver_rows))
             self.solver_tree.selection_set(key)
+        self.refresh_assist_table()
         self._solver_selected()
         self.redraw()
+
+    def refresh_assist_table(self):
+        from .assist_display import assist_rows, hypotheses
+        if getattr(self, '_assist_report_reference', None) is not self.report:
+            self.assist_hypothesis_index = 0
+            self._assist_report_reference = self.report
+        choices = hypotheses(self.report)
+        self.assist_hypothesis_index = min(self.assist_hypothesis_index, max(0, len(choices)-1))
+        values = [f"方案 {i+1}（{'备选对照' if choice.get('near_best') is False else '待确认'}）"
+                  for i, choice in enumerate(choices)]
+        self.assist_plan_box.configure(values=values)
+        self.assist_plan_label.set(values[self.assist_hypothesis_index] if values else '暂无方案')
+        selected = self.assist_tree.selection()
+        self.assist_tree.delete(*self.assist_tree.get_children())
+        self.assist_rows = {r['key']: r for r in assist_rows(self.report, self.assist_hypothesis_index)}
+        for key, row in self.assist_rows.items():
+            self.assist_tree.insert('', 'end', iid=key, text=row['label'], values=row['values'])
+        if self.assist_rows:
+            self.assist_tree.selection_set(selected[0] if selected and selected[0] in self.assist_rows else next(iter(self.assist_rows)))
+
+    def selected_assist_row(self):
+        selected = self.assist_tree.selection() if hasattr(self, 'assist_tree') else ()
+        return self.assist_rows.get(selected[0]) if selected else None
+
+    def assist_display_active(self):
+        return bool(getattr(self, 'assist_rows', None) and self.status_tabs.select() == str(self.assist_status_tab))
+
+    def _assist_selected(self):
+        row = self.selected_assist_row()
+        if row and row.get('preview_pipe_id'):
+            self.select_model_pipe(row['preview_pipe_id'])
+        self.redraw()
+        self._refresh_open_details()
+
+    def _assist_plan_selected(self):
+        index = self.assist_plan_box.current()
+        if index < 0:
+            return
+        self.assist_hypothesis_index = index
+        self.refresh_assist_table()
+        self._assist_selected()
+
+    def apply_assist_hints(self, values):
+        if self.busy:
+            return False
+        from .elevation_dataset import normalize_registration_settings
+        settings = dict(self.registration_settings)
+        settings['installation_assist'] = {'appearance_diameter_hints': values,
+                                           'hint_source': 'USER_STATED_PURCHASE_DIAMETERS'}
+        self.registration_settings = normalize_registration_settings(settings)
+        self.invalidate()
+        self.message.set('已设置颜色与采购规格，仅用于辅助识别；点击⑤重新评估并保存到本次现场。')
+        return True
+
+    def edit_assist_hints(self):
+        if self.busy:
+            return
+        tk, ttk = self.app.tk, self.app.ttk
+        dialog = tk.Toplevel(self.window)
+        dialog.title('辅助识别 · 颜色与采购规格')
+        generation = self.generation
+        ttk.Label(dialog, text='填写已知采购外径，用于区分粗细档位。\n不覆盖实测尺寸；留空则只比较相对大小。').grid(row=0, column=0, columnspan=2, padx=14, pady=12)
+        hints = (self.registration_settings.get('installation_assist') or {}).get('appearance_diameter_hints') or {}
+        variables = {}
+        for index, (key, label) in enumerate((('BLUE', '蓝色'), ('RED', '红色'), ('WHITE', '白色')), 1):
+            variables[key] = tk.StringVar(value=str(hints.get(key, '')))
+            ttk.Label(dialog, text=label+'外径 mm').grid(row=index, column=0, padx=14, pady=4)
+            ttk.Entry(dialog, textvariable=variables[key], width=16).grid(row=index, column=1, padx=14, pady=4)
+        def save():
+            try:
+                if generation != self.generation:
+                    self.app.messagebox.showinfo('现场已改变', '请关闭后重新打开规格设置。', parent=dialog)
+                    return
+                values = {k: float(v.get().strip()) for k, v in variables.items() if v.get().strip()}
+                if self.apply_assist_hints(values):
+                    dialog.destroy()
+            except (ValueError, TypeError) as error:
+                self.app.messagebox.showerror('规格无效', str(error), parent=dialog)
+        ttk.Button(dialog, text='应用识别先验', command=save).grid(row=4, column=0, columnspan=2, pady=12)
 
     def selected_solver_row(self):
         selected = self.solver_tree.selection() if hasattr(self, 'solver_tree') else ()
@@ -1715,13 +1846,15 @@ class ElevationCaptureDialog:
         from .section_display import section_summary_lines
         from .ground_check import ground_summary_lines
         from .view_geometry import view_geometry_summary_lines
+        from .assist_display import assist_summary_lines
         tk, ttk = self.app.tk, self.app.ttk
         row = self.selected_solver_row()
         spec = self.selected_pipe()
         cad_lines = relative_layout_summary_lines(self.report)
         if spec is not None:
             cad_lines += ['', '所选 CAD 管号：'+spec['pipe_id']]+measurement_summary_lines(spec, self.results.get(spec['pipe_id']))
-        pages = [('candidate', '当前候选', row['detail'] if row else '评估后选择一个现场候选，查看轮廓、尺寸与重复性。'),
+        pages = [('assist', '辅助安装识别', '\n'.join(assist_summary_lines(self.report, self.assist_hypothesis_index))),
+                 ('candidate', '当前候选', row['detail'] if row else '评估后选择一个现场候选，查看轮廓、尺寸与重复性。'),
                  ('sections', '断面与汇聚', '\n'.join(section_summary_lines(self.report, detailed=True))),
                  ('ground', '地面倾角', '\n'.join(ground_summary_lines(self.current_ground_check()))),
                  ('geometry', '机位几何', '\n'.join(view_geometry_summary_lines(self.report))),
@@ -1748,7 +1881,8 @@ class ElevationCaptureDialog:
             text = self.detail_texts[key]
             text.configure(state='normal'); text.delete('1.0', 'end')
             text.insert('1.0', content); text.configure(state='disabled')
-        tab = tab or ('cad' if self.status_tabs.select() == str(self.cad_status_tab) else 'candidate')
+        tab = tab or ('assist' if self.status_tabs.select() == str(self.assist_status_tab) else
+                      'cad' if self.status_tabs.select() == str(self.cad_status_tab) else 'candidate')
         self.detail_tabs.select(self.detail_pages[tab])
         dialog.lift()
 

@@ -130,7 +130,7 @@ def normalize_registration_settings(payload: Mapping | None = None, *, image_siz
 
     from .camera_view import normalize_camera_side
 
-    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode", "camera_side_world", "aggregation_band", "ground_region", "ground_candidate_trial"}
+    allowed = {"axis_world", "anchors", "present_pipe_count", "local_observation_mode", "camera_side_world", "aggregation_band", "ground_region", "ground_candidate_trial", "installation_assist"}
     if payload is not None and (not isinstance(payload, Mapping) or set(payload) - allowed):
         raise ValueError("立面匹配配置包含未知字段")
     payload = dict(payload or {})
@@ -156,6 +156,10 @@ def normalize_registration_settings(payload: Mapping | None = None, *, image_siz
             f"（当前：{available}）"
         )
     result = {"axis_world": axis, "anchors": dict(anchors), "local_observation_mode": mode}
+    from .installation_assist_config import normalize_installation_assist_settings
+    assistance = normalize_installation_assist_settings(payload.get('installation_assist'))
+    if assistance:
+        result['installation_assist'] = assistance
     if type(payload.get('ground_candidate_trial', False)) is not bool:
         raise ValueError('候选地面试验开关必须为布尔值')
     if payload.get('ground_candidate_trial'):

@@ -10,9 +10,11 @@ import numpy as np
 from .section_display import section_evaluations
 
 STATE_COLORS = {'IN_POSITION': '#26AD72', 'INSTALLED': '#31A9D4',
-                'OUT_OF_POSITION': '#E28232', 'UNKNOWN': '#B9C1CA'}
+                'OUT_OF_POSITION': '#E28232', 'UNKNOWN': '#B9C1CA',
+                'ASSIST_CANDIDATE': '#E8BF58', 'SUSPECTED_INSTALLED': '#F1D477'}
 STATE_LABELS = {'IN_POSITION': '断面相对就位', 'INSTALLED': '已识别安装，尺寸另核',
-                'OUT_OF_POSITION': '尺寸或位置不符', 'UNKNOWN': '尚未确认'}
+                'OUT_OF_POSITION': '尺寸或位置不符', 'UNKNOWN': '尚未确认',
+                'ASSIST_CANDIDATE': '当前辅助方案候选，待确认', 'SUSPECTED_INSTALLED': '疑似已安装，待确认'}
 
 
 def model_states(report):
@@ -73,11 +75,12 @@ def scene_sections(report):
     return scenes
 
 
-def draw_scene(canvas, scene, *, selected_pipe=None):
+def draw_scene(canvas, scene, *, selected_pipe=None, advisory_assignments=None):
     """Equal-scale normal section; dashed circles denote conditional fits."""
     canvas.delete('all')
     w, h = max(canvas.winfo_width(), 150), max(canvas.winfo_height(), 150)
     items = scene.get('items', []) if scene else []
+    advisory_assignments = advisory_assignments or {}
     if not items:
         canvas.create_text(w/2, h/2, text='尚未生成现场断面\n请先点击⑤保存并评估', justify='center', fill='#355371')
         return []
@@ -96,19 +99,22 @@ def draw_scene(canvas, scene, *, selected_pipe=None):
                 angle = np.linspace(0, 2*np.pi, 49)
                 ellipse = (np.c_[np.cos(angle), np.sin(angle)]*np.sqrt(5.991*eigenvalues))@eigenvectors.T*scale+[x, y]
                 canvas.create_line(*ellipse.ravel(), fill='#CAD3DF', dash=(3, 4), tags='center-uncertainty')
-        selected = row['pipe_id'] is not None and row['pipe_id'] == selected_pipe
+        preview = advisory_assignments.get(row['id'])
+        selected = (row['pipe_id'] or preview) is not None and (row['pipe_id'] or preview) == selected_pipe
         radius = max(3., radius)
         canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=row['color'],
                            outline='#C17A00' if selected else '#344A60', width=3 if selected else 1,
                            dash=(4, 3), tags=('scene-pipe', row['id']))
-        suffix = f" → {row['pipe_id']}" if row['pipe_id'] else ' · 待对应'
+        suffix = (f" → {row['pipe_id']}" if row['pipe_id'] else f' · 辅助 → {preview}' if preview else ' · 待对应')
         canvas.create_text(x, y-radius-8, text=f"{row['label']}  Ø{row['diameter_mm']:.1f} mm{suffix}",
                            anchor='s', fill='#20374B', tags='scene-label')
-        hits.append((row, float(x), float(y), max(radius, 12.)))
+        hits.append(({**row, 'assist_pipe_id': preview}, float(x), float(y), max(radius, 12.)))
     unstable = sum(not r['subset_stable'] for r in items)
     canvas.create_rectangle(0, 0, w, 78, fill='#F2F5F8', outline='')
     canvas.create_text(12, 12, anchor='nw', text=f"现场相对断面 · {scene['zone_id']} · {len(items)} 根候选", fill='#20374B', tags='scene-title')
-    canvas.create_text(12, 36, anchor='nw', text='横轴 V（纵深分量），纵轴 U；以 S1 为原点，单位 mm。\n三维管轴从图像解算；无需假定相机与地面垂直。', fill='#355371', width=w-24)
+    caption = ('坐标和直径为独立条件量测；辅助管号来自当前方案，待确认。'
+               if advisory_assignments else '三维管轴从图像解算；无需假定相机与地面垂直。')
+    canvas.create_text(12, 36, anchor='nw', text='横轴 V（纵深分量），纵轴 U；以 S1 为原点，单位 mm。\n'+caption, fill='#355371', width=w-24)
     canvas.create_rectangle(0, h-83, w, h, fill='#F2F5F8', outline='')
     note = f'条件估计；{unstable} 根尚未通过完整尺寸/边界检查。'
     note += '\n虚线椭圆仅表示像素误差假设，不含标定和轴向误差。'

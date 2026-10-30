@@ -1,0 +1,99 @@
+{
+  "scope": "ARCHIVED_SCENE_UI_NOT_NEW_CAPTURE_OR_METRIC_VALIDATION",
+  "screens": {
+    "1024x720": {
+      "clipped_controls": [],
+      "photo_height": 214,
+      "workflow": "辅助识别：疑似 4 / 有歧义 0 / 未观察到 8 · 观察侧：从 +Y 侧朝 -Y 看\n照片：10 对，多帧检查未通过 · 地面：平面检查通过 · 黄色候选待确认，精确尺寸见求解页",
+      "selected_photo_labels": true
+    },
+    "1280x860": {
+      "clipped_controls": [],
+      "photo_height": 354,
+      "workflow": "辅助识别：疑似 4 / 有歧义 0 / 未观察到 8 · 观察侧：从 +Y 侧朝 -Y 看\n照片：10 对，多帧检查未通过 · 地面：平面检查通过 · 黄色候选待确认，精确尺寸见求解页",
+      "selected_photo_labels": true
+    }
+  },
+  "strict_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "assistance_rows": [
+    {
+      "label": "S1",
+      "preview_pipe_id": "P011",
+      "values": [
+        "红",
+        "中",
+        "P011",
+        "中层 · 横向位 1",
+        "P011",
+        "疑似已安装"
+      ]
+    },
+    {
+      "label": "S2",
+      "preview_pipe_id": "P008",
+      "values": [
+        "红",
+        "中",
+        "P008",
+        "近层 · 横向位 2",
+        "P008",
+        "疑似已安装"
+      ]
+    },
+    {
+      "label": "S3",
+      "preview_pipe_id": "P009",
+      "values": [
+        "白",
+        "细",
+        "P009",
+        "远层 · 横向位 2",
+        "P009",
+        "疑似已安装"
+      ]
+    },
+    {
+      "label": "S4",
+      "preview_pipe_id": "P004",
+      "values": [
+        "蓝",
+        "粗",
+        "P004",
+        "近层 · 横向位 3",
+        "P004",
+        "疑似已安装"
+      ]
+    }
+  ],
+  "detail": "辅助安装识别 · 疑似已安装\n目标：通过上下层、左右关系和粗细差异，协助区分已安装的模型管位。\n黄色表示当前候选方案；多个方案接近时请结合现场比较，尚未观察到不等于未安装。\n疑似已安装 4；对应有歧义 0；未观察到 8。\n采用已知管径辅助定位；管径来自识别先验，不是本次实测，也不覆盖原测量。\n图像横向顺序不自动等于世界上下层；设计层位随候选对应显示。\n未观察到不表示未安装；本结果只辅助辨认，不判断尺寸或就位合格。\n\n当前预览：方案 1 / 5（待确认，不是验收结果）\n关系差异分数 0.143；越小越相符，不是概率。\nS1 → P011 · 中层 · 横向位 1\nS2 → P008 · 近层 · 横向位 2\nS3 → P009 · 远层 · 横向位 2\nS4 → P004 · 近层 · 横向位 3\n层位按指定观察侧从近到远；下视时通常对应上/中/下层。横向位按本方案模型投影排列。\n\n颜色与采购管径只用于识别先验，不会覆盖实测管径；精确尺寸/就位结果保留在其他分页。\n\nS1：疑似已安装\n颜色：红；相对大小：中。\n当前候选方案：P011（待确认）\n模型相对位置：中层 · 横向位 1。层位从指定观察侧近到远排列，不是实测地面高度。\n可选模型管号：P011\n依据颜色、粗细、排列和层间关系辅助识别；不要求毫米尺寸验收通过。\n方案排序不是正确率；切换方案仅供比较，不代表确认安装或尺寸合格。\n图像可见宽度约 70.3 px；受距离和遮挡影响。\n采用采购外径提示 40 mm，仅作识别先验。\n\nS2：疑似已安装\n颜色：红；相对大小：中。\n当前候选方案：P008（待确认）\n模型相对位置：近层 · 横向位 2。层位从指定观察侧近到远排列，不是实测地面高度。\n可选模型管号：P008\n依据颜色、粗细、排列和层间关系辅助识别；不要求毫米尺寸验收通过。\n方案排序不是正确率；切换方案仅供比较，不代表确认安装或尺寸合格。\n图像可见宽度约 84.0 px；受距离和遮挡影响。\n采用采购外径提示 40 mm，仅作识别先验。\n\nS3：疑似已安装\n颜色：白；相对大小：细。\n当前候选方案：P009（待确认）\n模型相对位置：远层 · 横向位 2。层位从指定观察侧近到远排列，不是实测地面高度。\n可选模型管号：P009\n依据颜色、粗细、排列和层间关系辅助识别；不要求毫米尺寸验收通过。\n方案排序不是正确率；切换方案仅供比较，不代表确认安装或尺寸合格。\n图像可见宽度约 39.1 px；受距离和遮挡影响。\n采用采购外径提示 25 mm，仅作识别先验。\n\nS4：疑似已安装\n颜色：蓝；相对大小：粗。\n当前候选方案：P004（待确认）\n模型相对位置：近层 · 横向位 3。层位从指定观察侧近到远排列，不是实测地面高度。\n可选模型管号：P004\n依据颜色、粗细、排列和层间关系辅助识别；不要求毫米尺寸验收通过。\n方案排序不是正确率；切换方案仅供比较，不代表确认安装或尺寸合格。\n图像可见宽度约 104.7 px；受距离和遮挡影响。\n采用采购外径提示 50 mm，仅作识别先验。\n",
+  "first_plan_yellow_pipes": [
+    "P004",
+    "P008",
+    "P009",
+    "P011"
+  ],
+  "scene_and_model_clicks_link_to_the_current_photo_candidate_without_assigning_identity": true,
+  "second_plan_yellow_pipes": [
+    "P001",
+    "P008",
+    "P009",
+    "P011"
+  ],
+  "switch_does_not_light_union_of_plans": true,
+  "input_change_clears_suggestions": true,
+  "callback_errors": [],
+  "sources_unchanged": true,
+  "source_sha256": {
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\manifest.json": "7459437351de1335d6b33b52a9c3e91f96949b97ac0c488dbee20ff439b5fb52",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\report.json": "0954f43ab4e3dde69ae78843ca4d6a555a25040d4072114c74394361cf1f89db",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\measurement_workbench\\workbench_profile.json": "12bc0e6359bcae983a47b9b5da31b93ffa2a068214955cf813be779962f835d7",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e"
+  }
+}

@@ -1,0 +1,1089 @@
+{
+  "scope": "DIAMETER_PRIOR_AUXILIARY_IDENTITY_NOT_MEASUREMENT_OR_ACCEPTANCE",
+  "input_pipe_ids_used_as_prior": false,
+  "observed_order": [
+    {
+      "observation_id": "POOL-L18-POOL-R19",
+      "appearance": "hue-0",
+      "cad_diameter_class": 41
+    },
+    {
+      "observation_id": "POOL-L19-POOL-R20",
+      "appearance": "hue-0",
+      "cad_diameter_class": 41
+    },
+    {
+      "observation_id": "POOL-L20-POOL-R21",
+      "appearance": "neutral",
+      "cad_diameter_class": 26
+    },
+    {
+      "observation_id": "POOL-L21-POOL-R22",
+      "appearance": "hue-105",
+      "cad_diameter_class": 51
+    }
+  ],
+  "source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\geometry-path-20261031\\report.json": "c6704e3df6487647226e4058e9cfa19e9b4865e6d33c8d8952067fc91399f5a8",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd"
+  },
+  "source_unchanged": true,
+  "results": [
+    {
+      "prior_source": "USER_PURCHASE_40_25_50",
+      "axis_source": "axis",
+      "relative_centers_mm": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          55.23737655684519,
+          -175.68549962854422
+        ],
+        [
+          116.89921213364616,
+          134.873652270795
+        ],
+        [
+          144.06451905032645,
+          -175.89328906921855
+        ]
+      ],
+      "fits": [
+        {
+          "known_diameter_mm": 40,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.7973408182455153,
+          "section_center_parameters_mm": [
+            -84.56079900250766,
+            1060.329647406626
+          ]
+        },
+        {
+          "known_diameter_mm": 40,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.643817540104557,
+          "section_center_parameters_mm": [
+            -29.32342244566247,
+            884.6441477780818
+          ]
+        },
+        {
+          "known_diameter_mm": 25,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 1.169452312776329,
+          "section_center_parameters_mm": [
+            32.3384131311385,
+            1195.203299677421
+          ]
+        },
+        {
+          "known_diameter_mm": 50,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.9129893355089651,
+          "section_center_parameters_mm": [
+            59.50372004781878,
+            884.4363583374075
+          ]
+        }
+      ],
+      "top10": [
+        {
+          "rms_mm": 13.07868482480079,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            2.4090774170243354,
+            18.874909394260946,
+            17.869476823003318,
+            1.6804542288525124
+          ],
+          "assumed_camera_cross_section_mm": [
+            -166.26846831996542,
+            1018.7380708601323
+          ],
+          "determinant": 0.9999999999999998
+        },
+        {
+          "rms_mm": 61.41127376002853,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P001"
+          ],
+          "residuals_mm": [
+            18.802595459730266,
+            65.8538498441402,
+            57.44634568320982,
+            84.23199161627963
+          ],
+          "assumed_camera_cross_section_mm": [
+            -479.5783355116285,
+            871.9474208620214
+          ],
+          "determinant": 0.9999999999999991
+        },
+        {
+          "rms_mm": 63.28943200945722,
+          "pipe_ids": [
+            "P005",
+            "P002",
+            "P009",
+            "P001"
+          ],
+          "residuals_mm": [
+            57.53988685537239,
+            76.10225157550539,
+            78.92997401621906,
+            26.26550482909569
+          ],
+          "assumed_camera_cross_section_mm": [
+            -1015.7446106509641,
+            231.4626593475415
+          ],
+          "determinant": -1.0
+        },
+        {
+          "rms_mm": 72.11631231594032,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P006",
+            "P004"
+          ],
+          "residuals_mm": [
+            41.95680433902183,
+            50.327947101833615,
+            112.18671388787878,
+            62.641164942969326
+          ],
+          "assumed_camera_cross_section_mm": [
+            154.46627613950028,
+            1067.4767452928627
+          ],
+          "determinant": 1.0
+        },
+        {
+          "rms_mm": 72.92890340875107,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            39.28049999878654,
+            21.713933707895766,
+            62.86088218164077,
+            123.72775235868502
+          ],
+          "assumed_camera_cross_section_mm": [
+            -197.3790626945132,
+            970.6771040235393
+          ],
+          "determinant": 0.9999999999999999
+        },
+        {
+          "rms_mm": 77.61021110130486,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            70.4478423350251,
+            101.93405676504067,
+            51.09669098952606,
+            78.28829555200578
+          ],
+          "assumed_camera_cross_section_mm": [
+            -242.30283754347545,
+            976.5573679486135
+          ],
+          "determinant": -0.9999999999999997
+        },
+        {
+          "rms_mm": 77.8579994708056,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            55.903802673554054,
+            66.81227991880631,
+            85.78944984192698,
+            96.42886871103877
+          ],
+          "assumed_camera_cross_section_mm": [
+            70.19287477840048,
+            970.0374847263441
+          ],
+          "determinant": -0.9999999999999993
+        },
+        {
+          "rms_mm": 81.1406782063102,
+          "pipe_ids": [
+            "P002",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            85.43166790418518,
+            113.53112940939847,
+            40.27202945361663,
+            67.27194851453616
+          ],
+          "assumed_camera_cross_section_mm": [
+            -182.378049792083,
+            993.3851048873472
+          ],
+          "determinant": -1.0000000000000002
+        },
+        {
+          "rms_mm": 82.95832449276524,
+          "pipe_ids": [
+            "P002",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            78.33726817797117,
+            75.50839671615209,
+            91.6158062723105,
+            85.42033066800332
+          ],
+          "assumed_camera_cross_section_mm": [
+            117.5354216673921,
+            964.2799308449576
+          ],
+          "determinant": -0.9999999999999999
+        },
+        {
+          "rms_mm": 85.28874507016965,
+          "pipe_ids": [
+            "P005",
+            "P011",
+            "P006",
+            "P007"
+          ],
+          "residuals_mm": [
+            31.25480426981832,
+            43.5261523016561,
+            127.07309737528512,
+            100.38784459234715
+          ],
+          "assumed_camera_cross_section_mm": [
+            1018.5738644679706,
+            107.16823169016263
+          ],
+          "determinant": 1.0
+        }
+      ],
+      "evaluated_compatible_hypotheses": 143
+    },
+    {
+      "prior_source": "USER_PURCHASE_40_25_50",
+      "axis_source": "unconstrained_axis",
+      "relative_centers_mm": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          55.24195517269884,
+          -175.74540466250767
+        ],
+        [
+          116.90409121379611,
+          133.6777277568233
+        ],
+        [
+          144.04041146533683,
+          -172.66556174371954
+        ]
+      ],
+      "fits": [
+        {
+          "known_diameter_mm": 40,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.4211036395764907,
+          "section_center_parameters_mm": [
+            -84.50293319548331,
+            1051.6470140283927
+          ]
+        },
+        {
+          "known_diameter_mm": 40,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.570220223824361,
+          "section_center_parameters_mm": [
+            -29.26097802278447,
+            875.9016093658851
+          ]
+        },
+        {
+          "known_diameter_mm": 25,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 1.1676636384343535,
+          "section_center_parameters_mm": [
+            32.401158018312806,
+            1185.324741785216
+          ]
+        },
+        {
+          "known_diameter_mm": 50,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.8190312768381594,
+          "section_center_parameters_mm": [
+            59.53747826985354,
+            878.9814522846732
+          ]
+        }
+      ],
+      "top10": [
+        {
+          "rms_mm": 12.759122710642309,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            2.3357397618902183,
+            19.403758744886954,
+            16.167615634112906,
+            2.79777061666059
+          ],
+          "assumed_camera_cross_section_mm": [
+            -162.30972705856686,
+            1011.2089966389956
+          ],
+          "determinant": 0.9999999999999998
+        },
+        {
+          "rms_mm": 60.584080141035244,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P001"
+          ],
+          "residuals_mm": [
+            19.10231793134363,
+            65.28259959169813,
+            55.38360111992325,
+            83.59224505497292
+          ],
+          "assumed_camera_cross_section_mm": [
+            -470.7926006354077,
+            867.5388983497013
+          ],
+          "determinant": 0.9999999999999996
+        },
+        {
+          "rms_mm": 62.68919104736158,
+          "pipe_ids": [
+            "P005",
+            "P002",
+            "P009",
+            "P001"
+          ],
+          "residuals_mm": [
+            57.25304248054336,
+            76.26171924496768,
+            77.64671667587022,
+            24.432875202692795
+          ],
+          "assumed_camera_cross_section_mm": [
+            -1009.6352283220377,
+            224.15428690805325
+          ],
+          "determinant": -1.0000000000000004
+        },
+        {
+          "rms_mm": 70.98868724915515,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P006",
+            "P004"
+          ],
+          "residuals_mm": [
+            42.148657383600465,
+            50.878433818031105,
+            110.2767686113305,
+            60.2618023880851
+          ],
+          "assumed_camera_cross_section_mm": [
+            156.86843832844795,
+            1058.891525151284
+          ],
+          "determinant": 0.9999999999999996
+        },
+        {
+          "rms_mm": 71.39653855254689,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            38.8199932591972,
+            21.21616131738443,
+            61.25617904842049,
+            121.16280790671577
+          ],
+          "assumed_camera_cross_section_mm": [
+            -195.1824421667156,
+            962.7872366233688
+          ],
+          "determinant": 1.0000000000000002
+        },
+        {
+          "rms_mm": 76.63556571850941,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            56.32158856425162,
+            66.41268961888831,
+            84.10812112499205,
+            93.99519674957826
+          ],
+          "assumed_camera_cross_section_mm": [
+            69.2075401803635,
+            961.8850144423109
+          ],
+          "determinant": -0.9999999999999991
+        },
+        {
+          "rms_mm": 77.71778606769416,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            70.99570846330339,
+            101.82596550698511,
+            49.66003153689969,
+            79.2791301741735
+          ],
+          "assumed_camera_cross_section_mm": [
+            -239.67220614286066,
+            968.771676853787
+          ],
+          "determinant": -1.0
+        },
+        {
+          "rms_mm": 81.2026620982807,
+          "pipe_ids": [
+            "P002",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            85.83228869620858,
+            113.404006895582,
+            38.649550473227904,
+            68.22060548547714
+          ],
+          "assumed_camera_cross_section_mm": [
+            -180.33716082614885,
+            985.4180627423293
+          ],
+          "determinant": -1.0
+        },
+        {
+          "rms_mm": 81.83374295668526,
+          "pipe_ids": [
+            "P002",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            78.71567256855724,
+            75.17636076407598,
+            89.88904145074726,
+            82.82127653337852
+          ],
+          "assumed_camera_cross_section_mm": [
+            115.6282797776822,
+            956.2574977157061
+          ],
+          "determinant": -1.0
+        },
+        {
+          "rms_mm": 83.9513835668519,
+          "pipe_ids": [
+            "P005",
+            "P011",
+            "P006",
+            "P007"
+          ],
+          "residuals_mm": [
+            31.637715111296917,
+            43.71684469047447,
+            125.33487212940355,
+            97.82842895756924
+          ],
+          "assumed_camera_cross_section_mm": [
+            1010.6203407097457,
+            104.92681022820403
+          ],
+          "determinant": 1.0000000000000004
+        }
+      ],
+      "evaluated_compatible_hypotheses": 145
+    },
+    {
+      "prior_source": "CAD_41_26_51",
+      "axis_source": "axis",
+      "relative_centers_mm": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          56.59464665960182,
+          -180.00722992853935
+        ],
+        [
+          120.19198740925007,
+          155.071947625534
+        ],
+        [
+          147.33392482579058,
+          -184.41613082408378
+        ]
+      ],
+      "fits": [
+        {
+          "known_diameter_mm": 41,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.8201556854225562,
+          "section_center_parameters_mm": [
+            -86.7029090327735,
+            1086.356533078349
+          ]
+        },
+        {
+          "known_diameter_mm": 41,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.6321341351267084,
+          "section_center_parameters_mm": [
+            -30.108262373171684,
+            906.3493031498097
+          ]
+        },
+        {
+          "known_diameter_mm": 26,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 1.2696793654213863,
+          "section_center_parameters_mm": [
+            33.48907837647657,
+            1241.428480703883
+          ]
+        },
+        {
+          "known_diameter_mm": 51,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.967111797452711,
+          "section_center_parameters_mm": [
+            60.63101579301706,
+            901.9404022542652
+          ]
+        }
+      ],
+      "top10": [
+        {
+          "rms_mm": 22.702997819865324,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            0.12472867985622764,
+            25.041953087679524,
+            36.217307081465215,
+            11.08585297182708
+          ],
+          "assumed_camera_cross_section_mm": [
+            -169.3579684424241,
+            1046.5717835620144
+          ],
+          "determinant": 1.0000000000000002
+        },
+        {
+          "rms_mm": 67.67649801516926,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P001"
+          ],
+          "residuals_mm": [
+            17.173155966347288,
+            66.23104295823147,
+            75.1509897090795,
+            89.39403751344419
+          ],
+          "assumed_camera_cross_section_mm": [
+            -491.29154497285305,
+            897.3544797228516
+          ],
+          "determinant": 0.9999999999999991
+        },
+        {
+          "rms_mm": 71.80249694650948,
+          "pipe_ids": [
+            "P005",
+            "P002",
+            "P009",
+            "P001"
+          ],
+          "residuals_mm": [
+            58.881583365021314,
+            81.945917231572,
+            96.07587795848771,
+            34.779961688078195
+          ],
+          "assumed_camera_cross_section_mm": [
+            -1039.8800171368853,
+            246.71567970042787
+          ],
+          "determinant": -0.9999999999999996
+        },
+        {
+          "rms_mm": 80.77032149956541,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            39.12382013581022,
+            18.235240664166867,
+            78.9093658823492,
+            134.18455206363686
+          ],
+          "assumed_camera_cross_section_mm": [
+            -189.88667361647003,
+            1001.4883486441835
+          ],
+          "determinant": 1.0
+        },
+        {
+          "rms_mm": 80.9910690225967,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            72.24071490818181,
+            102.70625551011268,
+            67.72593803348491,
+            76.70798232141755
+          ],
+          "assumed_camera_cross_section_mm": [
+            -250.2029141363946,
+            1003.3071882202096
+          ],
+          "determinant": -1.0
+        },
+        {
+          "rms_mm": 82.15001333408745,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P006",
+            "P004"
+          ],
+          "residuals_mm": [
+            40.57000671026105,
+            56.51782009784316,
+            129.3718424014725,
+            73.60187309932233
+          ],
+          "assumed_camera_cross_section_mm": [
+            169.49694797697086,
+            1093.5324649313566
+          ],
+          "determinant": 0.9999999999999999
+        },
+        {
+          "rms_mm": 83.84313955106796,
+          "pipe_ids": [
+            "P002",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            85.37582542349126,
+            114.9962456178687,
+            57.98604095875248,
+            65.13938271200972
+          ],
+          "assumed_camera_cross_section_mm": [
+            -194.5917553448796,
+            1019.6132793315708
+          ],
+          "determinant": -1.0
+        },
+        {
+          "rms_mm": 85.76732765480375,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            57.776234923164594,
+            62.814729038591615,
+            104.10132515831738,
+            106.31683105877332
+          ],
+          "assumed_camera_cross_section_mm": [
+            66.28677605294216,
+            998.1067362213022
+          ],
+          "determinant": -1.0000000000000002
+        },
+        {
+          "rms_mm": 90.05731965048464,
+          "pipe_ids": [
+            "P002",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            78.38957561668728,
+            72.49777129952476,
+            108.70083968597403,
+            96.04456430907432
+          ],
+          "assumed_camera_cross_section_mm": [
+            109.9803809356946,
+            993.1688215187608
+          ],
+          "determinant": -1.0
+        },
+        {
+          "rms_mm": 94.86556873661503,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            147.7907183061905,
+            18.874843017590106,
+            116.70686421291923,
+            13.381190383315285
+          ],
+          "assumed_camera_cross_section_mm": [
+            60.04437435716396,
+            1032.289437696979
+          ],
+          "determinant": 1.0
+        }
+      ],
+      "evaluated_compatible_hypotheses": 147
+    },
+    {
+      "prior_source": "CAD_41_26_51",
+      "axis_source": "unconstrained_axis",
+      "relative_centers_mm": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          56.6011872202156,
+          -180.08015834511423
+        ],
+        [
+          120.19910408650048,
+          153.66395788388104
+        ],
+        [
+          147.31064164942012,
+          -181.12493540604532
+        ]
+      ],
+      "fits": [
+        {
+          "known_diameter_mm": 41,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.4548857745309054,
+          "section_center_parameters_mm": [
+            -86.64595046090139,
+            1077.515131840147
+          ]
+        },
+        {
+          "known_diameter_mm": 41,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.5736458660013652,
+          "section_center_parameters_mm": [
+            -30.04476324068579,
+            897.4349734950328
+          ]
+        },
+        {
+          "known_diameter_mm": 26,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 1.2721514905186302,
+          "section_center_parameters_mm": [
+            33.553153625599094,
+            1231.179089724028
+          ]
+        },
+        {
+          "known_diameter_mm": 51,
+          "diameter_source": "USER_KNOWN_CONSTRAINT",
+          "reprojection_rms_px": 0.8840718013642368,
+          "section_center_parameters_mm": [
+            60.664691188518724,
+            896.3901964341017
+          ]
+        }
+      ],
+      "top10": [
+        {
+          "rms_mm": 21.810231512012802,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            0.42747272829000676,
+            25.54613208821368,
+            34.3372549730188,
+            8.420814553615815
+          ],
+          "assumed_camera_cross_section_mm": [
+            -165.48521688828953,
+            1038.8147857609745
+          ],
+          "determinant": 1.0000000000000004
+        },
+        {
+          "rms_mm": 66.64836724027617,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P001"
+          ],
+          "residuals_mm": [
+            17.444585303346894,
+            65.7100142610002,
+            72.96729566256502,
+            88.44022645993223
+          ],
+          "assumed_camera_cross_section_mm": [
+            -482.5578723260212,
+            892.672783409505
+          ],
+          "determinant": 1.0000000000000007
+        },
+        {
+          "rms_mm": 71.01745146204811,
+          "pipe_ids": [
+            "P005",
+            "P002",
+            "P009",
+            "P001"
+          ],
+          "residuals_mm": [
+            58.62772523542233,
+            82.11231887471494,
+            94.52330207826968,
+            32.55174243592154
+          ],
+          "assumed_camera_cross_section_mm": [
+            -1033.57262148766,
+            239.4587722456439
+          ],
+          "determinant": -0.9999999999999998
+        },
+        {
+          "rms_mm": 79.13987638475427,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            38.7021562034693,
+            17.829207398359195,
+            77.09938907161722,
+            131.5006722808241
+          ],
+          "assumed_camera_cross_section_mm": [
+            -187.90007965870672,
+            993.3372792036881
+          ],
+          "determinant": 1.0000000000000002
+        },
+        {
+          "rms_mm": 80.88921020514883,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            72.74934696338141,
+            102.62813455927727,
+            66.02975315776888,
+            77.37782319023685
+          ],
+          "assumed_camera_cross_section_mm": [
+            -247.50386495985808,
+            995.3341085895947
+          ],
+          "determinant": -1.000000000000001
+        },
+        {
+          "rms_mm": 80.8915549706252,
+          "pipe_ids": [
+            "P011",
+            "P008",
+            "P006",
+            "P004"
+          ],
+          "residuals_mm": [
+            40.74327041468022,
+            57.04321645301777,
+            127.31091547769608,
+            71.07575420003676
+          ],
+          "assumed_camera_cross_section_mm": [
+            171.61168654834597,
+            1084.748172275711
+          ],
+          "determinant": 0.9999999999999999
+        },
+        {
+          "rms_mm": 83.7065501280533,
+          "pipe_ids": [
+            "P002",
+            "P008",
+            "P009",
+            "P004"
+          ],
+          "residuals_mm": [
+            85.75271481116847,
+            114.89533687690584,
+            56.16786022748391,
+            65.71035748863153
+          ],
+          "assumed_camera_cross_section_mm": [
+            -192.41779041565692,
+            1011.4722412730898
+          ],
+          "determinant": -1.000000000000001
+        },
+        {
+          "rms_mm": 84.41274174141557,
+          "pipe_ids": [
+            "P005",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            58.16010099366905,
+            62.45947076283502,
+            102.24974142599672,
+            103.74609108762256
+          ],
+          "assumed_camera_cross_section_mm": [
+            65.40409962060207,
+            989.7474748240174
+          ],
+          "determinant": -0.9999999999999999
+        },
+        {
+          "rms_mm": 88.78451211551413,
+          "pipe_ids": [
+            "P002",
+            "P008",
+            "P009",
+            "P007"
+          ],
+          "residuals_mm": [
+            78.73881271993802,
+            72.2101483213123,
+            106.80394116707231,
+            93.32507898956563
+          ],
+          "assumed_camera_cross_section_mm": [
+            108.26079725223335,
+            984.9155593761366
+          ],
+          "determinant": -1.0000000000000004
+        },
+        {
+          "rms_mm": 93.99683322261819,
+          "pipe_ids": [
+            "P005",
+            "P011",
+            "P006",
+            "P007"
+          ],
+          "residuals_mm": [
+            31.70748851180695,
+            46.9789226654375,
+            142.9073218318663,
+            108.19765241369451
+          ],
+          "assumed_camera_cross_section_mm": [
+            1039.6854765822704,
+            96.46044479343077
+          ],
+          "determinant": 1.0
+        }
+      ],
+      "evaluated_compatible_hypotheses": 147
+    }
+  ]
+}

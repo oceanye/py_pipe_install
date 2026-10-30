@@ -1,0 +1,91 @@
+{
+  "recorded_at": "2026-10-30T23:25:20.831871+00:00",
+  "scope": "ARCHIVED_REPLAY_QUALITATIVE_ASSISTANCE_NOT_METRIC_ACCEPTANCE",
+  "tests": {
+    "full_suite": {
+      "tests": 1141,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "junit_testcase_count_including_subtests": 1413,
+      "subtests_passed": 272,
+      "passed": 1139,
+      "seconds": 433.367,
+      "xml_sha256": "79dd2f2cd4e2819fb90fc0073c9c9fb53ad276e48e6afa7c1c374f8efc4f9d27",
+      "skips": [
+        {
+          "test": "tests.test_ground_monitor_gui::test_result_is_bound_to_sample_not_newest_preview_and_roi_change_discards_late_result",
+          "reason": "Can't find a usable tk.tcl in the following directories: \n    C:/tmp/mf1750-python312/tcl/tcl8.6/tk8.6 C:/tmp/mf1750-python312/tcl/tk8.6 C:/tmp/lib/tk8.6 C:/tmp/lib/tk8.6 C:/lib/tk8.6 C:/tmp/library\n\nC:/tmp/mf1750-python312/tcl/tk8.6/tk.tcl: couldn't read file \"C:/tmp/mf1750-python312/tcl/tk8.6/ttk/vistaTheme.tcl\": no such file or directory\ncouldn't read file \"C:/tmp/mf1750-python312/tcl/tk8.6/ttk/vistaTheme.tcl\": no such file or directory\n    while executing\n\"source -encoding utf-8 C:/tmp/mf1750-python312/tcl/tk8.6/ttk/vistaTheme.tcl\"\n    (\"uplevel\" body line 1)\n    invoked from within\n\"uplevel #0 [list source -encoding utf-8 [file join $library $script]]\"\n    (procedure \"ttk::LoadThemes\" line 18)\n    invoked from within\n\"ttk::LoadThemes\"\n    (file \"C:/tmp/mf1750-python312/tcl/tk8.6/ttk/ttk.tcl\" line 159)\n    invoked from within\n\"source -encoding utf-8 C:/tmp/mf1750-python312/tcl/tk8.6/ttk/ttk.tcl\"\n    (\"uplevel\" body line 1)\n    invoked from within\n\"uplevel \\#0 [list source -encoding utf-8 $::ttk::library/ttk.tcl]\"\n    (file \"C:/tmp/mf1750-python312/tcl/tk8.6/tk.tcl\" line 702)\n    invoked from within\n\"source -encoding utf-8 C:/tmp/mf1750-python312/tcl/tk8.6/tk.tcl\"\n    (\"uplevel\" body line 1)\n    invoked from within\n\"uplevel #0 [list source -encoding utf-8 $file]\"\n\n\nThis probably means that tk wasn't installed properly."
+        },
+        {
+          "test": "tests.test_gui.DashboardModelTests::test_module_import_does_not_eagerly_import_tkinter",
+          "reason": "tkinter was imported by the surrounding test process"
+        }
+      ]
+    },
+    "isolated_lazy_tk": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_testcase_count_including_subtests": 1,
+      "subtests_passed": 0,
+      "passed": 1,
+      "seconds": 0.179,
+      "xml_sha256": "f1d00ac335403eb4d1c245367f4de2b5ba7820e8cba3c1d832d834a93253d2c8",
+      "skips": []
+    },
+    "isolated_ground_gui": {
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_testcase_count_including_subtests": 10,
+      "subtests_passed": 0,
+      "passed": 10,
+      "seconds": 1.094,
+      "xml_sha256": "ff7dfa94690f709c7e239efa3125cb15411fd6c2411b73882edcb6abacade01a",
+      "skips": []
+    },
+    "final_assist_gui": {
+      "tests": 64,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_testcase_count_including_subtests": 69,
+      "subtests_passed": 5,
+      "passed": 64,
+      "seconds": 23.922,
+      "xml_sha256": "4c0002270ce5361d5533b49b2bf0685c1d3542f2f36637d386c87002f2e734fd",
+      "skips": []
+    }
+  },
+  "full_suite_subtests_passed": 272,
+  "test_notes": [
+    "The full suite had two Tk environment skips; each affected test passed in an isolated run.",
+    "The final GUI navigation/display edits were also checked after full-suite collection.",
+    "OpenCV used two threads in the full-suite process; production settings were not relaxed."
+  ],
+  "protected_file_count": 27,
+  "original_sources_unchanged": true,
+  "gui_source_hashes_unchanged": true,
+  "free_diameter_delta_mm_by_candidate": {
+    "POOL-L18-POOL-R19": 0.0,
+    "POOL-L19-POOL-R20": 0.0,
+    "POOL-L20-POOL-R21": 0.0,
+    "POOL-L21-POOL-R22": 0.0
+  },
+  "assist_counts": {
+    "LIKELY": 4,
+    "AMBIGUOUS": 0,
+    "NO_OBSERVATION": 8
+  },
+  "strict_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "new_capture": false,
+  "gui_evidence_sha256": "443662009561031d339e4bf3bcbd3e70feae181d9a3d2de120f1f1607bb9bf98",
+  "replay_evidence_sha256": "104960ea2a08962b5a4fb1b74c8cc174cf7b1fd6fdbd21b6cb44beea7e1c4067"
+}

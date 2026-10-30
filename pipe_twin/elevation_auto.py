@@ -1012,6 +1012,20 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
     result["temporal_fusion"] = groups[-1]["depth"].audit.get("temporal_fusion")
     result['reference_pair_diagnostics'] = reference_pair_diagnostics(groups[-1], calibration,
         loaded['pipe_specs'], loaded['registration_settings'], config['matching'])
+    from .installation_assist import analyze_installation_assist
+    assist_settings = dict(loaded['registration_settings'])
+    assist_settings.update(assist_settings.pop('installation_assist', {}))
+    if progress:
+        progress('正在按层位、左右排列和管径大小生成辅助安装对应……')
+    result['installation_assist'] = analyze_installation_assist(
+        result, loaded['pipe_specs'], settings=assist_settings, calibration=calibration)
+    result['installation_assist']['source'] = {
+        'dataset_id': manifest['dataset_id'], 'calibration_id': calibration.calibration_id,
+        'capture_id': groups[-1]['capture_id'],
+        'photo_sha256': {role: groups[-1]['photos'][role]['actual_sha256'] for role in ('left', 'right')},
+        'captured_at': groups[-1]['captured_at'],
+        'scope': 'CURRENT_CAPTURE_QUALITATIVE_ASSISTANCE',
+    }
     from .section_status import solver_status_rows
     result['solver_status'] = solver_status_rows(result)
     # All inference used immutable decoded images. Recheck bound snapshots

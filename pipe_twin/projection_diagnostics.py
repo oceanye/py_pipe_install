@@ -152,7 +152,10 @@ def fit_silhouettes(observations, intrinsic, baseline_mm, axis, reference_u=None
               'baseline_perpendicular_to_axis_mm': perpendicular,
               'diameter_source': 'IMAGE_FIT' if fixed_radius is None else 'USER_KNOWN_CONSTRAINT',
               'known_diameter_mm': known_diameter_mm}
-    if perpendicular < 1e-6:
+    # With a supplied radius, the two tangent planes already constrain the
+    # two cross-section centre coordinates. A parallel stereo baseline only
+    # makes the free-radius problem unobservable.
+    if perpendicular < 1e-6 and fixed_radius is None:
         return result | {'status': 'UNOBSERVABLE_PARALLEL_BASELINE'}
     allowed = {('left', 'top'), ('left', 'bottom'), ('right', 'top'), ('right', 'bottom')}
     keys = [(o['role'], o['edge']) for o in observations]

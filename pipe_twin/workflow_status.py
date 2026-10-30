@@ -58,4 +58,10 @@ def workflow_summary(report, registration, *, loaded_pairs=0, ground_inspection=
         if ground.get('source_burst_status') == 'INVALID':
             source += '；连拍未通过'
         source += '）'
+    from .assist_display import assist_data
+    assist = assist_data(report)
+    if assist:
+        counts = assist.get('counts') or {}
+        summary = f"辅助识别：疑似 {counts.get('LIKELY', 0)} / 有歧义 {counts.get('AMBIGUOUS', 0)} / 未观察到 {counts.get('NO_OBSERVATION', 0)}"
+        return f'{summary} · {viewing}\n{sampling} · 地面：{plane} · 黄色候选待确认，精确尺寸见求解页'
     return f'{sampling} · {viewing} · {sections}\n{source}：{plane} / {applied} · {position}'

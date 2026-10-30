@@ -141,7 +141,7 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.refresh_table()
         self.dialog.show_analysis_details()
         window = self.dialog.analysis_details_window
-        self.assertEqual(len(self.dialog.detail_tabs.tabs()), 6)
+        self.assertEqual(len(self.dialog.detail_tabs.tabs()), 7)
         self.dialog.solver_tree.selection_set('0:1')
         self.root.update()
         self.assertIn('/ S2', self.dialog.detail_texts['candidate'].get('1.0', 'end'))
@@ -163,6 +163,53 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.status_tabs.select(0)
         self.root.update()
         self.assertFalse(self.dialog.cad_actions.winfo_manager())
+
+    def test_assistance_without_metric_fit_links_photo_and_one_candidate_plan_only(self):
+        from test_assist_display import report_fixture
+        report = report_fixture()
+        before = copy.deepcopy(report)
+        self.dialog.report = report
+        self.dialog.refresh_table()
+        self.root.update()
+        self.assertEqual(len(self.dialog.assist_tree.get_children()), 2)
+        self.assertFalse(self.dialog.solver_tree.get_children())
+        self.assertEqual(self.dialog.status_tabs.select(), str(self.dialog.assist_status_tab))
+        self.assertEqual(self.dialog.selected_id(), 'P001')
+        self.assertTrue(self.dialog.views['left'].canvas.find_withtag('assist-candidate'))
+        self.dialog.open_model_viewer()
+        viewer = self.dialog.model_viewer
+        self.root.update_idletasks()
+        self.assertEqual(viewer.installation_states['P001'], 'ASSIST_CANDIDATE')
+        self.assertEqual(viewer.installation_states['P003'], 'UNKNOWN')
+        self.dialog.assist_plan_box.current(1)
+        self.dialog._assist_plan_selected()
+        self.root.update()
+        self.assertEqual(self.dialog.selected_id(), 'P003')
+        self.assertEqual(viewer.installation_states['P003'], 'ASSIST_CANDIDATE')
+        self.assertEqual(viewer.installation_states['P001'], 'UNKNOWN')
+        self.dialog.select_model_pipe('P004')
+        self.root.update()
+        self.assertEqual(self.dialog.selected_assist_row()['label'], 'A2')
+        self.dialog.select_model_pipe('P009')
+        self.root.update()
+        self.assertIsNone(self.dialog.selected_assist_row())
+        self.assertEqual(report, before)
+        self.dialog.show_analysis_details('assist')
+        self.assertIn('采用已知管径辅助定位', self.dialog.detail_texts['assist'].get('1.0', 'end'))
+        self.dialog.invalidate()
+        self.assertFalse(self.dialog.assist_tree.get_children())
+        self.assertFalse(viewer.section_canvas.find_withtag('state:ASSIST_CANDIDATE'))
+
+    def test_purchase_colour_hints_invalidate_old_suggestions_without_rewriting_model(self):
+        from test_assist_display import report_fixture
+        self.dialog.report = report_fixture()
+        before = copy.deepcopy(self.dialog.pipes)
+        self.assertTrue(self.dialog.apply_assist_hints({'BLUE': 50., 'RED': 40., 'WHITE': 25.}))
+        self.assertEqual(self.dialog.registration_settings['installation_assist']['appearance_diameter_hints']['BLUE'], 50.)
+        self.assertIsNone(self.dialog.report)
+        self.assertEqual(self.dialog.pipes, before)
+        with self.assertRaises(ValueError):
+            self.dialog.apply_assist_hints({'BLUE': -50.})
 
     def test_empty_pipe_roi_band_intersection_stops_analysis_before_saving(self):
         self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})
