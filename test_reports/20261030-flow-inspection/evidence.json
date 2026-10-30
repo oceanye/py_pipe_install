@@ -1,0 +1,372 @@
+{
+  "dataset_id": "elevation-20261030-161444-3ab7011e",
+  "generated_at": "2026-10-30T08:14:58.716859+00:00",
+  "sources_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\manifest.json": "8a0213d99a3d79e9cc6f9878b613c2a0c884677dc90eed4903f8dbf76c69da00",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\report.json": "f2eb7af75f19b0fd4ad5b02b0df5192f46d08bb965d0b3bc31e217b826a10b12",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\left.png": "df6012d327df5602cf9a08f69fee9c9c910e8cec9710a01f2b4836292cd48ccd",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-161444-3ab7011e\\photos\\right.png": "c774c3f4fbf112b5a978004ac019ff6317616d93804096bce0b02ca8219b4f08",
+    "outputs\\elevation_workbench\\last_scene.json": "b8ce4a449f34e0d1debef25954aae538c128456d76c522ae051c078e24bbb5e8",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e"
+  },
+  "calibration_id": "field-chess-42b9fd287add",
+  "calibration_validated": true,
+  "scale_verified_independently": false,
+  "capture_time": "2026-10-30T16:12:37.780+08:00",
+  "temporal_sections": {
+    "status": "NOT_CHECKED",
+    "requested_frames": 1,
+    "sampled_frames": 1,
+    "reason_codes": []
+  },
+  "ground": {
+    "status": "GROUND_PLANE_INCONSISTENT",
+    "accepted_measurement": false,
+    "selection": {
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "rect_px": [
+        172,
+        109,
+        596,
+        338
+      ]
+    },
+    "valid_depth_fraction": 0.7237500496406021,
+    "left_plane": {
+      "status": "GROUND_PLANE_INCONSISTENT",
+      "sample_count": 4096,
+      "inlier_fraction": 0.568359375,
+      "holdout_inlier_fraction": 0.5568948891031823,
+      "holdout_rms_mm": 2.809941040400567,
+      "occupied_cells": 16,
+      "candidate_plane": {
+        "normal_camera": [
+          -0.056398870152488734,
+          -0.23359895352213855,
+          -0.9706959855479389
+        ],
+        "offset_mm": 1211.550108623256
+      }
+    },
+    "correction_status": "TRIAL_APPLIED",
+    "corrections": [
+      {
+        "zone_id": "Z01",
+        "revision": "ground-constrained-pipe-axis-v1",
+        "policy": {
+          "maximum_nullspace_ratio": 0.25,
+          "maximum_boundary_p95_px": 2.0,
+          "minimum_boundaries": 3,
+          "minimum_direction_strength": 1e-06
+        },
+        "policy_sha256": "f8ba3fa18c6239f79510846a7e2b463c822df89c696080befc44e73e3f00ae90",
+        "status": "TRIAL_APPLIED",
+        "applied": true,
+        "assumption": "PIPE_AXES_PARALLEL_TO_GROUND",
+        "calibration_modified": false,
+        "nominal_dimensions_used": false,
+        "trial_mode": true,
+        "ground_status": "GROUND_PLANE_INCONSISTENT",
+        "scope": "EXPERIMENTAL_GROUND_CONSTRAINT_NOT_ACCEPTED_MEASUREMENT",
+        "trial_revision": "candidate-ground-hypothesis-v1",
+        "ground_quality_bypassed": true,
+        "ground_identity_bypassed": false,
+        "original_ground_status": "GROUND_PLANE_INCONSISTENT",
+        "normal_camera": [
+          -0.05639887015248874,
+          -0.23359895352213858,
+          -0.970695985547939
+        ],
+        "proposed_axis": [
+          0.9979579483583633,
+          -0.04238897350920208,
+          -0.047781881850782124
+        ],
+        "nullspace_ratio": 0.0028169962801632615,
+        "axis_change_deg": 2.71920526918784,
+        "boundary_residuals": [
+          {
+            "role": "left",
+            "edge": "top",
+            "p95_px": 2.4429092246327215
+          },
+          {
+            "role": "right",
+            "edge": "top",
+            "p95_px": 2.475129816691404
+          },
+          {
+            "role": "right",
+            "edge": "bottom",
+            "p95_px": 1.3854154007852635
+          },
+          {
+            "role": "left",
+            "edge": "top",
+            "p95_px": 0.8994616673881004
+          },
+          {
+            "role": "left",
+            "edge": "bottom",
+            "p95_px": 0.8082555090615664
+          },
+          {
+            "role": "right",
+            "edge": "top",
+            "p95_px": 1.4723364870060527
+          },
+          {
+            "role": "right",
+            "edge": "bottom",
+            "p95_px": 0.9601216096273312
+          },
+          {
+            "role": "left",
+            "edge": "top",
+            "p95_px": 1.7939715690788183
+          },
+          {
+            "role": "left",
+            "edge": "bottom",
+            "p95_px": 1.0739526149972054
+          },
+          {
+            "role": "right",
+            "edge": "top",
+            "p95_px": 1.1604208678206116
+          },
+          {
+            "role": "right",
+            "edge": "bottom",
+            "p95_px": 1.762677456176299
+          }
+        ],
+        "boundary_check_passed": false,
+        "boundary_consistency_bypassed": true
+      }
+    ]
+  },
+  "ground_angles_degrees_optical_axis_to_plane_and_roll": [
+    76.09511242043928,
+    -13.573427858399407
+  ],
+  "ground_trial_comparison": {
+    "scope": "SAME_IMAGES_BEFORE_AFTER_NOT_ACCURACY_VALIDATION",
+    "baseline_ground_correction": {
+      "revision": "ground-constrained-pipe-axis-v1",
+      "policy": {
+        "maximum_nullspace_ratio": 0.25,
+        "maximum_boundary_p95_px": 2.0,
+        "minimum_boundaries": 3,
+        "minimum_direction_strength": 1e-06
+      },
+      "policy_sha256": "f8ba3fa18c6239f79510846a7e2b463c822df89c696080befc44e73e3f00ae90",
+      "status": "GROUND_CHECK_FAILED",
+      "applied": false,
+      "assumption": "PIPE_AXES_PARALLEL_TO_GROUND",
+      "calibration_modified": false,
+      "nominal_dimensions_used": false,
+      "trial_mode": false,
+      "ground_status": "GROUND_PLANE_INCONSISTENT"
+    },
+    "baseline_axis": {
+      "axis": [
+        0.9993058366453578,
+        -0.03724853403522999,
+        -0.0006257465524216292
+      ],
+      "singular_values": [
+        3.3124610011031375,
+        0.16606774103450483,
+        0.0048602014862309285
+      ],
+      "line_residual_degrees": [
+        0.1646089490281852,
+        0.08032547698383723,
+        0.09153470859883388,
+        0.09976452421700308,
+        0.024286381687009622,
+        0.09585160167080048,
+        0.06702600386931779,
+        0.027764601540615927,
+        0.08701514848311982,
+        0.027251339659590076,
+        0.04806533077510115
+      ],
+      "nullspace_ratio": 0.02926637922545774,
+      "status": "STABLE"
+    },
+    "trial_axis": {
+      "status": "STABLE",
+      "axis": [
+        0.9979579483583633,
+        -0.04238897350920208,
+        -0.047781881850782124
+      ],
+      "source": "GROUND_PLANE_CONSTRAINED",
+      "singular_values": [
+        3.2851491077332393,
+        0.009254252816266193
+      ],
+      "nullspace_ratio": 0.0028169962801632615,
+      "line_residual_degrees": [
+        0.36233950670527365,
+        0.2834494278451122,
+        0.01809412808995339,
+        0.04279079912755248,
+        0.024407331154143494,
+        0.03064294504961983,
+        0.06295441247266839,
+        0.10477327582101113,
+        0.13987345555512753,
+        0.03947395610091202,
+        0.17249892781841822
+      ]
+    },
+    "candidates": [
+      {
+        "candidate_id": "POOL-L02-POOL-R17",
+        "before_candidate_id": "POOL-L02-POOL-R17",
+        "before_diameter_mm": 45.049621411569866,
+        "after_diameter_mm": 45.23591303366609
+      },
+      {
+        "candidate_id": "POOL-L03-POOL-R18",
+        "before_candidate_id": "POOL-L03-POOL-R18",
+        "before_diameter_mm": 21.689422251899032,
+        "after_diameter_mm": 21.523514650538633
+      },
+      {
+        "candidate_id": "POOL-L04-POOL-R19",
+        "before_candidate_id": "POOL-L04-POOL-R19",
+        "before_diameter_mm": 40.16099612026004,
+        "after_diameter_mm": 40.22604704601691
+      }
+    ],
+    "pairs": [
+      {
+        "ids": [
+          "POOL-L02-POOL-R17",
+          "POOL-L03-POOL-R18"
+        ],
+        "before_center_distance_mm": 51.134004210292616,
+        "after_center_distance_mm": 43.77828449374463
+      },
+      {
+        "ids": [
+          "POOL-L02-POOL-R17",
+          "POOL-L04-POOL-R19"
+        ],
+        "before_center_distance_mm": 252.9967933908958,
+        "after_center_distance_mm": 257.7502418605416
+      },
+      {
+        "ids": [
+          "POOL-L03-POOL-R18",
+          "POOL-L04-POOL-R19"
+        ],
+        "before_center_distance_mm": 279.0585906049196,
+        "after_center_distance_mm": 272.45837075049457
+      }
+    ]
+  },
+  "saved_camera_side_world": null,
+  "report_camera_view": {
+    "revision": "camera-side-hemisphere-v1",
+    "coordinate_frame": "MODEL",
+    "side_vector_convention": "SCENE_TO_CAMERA_VIEWING_HEMISPHERE",
+    "minimum_facing_cosine_exclusive": 1e-06,
+    "policy_sha256": "00f5cfc51b5fb37123e02ce74e220fe635332d44d7b81224171dfce8234b213e",
+    "camera_side_world": null,
+    "rejected_pose_count": 0
+  },
+  "registration_status": "INSUFFICIENT_OBSERVATIONS",
+  "installation_counts": {
+    "INSTALLED": 0,
+    "NOT_INSTALLED": 0,
+    "UNKNOWN": 12
+  },
+  "position_counts": {
+    "IN_POSITION": 0,
+    "OUT_OF_POSITION": 0,
+    "UNKNOWN": 12
+  },
+  "candidate_results": [
+    {
+      "label": "S1",
+      "candidate_id": "POOL-L02-POOL-R17",
+      "color_srgb": "#FF4F4C",
+      "solved": true,
+      "diameter_mm": 45.23591303366609,
+      "pipe_id": null,
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL",
+        "PARTIAL_STEREO_BOUNDARY_SUPPORT"
+      ]
+    },
+    {
+      "label": "S2",
+      "candidate_id": "POOL-L03-POOL-R18",
+      "color_srgb": "#E7CBBA",
+      "solved": true,
+      "diameter_mm": 21.523514650538633,
+      "pipe_id": null,
+      "reason_codes": [
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL"
+      ]
+    },
+    {
+      "label": "S3",
+      "candidate_id": "POOL-L04-POOL-R19",
+      "color_srgb": "#3B78DE",
+      "solved": true,
+      "diameter_mm": 40.22604704601691,
+      "pipe_id": null,
+      "reason_codes": [
+        "POOLED_DIMENSIONS_UNSTABLE",
+        "GROUND_AXIS_CONFLICT",
+        "GROUND_CORRECTION_EXPERIMENTAL"
+      ]
+    },
+    {
+      "label": "C4",
+      "candidate_id": "POOL-L01",
+      "color_srgb": "#FA4A3F",
+      "solved": false,
+      "diameter_mm": null,
+      "pipe_id": null,
+      "reason_codes": [
+        "STEREO_SECTION_PAIR_UNRESOLVED"
+      ]
+    }
+  ],
+  "matching_settings": {
+    "diameter_filter_enabled": true,
+    "diameter_tolerance_mm": 3.0,
+    "diameter_tolerance_ratio": 0.1,
+    "color_filter_enabled": false,
+    "color_filter_mode": "hint",
+    "color_delta_lab": 45.0
+  },
+  "user_accepted_nominal_diameter_difference_mm": 1.0,
+  "gui_verification": {
+    "scope": "ISOLATED_TEST_DIRECTION_NOT_USER_FIELD_SELECTION",
+    "preview_does_not_change_matching": true,
+    "applied_caption": "模型匹配观察侧已应用：从 +Y 侧朝 -Y 看。",
+    "main_control_and_section_arrow_linked": true,
+    "saved_and_reopened_direction": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "test_manifest": "outputs\\flow-inspection-20261030\\gui-test\\captures\\elevation-20261030-162457-8db21af1\\manifest.json"
+  },
+  "source_scene_photos_calibration_and_default_pointer_unchanged": true
+}

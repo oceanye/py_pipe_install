@@ -1903,6 +1903,7 @@ class ElevationCaptureDialog:
         side = normalize_camera_side(side)
         if side == self.registration_settings.get("camera_side_world"):
             return
+        previous_side = self.registration_settings.get("camera_side_world")
         live_viewer = (self.model_viewer if self.model_viewer is not None
                        and self.model_viewer.window.winfo_exists() and self.model_viewer._is_current() else None)
         if side is None:
@@ -1914,6 +1915,8 @@ class ElevationCaptureDialog:
         self.invalidate()
         if live_viewer is not None:
             live_viewer.sync_from_owner()
+        log_event(LOGGER, "elevation_camera_side_changed", previous_camera_side_world=previous_side,
+                  camera_side_world=side)
         self.message.set(f"相机观察方向：{camera_side_label(side)}。改变观察侧后需重新评估；下次保存会开始新历史。")
 
     def open_model_viewer(self) -> None:
@@ -2306,7 +2309,8 @@ class ElevationCaptureDialog:
             self.busy = True
             self._set_controls(False)
             generation = self.generation
-            log_event(LOGGER, "elevation_gui_run_start", analyze=analyze, pipe_count=len(self.pipes))
+            log_event(LOGGER, "elevation_gui_run_start", analyze=analyze, pipe_count=len(self.pipes),
+                      camera_side_world=registration.get("camera_side_world"))
             self.message.set("正在保存并分析双目深度……" if analyze else "正在保存基础现场……")
             threading.Thread(target=self._worker, args=(arguments, analyze, generation), daemon=True).start()
         except (OSError, ValueError) as error:

@@ -136,7 +136,22 @@ class ElevationModelViewer:
 
     def focus_section(self) -> None:
         self.section_canvas.focus_set()
-        self.info.set("左右视图和主列表共享管道选择；截面固定沿管长轴，箭头表示待应用的相机观察侧。")
+        self.info.set("左右视图和主列表共享管道选择；截面固定沿管长轴。" + self.camera_side_status())
+
+    def camera_side_status(self) -> str:
+        """Distinguish the preview arrow from the constraint sent to matching."""
+        if not self._is_current():
+            return "现场输入已改变，请重新打开方向预览。"
+        selected = self.view_choices[self.view_mode.get()]
+        applied = self.owner.registration_settings.get("camera_side_world")
+        same = ((selected is None and applied is None) or
+                (selected is not None and applied is not None
+                 and np.allclose(selected, applied, atol=1e-9, rtol=0)))
+        if not same:
+            return f"仅预览：{self.view_mode.get()}；尚未用于匹配，请点击“应用相机观察侧”。"
+        if applied is None:
+            return "模型匹配观察侧：未指定（自动判断）。"
+        return f"模型匹配观察侧已应用：{self.view_mode.get()}。"
 
     def _rotation(self) -> np.ndarray:
         cy, sy, cp, sp = math.cos(self.yaw), math.sin(self.yaw), math.cos(self.pitch), math.sin(self.pitch)
@@ -151,6 +166,7 @@ class ElevationModelViewer:
             if self.registration_rotation is not None:
                 self.base_rotation = self.base_rotation @ self.registration_rotation.T
         self.draw()
+        self.info.set(self.camera_side_status())
 
     def apply_camera_side(self) -> None:
         if not self._is_current() or getattr(self.owner, "busy", False):
@@ -158,7 +174,7 @@ class ElevationModelViewer:
             return
         if self.on_camera_side:
             self.on_camera_side(self.view_choices[self.view_mode.get()])
-        self.info.set(f"已应用：{self.view_mode.get()}。编号截面与方向示意已同步。")
+        self.info.set(self.camera_side_status() + "编号截面箭头与主窗口已同步；点击⑤保存并评估更新匹配。")
 
     def _frame(self) -> tuple[np.ndarray, float]:
         groups = [self.display_lines.reshape(-1, 3)]
@@ -243,7 +259,8 @@ class ElevationModelViewer:
             canvas.create_text(x, y-radius-5, text=pipe["pipe_id"], anchor="s", fill="#A45C00" if active else "#273B51", tags=tags)
             self.section_hits.append((pipe["pipe_id"], float(x), float(y), radius))
         canvas.create_text(12, 12, anchor="nw", text=f"固定截面 · 从管长轴正侧看，轴={np.round(self.section_basis[2], 3).tolist()}", fill="#273B51")
-        canvas.create_text(12, 34, anchor="nw", text=f"相机侧（待应用）：{self.view_mode.get()}", fill="#355371")
+        canvas.create_text(12, 34, anchor="nw", text=self.camera_side_status(), width=max(w-24, 50),
+                           fill="#355371", tags="camera_side_status")
         origin = np.array([48., 110.])
         for index, (name, color) in enumerate(zip("XYZ", ("#AA3333", "#237541", "#2464A0"))):
             vector = self.section_basis[:, index]

@@ -774,14 +774,19 @@ class ElevationGuiTests(unittest.TestCase):
             "translation_model_to_camera_mm": [0, 0, 1000]}}
         self.dialog.open_model_viewer()
         viewer = self.dialog.model_viewer
+        self.assertIn("未指定", viewer.camera_side_status())
         viewer.view_mode.set("从 -Y 侧朝 +Y 看")
         viewer.preview_side()
+        self.assertIn("仅预览", viewer.info.get())
         combined = viewer._rotation() @ viewer.registration_rotation
         self.assertTrue(np.allclose(combined @ [0, -1, 0], [0, 0, 1]))
         self.assertNotIn("camera_side_world", self.dialog.registration_settings)
         viewer.apply_camera_side()
         self.assertEqual(self.dialog.registration_settings["camera_side_world"], [0, -1, 0])
         self.assertIsNone(self.dialog.report)
+        caption = viewer.section_canvas.itemcget(viewer.section_canvas.find_withtag("camera_side_status")[0], "text")
+        self.assertIn("已应用", caption)
+        self.assertNotIn("待应用", caption)
         self.dialog.open_model_viewer()
         stale = self.dialog.model_viewer
         self.dialog._set_camera_side([1, 0, 0])
@@ -792,6 +797,7 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.invalidate()
         stale.apply_camera_side()
         self.assertIn("输入已改变", stale.info.get())
+        self.assertIn("输入已改变", stale.camera_side_status())
         self.assertEqual(self.dialog.registration_settings["camera_side_world"], [1, 0, 0])
 
     def test_catalog_and_direction_share_selection_without_creating_identity(self):
