@@ -46,7 +46,9 @@ def test_presentation_does_not_promote_candidates_to_installed_or_unseen_to_abse
               'position_assessment': {'pipes': [{'pipe_id': 'P001', 'state': 'UNKNOWN'},
                                                 {'pipe_id': 'P002', 'state': 'IN_POSITION'},
                                                 {'pipe_id': 'P003', 'state': 'OUT_OF_POSITION'}]}}
-    assert model_states(report) == {'P001': 'INSTALLED', 'P002': 'IN_POSITION', 'P003': 'OUT_OF_POSITION', 'P004': 'UNKNOWN'}
+    assert model_states(report) == {'P001': 'UNKNOWN', 'P002': 'IN_POSITION', 'P003': 'OUT_OF_POSITION', 'P004': 'UNKNOWN'}
+    report['pipes'][0]['installation_evidence_qualified'] = True
+    assert model_states(report)['P001'] == 'INSTALLED'
 
 
 def test_unrelated_zones_have_separate_origins_and_covariance_is_relative():

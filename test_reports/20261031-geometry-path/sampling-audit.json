@@ -1,0 +1,178 @@
+{
+  "scope": "SAME_IMAGE_SAMPLING_AUDIT_NOT_FIELD_ACCURACY_OR_NEW_ACCEPTANCE",
+  "source": "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json",
+  "new_capture": false,
+  "candidate_id": "POOL-L21",
+  "role": "left",
+  "edge": "bottom",
+  "previous_boundary": {
+    "status": "UNSTABLE",
+    "holdout_p95_px": 2.208982848873528,
+    "participated_in_ground_check": false,
+    "source_columns": 631
+  },
+  "new_boundary": {
+    "status": "STABLE",
+    "holdout_p95_px": 1.934383975675405,
+    "adaptive_requested_span_px": 384.0,
+    "observed_axial_interval_px": [
+      1068.0000000000002,
+      1453.0000000000002
+    ],
+    "full_span_status": "UNSTABLE",
+    "source_axial_samples": 332,
+    "retained_samples": 325,
+    "actual_original_pixel_bounds": [
+      [
+        1130.7588939474217,
+        646.096858532107
+      ],
+      [
+        1513.2813489384034,
+        680.1477345035283
+      ]
+    ],
+    "all_retained_samples_inside_original_user_band": true,
+    "all_retained_inward_samples_supported_by_original_blue_pixels": true,
+    "retained_axial_runs_px": [
+      [
+        1068,
+        1071
+      ],
+      [
+        1072,
+        1077
+      ],
+      [
+        1079,
+        1080
+      ],
+      [
+        1081,
+        1089
+      ],
+      [
+        1093,
+        1106
+      ],
+      [
+        1108,
+        1123
+      ],
+      [
+        1125,
+        1133
+      ],
+      [
+        1139,
+        1156
+      ],
+      [
+        1160,
+        1171
+      ],
+      [
+        1173,
+        1182
+      ],
+      [
+        1183,
+        1201
+      ],
+      [
+        1204,
+        1239
+      ],
+      [
+        1240,
+        1252
+      ],
+      [
+        1258,
+        1263
+      ],
+      [
+        1264,
+        1273
+      ],
+      [
+        1275,
+        1292
+      ],
+      [
+        1293,
+        1294
+      ],
+      [
+        1296,
+        1307
+      ],
+      [
+        1310,
+        1328
+      ],
+      [
+        1329,
+        1361
+      ],
+      [
+        1364,
+        1374
+      ],
+      [
+        1377,
+        1386
+      ],
+      [
+        1388,
+        1401
+      ],
+      [
+        1404,
+        1419
+      ],
+      [
+        1421,
+        1434
+      ],
+      [
+        1436,
+        1453
+      ]
+    ]
+  },
+  "same_new_points_with_previous_axis": {
+    "p95_px": 2.18120754916222,
+    "maximum_px": 2.4929152619407313,
+    "above_2px": 26,
+    "signed_range_px": [
+      -2.4929152619407313,
+      2.2536361219992185
+    ]
+  },
+  "same_new_points_with_new_axis": {
+    "p95_px": 2.1645903070387615,
+    "maximum_px": 2.437495052306712,
+    "above_2px": 25,
+    "signed_range_px": [
+      -2.437495052306712,
+      2.217341422275172
+    ]
+  },
+  "axis_change_between_versions_deg": 0.01850241435538338,
+  "new_other_15_boundaries_max_p95_px": 1.9530190468719646,
+  "ground_boundary_limit_px": 2.0,
+  "thresholds_changed": false,
+  "interpretation": "The additional blue-left-bottom evidence passes its local boundary holdout but conflicts with the independently ground-constrained common axis. Keep this rejection; do not discard the new evidence to recover the previous green check.",
+  "source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\ground-color-boundaries-20261030\\report.json": "a4171f71230f1288d58bf7ee62fd5436c22774193e3599626d9362a16742e6fd",
+    "outputs\\geometry-path-20261031\\report.json": "c6704e3df6487647226e4058e9cfa19e9b4865e6d33c8d8952067fc91399f5a8",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd"
+  },
+  "sources_unchanged": true
+}

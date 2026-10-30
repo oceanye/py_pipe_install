@@ -112,6 +112,18 @@ def solver_status_rows(report):
             detail = [f'{zone} / {label}：{current}。',
                       source_text,
                       '重复性仅反映本次帧间变化，不代表绝对精度或已完成安装。']
+            diagnostic = report.get('reference_pair_diagnostics') or {}
+            if diagnostic:
+                fractions = diagnostic.get('valid_depth_fraction') or {}
+                detail.append(f"哈希绑定末帧的独立诊断：全幅有效深度左 {fractions.get('left', 0):.1%} / 右 {fractions.get('right', 0):.1%}（不等于管面圆弧覆盖）；"
+                              f"自由圆柱候选 {diagnostic.get('metric_cylinder_count', 0)} 个。")
+                rejection_labels = {'CYLINDER_FIT_RESIDUAL_TOO_LARGE': '圆柱拟合残差过大',
+                          'NO_DOMINANT_DISPARITY_SUPPORT': '缺少一致视差支持',
+                          'INSUFFICIENT_VALID_DEPTH': '局部有效深度不足'}
+                rejected = sorted((diagnostic.get('rejected_reason_counts') or {}).items(), key=lambda item: (-item[1], item[0]))[:3]
+                if rejected:
+                    detail.append('局部候选主要拒绝原因：'+'；'.join(f'{rejection_labels.get(code, code)} {count} 次' for code, count in rejected)+'。')
+                detail.append('该诊断不改变原连拍失败，不参与 CAD 安装判定；不能将“融合深度无效”解释为“每帧都无深度”。')
             if temporal:
                 detail += [f"解出 {frames} 帧，至少要求 {temporal['required_frames']} 帧。"]
                 if spread:

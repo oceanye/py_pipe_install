@@ -1,0 +1,51 @@
+{
+  "scope": "ARCHIVED_REPORT_GUI_NOT_LIVE_CAMERA",
+  "screens": {
+    "1024x720": {
+      "clipped_controls": [],
+      "photo_height": 214,
+      "geometry_text": "机位几何检查（来自本次评估照片，不是实时角度）\n本页检查双目连线横跨管轴的程度；光轴相对地面的倾斜见“地面倾角”页。\n\n报告时间：2026-10-30T17:09:31.316829+00:00\n物理双目基线：59.82 mm\n垂直管轴的有效分量：5.70 mm\n双目连线与管轴锐夹角：5.47°\n横跨程度：9.5%（0% 沿管轴，100% 横跨管轴）\n轴向使用地面试验约束，上述数值也属于条件诊断。\n本次地面约束与管轴轮廓检查未通过；不能据此确认机位或尺寸已可靠。\n\n如何调整：\n先用实时地面调姿检查向下倾斜；再让两镜头连线更多地横跨管轴，保持管道在两眼内可见。\n调到垂直地面不会自动改善双目连线方向；相机绕光轴转动也会改变管道在图像中的方向。\n调整机位后重新抓拍、重画本次范围并评估；用同物、同光对照管径和相对心距的重复性。\n\n含义与限制：\n有效分量越大，通常越有利于用两眼轮廓求断面；这不是精度保证，也不改变物理基线。\n地面距离不能代替管道距离；更多相同机位帧不能增加新的观察方向或看穿遮挡。\n管径、相对位置和安装状态仍须通过各自检查，不能凭此页的数值点亮 CAD。\n",
+      "button_opens_geometry_tab": true
+    },
+    "1280x860": {
+      "clipped_controls": [],
+      "photo_height": 354,
+      "geometry_text": "机位几何检查（来自本次评估照片，不是实时角度）\n本页检查双目连线横跨管轴的程度；光轴相对地面的倾斜见“地面倾角”页。\n\n报告时间：2026-10-30T17:09:31.316829+00:00\n物理双目基线：59.82 mm\n垂直管轴的有效分量：5.70 mm\n双目连线与管轴锐夹角：5.47°\n横跨程度：9.5%（0% 沿管轴，100% 横跨管轴）\n轴向使用地面试验约束，上述数值也属于条件诊断。\n本次地面约束与管轴轮廓检查未通过；不能据此确认机位或尺寸已可靠。\n\n如何调整：\n先用实时地面调姿检查向下倾斜；再让两镜头连线更多地横跨管轴，保持管道在两眼内可见。\n调到垂直地面不会自动改善双目连线方向；相机绕光轴转动也会改变管道在图像中的方向。\n调整机位后重新抓拍、重画本次范围并评估；用同物、同光对照管径和相对心距的重复性。\n\n含义与限制：\n有效分量越大，通常越有利于用两眼轮廓求断面；这不是精度保证，也不改变物理基线。\n地面距离不能代替管道距离；更多相同机位帧不能增加新的观察方向或看穿遮挡。\n管径、相对位置和安装状态仍须通过各自检查，不能凭此页的数值点亮 CAD。\n",
+      "button_opens_geometry_tab": true
+    }
+  },
+  "geometry": [
+    {
+      "status": "CONDITIONAL_GEOMETRY",
+      "physical_baseline_mm": 59.82261029553183,
+      "baseline_perpendicular_to_axis_mm": 5.704312086068831,
+      "baseline_cross_axis_fraction": 0.09535378108525779,
+      "baseline_axis_acute_angle_deg": 5.471682414146676,
+      "axis_camera": [
+        0.9954434471293409,
+        -0.08734482644636288,
+        -0.03825212229811587
+      ],
+      "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM",
+      "scope": "SILHOUETTE_SECTION_GEOMETRY_ONLY",
+      "accepted_measurement": false,
+      "zone_id": null,
+      "source_generated_at": "2026-10-30T17:09:31.316829+00:00",
+      "calibration_id": "field-chess-42b9fd287add",
+      "axis_source": "GROUND_PLANE_CONSTRAINED",
+      "ground_boundary_check_passed": false,
+      "ground_trial": true
+    }
+  ],
+  "all_four_sections_keep_solved_labels_and_values_with_depth_diagnostic": true,
+  "cleared_report_removes_old_geometry": true,
+  "callback_errors": [],
+  "source_unchanged": true,
+  "protected_source_sha256": {
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\manifest.json": "7de79aaa460373521b2c97c77d07e92db009935baf563ce42199d9cf5a94df33",
+    "outputs\\elevation_workbench\\captures\\elevation-20261030-183635-b6b7b875\\report.json": "05397a516e8fa1b3d9b129c9a2b2514118be6e6ffbe9b45de98acc6c4b0508ef",
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\measurement_workbench\\workbench_profile.json": "12bc0e6359bcae983a47b9b5da31b93ffa2a068214955cf813be779962f835d7",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e"
+  }
+}

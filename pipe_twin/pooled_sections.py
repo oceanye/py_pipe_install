@@ -13,15 +13,17 @@ import cv2
 import numpy as np
 
 from .axial_aggregation import aggregate_boundaries, POLICY, REVISION, POLICY_SHA256
-from .image_regions import propose_regions
+from .image_regions import propose_regions, POLICY as IMAGE_POLICY
 from .projection_diagnostics import fit_silhouettes, pixel_error_scenarios
 from .section_diagnostics import axis_from_image_lines
 from .section_model import build_section_model
 from .axial_consistency import synchronize_axial_blocks
 from .ground_correction import correct_pipe_axis
+from .image_line_geometry import (canonical_image_axis, normal_from_axis, sampling_coordinates,
+                                  fit_image_line, point_at_station)
 
 
-EDGE_EXTRACTION_REVISION = 'colour-supported-local-gradient-v1'
+EDGE_EXTRACTION_REVISION = 'colour-supported-local-gradient-v2'
 EDGE_EXTRACTION_POLICY = {'search_radius_px': 3., 'gaussian_sigma_px': .7, 'axial_sigma_px': 4.,
     'axial_kernel_radius_px': 12, 'minimum_colour_gradient': 4.,
     'hue_half_width': 15., 'saturation_min': 120., 'value_min': 40.,
@@ -97,8 +99,21 @@ def _gradient_edge(gradient, x, seed_y, edge):
 
 
 def _observed_edges(image, proposal, role, sampling_mask=None):
-    x, y, width, height = proposal['region_px']
-    crop = image[y:y+height, x:x+width]
+    # This local lattice only locates original image boundaries. Neither the
+    # images used for stereo geometry nor K/epipolar coordinates are rotated.
+    px, py, pw, ph = proposal['region_px']
+    axis = canonical_image_axis(proposal['axis_image'])
+    normal = normal_from_axis(axis)
+    rows, columns = np.nonzero(proposal['mask'])
+    supported = sampling_coordinates(np.c_[columns+px, rows+py], axis)
+    x = int(np.floor(supported[:, 0].min()))
+    y = int(np.floor(supported[:, 1].min()))-4
+    width = int(np.ceil(supported[:, 0].max()))-x+1
+    height = int(np.ceil(supported[:, 1].max()))-y+5
+    tt, ss = np.mgrid[y:y+height, x:x+width]
+    mapx = (ss*axis[0]+tt*normal[0]).astype(np.float32)
+    mapy = (ss*axis[1]+tt*normal[1]).astype(np.float32)
+    crop = cv2.remap(image, mapx, mapy, cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT)
     hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
     appearance = proposal['appearance']
     if appearance == 'neutral':
@@ -106,19 +121,34 @@ def _observed_edges(image, proposal, role, sampling_mask=None):
     else:
         hue = int(appearance.split('-')[1]); delta = abs(hsv[:, :, 0].astype(int)-hue)
         raw = (np.minimum(delta, 180-delta) <= 15) & (hsv[:, :, 1] >= 120) & (hsv[:, :, 2] >= 40)
+    source_hsv = cv2.cvtColor(image[py:py+ph, px:px+pw], cv2.COLOR_BGR2HSV)
+    if appearance == 'neutral':
+        source_raw = (source_hsv[:, :, 1] < 65) & (source_hsv[:, :, 2] >= 100)
+    else:
+        delta = abs(source_hsv[:, :, 0].astype(int)-hue)
+        source_raw = (np.minimum(delta, 180-delta) <= 15) & (source_hsv[:, :, 1] >= 120) & (source_hsv[:, :, 2] >= 40)
     # Morphology only bounds the search; edges come from the original pixels.
-    gate = cv2.dilate(proposal['mask'], np.ones((5, 5), np.uint8)).astype(bool)
+    local_mask = cv2.remap(proposal['mask'], mapx-px, mapy-py, cv2.INTER_NEAREST,
+                          borderMode=cv2.BORDER_CONSTANT)
+    gate = cv2.remap(cv2.dilate(proposal['mask'], np.ones((5, 5), np.uint8)),
+                     mapx-px, mapy-py, cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT).astype(bool)
     raw &= gate
     interior = None
     if sampling_mask is not None:
-        selected = sampling_mask[y:y+height, x:x+width]
+        selected = cv2.remap(sampling_mask.astype(np.uint8), mapx, mapy, cv2.INTER_NEAREST,
+                             borderMode=cv2.BORDER_CONSTANT).astype(bool)
         raw &= selected
         # The cut planes are axial ends, never observed cylinder silhouettes.
         # Erode the selection to discard false top/bottom points on a cut.
-        interior = cv2.erode(sampling_mask.astype(np.uint8), np.ones((5, 5), np.uint8),
-                             borderType=cv2.BORDER_CONSTANT, borderValue=0)[y:y+height, x:x+width]
+        interior = cv2.remap(cv2.erode(sampling_mask.astype(np.uint8), np.ones((5, 5), np.uint8),
+                             borderType=cv2.BORDER_CONSTANT, borderValue=0), mapx, mapy,
+                             cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT)
     points = {'top': [], 'bottom': []}
     gradient = _colour_gradient(image, proposal, sampling_mask)
+    if gradient is not None:
+        score, gx, gy = gradient
+        gradient = (cv2.remap(score, mapx-gx, mapy-gy, cv2.INTER_LINEAR,
+                              borderMode=cv2.BORDER_CONSTANT, borderValue=-255), x, y)
     extraction = {'revision': EDGE_EXTRACTION_REVISION, 'policy': dict(EDGE_EXTRACTION_POLICY),
                   'policy_sha256': EDGE_EXTRACTION_POLICY_SHA256,
                   'source': 'LOCAL_COLOUR_GRADIENT' if gradient is not None else 'ORIGINAL_NEUTRAL_THRESHOLD',
@@ -133,9 +163,20 @@ def _observed_edges(image, proposal, role, sampling_mask=None):
         low, high = rows[0], rows[-1]
         if interior is not None and not (interior[low, column] and interior[high, column]):
             continue
-        search_rows = np.flatnonzero(proposal['mask'][:, column])
+        search_rows = np.flatnonzero(local_mask[:, column])
         for edge, seed in [('top', y+low-.5), ('bottom', y+high+.5)]:
+            if appearance == 'neutral':
+                # Preserve the original threshold pixel's normal coordinate.
+                # Re-quantizing it onto integer local t creates artificial
+                # two-level plateaus and a zero MAD at some oblique angles.
+                row = low if edge == 'top' else high
+                pixel = np.rint([mapx[row, column], mapy[row, column]])
+                seed = float(pixel@normal)+(-.5 if edge == 'top' else .5)
             search_seed = (y+search_rows[0]-.5 if edge == 'top' else y+search_rows[-1]+.5) if len(search_rows) else seed
+            if abs(search_seed-seed) > EDGE_EXTRACTION_POLICY['search_radius_px']:
+                # A cut through a painted band is a missing outer contour,
+                # not a replacement silhouette at the occluder's boundary.
+                continue
             located, refined = _gradient_edge(gradient, x+column, search_seed, edge)
             if not refined or abs(located-seed) > EDGE_EXTRACTION_POLICY['search_radius_px']:
                 located = seed
@@ -143,10 +184,15 @@ def _observed_edges(image, proposal, role, sampling_mask=None):
             # An adjusted sample must remain inside the actual selection.
             # Neither a cut-plane nor pixels beyond it can become a silhouette.
             if sampling_mask is not None:
-                row = int(round(located))
-                if not (0 <= row < sampling_mask.shape[0] and sampling_mask[row, x+column]):
+                point = axis*(x+column)+normal*located
+                u, v = np.rint(point).astype(int)
+                if not (0 <= v < sampling_mask.shape[0] and 0 <= u < sampling_mask.shape[1] and sampling_mask[v, u]):
                     located, refined = seed, False
-            points[edge].append([x+column, located])
+            interior_point = axis*(x+column)+normal*(located+(.75 if edge == 'top' else -.75))
+            iu, iv = np.rint(interior_point-[px, py]).astype(int)
+            if not (0 <= iu < pw and 0 <= iv < ph and source_raw[iv, iu]):
+                continue
+            points[edge].append((axis*(x+column)+normal*located).tolist())
             extraction['edges'][edge]['refined_columns' if refined else 'threshold_columns'] += 1
             if refined:
                 extraction['edges'][edge]['shifts'].append(located-seed)
@@ -163,10 +209,9 @@ def _observed_edges(image, proposal, role, sampling_mask=None):
             transitions = np.diff(np.r_[False, active, False].astype(int))
             highlights = max(highlights, int(sum(end-start >= 2 for start, end in zip(
                 np.flatnonzero(transitions == 1), np.flatnonzero(transitions == -1)))))
-    edges = [{'role': role, 'edge': edge, 'points': np.asarray(pixels, float).reshape(-1, 2)} for edge, pixels in points.items()]
+    edges = [{'role': role, 'edge': edge, 'image_axis': axis.tolist(),
+              'points': np.asarray(pixels, float).reshape(-1, 2)} for edge, pixels in points.items()]
     reasons = []
-    if abs(proposal['axis_image'][0]) < .3:
-        reasons.append('AXIAL_IMAGE_PARAMETERIZATION_UNSUPPORTED')
     if proposal.get('transverse_boundary_contacts'):
         reasons.append('TRANSVERSE_BOUNDARY_CLIPPED')
     if proposal['width_px'] < POLICY['minimum_width_px']:
@@ -179,8 +224,47 @@ def _observed_edges(image, proposal, role, sampling_mask=None):
         audit['absolute_shift_p95_px'] = float(np.percentile(np.abs(shifts), 95)) if shifts else None
     return {'role': role, 'region_px': list(proposal['region_px']), 'appearance': appearance,
             'color_srgb': proposal['sampled_color_srgb'], 'width_px': proposal['width_px'],
+            'image_axis': axis.tolist(), 'axial_interval_px': [float(x), float(x+width)],
+            'sampling_frame': {'axis_image': axis.tolist(), 'normal_image': normal.tolist(),
+                               'origin_px': [0., 0.], 'sample_step_px': 1.,
+                               'source_coordinates': 'ORIGINAL_RECTIFIED_IMAGE'},
             'edges': edges, 'reason_codes': reasons, 'highlight_band_count': highlights,
             'edge_extraction': extraction}
+
+
+def _item_axis(item):
+    return canonical_image_axis(item.get('image_axis', [1., 0.]))
+
+
+def _directions_agree(first, second):
+    return abs(float(_item_axis(first)@_item_axis(second))) >= np.cos(np.deg2rad(IMAGE_POLICY['axis_tolerance_deg']))
+
+
+def _stations(points, axis):
+    return np.asarray(points)@axis
+
+
+def _item_interval(item, axis, offset=(0., 0.)):
+    edges = item.get('edges', item.get('pooled_edges', []))
+    points = [np.asarray(edge['points']) for edge in edges if len(edge['points'])]
+    if points:
+        station = _stations(np.vstack(points)+offset, axis)
+    else:
+        x, y, w, h = item['region_px']
+        station = _stations(np.array([[x, y], [x+w-1, y], [x, y+h-1], [x+w-1, y+h-1]])+offset, axis)
+    return float(station.min()), float(station.max()+1)
+
+
+def _audit_line(edge):
+    if edge.get('line_homogeneous') is not None:
+        return np.asarray(edge['line_homogeneous'], float)
+    slope, intercept = edge['line_slope_intercept']
+    return np.array([slope, -1., intercept], float)
+
+
+def _edge_order(edges, reverse=False):
+    return {('bottom' if edge['edge'] == 'top' else 'top') if reverse else edge['edge']: edge
+            for edge in edges}
 
 
 def _join_disjoint(items):
@@ -192,9 +276,16 @@ def _join_disjoint(items):
         for previous in combined:
             if previous['appearance'] != item['appearance']:
                 continue
+            if not _directions_agree(previous, item):
+                continue
+            axis = _item_axis(previous)
+            secondary = _edge_order(item['edges'], bool(axis@_item_axis(item) < 0))
             joins = True
-            for first, second in zip(previous['edges'], item['edges']):
-                a, b = first['points'], second['points']
+            for first in previous['edges']:
+                second = secondary.get(first['edge'])
+                if second is None:
+                    joins = False; break
+                a, b = [sampling_coordinates(edge['points'], axis) for edge in (first, second)]
                 if min(len(a), len(b)) < 48:
                     joins = False; break
                 a0, a1 = a[:, 0].min(), a[:, 0].max()
@@ -208,7 +299,8 @@ def _join_disjoint(items):
                     joins = False; break
             if not joins:
                 continue
-            for first, second in zip(previous['edges'], item['edges']):
+            for first in previous['edges']:
+                second = secondary[first['edge']]
                 first['points'] = np.vstack([first['points'], second['points']])
             if previous.get('edge_extraction') is not None and item.get('edge_extraction') is not None:
                 sources = previous['edge_extraction'].get('source_extractions')
@@ -242,15 +334,17 @@ def aggregate_image(image, role, *, sampling_mask=None, axis_hint_image=None):
         # A failed full span stays in the audit; a locally stable part does not
         # certify the rejected ends, occluded gap or whole physical pipe.
         best_count = item['aggregation']['stable_boundary_count']
-        best_length = max((float(np.ptp(e['points'][:, 0]))+1 for e in item['pooled_edges']), default=0.)
+        axis = _item_axis(item)
+        best_length = max((float(np.ptp(_stations(e['points'], axis)))+1 for e in item['pooled_edges']), default=0.)
         if item['aggregation']['stable_boundary_count'] < 2 and all(len(e['points']) for e in item['edges']):
-            low = max(e['points'][:, 0].min() for e in item['edges'])
-            high = min(e['points'][:, 0].max() for e in item['edges'])+1
+            low = max(_stations(e['points'], axis).min() for e in item['edges'])
+            high = min(_stations(e['points'], axis).max() for e in item['edges'])+1
             for length in POLICY['adaptive_lengths_px']:
                 if length >= high-low:
                     continue
                 for start in np.linspace(low, high-length, POLICY['adaptive_positions']):
-                    selected = [{**e, 'points': e['points'][(e['points'][:, 0] >= start) & (e['points'][:, 0] < start+length)]} for e in item['edges']]
+                    selected = [{**e, 'points': e['points'][(_stations(e['points'], axis) >= start)
+                                & (_stations(e['points'], axis) < start+length)]} for e in item['edges']]
                     aggregation, pooled = aggregate_boundaries(selected)
                     attempts.append({'span': [float(start), float(start+length)],
                                      'stable_boundary_count': aggregation['stable_boundary_count']})
@@ -273,7 +367,8 @@ def _bounded(observations):
     """Keep actual samples across the whole interval; never interpolate gaps."""
     output = []
     for obs in observations:
-        points = obs['points'][np.argsort(obs['points'][:, 0])]
+        axis = canonical_image_axis(obs.get('image_axis', [1., 0.]))
+        points = obs['points'][np.argsort(_stations(obs['points'], axis))]
         count = min(len(points), POLICY['maximum_fit_points_per_boundary'])
         output.append({**obs, 'points': points[np.linspace(0, len(points)-1, count).round().astype(int)]})
     return output
@@ -282,28 +377,36 @@ def _bounded(observations):
 def _possible_same_instance(first, second):
     if first['appearance'] != second['appearance']:
         return False
-    a, b = first['region_px'], second['region_px']
-    if min(a[0]+a[2], b[0]+b[2]) >= max(a[0], b[0]):
+    if not _directions_agree(first, second):
+        return False
+    axis = _item_axis(first)
+    a, b = _item_interval(first, axis), _item_interval(second, axis)
+    if min(a[1], b[1]) >= max(a[0], b[0]):
         return False
     boundaries = [item['aggregation']['boundaries'] for item in (first, second)]
     # A single surviving tangent cannot distinguish two cylinders sharing an
     # apparent edge. Missing/unstable edges must neither crash this check nor
     # cause a second physical pipe to be merged out of the section model.
     if any({b['edge'] for b in rows if b['status'] == 'STABLE'
-            and b.get('line_slope_intercept') is not None} != {'top', 'bottom'}
+            and (b.get('line_homogeneous') is not None or b.get('line_slope_intercept') is not None)} != {'top', 'bottom'}
            for rows in boundaries):
         return False
-    station = (min(a[0]+a[2], b[0]+b[2])+max(a[0], b[0]))/2
-    first_edges, second_edges = [{b['edge']: b for b in rows} for rows in boundaries]
+    station = (min(a[1], b[1])+max(a[0], b[0]))/2
+    first_edges = _edge_order(boundaries[0])
+    second_edges = _edge_order(boundaries[1], bool(axis@_item_axis(second) < 0))
     for edge in ('top', 'bottom'):
         x, y = first_edges[edge], second_edges[edge]
-        delta = np.asarray(x['line_slope_intercept'])-y['line_slope_intercept']
-        if abs(delta@[station, 1]) > max(8., .4*min(first['width_px'], second['width_px'])):
+        try:
+            pa = point_at_station(_audit_line(x), axis, station)
+            pb = point_at_station(_audit_line(y), axis, station)
+        except ValueError:
+            return False
+        if np.linalg.norm(pa-pb) > max(8., .4*min(first['width_px'], second['width_px'])):
             return False
     return True
 
 
-def _compatibility_reasons(first, second, offset=(0., 0.)):
+def _compatibility_reasons(first, second, offset=(0., 0.), disparity_range=(0., 256.)):
     reasons = []
     stable_counts = [item['aggregation']['stable_boundary_count'] for item in (first, second)]
     # Three independent tangents can determine a conditional free circle.
@@ -314,20 +417,38 @@ def _compatibility_reasons(first, second, offset=(0., 0.)):
         reasons.append('APPEARANCE_MISMATCH')
     if abs(first['width_px']-second['width_px']) > max(6, .25*max(first['width_px'], second['width_px'])):
         reasons.append('PROJECTED_WIDTH_MISMATCH')
-    x, y, w, h = first['region_px']; u, v, s, t = second['region_px']
-    u += offset[0]; v += offset[1]
-    if min(x+w, u+s)-max(x, u) < .4*min(w, s):
+    if not _directions_agree(first, second):
+        return reasons+['AXIAL_DIRECTION_MISMATCH']
+    axis = _item_axis(first)
+    normal = normal_from_axis(axis)
+    x, end = _item_interval(first, axis)
+    u, finish = _item_interval(second, axis, offset)
+    shifts = [float(d)*axis[0] for d in disparity_range]
+    overlap = max(min(end, finish+shift)-max(x, u+shift) for shift in (0., *shifts, sum(shifts)/2))
+    if overlap < .4*min(end-x, finish-u):
         reasons.append('INSUFFICIENT_AXIAL_IMAGE_OVERLAP')
     # Rectified parallel axes: this is a bounded proposal association only,
     # not point correspondence or depth. Multiple choices stay ambiguous.
-    station = (max(x, u)+min(x+w, u+s))/2
-    for a, b in zip(first['aggregation']['boundaries'], second['aggregation']['boundaries']):
+    station = (max(x, u)+min(end, finish))/2
+    reverse = bool(axis@_item_axis(second) < 0)
+    secondary = _edge_order(second['aggregation']['boundaries'], reverse)
+    for a in first['aggregation']['boundaries']:
+        b = secondary.get(a['edge'])
+        if b is None:
+            continue
         if a['status'] != 'STABLE' or b['status'] != 'STABLE':
             continue
-        right_line = np.asarray(b['line_slope_intercept']).copy()
-        right_line[1] += offset[1]-right_line[0]*offset[0]
-        delta = np.asarray(a['line_slope_intercept'])-right_line
-        if abs(delta@[station, 1]) > max(24, first['width_px']*.4):
+        right_line = _audit_line(b).copy()
+        right_line[2] -= right_line[:2]@offset
+        try:
+            delta = float((point_at_station(_audit_line(a), axis, station)
+                           -point_at_station(right_line, axis, station))@normal)
+        except ValueError:
+            reasons.append('AXIAL_DIRECTION_MISMATCH')
+            break
+        limits = sorted(float(d)*normal[0] for d in disparity_range)
+        allowance = max(24, first['width_px']*.4)
+        if delta < limits[0]-allowance or delta > limits[1]+allowance:
             reasons.append('TRANSVERSE_POSITION_MISMATCH')
             break
     return reasons
@@ -423,7 +544,7 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
         views[role], proposal_audit[role] = (aggregate_image(image, role, sampling_mask=masks[role],
             axis_hint_image=band_audit['axis_image']) if band_audit else aggregate_image(image, role))
     result = {'revision': REVISION, 'policy_sha256': POLICY_SHA256, 'policy': dict(POLICY),
-              'section_revision': 'pooled-sections-ground-constrained-v3',
+              'section_revision': 'pooled-sections-oriented-boundaries-v4',
               'edge_extraction_revision': EDGE_EXTRACTION_REVISION,
               'edge_extraction_policy_sha256': EDGE_EXTRACTION_POLICY_SHA256,
               'edge_extraction_policy': dict(EDGE_EXTRACTION_POLICY),
@@ -440,7 +561,7 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
     if not np.allclose(k[:2, :2], kr[:2, :2], atol=1e-7):
         return result | {'status': 'UNSUPPORTED_RECTIFIED_INTRINSICS'}
     offset = k[:2, 2]-kr[:2, 2]
-    reasons = [[_compatibility_reasons(a, b, offset) for b in views['right']] for a in views['left']]
+    reasons = [[_compatibility_reasons(a, b, offset, disparity_range) for b in views['right']] for a in views['left']]
     comparisons = np.array([[not codes for codes in row] for row in reasons], bool).reshape(
         len(views['left']), len(views['right']))
     result['pairing_audit'] = _pairing_audit(views, reasons, comparisons)
@@ -451,13 +572,17 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
     all_lines = []
     paired_observations = []
     for i, j in pair_indexes:
+        common_axis_image = _item_axis(views['left'][i])
+        reverse = bool(common_axis_image@_item_axis(views['right'][j]) < 0)
         observations = [*views['left'][i]['pooled_edges'],
-                        *[{**o, 'points': o['points']+offset} for o in views['right'][j]['pooled_edges']]]
+                        *[{**o, 'points': o['points']+offset,
+                            'edge': ('bottom' if o['edge'] == 'top' else 'top') if reverse else o['edge'],
+                            'image_axis': common_axis_image.tolist()}
+                          for o in views['right'][j]['pooled_edges']]]
         paired_observations.append((i, j, observations))
         # Compound/occluded envelopes cannot define a cylinder's common axis.
         for obs in observations if not (views['left'][i]['reason_codes'] or views['right'][j]['reason_codes']) else []:
-            slope, intercept = np.polyfit(obs['points'][:, 0], obs['points'][:, 1], 1)
-            all_lines.append([slope, -1., intercept])
+            all_lines.append(fit_image_line(obs['points'], image_axis=common_axis_image).tolist())
     try:
         axis_audit = axis_from_image_lines(all_lines, k)
     except ValueError:
@@ -482,7 +607,10 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                      'left_region_px': a['region_px'], 'right_region_px': b['region_px'],
                      'boundary_status': 'STABLE', 'reason_codes': sorted(set(a['reason_codes']+b['reason_codes']))}
         candidate['observed_boundary_count'] = len(observations)
-        reference = float(np.mean(a['pooled_edges'][0]['points'][:, 0]))
+        reference_pixel = np.mean(a['pooled_edges'][0]['points'], axis=0)
+        image_axis = _item_axis(a)
+        fitting_frame = {'reference_pixel': reference_pixel, 'image_axis': image_axis}
+        reference = float(reference_pixel[0])
         fit = {'status': 'OUTLINE_IDENTITY_OR_OCCLUSION_UNRESOLVED'}
         error, sensitivity = {}, {}
         common_support = None
@@ -490,16 +618,16 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
             candidate['reason_codes'].append(axis_audit['status'])
             fit = {'status': axis_audit['status']}
         if not candidate['reason_codes'] and axis is not None:
-            fit = fit_silhouettes(_bounded(observations), k, calibration.baseline_mm, axis, reference)
+            fit = fit_silhouettes(_bounded(observations), k, calibration.baseline_mm, axis, reference, **fitting_frame)
             if fit['status'] == 'CONDITIONAL_FIT':
                 common, partitions, common_support = synchronize_axial_blocks(observations, k, calibration.baseline_mm, fit)
                 if common:
-                    fit = fit_silhouettes(_bounded(common), k, calibration.baseline_mm, axis, reference)
+                    fit = fit_silhouettes(_bounded(common), k, calibration.baseline_mm, axis, reference, **fitting_frame)
             if fit['status'] == 'CONDITIONAL_FIT':
                 fitted_observations = common if common else observations
                 try:
                     error = pixel_error_scenarios(_bounded(fitted_observations), k, calibration.baseline_mm, axis, reference,
-                                                  sigma_px=POLICY['assumed_coherent_edge_sigma_px'])
+                                                  sigma_px=POLICY['assumed_coherent_edge_sigma_px'], **fitting_frame)
                 except (ValueError, np.linalg.LinAlgError, FloatingPointError) as exc:
                     # A nearly parallel baseline may admit a finite trial fit
                     # but lose its solution under a subpixel perturbation.
@@ -514,7 +642,7 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                     candidate['reason_codes'].append('CYLINDER_PROJECTION_INCONSISTENT')
                 halves = []
                 for divided in partitions:
-                    halves.append(fit_silhouettes(_bounded(divided), k, calibration.baseline_mm, axis, reference))
+                    halves.append(fit_silhouettes(_bounded(divided), k, calibration.baseline_mm, axis, reference, **fitting_frame))
                 if len(halves) == 2 and all(f['status'] == 'CONDITIONAL_FIT' for f in halves):
                     diameter_delta = abs(halves[0]['trial_diameter_mm']-halves[1]['trial_diameter_mm'])
                     center_delta = float(np.linalg.norm(np.array(halves[0]['section_center_parameters_mm'])-halves[1]['section_center_parameters_mm']))

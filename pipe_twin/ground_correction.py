@@ -8,8 +8,9 @@ import math
 import numpy as np
 
 from .section_diagnostics import section_basis
+from .image_line_geometry import fit_image_line
 
-REVISION = 'ground-constrained-pipe-axis-v1'
+REVISION = 'ground-constrained-pipe-axis-v2'
 POLICY = {'maximum_nullspace_ratio': .25, 'maximum_boundary_p95_px': 2.,
           'minimum_boundaries': 3, 'minimum_direction_strength': 1e-6}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
@@ -58,10 +59,12 @@ def correct_pipe_axis(observations, intrinsic, unconstrained, ground):
     lines = []
     for observation in observations:
         points = np.asarray(observation['points'], float)
-        if len(points) < 2 or not np.isfinite(points).all() or np.ptp(points[:, 0]) < 1e-6:
+        if len(points) < 2 or not np.isfinite(points).all():
             return unconstrained, audit | {'status': 'NO_USABLE_PIPE_BOUNDARIES'}
-        slope, intercept = np.polyfit(points[:, 0], points[:, 1], 1)
-        lines.append([slope, -1., intercept])
+        try:
+            lines.append(fit_image_line(points))
+        except ValueError:
+            return unconstrained, audit | {'status': 'NO_USABLE_PIPE_BOUNDARIES'}
     normals = np.asarray(lines)@k
     normals /= np.linalg.norm(normals, axis=1)[:, None]
     basis = section_basis(normal)

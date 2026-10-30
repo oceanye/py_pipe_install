@@ -9,8 +9,9 @@ from __future__ import annotations
 import hashlib
 import json
 import numpy as np
+from .image_line_geometry import canonical_image_axis, normal_from_axis, sampling_coordinates
 
-REVISION = 'axial-boundary-aggregation-v1'
+REVISION = 'axial-boundary-aggregation-v2'
 POLICY = {'window_px': 128, 'minimum_windows': 3, 'maximum_windows': 16,
           'minimum_points_per_window': 48, 'minimum_window_fraction': .75,
           'maximum_edge_rms_px': 1.25, 'maximum_window_offset_px': 1.5,
@@ -42,7 +43,7 @@ def _fit(points):
 
 def _column_runs(points):
     """Half-open runs of actual sampled columns, with holes left untouched."""
-    columns = np.unique(np.floor(np.asarray(points)[:, 0]).astype(int))
+    columns = np.unique(np.floor(np.asarray(points)[:, 0]+1e-7).astype(int))
     if not len(columns):
         return []
     starts = np.r_[0, np.flatnonzero(np.diff(columns) > 1)+1]
@@ -70,15 +71,23 @@ def aggregate_boundaries(observations):
             audit.update(status='OCCLUDED', reason_codes=['OCCLUDED_BOUNDARY_NOT_FILLED'])
             output.append(audit)
             continue
-        points = np.asarray(obs['points'], float)
-        if points.ndim != 2 or points.shape[1] != 2 or not np.isfinite(points).all():
+        original = np.asarray(obs['points'], float)
+        if original.ndim != 2 or original.shape[1] != 2 or not np.isfinite(original).all():
             raise ValueError('INVALID_EDGE_POINTS')
+        axis = canonical_image_axis(obs.get('image_axis', [1., 0.]))
+        normal = normal_from_axis(axis)
+        points = sampling_coordinates(original, axis)
+        oriented = 'image_axis' in obs
+        if oriented:
+            audit['image_axis'] = axis.tolist()
+            audit['sampling_frame'] = {'axis_image': axis.tolist(), 'normal_image': normal.tolist(),
+                                       'origin_px': [0., 0.], 'coordinate_space': 'ORIGINAL_IMAGE_PIXELS'}
         # One sample per axial pixel; duplicates add no support.
         if len(points):
-            _, indices = np.unique(np.floor(points[:, 0]), return_index=True)
+            _, indices = np.unique(np.floor(points[:, 0]+1e-7), return_index=True)
             points = points[np.sort(indices)]
         audit['source_columns'] = len(points)
-        audit['observed_column_runs_px'] = _column_runs(points)
+        audit['observed_axial_runs_px' if oriented else 'observed_column_runs_px'] = _column_runs(points)
         if len(points) < POLICY['minimum_points_per_window']*POLICY['minimum_windows']:
             audit['reason_codes'] = ['TOO_FEW_AXIAL_WINDOWS']
             output.append(audit)
@@ -122,16 +131,24 @@ def aggregate_boundaries(observations):
             predicted, _, _ = _fit(train)
             holdout_errors.extend(abs(test[:, 1]-test[:, 0]*predicted[0]-predicted[1]))
         p95 = float(np.percentile(holdout_errors, 95))
-        audit.update(line_slope_intercept=line.tolist(), retained_columns=int(inliers.sum()),
-                     retained_column_runs_px=_column_runs(joined[inliers]),
+        homogeneous = np.r_[normal-line[0]*axis, -line[1]]
+        homogeneous /= np.linalg.norm(homogeneous[:2])
+        reference_s = (x0+x1-1)/2
+        reference_pixel = axis*reference_s+normal*float(line@[reference_s, 1.])
+        audit.update(line_slope_intercept=([-homogeneous[0]/homogeneous[1], -homogeneous[2]/homogeneous[1]]
+                                          if abs(homogeneous[1]) > 1e-10 else None),
+                     line_homogeneous=homogeneous.tolist(),
+                     line_axial_slope_intercept=line.tolist(), retained_columns=int(inliers.sum()),
                      pooled_rms_px=float(np.sqrt(np.mean(residual[inliers]**2))), holdout_p95_px=p95,
-                     observed_axial_interval_px=[x0, x1], reference_u_px=(x0+x1-1)/2,
-                     edge_v_at_reference_px=float(line@[(x0+x1-1)/2, 1.]))
+                     observed_axial_interval_px=[x0, x1], reference_u_px=float(reference_pixel[0]),
+                     edge_v_at_reference_px=float(reference_pixel[1]), reference_s_px=reference_s,
+                     reference_pixel=reference_pixel.tolist())
+        audit['retained_axial_runs_px' if oriented else 'retained_column_runs_px'] = _column_runs(joined[inliers])
         if p95 > POLICY['maximum_holdout_p95_px']:
             audit['reason_codes'] = ['CROSS_WINDOW_BOUNDARY_UNSTABLE']
         else:
             audit.update(status='STABLE', reason_codes=[])
-            pooled.append({**obs, 'points': joined[inliers]})
+            pooled.append({**obs, 'points': joined[inliers]@np.stack([axis, normal])})
         output.append(audit)
     return {'revision': REVISION, 'policy_sha256': POLICY_SHA256, 'policy': dict(POLICY),
             'scope': 'IMAGE_BOUNDARIES_NOT_METRIC_OR_OCCLUSION_RECOVERY',

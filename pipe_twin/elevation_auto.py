@@ -11,6 +11,7 @@ import copy
 import hashlib
 import json
 import math
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -28,6 +29,8 @@ from .elevation_zones import (
     offset_observation_pixels,
 )
 from .model_zones import zone_model_specs
+from .observation_evidence import observation_evidence, metric_cylinder
+from .state import classify_installation_state, NegativeInstallationEvidence
 
 LOGGER = get_logger("elevation_auto")
 STATE_ZH = {"INSTALLED": "安装", "NOT_INSTALLED": "未安装", "UNKNOWN": "不确定"}
@@ -145,6 +148,14 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
     }
     observations = {str(item.get("observation_id")): item for item in surface.get("observations", [])
                     if isinstance(item, Mapping) and item.get("observation_id")}
+    # A registered surface strip still has no observed circle centre or free
+    # radius. It cannot establish either positive or projected negative state.
+    matched = bool(matched and registration.get('matches') and all(
+        metric_cylinder(observations.get(str(m['observation_id']), {}))
+        for m in registration['matches']))
+    if not matched:
+        associations = {}
+    calibrated = bool(calibration.validated)
     interval = _common_observed_interval(surface, registration) if matched else None
     common_axis = np.asarray(registration.get("camera_axis", [1, 0, 0]), float)
     step = max(1, math.ceil(max(calibration.left.width, calibration.left.height)/640))
@@ -155,7 +166,7 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
         observation = observations.get(str(association.get("observation_id"))) if association else None
         measured_section = None
         model_section = None
-        if observation is not None and healthy:
+        if observation is not None and healthy and calibrated:
             measured_diameter = float(observation["diameter_mm"])
             center_camera = np.asarray(observation["center_camera_mm"], dtype=float)
             evidence.update(
@@ -212,12 +223,16 @@ def evaluate_registered_capture(pipe_specs: list[dict], surface: Mapping, regist
                 evidence[role] = _view_evidence(spec, center, axis, getattr(calibration, role), images[role],
                     getattr(depth, f"{role}_depth_mm"), getattr(depth, f"{role}_valid"),
                     calibration.baseline_mm if role == "right" else 0., interval, common_axis, step)
-        positive = bool(healthy and matched and association is not None)
-        free = bool(healthy and matched and not positive and all(evidence[r]["free_space_candidate"] for r in ("left", "right")))
+        positive = bool(healthy and calibrated and matched and association is not None)
+        free = bool(healthy and calibrated and matched and not positive and all(evidence[r]["free_space_candidate"] for r in ("left", "right")))
         evidence.update(installed_candidate=positive, free_space_candidate=free,
-                        observation_id=associations.get(spec["pipe_id"], {}).get("observation_id"))
+                        observation_id=associations.get(spec["pipe_id"], {}).get("observation_id"),
+                        calibration_validated=calibrated, registration_metric_validated=matched,
+                        observation_evidence=observation_evidence(observation or {}))
         if not healthy:
             reasons = ["CAPTURE_OR_DEPTH_UNHEALTHY"]
+        elif not calibrated:
+            reasons = ['CALIBRATION_NOT_VALIDATED']
         elif not matched:
             reasons = list(registration.get("reason_codes") or [registration.get("status", "REGISTRATION_REQUIRED")])
         elif positive:
@@ -338,6 +353,10 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             observation_mode, group["left"], group["right"], group["depth"],
             calibration, pipe_specs, matching_settings=matching,
         )
+        for observation in surface['observations']:
+            observation['observation_evidence'] = observation_evidence(observation)
+        metric_observations = [o for o in surface['observations'] if metric_cylinder(o)]
+        metric_ids = {o['observation_id'] for o in metric_observations}
         surface.setdefault("audit", {}).update({
             "local_observation_mode": observation_mode,
             "fixed_camera_relative_layout": True,
@@ -348,16 +367,23 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             "diameter_tolerance_ratio": matching["diameter_tolerance_ratio"],
             "color_filter_enabled": matching["color_filter_enabled"],
             "color_filter_mode": matching["color_filter_mode"],
+            'metric_cylinder_count': len(metric_observations),
+            'unresolved_candidate_count': len(surface['observations'])-len(metric_observations),
+            'registration_excluded_observation_ids': [o['observation_id'] for o in surface['observations']
+                                                     if o['observation_id'] not in metric_ids],
         })
         anchors = settings["anchors"] if group.get("anchors_apply", group is groups[-1]) else {}
+        anchors = {key: value for key, value in anchors.items() if key in metric_ids}
         registration = register_elevation(
-            pipe_specs, surface["observations"], settings["axis_world"], anchors=anchors,
+            pipe_specs, metric_observations, settings["axis_world"], anchors=anchors,
             camera_side_world=settings.get("camera_side_world"),
             config={
                 "diameter_tolerance_mm": matching["diameter_tolerance_mm"],
                 "diameter_tolerance_ratio": matching["diameter_tolerance_ratio"],
             },
         )
+        if surface['observations'] and not metric_observations:
+            registration['reason_codes'] = ['NO_METRIC_CYLINDER_OBSERVATIONS']
         present_count = settings.get("present_pipe_count")
         if present_count is not None and len(surface["observations"]) > present_count:
             registration = {"status": "SCENE_INVENTORY_CONFLICT", "matches": [],
@@ -401,9 +427,20 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             signatures.add(capture["pair_signature"])
             last_time = timestamp
             independent.append(capture["capture_id"])
-        state = "INSTALLED" if evidence["installed_candidate"] else "NOT_INSTALLED" if len(independent) >= 2 else "UNKNOWN"
+        negative = NegativeInstallationEvidence(
+            calibration_validated=bool(calibration.validated),
+            registration_validated=evidence['registration_metric_validated'],
+            expected_region_in_frame=all(evidence.get(r, {}).get('projected_samples', 0) >= 40 for r in ('left', 'right')),
+            expected_region_unoccluded=all(evidence.get(r, {}).get('visibility') == 'OBSERVED_REGION' for r in ('left', 'right')),
+            sensor_health_validated=bool(current['analysis_healthy']),
+            free_space_validated=bool(evidence['free_space_candidate']),
+            repeated_absence_observations=len(independent),
+            independent_evidence_sources=2 if evidence['free_space_candidate'] else 0)
+        state = classify_installation_state(direct_instance_evidence=evidence['installed_candidate'],
+            negative_evidence=negative, evidence_healthy=bool(current['analysis_healthy'] and calibration.validated))
         reasons = ["REPEATED_REGISTERED_FREE_SPACE"] if state == "NOT_INSTALLED" else evidence["reason_codes"]
         rows.append({"pipe_id": pipe_id, "installation_state": state, "installation_state_zh": STATE_ZH[state],
+                     'installation_evidence_qualified': state != 'UNKNOWN',
                      "section_position": positions[pipe_id],
                      "measurement": evidence["measurement"],
                      "reason_codes": reasons, "state_basis": reasons[0], "current_evidence": evidence,
@@ -427,6 +464,53 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
                                 "observed_geometry_only_count": sum(o.get("observation_basis") == "DEPTH_ONLY_LOCAL_CYLINDER"
                                                                      for o in current_surface["observations"]),
                                 "identity_or_absence_proof": False}}
+
+
+def reference_pair_diagnostics(group, calibration, pipe_specs, registration_settings, matching_settings):
+    """Inspect the bound current pair without lending it burst/state authority.
+
+    This runs once in full image coordinates, outside zone registration. The
+    same standalone depth object is already used by the optional ground check.
+    """
+    reference = group.get('reference_ground_pair')
+    if reference is None:
+        return None
+    burst = group['depth'].audit.get('temporal_fusion') or {}
+    if (group.get('pair_healthy') or burst.get('status') != 'INVALID'
+            or reference.get('source_scope') != 'REFERENCE_STEREO_PAIR_ONLY'
+            or reference.get('source_burst_status') != 'INVALID'
+            or reference.get('source_capture_id') != burst.get('reference_capture_id')):
+        raise ValueError('LOCAL_DIAGNOSTIC_REFERENCE_SCOPE_MISMATCH')
+    for role in ('left', 'right'):
+        if (reference['source_photo_sha256'].get(role) != group['photos'][role]['actual_sha256']
+                or not np.array_equal(reference[role], group[role])):
+            raise ValueError('LOCAL_DIAGNOSTIC_REFERENCE_PHOTO_MISMATCH')
+    depth = reference['depth']
+    output = {key: copy.deepcopy(value) for key, value in reference.items() if key.startswith('source_')}
+    output.update(status='DIAGNOSTIC_ONLY', installation_evidence=False,
+                  accepted_measurement=False, burst_status_unchanged=burst['status'],
+                  calibration_validated=bool(calibration.validated), depth_audit=copy.deepcopy(depth.audit),
+                  source_pixel_sha256={r: hashlib.sha256(np.ascontiguousarray(reference[r]).tobytes()).hexdigest()
+                                       for r in ('left', 'right')},
+                  valid_depth_fraction={r: float((getattr(depth, r+'_valid')
+                      & np.isfinite(getattr(depth, r+'_depth_mm')) & (getattr(depth, r+'_depth_mm') > 0)).mean())
+                                        for r in ('left', 'right')})
+    if depth.audit.get('status') != 'VALID':
+        return output | {'status': 'DIAGNOSTIC_DEPTH_INVALID', 'observations': [], 'metric_cylinder_count': 0}
+    from .recognition import recognize_local_pipes
+    try:
+        surface = recognize_local_pipes(registration_settings.get('local_observation_mode', 'auto'),
+            reference['left'], reference['right'], depth, calibration, pipe_specs, matching_settings=matching_settings)
+    except Exception as error:
+        return output | {'status': 'DIAGNOSTIC_FAILED', 'reason': str(error),
+                         'observations': [], 'metric_cylinder_count': 0}
+    observations = [dict(o, observation_evidence=observation_evidence(o), installation_evidence=False)
+                    for o in surface['observations']]
+    return output | {'observations': observations, 'candidate_count': len(observations),
+                     'metric_cylinder_count': sum(metric_cylinder(o) for o in observations),
+                     'audit': surface.get('audit', {}), 'image_candidates': surface.get('image_candidates', []),
+                     'rejected_reason_counts': dict(Counter(str(r.get('reason', 'UNKNOWN')) for r in surface.get('rejected', []))),
+                     'rejected': surface.get('rejected', [])}
 
 
 def _zone_observation_id(zone_id: str, value: Any) -> str:
@@ -652,6 +736,7 @@ def _merge_zone_rows(zone_reports: list[Mapping[str, Any]], pipe_specs: list[dic
             reasons = ["ZONE_NO_EVIDENCE"]
         row = copy.deepcopy(dict(chosen))
         row.update(pipe_id=spec["pipe_id"], installation_state=state,
+                   installation_evidence_qualified=bool(state != 'UNKNOWN' and chosen.get('installation_evidence_qualified')),
                    installation_state_zh=STATE_ZH[state], reason_codes=reasons,
                    state_basis=reasons[0], zone_ids=[zone_id for zone_id, _ in entries],
                    zone_results=[{"zone_id": zone_id, "installation_state": item.get("installation_state"),
@@ -884,14 +969,14 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
         # Only the current burst contributes to section repeatability, never
         # previous installation-state history. Bound decoding to seven pairs.
         burst_audit = depth.audit.get('temporal_fusion') or {}
-        if capture is captures[-1] and loaded['registration_settings'].get('ground_region'):
+        if capture is captures[-1]:
             from .ground_source import reference_ground_source
             reference_ground = reference_ground_source(groups[-1], capture, bursts[capture['capture_id']],
                 compute_depth=lambda left, right: _compute_stereo_depth(left, right, calibration, config))
             if reference_ground is not None:
                 groups[-1]['reference_ground_pair'] = reference_ground
                 if progress:
-                    progress('连拍未通过；单独检查当前末帧地面，连拍及安装状态仍保持未通过。')
+                    progress('连拍未通过；单独诊断哈希绑定末帧深度及可选地面，连拍和安装状态仍未通过。')
         if capture is captures[-1] and burst_audit.get('status') == 'VALID':
             from .temporal_sections import sample_indices
             accepted = {f['capture_id'] for f in burst_audit['frames'] if f['accepted']}
@@ -925,6 +1010,8 @@ def analyze_elevation_auto_manifest(manifest_path: str | Path, *, report_output_
                                      "quality_audit": loaded["calibration"].get("quality_audit"),
                                      "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM"})
     result["temporal_fusion"] = groups[-1]["depth"].audit.get("temporal_fusion")
+    result['reference_pair_diagnostics'] = reference_pair_diagnostics(groups[-1], calibration,
+        loaded['pipe_specs'], loaded['registration_settings'], config['matching'])
     from .section_status import solver_status_rows
     result['solver_status'] = solver_status_rows(result)
     # All inference used immutable decoded images. Recheck bound snapshots

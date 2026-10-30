@@ -1,0 +1,93 @@
+{
+  "checked_at": "2026-10-31T01:39:14.713929+08:00",
+  "scope": "SOFTWARE_AND_SAME_IMAGE_REPLAY_NOT_FIELD_METRIC_ACCURACY",
+  "base_commit": "7ff6f295ba5a035ab16361fcd4f3ce9ac4cf16f7",
+  "full_suite": {
+    "command": "python -c \"import cv2,pytest;cv2.setNumThreads(2);raise SystemExit(pytest.main(['tests','-q','-rs']))\"",
+    "passed": 1096,
+    "skipped": 1,
+    "subtests_passed": 272,
+    "seconds": 444.63,
+    "exit_code": 0,
+    "junit_attributes": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "1",
+      "tests": "1369",
+      "time": "444.453",
+      "timestamp": "2026-10-31T01:30:09.958863+08:00",
+      "hostname": "ZJLZ1026"
+    },
+    "junit_path": "outputs\\geometry-path-20261031\\pytest-final.xml",
+    "junit_sha256": "b32af22374441b1b3a8c97e30c37afc49fb25856c963ae73e97203af3199b7bd"
+  },
+  "isolated_check": {
+    "command": "python -m pytest tests/test_gui.py::DashboardModelTests::test_module_import_does_not_eagerly_import_tkinter tests/test_capture_agent.py::test_second_request_is_rejected_while_camera_is_busy -q",
+    "passed": 3,
+    "seconds": 3.34,
+    "exit_code": 0,
+    "tk_lazy_import_passed": true
+  },
+  "initial_full_run": {
+    "passed": 1093,
+    "failures": 2,
+    "skipped": 1,
+    "subtests_passed": 272,
+    "seconds": 461.85,
+    "failures_resolved": [
+      "GUI_TAB_COUNT_UPDATED_FROM_5_TO_6",
+      "MOCK_REMOTE_CAPTURE_3S_WAIT_PASSED_ISOLATED_AND_FINAL_FULL_RUN"
+    ],
+    "production_timeout_relaxed": false
+  },
+  "late_display_fix": {
+    "description": "Depth rejection labels cannot overwrite section ID labels and erase solved dimensions.",
+    "targeted_command": "python -m pytest tests/test_observation_evidence.py tests/test_temporal_sections.py -q",
+    "passed": 17,
+    "seconds": 20.03,
+    "also_in_final_full_suite": true
+  },
+  "other_checks": {
+    "git_diff_check": true,
+    "pip_check": "No broken requirements found.",
+    "cli_help_exit_code": 0,
+    "gui_1024x720_and_1280x860": true,
+    "source_hashes_unchanged": true,
+    "protected_source_count": 28
+  },
+  "changed_source_working_tree_sha256": {
+    "pipe_twin/axial_aggregation.py": "053a0eb4a20adea773aa9c4e2130a70a51f87d5cc47f455a68a1c127911af96f",
+    "pipe_twin/axial_consistency.py": "bc9038e3cb2a3d5abd269fba81cc7e65bbd35627b59434cd24324c29bb05ea30",
+    "pipe_twin/elevation_auto.py": "57a463194f912dc1b40711f93654f832ae1444488917857c1e26deb94ce4911b",
+    "pipe_twin/elevation_gui.py": "6fae745043b3832f35a027a806476e2374d0323917fc27d56145c57b2a23d926",
+    "pipe_twin/ground_correction.py": "0027f8e0403b44fd460e0ba37f694ea5061226b7ad6bb767ae7d4310548f3252",
+    "pipe_twin/image_line_geometry.py": "335587bd7dc99e3ddd99e6010158da53ab213f27bd28b49dcf7bb69d314bc852",
+    "pipe_twin/observation_evidence.py": "da66a56af57f76f77c12aa7b2fb86bdf669e90520e63f8c0398c8af058bf12e8",
+    "pipe_twin/parallel_local.py": "3d2118c13889aa333255c1b7355a10751656455ac7fab9f58d2f9c9829798748",
+    "pipe_twin/pooled_sections.py": "2358b00ac7d4ae698c109868c1de78f3133d282fc09b62a21cab222c580b28fa",
+    "pipe_twin/projection_diagnostics.py": "b672fa93002f6ea5384611d4a0ca0a01afd45046efc84856d59f55d8c6495491",
+    "pipe_twin/relative_scene.py": "7b601256a0a7cecbd74087fd60fff46899ca3edb437aaf0d781373d825bb3a06",
+    "pipe_twin/section_display.py": "b259c3957148d257f755d2a962f8105e5a55d495f990930f7d621a9537af3c1e",
+    "pipe_twin/section_status.py": "beed3625b5a36ce2bf1937c75c2bc302497c10024284dd319b6d45676d8457c9",
+    "pipe_twin/view_geometry.py": "64d37d9edfa7439539be792faae58a1c0186f20c538a2bd70a8070de211a873b",
+    "tests/test_color_boundaries.py": "bd27888b20c81b9d656395cf9616609248cb4a43b1f71497f7d7e818f0034917",
+    "tests/test_directional_image_pipeline.py": "27888a5c07e33164543b70c68e4db6981fdcb13014377d416b8b72b64873c41a",
+    "tests/test_directional_projection.py": "ed375d402d7db1b2fd0cffa418dd9bebd767057969a9562e629c15f81c5ee6e9",
+    "tests/test_elevation_gui.py": "9128d76a548db85a4730d98423337457816ed5dd69b811ec5e10fa8dddb050f4",
+    "tests/test_elevation_zones.py": "0d370495256576e5af9da0d6968a9defec9203682f8d9d12a70ae62c80397906",
+    "tests/test_observation_evidence.py": "d65617d5a35f717e70a1a51d3f98c126c80f65a66fe4d03cc9d6a36678254569",
+    "tests/test_oriented_boundaries.py": "ef97971ce81670306ccb890af32dffe6f65014370bdd330fded30054fe4ae9dc",
+    "tests/test_parallel_local.py": "a2532abad8a3879f151b8c3d4a0cb46d534fb4aa462d8cd82e019cea77201215",
+    "tests/test_relative_scene.py": "522360dd1a2f84e2988eaf1667779481ce2a0469768b77f97a061756eb227082",
+    "tests/test_view_geometry.py": "76a85fd363936c260c7601f3842071acbf9600684c2c1d470e84c67ccd569e3c"
+  },
+  "evidence_sha256": {
+    "evidence.json": "d95b6fbf10e8b0d0d375bc242009a585b5ded347f1037e2b66c8347e51689f54",
+    "gui-evidence.json": "23e0f4f7cfd25059d6509513443e1c4df1246c7b97d0d18cab14395587cd3703",
+    "gui-verify.py": "5ec8ed691bb1d876fe6580b377656fe0e36c609be0156e56c496f25a706d6ed2",
+    "replay.py": "fdb8a16451e739012b45a495671f52f9041f3d735a6148945ac62ddbe47f637b",
+    "sampling-audit.json": "58acac5a2839d37b4dea47876cc020fc48d6b7f6e2c6a475aa07877a5feeade5",
+    "sampling-audit.py": "999f0dc9f19ac02f5b2ffd8f72780ca20f86fdc03e17d5cbdacfac116cbe9c00"
+  }
+}

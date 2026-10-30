@@ -23,7 +23,8 @@ def model_states(report):
         pid = row['pipe_id']
         state = positions.get(pid, (row.get('section_position') or {}).get('state'))
         states[pid] = (state if state in ('IN_POSITION', 'OUT_OF_POSITION')
-                       else 'INSTALLED' if row.get('installation_state') == 'INSTALLED' else 'UNKNOWN')
+                       else 'INSTALLED' if row.get('installation_state') == 'INSTALLED'
+                       and row.get('installation_evidence_qualified') is True else 'UNKNOWN')
     for pid, state in positions.items():
         if state in ('IN_POSITION', 'OUT_OF_POSITION'):
             states[pid] = state

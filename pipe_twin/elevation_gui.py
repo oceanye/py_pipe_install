@@ -928,6 +928,7 @@ class ElevationCaptureDialog:
         self.region_button = ttk.Button(method_bar, text="管道评估区域（可选）", command=self.toggle_region_selection)
         self.region_button.pack(side="left", padx=3)
         ttk.Button(method_bar, text='地面选区 / 倾角…', command=lambda: self.open_settings('ground')).pack(side='left', padx=3)
+        ttk.Button(method_bar, text='机位几何检查', command=lambda: self.show_analysis_details('geometry')).pack(side='left', padx=3)
         run_bar = ttk.Frame(self.controls)
         run_bar.pack(fill='x', pady=(0, 4))
         self.run_button = ttk.Button(run_bar, text="⑤ 保存并评估", command=lambda: self.submit(True))
@@ -1713,6 +1714,7 @@ class ElevationCaptureDialog:
     def show_analysis_details(self, tab=None):
         from .section_display import section_summary_lines
         from .ground_check import ground_summary_lines
+        from .view_geometry import view_geometry_summary_lines
         tk, ttk = self.app.tk, self.app.ttk
         row = self.selected_solver_row()
         spec = self.selected_pipe()
@@ -1722,6 +1724,7 @@ class ElevationCaptureDialog:
         pages = [('candidate', '当前候选', row['detail'] if row else '评估后选择一个现场候选，查看轮廓、尺寸与重复性。'),
                  ('sections', '断面与汇聚', '\n'.join(section_summary_lines(self.report, detailed=True))),
                  ('ground', '地面倾角', '\n'.join(ground_summary_lines(self.current_ground_check()))),
+                 ('geometry', '机位几何', '\n'.join(view_geometry_summary_lines(self.report))),
                  ('cad', 'CAD 对应与就位', '\n'.join(cad_lines)),
                  ('recognition', '识别诊断', '\n'.join(recognition_diagnostic_lines(self.report)))]
         dialog = getattr(self, 'analysis_details_window', None)

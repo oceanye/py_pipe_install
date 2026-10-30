@@ -30,6 +30,7 @@ REASONS = {
     'TRANSVERSE_BOUNDARY_CLIPPED': '管宽边界超出画面',
     'VISIBLE_BAND_TOO_NARROW': '可见条带过窄',
     'AXIAL_IMAGE_PARAMETERIZATION_UNSUPPORTED': '当前轴向投影不适用此汇聚方式',
+    'AXIAL_DIRECTION_MISMATCH': '左右候选的管轴投影方向不一致',
     'GROUND_AXIS_CONFLICT': '水平管假设与图像边界不一致',
 }
 
@@ -62,7 +63,7 @@ def section_summary_lines(report, *, detailed=False):
     lines += ['', pooling_summary(report)]
     for stage in stages:
         lines += ['', f"{stage.get('zone_id', '全幅')}：稳定双目边界 {stage.get('boundary_pair_count', 0)} 对"]
-        if any(edge.get('status') == 'STABLE' and 'retained_column_runs_px' not in edge
+        if any(edge.get('status') == 'STABLE' and 'retained_column_runs_px' not in edge and 'retained_axial_runs_px' not in edge
                for view in stage.get('views', {}).values() for item in view
                for edge in item.get('aggregation', {}).get('boundaries', [])):
             lines.append('旧记录缺少逐列观测范围，未绘制这些稳定边界；重新评估后可查看。')
@@ -72,12 +73,12 @@ def section_summary_lines(report, *, detailed=False):
         band = stage.get('aggregation_band')
         if band:
             lines += [f"手动汇聚范围：沿左图指定方向 {band['span_px']:.1f} px，两条垂线之间取样。"]
-            if stage.get('section_revision') in ('pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3'):
+            if stage.get('section_revision') in ('pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3', 'pooled-sections-oriented-boundaries-v4'):
                 lines += ['右图使用对应视差搜索带；鼠标仅提供大致方向，实际边缘方向从图像重新估计。',
                           '三维轴向和毫米尺寸仍需解算；图像内倾斜与纵深倾斜分别处理。']
             else:
                 lines += ['右图使用对应视差搜索带；所画方向是二维取样方向，三维轴向和毫米尺寸仍需解算。']
-        if stage.get('section_revision') in ('pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3'):
+        if stage.get('section_revision') in ('pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3', 'pooled-sections-oriented-boundaries-v4'):
             lines += ['子段按两眼共同轴向区间对齐；圆心差在同一法向断面上比较，不把沿管长的位移算作误差。']
         if stage.get('ground_correction'):
             from .ground_correction import correction_summary
@@ -152,12 +153,19 @@ def boundary_overlay_segments(report, role):
             for edge in item['aggregation']['boundaries']:
                 if edge['status'] != 'STABLE':
                     continue
-                slope, intercept = edge['line_slope_intercept']
-                for u, end in edge.get('retained_column_runs_px', []):
+                oriented = 'retained_axial_runs_px' in edge
+                runs = edge.get('retained_axial_runs_px' if oriented else 'retained_column_runs_px', [])
+                for u, end in runs:
                     if end <= u:
                         continue
                     v = end-1  # Runs are half-open; the next column may be missing.
-                    points = [[u, slope*u+intercept], [v, slope*v+intercept]]
+                    if oriented:
+                        from .image_line_geometry import point_at_station
+                        points = [point_at_station(edge['line_homogeneous'], edge['image_axis'], station).tolist()
+                                  for station in (u, v)]
+                    else:
+                        slope, intercept = edge['line_slope_intercept']
+                        points = [[u, slope*u+intercept], [v, slope*v+intercept]]
                     refinement = stage.get('epipolar_refinement', {})
                     if role == 'right' and refinement.get('applied'):
                         from .epipolar_refinement import transform_points

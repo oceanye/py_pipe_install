@@ -141,13 +141,16 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.refresh_table()
         self.dialog.show_analysis_details()
         window = self.dialog.analysis_details_window
-        self.assertEqual(len(self.dialog.detail_tabs.tabs()), 5)
+        self.assertEqual(len(self.dialog.detail_tabs.tabs()), 6)
         self.dialog.solver_tree.selection_set('0:1')
         self.root.update()
         self.assertIn('/ S2', self.dialog.detail_texts['candidate'].get('1.0', 'end'))
         self.dialog.show_analysis_details('ground')
         self.assertIs(self.dialog.analysis_details_window, window)
         self.assertEqual(self.dialog.detail_tabs.select(), str(self.dialog.detail_pages['ground']))
+        self.dialog.show_analysis_details('geometry')
+        self.assertEqual(self.dialog.detail_tabs.select(), str(self.dialog.detail_pages['geometry']))
+        self.assertIn('不是实时角度', self.dialog.detail_texts['geometry'].get('1.0', 'end'))
         self.dialog.invalidate()
         self.assertFalse(window.winfo_exists())
 
@@ -856,7 +859,7 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.open_model_viewer()
         viewer = self.dialog.model_viewer
         report = report_fixture()
-        report['pipes'] = [{'pipe_id': 'P001', 'installation_state': 'INSTALLED'}]
+        report['pipes'] = [{'pipe_id': 'P001', 'installation_state': 'INSTALLED', 'installation_evidence_qualified': True}]
         self.dialog.report = report
         self.dialog.redraw(); self.root.update_idletasks()
         self.assertEqual(len(viewer.scene_hits), 2)
@@ -864,6 +867,9 @@ class ElevationGuiTests(unittest.TestCase):
         circle = next(i for i in viewer.section_canvas.find_withtag('pipe:P001')
                       if viewer.section_canvas.type(i) == 'oval')
         self.assertEqual(viewer.section_canvas.itemcget(circle, 'fill'), STATE_COLORS['INSTALLED'])
+        report['pipes'][0].pop('installation_evidence_qualified')
+        self.dialog.redraw(); self.root.update_idletasks()
+        self.assertFalse(viewer.section_canvas.find_withtag('state:INSTALLED'))
         # Looking at a conditional section creates no identity/installation.
         old_selection = self.dialog.selected_id()
         _, x, y, _ = viewer.scene_hits[1]

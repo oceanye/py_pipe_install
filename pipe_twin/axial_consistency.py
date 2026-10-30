@@ -12,7 +12,7 @@ import numpy as np
 from .axial_aggregation import POLICY
 from .section_diagnostics import section_basis
 
-REVISION = 'common-axial-stations-v1'
+REVISION = 'common-axial-stations-v2'
 
 
 def conditional_axial_stations(observation, intrinsic, baseline_mm, fit):
@@ -58,10 +58,13 @@ def synchronize_axial_blocks(observations, intrinsic, baseline_mm, fit):
     # boundaries are common physical stations, including unequal eye crops.
     spans = []
     for obs, station in zip(observations, stations):
-        points = np.asarray(obs['points'])[(station >= low) & (station <= high)]
+        inside = (station >= low) & (station <= high)
+        points = np.asarray(obs['points'])[inside]
         if len(points) < POLICY['minimum_points_per_window']*POLICY['minimum_windows']:
             return [], [], audit
-        order = np.argsort(points[:, 0])
+        # Order by the recovered axial station, not by image X: a vertical
+        # silhouette can have constant X while covering a long actual strip.
+        order = np.argsort(station[inside])
         spans.append(float(np.linalg.norm(points[order[-1]]-points[order[0]])))
     count = min(POLICY['maximum_windows'], int(np.ceil(min(spans)/POLICY['window_px'])))
     if count < POLICY['minimum_windows']:

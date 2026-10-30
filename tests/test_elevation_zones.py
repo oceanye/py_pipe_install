@@ -70,15 +70,17 @@ def test_zone_crop_shifts_intrinsics_and_pixel_boxes():
     assert cropped['section_frames'][0]['sha256'] == {'left': 'source'}
 
 
-def test_full_width_zone_reuses_automatic_geometry_and_qualifies_observations():
-    calibration, specs, groups = _groups()
+@pytest.mark.parametrize('capture_count', [1, 2])
+def test_full_width_zone_reuses_automatic_geometry_and_qualifies_observations(capture_count):
+    calibration, specs, groups = _groups(capture_count)
     result = analyze_elevation_auto_zones(
         groups, calibration=calibration, pipe_specs=specs,
         scope_settings={"scope": "zones", "zones": [{**_zone((0, 0, 640, 480)), "label": "全幅"}]},
         registration_settings={"camera_side_world": [1, 0, 0]},
     )
     assert result["scope"] == "zones"
-    assert result["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": 0, "UNKNOWN": 1}
+    assert result["counts"] == {"INSTALLED": 3, "NOT_INSTALLED": int(capture_count == 2), "UNKNOWN": int(capture_count == 1)}
+    assert all(row['installation_evidence_qualified'] == (row['installation_state'] != 'UNKNOWN') for row in result['pipes'])
     assert all(item["observation_id"].startswith("Z01:") for item in result["local_surface"]["observations"])
     assert result["capture_audit"]["groups"][0]["zone_ids"] == ["Z01"]
     assert result["zone_registration_audit"]["registrations"][0]["camera_view"]["camera_side_world"] == [1, 0, 0]
