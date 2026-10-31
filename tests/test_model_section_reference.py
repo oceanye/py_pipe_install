@@ -25,20 +25,21 @@ def test_reference_contains_basis_coordinates_and_coarse_position_labels():
     by_id = {row["pipe_id"]: row for row in result["pipes"]}
     assert by_id["LOW_LEFT"]["vertical_band"] == "LOWER"
     assert by_id["LOW_LEFT"]["horizontal_band"] == "LEFT"
-    assert by_id["UP_RIGHT"]["vertical_band"] == "MIDDLE"  # singleton layer has no relative upper/lower
-    assert by_id["UP_RIGHT"]["vertical_band_global"] == "UPPER"
+    assert by_id["UP_RIGHT"]["vertical_band"] == "UPPER"
     assert by_id["UP_RIGHT"]["horizontal_band"] == "RIGHT"
-    assert by_id["MIDDLE"]["vertical_band"] == "UPPER"
+    assert by_id["MIDDLE"]["vertical_band"] == "MIDDLE"
     assert by_id["MIDDLE"]["horizontal_band"] == "CENTER"
-    assert by_id["MIDDLE"]["deterministic_installation_state"] == "INSTALLED"
     assert by_id["LOW_LEFT"]["section_uv_mm"] == pytest.approx([-100.0, -100.0])
+    assert result["scope"] == "CROSS_SECTION_EVALUATION_ONLY"
+    assert all("axial_offset_mm" not in row and "camera_depth_mm" not in row for row in result["pipes"])
+    assert result["pairs"] and all(pair["scope"] == "SAME_2D_SECTION_ONLY" for pair in result["pairs"])
+    assert result["installation_state"] == "OUT_OF_SCOPE_FOR_SECTION_REFERENCE"
 
 
-def test_explicit_axis_and_camera_side_are_normalized_and_reversing_axis_changes_basis():
-    forward = build_model_section_reference(_pipes(), [0, 0, 1], camera_side_world=[0, -2, 0])
+def test_explicit_axis_and_reversing_axis_change_the_section_basis():
+    forward = build_model_section_reference(_pipes(), [0, 0, 1])
     reverse = build_model_section_reference(_pipes(), [0, 0, -1])
     assert forward["axis_source"] == "EXPLICIT"
-    assert forward["orientation"]["camera_side_world"] == [0.0, -1.0, 0.0]
     assert np.allclose(forward["axis_world"], [0, 0, 1])
     assert np.allclose(reverse["axis_world"], [0, 0, -1])
     # The model viewer intentionally mirrors the section when the directed
@@ -46,10 +47,9 @@ def test_explicit_axis_and_camera_side_are_normalized_and_reversing_axis_changes
     assert not np.allclose(forward["basis_rows"]["right_world"], reverse["basis_rows"]["right_world"])
 
 
-def test_explicit_right_and_reference_basis_control_labels_and_camera_depth():
-    # +X is the pipe axis in the PG2-style catalogue.  World Y is section
-    # right and the derived section-up direction is world Z; camera +Z also
-    # exposes front/back depth.
+def test_explicit_right_and_reference_basis_control_the_2d_section():
+    # +X is the pipe axis in the PG2-style catalogue.  This test only checks
+    # the 2-D section basis; no front/back or axial segment identity is added.
     pipes = [
         {"pipe_id": "FRONT", "nominal_diameter_mm": 40,
          "centerline_world_mm": [[0, 0, 100], [500, 0, 100]]},
@@ -58,14 +58,12 @@ def test_explicit_right_and_reference_basis_control_labels_and_camera_depth():
         {"pipe_id": "UP", "nominal_diameter_mm": 40,
          "centerline_world_mm": [[0, 100, 0], [500, 100, 0]]},
     ]
-    reference = build_model_section_reference(
-        pipes, [1, 0, 0], section_right_world=[0, 1, 0], camera_side_world=[0, 0, 1]
-    )
+    reference = build_model_section_reference(pipes, [1, 0, 0], section_right_world=[0, 1, 0])
     assert reference["basis_source"] == "EXPLICIT_SECTION_RIGHT"
     by_id = {row["pipe_id"]: row for row in reference["pipes"]}
-    assert by_id["FRONT"]["camera_depth_rank_near_to_far"] == 1
-    assert by_id["BACK"]["camera_depth_rank_near_to_far"] == 3
     assert by_id["UP"]["horizontal_band"] == "RIGHT"
+    assert "layer_id" not in by_id["FRONT"]
+    assert "camera_depth_rank_near_to_far" not in by_id["FRONT"]
 
     supplied = {
         "right_world": [0, 1, 0],
@@ -82,12 +80,11 @@ def test_explicit_section_up_controls_upper_middle_lower_without_using_axis_as_d
     result = build_model_section_reference(_pipes(), [0, 0, 1], section_up_world=[0, 1, 0])
     assert result["basis_source"] == "EXPLICIT_SECTION_UP"
     assert result["basis_rows"]["up_world"] == [0.0, 1.0, 0.0]
-    assert result["basis_rows"]["pipe_axis_world"] == [0.0, 0.0, 1.0]
+    assert result["basis_rows"]["normal_world"] == [0.0, 0.0, 1.0]
     by_id = {row["pipe_id"]: row for row in result["pipes"]}
     assert by_id["LOW_LEFT"]["vertical_band"] == "LOWER"
-    assert by_id["UP_RIGHT"]["vertical_band"] == "MIDDLE"
-    assert by_id["UP_RIGHT"]["vertical_band_global"] == "UPPER"
-    assert by_id["LOW_LEFT"]["axial_offset_mm"] == pytest.approx(0.0)
+    assert by_id["UP_RIGHT"]["vertical_band"] == "UPPER"
+    assert "axial_offset_mm" not in by_id["LOW_LEFT"]
 
 
 @pytest.mark.parametrize("bad", [[], [{"pipe_id": "P", "centerline_world_mm": [[0, 0, 0], [0, 0, 0]], "nominal_diameter_mm": 10}]])

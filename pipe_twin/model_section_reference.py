@@ -68,15 +68,6 @@ def _band(value: float, low: float, high: float, labels: tuple[str, str, str]) -
     return labels[1]
 
 
-def _ordered_bands(indices: list[int], values: np.ndarray, labels: tuple[str, str, str]) -> dict[int, str]:
-    """Assign relative bands; a singleton remains middle because no ordering exists."""
-    ordered = sorted(indices, key=lambda i: (-values[i], i))
-    if len(ordered) == 1:
-        return {ordered[0]: labels[1]}
-    low, high = float(np.min(values[indices])), float(np.max(values[indices]))
-    return {index: _band(float(values[index]), low, high, labels) for index in indices}
-
-
 def _finite_number(value: Any, *, field: str) -> float:
     try:
         number = float(value)
@@ -112,17 +103,15 @@ def build_model_section_reference(
     pipe_specs: Sequence[Mapping[str, Any]],
     axis_world: Sequence[float] | None = None,
     *,
-    camera_side_world: Sequence[float] | None = None,
     section_up_world: Sequence[float] | None = None,
     section_right_world: Sequence[float] | None = None,
     reference_basis: Mapping[str, Sequence[float]] | Sequence[Sequence[float]] | None = None,
 ) -> dict[str, Any]:
     """Build a deterministic cross-section reference from model pipe lines.
 
-    ``section_uv_mm`` uses the right/up rows of ``basis_rows``.  Positive V is
-    the model's visual up direction and positive U is visual right when viewing
-    along the pipe axis.  The third basis row is the pipe axis, so it is an
-    axial coordinate rather than an occlusion-depth measurement.
+    ``section_uv_mm`` is the only per-pipe geometry exposed to an AI caller.
+    The normal row only defines the plane; no axial segment or camera-depth
+    identity is emitted.
     """
     if not isinstance(pipe_specs, Sequence) or isinstance(pipe_specs, (str, bytes)):
         raise ValueError("pipe_specs must be a sequence")
@@ -184,67 +173,46 @@ def build_model_section_reference(
     origin = np.mean(lines.mean(axis=1), axis=0)
     centres = lines.mean(axis=1)
     section = (centres - origin) @ basis.T
-    u_values, v_values, depth_values = section[:, 0], section[:, 1], section[:, 2]
+    u_values, v_values = section[:, 0], section[:, 1]
     u_low, u_high = float(np.min(u_values)), float(np.max(u_values))
     v_low, v_high = float(np.min(v_values)), float(np.max(v_values))
-    axial_order = sorted(range(len(pipe_specs)), key=lambda i: (depth_values[i], pipe_ids[i]))
     vertical_order = sorted(range(len(pipe_specs)), key=lambda i: (-v_values[i], u_values[i], pipe_ids[i]))
     horizontal_order = sorted(range(len(pipe_specs)), key=lambda i: (u_values[i], -v_values[i], pipe_ids[i]))
     vertical_rank = {index: rank + 1 for rank, index in enumerate(vertical_order)}
     horizontal_rank = {index: rank + 1 for rank, index in enumerate(horizontal_order)}
-    axial_rank = {index: rank + 1 for rank, index in enumerate(axial_order)}
-    layer_keys = [str(pipe.get("layer_id", pipe.get("layer_path")) or "__ALL__") for pipe in pipe_specs]
-    layer_vertical_rank: dict[int, int] = {}
-    layer_vertical_band: dict[int, str] = {}
-    layer_vertical_bounds: dict[str, tuple[float, float]] = {}
-    for layer in sorted(set(layer_keys)):
-        members = [i for i, key in enumerate(layer_keys) if key == layer]
-        ordered = sorted(members, key=lambda i: (-v_values[i], u_values[i], pipe_ids[i]))
-        layer_vertical_rank.update({index: rank + 1 for rank, index in enumerate(ordered)})
-        low, high = float(np.min(v_values[members])), float(np.max(v_values[members]))
-        layer_vertical_bounds[layer] = (low, high)
-        layer_vertical_band.update(_ordered_bands(members, v_values, _BANDS))
-    camera_side = None if camera_side_world is None else _unit(camera_side_world, field="camera_side_world")
-    camera_depth = None if camera_side is None else (centres - origin) @ camera_side
-    camera_depth_order = None if camera_depth is None else sorted(
-        range(len(pipe_specs)), key=lambda i: (-camera_depth[i], pipe_ids[i]))
-    camera_depth_rank = None if camera_depth_order is None else {
-        index: rank + 1 for rank, index in enumerate(camera_depth_order)}
-
     pipes: list[dict[str, Any]] = []
     for index, pipe in enumerate(pipe_specs):
         row: dict[str, Any] = {
             "pipe_id": pipe_ids[index],
             "instance_id": pipe.get("instance_id"),
             "cad_object_id": pipe.get("cad_object_id"),
-            "layer_id": pipe.get("layer_id", pipe.get("layer_path")),
             "nominal_diameter_mm": _finite_number(pipe.get("nominal_diameter_mm"), field=f"pipes[{index}].nominal_diameter_mm"),
-            "center_world_mm": centres[index].tolist(),
             "section_uv_mm": [float(u_values[index]), float(v_values[index])],
-            "axial_offset_mm": float(depth_values[index]),
-            "vertical_band": layer_vertical_band[index],
-            "vertical_band_global": _band(float(v_values[index]), v_low, v_high, _BANDS),
+            "vertical_band": _band(float(v_values[index]), v_low, v_high, _BANDS),
             "horizontal_band": _band(float(u_values[index]), u_low, u_high, _HORIZONTAL_BANDS),
             "vertical_rank_top_to_bottom": vertical_rank[index],
-            "vertical_rank_within_layer_top_to_bottom": layer_vertical_rank[index],
-            "vertical_layer_bounds_mm": list(layer_vertical_bounds[layer_keys[index]]),
-            "vertical_rank_global_top_to_bottom": vertical_rank[index],
             "horizontal_rank_left_to_right": horizontal_rank[index],
-            "axial_rank": axial_rank[index],
         }
-        if camera_depth is not None:
-            row["camera_depth_mm"] = float(camera_depth[index])
-            row["camera_depth_rank_near_to_far"] = camera_depth_rank[index]
-        # Preserve an already determined installation state as context only;
-        # callers must still treat the deterministic report as authoritative.
-        if "installation_state" in pipe:
-            row["deterministic_installation_state"] = pipe.get("installation_state")
         pipes.append(row)
+
+    pairs = []
+    for first in range(len(pipes)):
+        for second in range(first + 1, len(pipes)):
+            delta = np.asarray(pipes[second]["section_uv_mm"], dtype=float) - np.asarray(pipes[first]["section_uv_mm"], dtype=float)
+            distance = float(np.linalg.norm(delta))
+            clearance = distance - (pipes[first]["nominal_diameter_mm"] + pipes[second]["nominal_diameter_mm"]) / 2.0
+            pairs.append({
+                "pipe_ids": [pipes[first]["pipe_id"], pipes[second]["pipe_id"]],
+                "delta_uv_mm": delta.tolist(),
+                "center_distance_mm": distance,
+                "surface_clearance_mm": clearance,
+                "scope": "SAME_2D_SECTION_ONLY",
+            })
 
     reference: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "reference_kind": "CAD_MODEL_CROSS_SECTION",
-        "scope": "ORIENTATION_AND_IDENTITY_AID_ONLY",
+        "scope": "CROSS_SECTION_EVALUATION_ONLY",
         "units": "millimetres",
         "axis_source": axis_source,
         "basis_source": basis_source,
@@ -253,21 +221,20 @@ def build_model_section_reference(
         "basis_rows": {
             "right_world": basis[0].tolist(),
             "up_world": basis[1].tolist(),
-            "pipe_axis_world": basis[2].tolist(),
+            "normal_world": basis[2].tolist(),
         },
         "orientation": {
-            "positive_u": "right when viewed along pipe_axis_world",
+            "positive_u": "right in the supplied section basis",
             "positive_v": "up along the declared section basis",
-            "positive_axis": "along pipe_axis_world; axial offset is not occlusion depth",
             "section_up_world": basis[1].tolist(),
-            "camera_side_world": None if camera_side is None else camera_side.tolist(),
         },
         "bands": {
             "vertical": {"lower": v_low, "upper": v_high, "thresholds": [v_low + (v_high-v_low)/3.0, v_low + 2.0*(v_high-v_low)/3.0]},
             "horizontal": {"left": u_low, "right": u_high, "thresholds": [u_low + (u_high-u_low)/3.0, u_low + 2.0*(u_high-u_low)/3.0]},
         },
         "pipes": pipes,
-        "deterministic_state_authority": "STEREO_OR_ELEVATION_REPORT_ONLY",
+        "pairs": pairs,
+        "installation_state": "OUT_OF_SCOPE_FOR_SECTION_REFERENCE",
     }
     return reference
 
