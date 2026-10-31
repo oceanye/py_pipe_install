@@ -1,0 +1,63 @@
+{
+  "schema_version": "complete-goal-stereo-ai-v1",
+  "goal": "同一管道目标、设备停机、双目相机前后位移条件下的整套序列与 AI 管道顺序安装介入验收",
+  "tested_commit": "cb04f90d43a85fcb4f4aa0d5ca1c5afaaa258abc",
+  "test_runs": {
+    "full_pytest": {
+      "command": "python -m pytest tests -q --junitxml=test_reports/20261101-complete-goal/pytest.xml",
+      "status": "PASS",
+      "passed": 1147,
+      "skipped": 1,
+      "subtests_passed": 272,
+      "duration_seconds": 226.25,
+      "junit_xml": "pytest.xml"
+    },
+    "temporal_identity_gui": {
+      "command": "python -m pytest tests/test_temporal_stereo.py tests/test_temporal_sections.py tests/test_installation_assist.py tests/test_assist_display.py -q",
+      "status": "PASS",
+      "passed": 42,
+      "duration_seconds": 6.62
+    },
+    "static_checks": {
+      "git_diff_check": "PASS",
+      "python_compileall": "PASS"
+    }
+  },
+  "field_series_baseline": {
+    "source_report": "../20261031-installation-assist/evidence.json",
+    "requested_pairs": 10,
+    "accepted_pairs": 4,
+    "temporal_status": "INVALID",
+    "reason_codes": [
+      "BURST_REFERENCE_OR_SCENE_UNSTABLE"
+    ],
+    "historical_single_frame_assist": {
+      "status": "LIKELY",
+      "candidate_ids": ["P011", "P008", "P009", "P004"],
+      "count": 4,
+      "scope": "CURRENT_CAPTURE_QUALITATIVE_ASSISTANCE"
+    },
+    "raw_series_available_in_checkout": false,
+    "source_hashes_available": true
+  },
+  "guard_acceptance": {
+    "invalid_or_incomplete_multiframe_sequence": "NO_IDENTITY_PROMOTION",
+    "returned_status": "INSUFFICIENT",
+    "returned_reason": "TEMPORAL_SEQUENCE_INVALID_FOR_IDENTITY",
+    "model_positions": "NO_OBSERVATION",
+    "strict_installation_state": "UNCHANGED_UNKNOWN"
+  },
+  "ai_scope": {
+    "synthetic_section_poc": "COMPLETED_ON_SYNTHETIC_DATA_ONLY",
+    "field_ai_sequence_test": "NOT_RUN_RAW_IMAGES_MISSING",
+    "installation_truth_inference": "OUT_OF_SCOPE",
+    "three_dimensional_pipe_segment_inference": "OUT_OF_SCOPE"
+  },
+  "not_yet_accepted": [
+    "真实现场原图的跨帧 SE(3) 相机前后位移补偿",
+    "配准后同一物理管道的跨帧跟踪与顺序安装判断",
+    "配准有效序列上的 Kimi AI 介入对照",
+    "四根现场管道对应模型管号的现场验收"
+  ],
+  "conclusion": "当前可验收的是错误/不完整序列安全拒绝；不能把历史四个候选当作四根已安装管道，也不能声称已经完成相机前后位移补偿。"
+}
