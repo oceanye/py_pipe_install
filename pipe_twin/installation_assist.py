@@ -23,6 +23,38 @@ POLICY = {'maximum_assignments': 50000, 'maximum_displayed_hypotheses': 5,
           'hint_diameter_tolerance_mm': 3., 'hint_diameter_tolerance_ratio': .15}
 
 
+def _invalid_temporal_sequence(report):
+    """Return whether a multi-frame capture is unsafe for identity assistance.
+
+    Installation assistance is intentionally single-current-image today.  A
+    failed burst must therefore not be presented as a valid identity result:
+    the current frame can be at a different camera pose from the other frames
+    that the caller supplied as a series.  Keep the legacy single-frame API
+    behaviour when no multi-frame contract is present.
+    """
+    fusion = (report or {}).get('temporal_fusion') or {}
+    if not isinstance(fusion, dict):
+        return False
+    frames = fusion.get('frames')
+    requested = fusion.get('requested_frames')
+    accepted = fusion.get('accepted_frames')
+    try:
+        is_sequence = (int(requested or 0) > 1 or int(accepted or 0) > 1
+                       or isinstance(frames, list) and len(frames) > 1)
+    except (TypeError, ValueError):
+        is_sequence = isinstance(frames, list) and len(frames) > 1
+    if not is_sequence:
+        return False
+    if fusion.get('status') != 'VALID':
+        return True
+    try:
+        if requested is not None and accepted is not None:
+            return int(accepted) < int(requested)
+    except (TypeError, ValueError):
+        return True
+    return False
+
+
 def color_class(value):
     try:
         r, g, b = [int(value[i:i+2], 16)/255 for i in (1, 3, 5)]
@@ -316,6 +348,13 @@ def analyze_installation_assist(report, pipe_specs, settings=None, *, calibratio
         'score_definition': 'RELATIVE_DIFFERENCE_LOWER_IS_BETTER_NOT_PROBABILITY',
         'relation_summary': ['图像横向顺序不自动等于世界上下层；设计层位随候选对应显示。',
                              '未观察到不表示未安装；本结果只辅助辨认，不判断尺寸或就位合格。']}
+    if _invalid_temporal_sequence(report):
+        # Do not turn a failed or incomplete burst into single-frame identity
+        # suggestions.  Keep the model inventory explicit, but leave every
+        # member at NO_OBSERVATION until the complete series can be registered
+        # and checked together.
+        output['reason_codes'] = ['TEMPORAL_SEQUENCE_INVALID_FOR_IDENTITY']
+        return output
     stages = report.get('section_evaluations') or ([report['section_evaluation']] if report.get('section_evaluation') else [])
     if len(stages) != 1 or not model:
         output['reason_codes'] = ['NO_SINGLE_CURRENT_IMAGE_SECTION']

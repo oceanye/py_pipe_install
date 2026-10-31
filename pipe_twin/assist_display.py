@@ -10,6 +10,7 @@ REASONS = {'MULTIPLE_PLAUSIBLE_LAYOUTS': '多个设计位置组合接近，请�
            'TOO_FEW_LAYOUT_OBSERVATIONS': '可用管道太少，暂不足以区分排列组合。',
            'SEARCH_TRUNCATED': '候选组合太多，尚未完成全部比较。',
            'NO_SINGLE_CURRENT_IMAGE_SECTION': '尚无当前单一区域的图像候选，请重新评估。',
+           'TEMPORAL_SEQUENCE_INVALID_FOR_IDENTITY': '多帧序列存在运动或位姿不一致，当前不能用于管号对应；请完成配准或重新采集。',
            'NO_COMPATIBLE_LAYOUT_HYPOTHESIS': '尚未找到符合观察侧的相对排列。',
            'NO_COMPATIBLE_MODEL_SIZE_OR_COLOR_CLASS': '颜色或粗细档位与模型不符，请核对采购规格提示。'}
 

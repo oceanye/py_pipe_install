@@ -32,19 +32,19 @@
 | S3 白管 | P009 | 细 | 远层 | 2 |
 | S4 蓝管 | P004 | 粗 | 近层 | 3 |
 
-得到 **4 根疑似已安装、0 根身份有歧义、8 根未观察到**。比较了 192 个完整对应、260 个搜索分支，未截断；最佳相对差异 0.1432，第二 0.6743。该分数越小越好，**不是正确率**。先验中心与设计相对布局对齐的 RMS 12.89 mm 仅用于候选排序，不代表毫米验收通过。独立原始采样点复核在采购规格/CAD 规格及地面轴/自由图像轴四种组合下均获得同一首选四管组合，详见 [交叉核对](test_reports/20261031-installation-assist/prior-crosscheck.json)。
+历史回放曾得到 **4 根辅助候选、0 根身份有歧义、8 根未观察到**。比较了 192 个完整对应、260 个搜索分支，未截断；最佳相对差异 0.1432，第二 0.6743。该分数越小越好，**不是正确率**。先验中心与设计相对布局对齐的 RMS 12.89 mm 仅用于候选排序，不代表毫米验收通过。独立原始采样点复核在采购规格/CAD 规格及地面轴/自由图像轴四种组合下均获得同一首选四管组合，详见 [交叉核对](test_reports/20261031-installation-assist/prior-crosscheck.json)。
 
-本次自由求解的四个直径相对上一轮完全未变。原始连拍检查仍为 4/10、整组 INVALID，严格安装/就位状态仍全部 UNKNOWN；这些限制保留在量测诊断中，辅助识别可单独查看。当前结果依赖照片边界、采购规格及所选观察侧，不宣称精密测量或独立安装验收。
+本次自由求解的四个直径相对上一轮完全未变。原始连拍检查仍为 4/10、整组 INVALID，严格安装/就位状态仍全部 UNKNOWN；由于这组多帧存在运动或位姿不一致，当前版本已禁止从最后一对图像单独生成管号候选，必须先完成整套序列配准或重新采集。现场图片仍可用于诊断，但不宣称精密测量或独立安装验收。
 
 ### GUI 使用与验证
 
-1. 重启 GUI，点“打开现场”，选择 `outputs/installation-assist-20261031/scenes/elevation-20261031-071031-189194c4/manifest.json`，即可查看本次准备好的四管结果和采购规格设置。原默认现场指针未改写，默认启动仍按用户要求清空历史选区。
+1. 重启 GUI，点“打开现场”，选择 `outputs/installation-assist-20261031/scenes/elevation-20261031-071031-189194c4/manifest.json`，可查看历史四管候选及采购规格设置；由于该序列多帧检查未通过，当前版本会显示证据不足，不再把单帧候选当作疑似管号。原默认现场指针未改写，默认启动仍按用户要求清空历史选区。
 2. 新拍摄时依次抓拍、指定管长方向/汇聚范围和模型观察侧，再点 **⑤保存并评估**；必要时在“颜色 / 采购规格…”核对蓝 50、红 40、白 25 mm。
 3. 直接看“辅助安装识别”，点行或照片定位候选，打开“现场模型 / 编号 / 方向”查看黄色位置。切换方案仅供对照，不把所有备选的并集点亮，也不等于确认安装。
 
 回放脚本/数值见 [replay.py](test_reports/20261031-installation-assist/replay.py)、[evidence.json](test_reports/20261031-installation-assist/evidence.json)；GUI 实窗验证见 [gui-verify.py](test_reports/20261031-installation-assist/gui-verify.py)、[gui-evidence.json](test_reports/20261031-installation-assist/gui-evidence.json)。1024×720 与 1280×860 无裁切，照片高度分别 214 / 354 px；四管高亮、备选方案和跨视图选择已检查。原现场、照片、标定、配置及默认指针共 27 个文件有 SHA-256 保护，保持不变。
 
-全量回归 **1139 passed、2 skipped、272 subtests passed，433.40 s**；两个跳过项分别为 Tk 资源临时初始化失败和进程中已加载 Tk。独立补跑懒加载项 **1 passed**、地面 GUI 文件 **10 passed**，均无跳过。最后的 GUI 导航/显示调整完成后另跑 **64 passed、5 subtests passed**。无失败，未放宽生产超时或质量阈值。最终回归及原直径零变化核对见 [validation-evidence.json](test_reports/20261031-installation-assist/validation-evidence.json)。
+历史回放的全量回归为 **1139 passed、2 skipped、272 subtests passed，433.40 s**；本次多帧身份门禁及 GUI 文案修复后的当前全量回归为 **1147 passed、1 skipped、272 subtests passed，230.56 s**。无失败，未放宽生产超时或质量阈值；新增回归覆盖未通过多帧序列不得提升单帧管号对应。最终回归及原直径零变化核对见 [validation-evidence.json](test_reports/20261031-installation-assist/validation-evidence.json)。
 
 ## 2026-10-31 固定双目方案复核与求解路径调整
 

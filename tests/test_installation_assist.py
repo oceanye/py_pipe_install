@@ -158,6 +158,21 @@ def test_independent_historical_regions_are_not_joined():
     assert result['reason_codes'] == ['NO_SINGLE_CURRENT_IMAGE_SECTION']
 
 
+def test_invalid_multi_frame_sequence_cannot_promote_single_frame_identity():
+    models = [spec(f'P{i}', i * 100., 0., 41) for i in range(4)]
+    report = image_report([(100. + i * 100, 41., COLORS[41]) for i in range(3)])
+    report['temporal_fusion'] = {
+        'status': 'INVALID', 'requested_frames': 10, 'accepted_frames': 4,
+        'reason_codes': ['BURST_REFERENCE_OR_SCENE_UNSTABLE'],
+    }
+    result = assist.analyze_installation_assist(report, models, settings())
+    assert result['status'] == 'INSUFFICIENT'
+    assert result['reason_codes'] == ['TEMPORAL_SEQUENCE_INVALID_FOR_IDENTITY']
+    assert result['counts'] == {'LIKELY': 0, 'AMBIGUOUS': 0, 'NO_OBSERVATION': 4}
+    assert result['observations'] == []
+    assert all(row['status'] == 'NO_OBSERVATION' for row in result['pipes'])
+
+
 def test_right_observation_box_restores_refinement_then_crop_offset():
     models = [spec('P1', 0, 0, 41)]
     report = image_report([(100., 41., COLORS[41])])
