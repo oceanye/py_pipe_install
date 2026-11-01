@@ -1,5 +1,6 @@
 """Scene-bound independent AI route, with no external calls or credentials."""
 import copy
+from datetime import datetime, timedelta
 import hashlib
 import json
 import os
@@ -93,6 +94,106 @@ def test_request_is_blind_to_local_identity_and_binds_pixels_and_control(scene):
     assert {a['asset_ref'] for a in request['asset_refs']} == {'scene_left', 'scene_right', 'model_section'}
     assert all(a.get('captured_at') for a in request['asset_refs'] if a['kind'] == 'FIELD_IMAGE')
     assert 'base64' not in json.dumps({k: v for k, v in request.items() if k != 'messages'})
+
+
+def test_request_adds_identity_blind_replay_and_pooled_control_context(scene):
+    report = {
+        'pipes': [{'pipe_id': 'LEAKED_PIPE', 'installation_state': 'INSTALLED'}],
+        'counts': {'INSTALLED': 1},
+        'temporal_fusion': {
+            'status': 'VALID', 'requested_frames': 10, 'accepted_frames': 10,
+            'algorithm': 'static-burst-photometric-consensus-v3',
+        },
+        'section_evaluation': {
+            'status': 'ANALYZED', 'conditional_section_count': 2,
+            'candidates': [{'candidate_id': 'HIDDEN_PIPE_ID'}],
+            'control_section': {
+                'status': 'DEFINED', 'source': 'PIPE_SEGMENT_AGGREGATION_COMMON_SUPPORT_MIDPOINT',
+                'station_mm': -141.676, 'interval_mm': [-296.06, 12.71],
+                'candidate_ids': ['HIDDEN_PIPE_ID'],
+            },
+        },
+        'local_surface': {
+            'observations': [{'pipe_id': 'HIDDEN_PIPE_ID'}],
+            'image_candidates': [{}, {}],
+            'audit': {'metric_cylinder_count': 0, 'observation_count': 0,
+                      'source_rejection_counts': {
+                          'left:image_strip': {'reasons': {'INSUFFICIENT_VALID_DEPTH': 30}},
+                      }},
+        },
+    }
+    alter_manifest(scene, lambda manifest: manifest['analysis']['elevation_auto']['registration'].pop('aggregation_band'))
+    request = prepare_ai_request(scene, report)
+    context = json.loads(request['messages'][1]['content'][0]['text'])
+    assert request['control_section']['coordinate_space'] == 'model_axis_mm'
+    assert request['image_control_section']['status'] == 'UNRESOLVED'
+    assert 'AI_AGGREGATION_BAND_MISSING' not in request['qualification_reason_codes']
+    assert context['pooled_control_section']['status'] == 'DEFINED'
+    assert context['pooled_control_section']['station_mm'] == -141.676
+    assert context['evidence_summary']['temporal_fusion']['accepted_frames'] == 10
+    assert context['evidence_summary']['local_surface']['rejection_reason_counts'] == {
+        'INSUFFICIENT_VALID_DEPTH': 30}
+    prompt = json.dumps(request['messages'], ensure_ascii=False)
+    assert 'LEAKED_PIPE' not in prompt and 'HIDDEN_PIPE_ID' not in prompt
+    assert '"installation_state"' not in prompt and '"counts"' not in prompt
+    changed = json.loads(json.dumps(report))
+    changed['section_evaluation']['control_section']['station_mm'] = -140.0
+    assert prepare_ai_request(scene, changed)['input_hash'] != request['input_hash']
+
+
+def test_request_includes_full_temporal_burst_as_bound_visual_evidence(tmp_path):
+    left = tmp_path / 'left.png'
+    right = tmp_path / 'right.png'
+    image = np.full((480, 640, 3), 160, np.uint8)
+    image[150:200, :, 2] = 250
+    image[:, 200:230, 0] = 30
+    cv2.imwrite(str(left), image)
+    cv2.imwrite(str(right), np.roll(image, -10, axis=1))
+    specs, _ = catalog_from_dxf(MODEL, axis_world=(0., 0., 1.), unitless_unit='millimeter')
+    start = datetime.fromisoformat('2026-11-01T10:00:00+08:00')
+    frames = []
+    for index in range(3):
+        frame_left, frame_right = left, right
+        if index < 2:
+            frame = image.copy()
+            frame[10 + index, 10 + index, 1] = 200 + index
+            frame_left = tmp_path / f'burst_left_{index}.png'
+            frame_right = tmp_path / f'burst_right_{index}.png'
+            cv2.imwrite(str(frame_left), frame)
+            cv2.imwrite(str(frame_right), np.roll(frame, -10, axis=1))
+        frames.append({
+            'left_path': frame_left, 'right_path': frame_right,
+            'left_time': (start + timedelta(milliseconds=index)).isoformat(),
+            'right_time': (start + timedelta(milliseconds=index + 1)).isoformat(),
+            'sha256': {
+                'left': hashlib.sha256(frame_left.read_bytes()).hexdigest(),
+                'right': hashlib.sha256(frame_right.read_bytes()).hexdigest(),
+            },
+        })
+    left_hash = hashlib.sha256(left.read_bytes()).hexdigest()
+    right_hash = hashlib.sha256(right.read_bytes()).hexdigest()
+    manifest = create_elevation_dataset(
+        output_root=tmp_path / 'scenes', calibration=_calibration(),
+        left_path=left, right_path=right,
+        left_time=(start + timedelta(milliseconds=2)).isoformat(),
+        right_time=(start + timedelta(milliseconds=3)).isoformat(),
+        pipe_specs=specs, pair_confirmed=True, model_path=MODEL, stl_unit='millimeter',
+        registration_settings={
+            'camera_side_world': [0., 1., 0.],
+            'aggregation_band': {'image_size': [640, 480], 'axis_segment_px': [[100, 220], [500, 250]]},
+        }, temporal_frames=frames,
+    )
+    request = prepare_ai_request(manifest)
+    context = json.loads(request['messages'][1]['content'][0]['text'])
+    assert context['image_scope'] == 'TEMPORAL_BURST_REFERENCE_SET'
+    assert context['temporal_frame_count'] == 3
+    assert len(context['temporal_asset_refs']) == 4
+    assert all(ref in {asset['asset_ref'] for asset in request['asset_refs']}
+               for ref in context['temporal_asset_refs'])
+    burst_hashes = {frame['sha256'][role] for frame in frames for role in ('left', 'right')}
+    assert all(asset['source_sha256'] in burst_hashes
+               for asset in request['asset_refs'] if asset['asset_ref'].startswith('burst_'))
+    assert '相机前后位移' in request['messages'][0]['content']
 
 
 def test_roi_is_sent_with_original_pixel_coordinates(scene):

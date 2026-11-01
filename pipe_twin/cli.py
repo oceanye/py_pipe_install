@@ -340,7 +340,8 @@ def _main(argv: Sequence[str] | None = None) -> int:
             from .ai_inputs import prepare_ai_request
             prepared = prepare_ai_request(scene_path)
             summary = {key: prepared.get(key) for key in
-                       ("input_hash", "point_map", "control_section", "asset_refs", "source_binding")}
+                       ("input_hash", "point_map", "control_section", "pooled_control_section",
+                        "evidence_summary", "observation_scope", "asset_refs", "source_binding")}
             # Images and their data URLs are never printed to logs/terminals.
             print(json.dumps({"status": "PREPARED_ONLY", "provider_called": False,
                               **summary}, ensure_ascii=False, indent=2))

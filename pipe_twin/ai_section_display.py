@@ -8,6 +8,8 @@ were produced by an AI model.
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 STATUS_LABELS = {
     "NOT_RUN": "未运行",
     "SUPPORTED_VISIBLE": "支持定位",
@@ -36,6 +38,15 @@ REASON_LABELS = {
     "AI_AGGREGATION_BAND_MISSING": "尚未指定管长方向与汇聚范围，请在左图画出后重新评估。",
     "AI_SUPPORT_WITHOUT_FIELD_IMAGE": "AI 未引用本次实拍图，不能确认该点位。",
     "LOW_EVIDENCE_QUALITY": "证据质量较低，仅作候选参考。",
+}
+
+_EVIDENCE_STATUS_LABELS = {
+    "VALID": "已通过",
+    "PARTIAL": "部分通过",
+    "ANALYZED": "已分析",
+    "UNRESOLVED": "未解析",
+    "INVALID": "无效",
+    "REJECTED": "已拒绝",
 }
 
 
@@ -71,6 +82,93 @@ def _position(item):
     if point and position not in (None, ""):
         return f"{point} · {position}"
     return str(point or position or "待指定")
+
+
+def _control_section_lines(control, *, label):
+    """Format a control section without confusing pixels with metric stations."""
+    if not isinstance(control, Mapping) or not control:
+        return []
+    status = str(control.get("status") or "UNRESOLVED")
+    if status != "DEFINED":
+        reasons = control.get("reason_codes") or []
+        reason = "；".join(REASON_LABELS.get(str(code), str(code)) for code in reasons)
+        suffix = f"（{reason}）" if reason else ""
+        return [f"{label}：未稳定确定{suffix}"]
+    coordinate_space = control.get("coordinate_space")
+    if coordinate_space == "rectified_left_pixel":
+        return [
+            f"{label}：左图汇聚范围中点垂线（像素），位置 {control.get('station_px')}。",
+            "这是照片上的断面采样位置；尚未形成毫米空间站位。",
+        ]
+    interval = control.get("interval_mm") or []
+    station = control.get("station_mm")
+    try:
+        station_text = f"{float(station):.1f} mm"
+    except (TypeError, ValueError):
+        station_text = "已定义"
+    return [f"{label}：公共支撑区间中点 {station_text}（区间 {interval}）。"]
+
+
+def _report_evidence_lines(report, data):
+    """Summarize full-replay evidence beside the independent AI result.
+
+    The values are read-only context.  In particular, local geometry counts
+    are never converted into AI candidate states or installation states.
+    """
+    if not isinstance(report, Mapping):
+        return []
+    lines = []
+    temporal = report.get("temporal_fusion")
+    if isinstance(temporal, Mapping):
+        status = str(temporal.get("status") or "UNRESOLVED")
+        requested = temporal.get("requested_frames")
+        accepted = temporal.get("accepted_frames")
+        if requested is not None or accepted is not None:
+            lines.append(
+                f"时序融合：{_EVIDENCE_STATUS_LABELS.get(status, status)}"
+                f"（{accepted if accepted is not None else '—'}/"
+                f"{requested if requested is not None else '—'} 帧）。"
+            )
+        else:
+            lines.append(f"时序融合：{_EVIDENCE_STATUS_LABELS.get(status, status)}。")
+        reasons = temporal.get("reason_codes") or []
+        if reasons:
+            lines.append("时序提示：" + "；".join(str(code) for code in reasons) + "。")
+
+    section = report.get("section_evaluation")
+    if isinstance(section, Mapping):
+        status = str(section.get("status") or "UNRESOLVED")
+        candidates = section.get("candidates")
+        count = len(candidates) if isinstance(candidates, list) else None
+        conditional = section.get("conditional_section_count")
+        summary = f"断面汇聚：{_EVIDENCE_STATUS_LABELS.get(status, status)}"
+        if count is not None:
+            summary += f"，候选 {count} 个"
+        if conditional is not None:
+            summary += f"，条件候选 {conditional} 个"
+        lines.append(summary + "。")
+        pooled = section.get("control_section")
+        # Prefer the AI namespace when it has already bound its own control
+        # section; otherwise expose the pooled section as an available input.
+        ai_control = data.get("control_section") if isinstance(data, Mapping) else None
+        if not (isinstance(ai_control, Mapping) and ai_control.get("status") == "DEFINED"):
+            lines.extend(_control_section_lines(pooled, label="可供 AI 引用的主流程控制断面"))
+
+    surface = report.get("local_surface")
+    if isinstance(surface, Mapping):
+        observations = surface.get("observations")
+        image_candidates = surface.get("image_candidates")
+        audit = surface.get("audit")
+        metric_count = audit.get("metric_cylinder_count") if isinstance(audit, Mapping) else None
+        if isinstance(observations, list) or isinstance(image_candidates, list) or metric_count is not None:
+            observed_text = len(observations) if isinstance(observations, list) else "—"
+            image_text = len(image_candidates) if isinstance(image_candidates, list) else "—"
+            metric_text = metric_count if metric_count is not None else "—"
+            lines.append(
+                f"局部双目证据：可用观测 {observed_text}，图像候选 {image_text}，"
+                f"可匹配圆柱 {metric_text}。"
+            )
+    return lines
 
 
 def section_candidate_rows(report):
@@ -159,28 +257,23 @@ def ai_section_summary_lines(report):
         f"提供方：{data.get('provider') or '未记录'}；契约：{data.get('schema_version') or '未记录'}。",
         f"模型：{data.get('model') or '未记录'}；结果生成时间：{data.get('generated_at') or '未记录'}。",
     ]
-    if data.get('observation_scope') == 'LATEST_REFERENCE_PAIR_ONLY_NOT_TEMPORAL_FUSION':
+    lines.extend(_report_evidence_lines(report, data))
+    if data.get('observation_scope') == 'TEMPORAL_BURST_REFERENCE_SET':
+        count = data.get('temporal_frame_count')
+        suffix = f'（{count} 组代表性双目帧）' if count else ''
+        lines.append('输入范围：整组连续双目图像' + suffix + '；按同一目标的相机位移观察处理。')
+    elif data.get('observation_scope') == 'LATEST_REFERENCE_PAIR_ONLY_NOT_TEMPORAL_FUSION':
         lines.append('输入范围：仅当前参考双目对；不代表整组多帧融合，也不是重新采集。')
     captured = sorted({str(asset['captured_at']) for asset in data.get('asset_refs', [])
                        if isinstance(asset, dict) and asset.get('kind') == 'FIELD_IMAGE' and asset.get('captured_at')})
     if captured:
         lines.append('实拍时间：' + ' / '.join(captured) + '。')
     control = data.get("control_section") or {}
-    if isinstance(control, dict):
-        if control.get("status") == "DEFINED":
-            if control.get('coordinate_space') == 'rectified_left_pixel':
-                lines.append(f"图像控制断面：左图汇聚范围中点垂线（像素），位置 {control.get('station_px')}。")
-                lines.append('这是照片上的断面采样位置；尚未形成毫米空间站位。')
-            else:
-                interval = control.get("interval_mm") or []
-                station = control.get("station_mm")
-                try:
-                    station_text = f"{float(station):.1f} mm"
-                except (TypeError, ValueError):
-                    station_text = "已定义"
-                lines.append(f"控制断面：管段汇聚共同支撑区间中点 {station_text}（区间 {interval}）。")
-        elif control:
-            lines.append("控制断面：管段汇聚共同支撑区间未能稳定确定。")
+    control_label = "图像控制断面" if control.get("coordinate_space") == "rectified_left_pixel" else "AI 输入控制断面"
+    lines.extend(_control_section_lines(control, label=control_label))
+    pooled = data.get('pooled_control_section')
+    if isinstance(pooled, Mapping):
+        lines.extend(_control_section_lines(pooled, label='AI 已绑定的主流程控制断面'))
     codes = data.get("reason_codes") or []
     lines.extend("提示：" + REASON_LABELS.get(str(code), str(code)) for code in codes)
     for row in section_candidate_rows(report):

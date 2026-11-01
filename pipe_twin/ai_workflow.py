@@ -79,7 +79,12 @@ def _build_checked_namespace(prepared, response, source):
         'reason_codes': list(qualification),
         'scope': 'VISUAL_SECTION_ONLY_NOT_METRIC_REGISTRATION'}
     namespace['asset_refs'] = copy.deepcopy(prepared['asset_refs'])
-    namespace['observation_scope'] = 'LATEST_REFERENCE_PAIR_ONLY_NOT_TEMPORAL_FUSION'
+    namespace['observation_scope'] = prepared.get(
+        'observation_scope', 'LATEST_REFERENCE_PAIR_ONLY_NOT_TEMPORAL_FUSION')
+    namespace['temporal_frame_count'] = int(prepared.get('temporal_frame_count') or 0)
+    namespace['temporal_asset_refs'] = list(prepared.get('temporal_asset_refs') or [])
+    namespace['pooled_control_section'] = copy.deepcopy(prepared.get('pooled_control_section'))
+    namespace['evidence_summary'] = copy.deepcopy(prepared.get('evidence_summary') or {})
     return namespace
 
 
