@@ -340,7 +340,9 @@ def filter_disparity(depth, support, camera, baseline_mm, axis_image):
     fraction = float(accepted.mean())
     axial = pixels @ np.asarray(axis_image)
     bins = np.minimum(7,((axial-axial.min()) / max(1.,float(np.ptp(axial))) * 8).astype(int))
-    covered = sum(np.count_nonzero(accepted & (bins == i)) >= 8 for i in range(8))
+    # NumPy scalar reductions can propagate np.int64 on newer NumPy versions;
+    # this diagnostic is persisted directly in the JSON report.
+    covered = int(sum(np.count_nonzero(accepted & (bins == i)) >= 8 for i in range(8)))
     audit.update(retained_points=int(accepted.sum()), retained_fraction=fraction,
                  axial_bins_with_support=covered, maximum_disparity_residual_px=POLICY["disparity_residual_px"])
     if fraction < POLICY["minimum_disparity_inlier_fraction"]:

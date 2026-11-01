@@ -102,8 +102,9 @@ class RegionCanvas:
             self.photo = self.owner.app.tk.PhotoImage(data=base64.b64encode(payload).decode("ascii"), format="png")
             canvas.create_image(0, 0, image=self.photo, anchor="nw")
         selected = self.owner.selected_id()
+        ai_active = hasattr(self.owner, 'ai_display_active') and self.owner.ai_display_active()
         drawn_observations: set[str] = set()
-        for spec in self.owner.pipes:
+        for spec in ([] if ai_active else self.owner.pipes):
             box = spec.get(f"{self.role}_region_px")
             if not box:
                 evidence = (self.owner.results.get(spec["pipe_id"], {}) or {}).get("current_evidence", {})
@@ -134,7 +135,8 @@ class RegionCanvas:
         # Before a rigid model pose is solved, show every detected local surface
         # with its OBS id.  Matching by model colour is only a convenience and
         # can hide observations when the physical pipe colour differs.
-        report = self.owner.report if isinstance(self.owner.report, dict) else {}
+        # The AI tab must not present A's yellow IMG proposals as AI findings.
+        report = self.owner.report if not ai_active and isinstance(self.owner.report, dict) else {}
         # Image proposals deliberately have no model ID or measurement. Show
         # their own IDs and failure stage even when every model row is UNKNOWN.
         assist_active = hasattr(self.owner, 'assist_display_active') and self.owner.assist_display_active()
@@ -185,6 +187,8 @@ class RegionCanvas:
                     fill='#6DD5FA', tags='assist-candidate')
         selected_solver = (self.owner.selected_assist_row() if assist_active else
                            self.owner.selected_solver_row() if hasattr(self.owner, 'selected_solver_row') else None)
+        if ai_active:
+            selected_solver = None
         box = (selected_solver or {}).get(self.role+'_region_px')
         if box:
             x, y, bw, bh = box
@@ -192,6 +196,18 @@ class RegionCanvas:
                                     outline='#FFD344', width=3, tags='solver-selection')
             canvas.create_text(ox+x*scale+4, oy+y*scale+4, anchor='nw',
                                text=selected_solver['label'], fill='#FFD344', tags='solver-selection')
+
+        if ai_active:
+            canvas.create_text(10, ch-12, anchor='sw', text='AI 对照原图', fill='#93C5FD', tags='ai-photo-source')
+            control = ((self.owner.report or {}).get('ai_section_assist') or {}).get('control_section') or {}
+            if self.role == 'left' and control.get('coordinate_space') == 'rectified_left_pixel':
+                try:
+                    line = np.asarray(control.get('line_px'), dtype=float)
+                    if line.shape == (2, 2) and np.isfinite(line).all():
+                        canvas.create_line(*(np.asarray([ox, oy]) + line * scale).reshape(-1),
+                                           fill='#E879F9', width=3, dash=(6, 3), tags='ai-control-section')
+                except (ValueError, TypeError):
+                    pass
 
         # Group search bounds are independent from automatic pipe identities.
         if self.assessment_regions and self.role == "left" and self.owner.zone_settings.get("scope") == "zones":
@@ -628,6 +644,8 @@ class ElevationCaptureDialog:
         self.model_viewer = None
         self.quality_dialog = None
         self.messages: queue.Queue = queue.Queue()
+        from .ai_gui import AISectionController
+        self.ai_controller = AISectionController(self)
         self.timestamp_sources = {role: "MANIFEST_OPERATOR_CONFIRMED" for role in ("left", "right")}
         self.camera_capture_provenance = {}
         self.temporal_frames: list[dict] = []
@@ -698,7 +716,8 @@ class ElevationCaptureDialog:
         ttk.Button(action_bar, text="③ 双目抓拍", command=self.capture_camera).pack(side="left", padx=3)
         ttk.Button(action_bar, text='现场模型 / 编号 / 方向', command=self.open_model_viewer).pack(side='left', padx=6)
         self.save_button = ttk.Button(action_bar, text="仅保存基础现场", command=lambda: self.submit(False))
-        ttk.Label(action_bar, text="先抓拍 → ④设置范围 → ⑤保存并评估", foreground="#355371").pack(side="left", padx=6)
+        ttk.Button(action_bar, text='Kimi 设置', command=self.ai_controller.open_settings).pack(side='left', padx=3)
+        ttk.Label(action_bar, text='先抓拍 → ④准备 → ⑤本地 / AI 评估', foreground='#355371').pack(side='left', padx=6)
         method_bar = ttk.Frame(self.controls)
         method_bar.pack(fill="x", pady=(0, 4))
         ttk.Label(method_bar, text='④ 分析准备').pack(side='left', padx=3)
@@ -712,6 +731,10 @@ class ElevationCaptureDialog:
         run_bar.pack(fill='x', pady=(0, 4))
         self.run_button = ttk.Button(run_bar, text="⑤ 保存并评估", command=lambda: self.submit(True))
         self.run_button.pack(side='left', padx=3)
+        self.ai_run_button = ttk.Button(run_bar, text='AI 断面评估', command=self.start_ai_evaluation)
+        self.ai_run_button.pack(side='left', padx=3)
+        self.ai_cancel_button = ttk.Button(run_bar, text='取消 AI', command=self.ai_controller.cancel, state='disabled')
+        self.ai_cancel_button.pack(side='left', padx=3)
         self.setup_summary = tk.StringVar()
         self.workflow_status = tk.StringVar()
         self.workflow_label = ttk.Label(run_bar, textvariable=self.workflow_status,
@@ -864,7 +887,7 @@ class ElevationCaptureDialog:
         for column, label, width in zip(
                 ('pipe_id', 'position', 'status', 'quality', 'reason'),
                 ('模型管号', '模型断面点位', '候选状态', '证据质量', '说明'),
-                (100, 170, 110, 90, 360)):
+                (85, 240, 105, 70, 260)):
             self.ai_section_tree.heading(column, text=label)
             self.ai_section_tree.column(column, width=width, stretch=column == 'reason')
         ai_section_scroll = ttk.Scrollbar(ai_section_frame, orient='vertical', command=self.ai_section_tree.yview)
@@ -1008,6 +1031,7 @@ class ElevationCaptureDialog:
 
     def invalidate(self) -> None:
         self.generation += 1
+        self.ai_controller.cancel(notify=False)
         details = getattr(self, 'analysis_details_window', None)
         if details is not None and details.winfo_exists():
             details.destroy()
@@ -1564,6 +1588,10 @@ class ElevationCaptureDialog:
     def selected_ai_section_row(self):
         selected = self.ai_section_tree.selection() if hasattr(self, 'ai_section_tree') else ()
         return self.ai_section_rows.get(selected[0]) if selected else None
+
+    def ai_display_active(self):
+        return bool(hasattr(self, 'status_tabs') and hasattr(self, 'ai_section_status_tab')
+                    and self.status_tabs.select() == str(self.ai_section_status_tab))
 
     def _ai_section_selected(self):
         """Highlight a model pipe for inspection only; never change its state."""
@@ -2236,16 +2264,38 @@ class ElevationCaptureDialog:
             restored_registration.get("local_observation_mode", "auto"), "自动（圆柱/图像引导）"))
         self.present_pipe_count.set(str(restored_registration.get("present_pipe_count", "")))
         self.confirmed.set(False)
+        ai_restore_note = ''
+        if restore_selections:
+            base_report = None
+            try:
+                from .ai_gui import load_bound_local_report
+                from .ai_workflow import load_ai_result
+                base_report = load_bound_local_report(path)
+                self.report = load_ai_result(path, report=base_report)
+                self.results = {r['pipe_id']: r for r in (self.report or {}).get('pipes', [])}
+                if self.report and self.report.get('ai_section_assist'):
+                    ai_restore_note = '已恢复与当前输入一致的 AI 断面结果。'
+            except (OSError, ValueError) as error:
+                self.report = base_report
+                self.results = {r['pipe_id']: r for r in (base_report or {}).get('pipes', [])}
+                ai_restore_note = f'旧 AI 结果未恢复：{error}。'
         self.refresh_table()
         self.refresh_calibration_status()
         self.summary.set(f"已恢复 {len(self.pipes)} 根管；自动匹配会重新生成照片区域")
-        self.message.set(f"已打开 {path}。{self.region_restore_note}自动匹配 {self.model_kind.upper() or '模型'}。")
+        self.message.set(f"已打开 {path}。{self.region_restore_note}{ai_restore_note}自动匹配 {self.model_kind.upper() or '模型'}。")
         log_event(LOGGER, 'elevation_scene_loaded', manifest=str(path),
                   restore_selections=restore_selections, zone_count=len(self.zone_settings['zones']),
                   aggregation_band=bool(self.registration_settings.get('aggregation_band')),
                   ground_region=bool(self.registration_settings.get('ground_region')))
 
-    def submit(self, analyze: bool) -> None:
+    def start_ai_evaluation(self):
+        try:
+            if not self.busy and self.ai_controller.configured():
+                self.submit(False, ai=True)
+        except (OSError, ValueError) as error:
+            self.show_error(error)
+
+    def submit(self, analyze: bool, *, ai: bool = False) -> None:
         if self.busy:
             return
         viewer = self.model_viewer
@@ -2291,7 +2341,7 @@ class ElevationCaptureDialog:
                 self.zone_settings, image_size=(left.shape[1], left.shape[0]))
             if len(scope_settings['zones']) > 1:
                 raise ValueError('当前界面仅使用一个管段评估区域，请重新框选或清除当前区域。')
-            if analyze and (problem := self.assessment_region_problem(scope_settings)):
+            if (analyze or ai) and (problem := self.assessment_region_problem(scope_settings)):
                 raise ValueError(problem)
             arguments = dict(output_root=self.output_root / "captures", calibration=calibration,
                 analysis_settings=settings,
@@ -2317,15 +2367,26 @@ class ElevationCaptureDialog:
                     raise ValueError("现场实际管数需为正整数") from error
             from .elevation_dataset import normalize_registration_settings
             arguments.update(mode=mode, registration_settings=normalize_registration_settings(registration))
-            self.invalidate()
+            if ai:
+                # Starting B is a new task, not an input edit. Keep valid A
+                # evidence visible while the immutable source is rechecked.
+                self.generation += 1
+            else:
+                self.invalidate()
             self.busy = True
             self._set_controls(False)
             generation = self.generation
             log_event(LOGGER, "elevation_gui_run_start", analyze=analyze, pipe_count=len(self.pipes),
                       camera_side_world=registration.get("camera_side_world"))
             self.message.set("正在保存并分析双目深度……" if analyze else "正在保存基础现场……")
-            threading.Thread(target=self._worker, args=(arguments, analyze, generation), daemon=True).start()
+            if ai:
+                self.ai_controller.start(arguments, generation)
+            else:
+                threading.Thread(target=self._worker, args=(arguments, analyze, generation), daemon=True).start()
         except (OSError, ValueError) as error:
+            if ai:
+                self.busy = False
+                self._set_controls(True)
             self.show_error(error)
 
     def _worker(self, arguments: dict, analyze: bool, generation: int) -> None:
@@ -2364,6 +2425,7 @@ class ElevationCaptureDialog:
         visit(self.cad_actions)
         for button in (self.run_button, self.save_button):
             button.configure(state="normal" if enabled else "disabled")
+        self.ai_cancel_button.configure(state='normal' if self.ai_controller.active else 'disabled')
 
     def poll(self) -> None:
         if self.closed:
@@ -2371,6 +2433,10 @@ class ElevationCaptureDialog:
         try:
             generation, kind, payload = self.messages.get_nowait()
         except queue.Empty:
+            self.poll_id = self.window.after(100, self.poll)
+            return
+        if kind.startswith('ai_'):
+            self.ai_controller.handle(generation, kind, payload)
             self.poll_id = self.window.after(100, self.poll)
             return
         if kind == "progress":
@@ -2450,6 +2516,7 @@ class ElevationCaptureDialog:
 
     def close(self) -> None:
         self.closed = True
+        self.ai_controller.close()
         for dialog in (self.ground_monitor, self.camera_dialog, self.calibration_dialog, self.model_viewer, self.quality_dialog):
             if dialog is not None and dialog.window.winfo_exists():
                 dialog.close()

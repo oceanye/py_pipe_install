@@ -630,7 +630,35 @@ class CaptureAgentRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _error(self, code: int, error: str, message: str) -> None:
+        self._discard_rejected_body()
         self._json(code, {"error": error, "message": message})
+
+    def _discard_rejected_body(self) -> None:
+        """Drain a small framed POST before closing, without parsing or running it.
+
+        On Windows, replying and closing before the client sends its JSON body
+        can reset the socket and hide the actual 401/4xx response. Never drain
+        unbounded, ambiguous or chunked input; the existing socket timeout and
+        request-size limit still apply. Already consumed bodies are not reread.
+        """
+        if self.command != "POST" or getattr(self, "_request_body_consumed", False):
+            return
+        self._request_body_consumed = True
+        lengths = self.headers.get_all("Content-Length", [])
+        if len(lengths) != 1 or self.headers.get("Transfer-Encoding") is not None:
+            return
+        try:
+            length = int(lengths[0])
+        except (TypeError, ValueError):
+            return
+        if not 0 <= length <= MAX_REQUEST_BYTES:
+            return
+        try:
+            self.rfile.read(length)
+        except OSError:
+            # A stalled/disconnected peer must not turn an auth rejection into
+            # a capture request or trigger a second read of a failed stream.
+            pass
 
     def _authorized(self) -> bool:
         if self.agent_server.token is None:
@@ -681,6 +709,7 @@ class CaptureAgentRequestHandler(BaseHTTPRequestHandler):
             self._error(500, "INTERNAL_ERROR", str(error))
 
     def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
+        self._request_body_consumed = False
         try:
             if not self._authorized():
                 return
@@ -705,6 +734,7 @@ class CaptureAgentRequestHandler(BaseHTTPRequestHandler):
             if length < 0 or length > MAX_REQUEST_BYTES:
                 self._error(413, "REQUEST_TOO_LARGE", f"request must be <= {MAX_REQUEST_BYTES} bytes")
                 return
+            self._request_body_consumed = True
             raw = self.rfile.read(length)
             try:
                 payload = json.loads(raw.decode("utf-8"))

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import tempfile
 import time
+import threading
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -228,6 +230,175 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertEqual(report, before)
         self.assertEqual(self.dialog.results, {})
 
+    def test_ai_tab_hides_local_algorithm_overlays(self):
+        self.dialog.report = {'local_surface': {'image_candidates': [
+            {'role': 'left', 'region_px': [30, 40, 80, 100], 'candidate_id': 'IMG1'}]}}
+        self.dialog.refresh_table()
+        self.root.update()
+        self.assertTrue(self.dialog.views['left'].canvas.find_withtag('image-candidate'))
+        self.dialog.status_tabs.select(self.dialog.ai_section_status_tab)
+        self.root.update()
+        self.assertFalse(self.dialog.views['left'].canvas.find_withtag('image-candidate'))
+        self.assertTrue(self.dialog.views['left'].canvas.find_withtag('ai-photo-source'))
+
+    def test_ai_button_runs_independent_workflow_and_reopens_saved_result(self):
+        from pipe_twin.ai_settings import AISettings
+
+        def provider(messages, **_kwargs):
+            context = json.loads(messages[1]['content'][0]['text'])
+            return {'provider': 'fixture', 'model': 'fixture', 'request_id': 'fixture-no-network',
+                    'response': {'input_hash': context['input_hash'], 'mapping_sha256': context['mapping_sha256'],
+                                 'point_assessments': [
+                                     {'point_id': point['point_id'], 'section_status': 'UNRESOLVED',
+                                      'evidence_quality': 'LOW', 'reason_codes': ['模拟未解'],
+                                      'observation_refs': ['scene_left']}
+                                     for point in context['model_points']]}}
+
+        with mock.patch('pipe_twin.ai_settings.configured_status', return_value={'configured': True}), \
+             mock.patch('pipe_twin.ai_settings.load_ai_settings', return_value=AISettings()), \
+             mock.patch('pipe_twin.ai_provider.request_section_assessment', side_effect=provider) as network, \
+             mock.patch('pipe_twin.stereo_analyzer.analyze_stereo_capture', side_effect=AssertionError('A must not run')):
+            self.dialog.start_ai_evaluation()
+            self.finish_worker()
+        network.assert_called_once()
+        self.app.messagebox.showerror.assert_not_called()
+        self.assertEqual(self.dialog.report['strict_evaluation'], 'NOT_RUN')
+        self.assertTrue(self.dialog.last_manifest.with_name('ai_section_result.json').is_file())
+        self.assertFalse(self.dialog.last_manifest.with_name('report.json').exists())
+        original = copy.deepcopy(self.dialog.report['ai_section_assist'])
+        self.dialog.load_session(self.dialog.last_manifest)
+        self.assertEqual(self.dialog.report['ai_section_assist'], original)
+        self.dialog.invalidate()
+        self.assertIsNone(self.dialog.report)
+
+    def test_cancelled_ai_response_cannot_save_or_unlock_a_new_task(self):
+        controller = self.dialog.ai_controller
+        old_event = threading.Event()
+        generation = self.dialog.generation
+        controller.active = (generation, old_event)
+        self.dialog.busy = True
+        controller.cancel()
+        self.assertTrue(old_event.is_set())
+        self.assertFalse(self.dialog.busy)
+        new_event = threading.Event()
+        controller.active = (generation, new_event)
+        self.dialog.busy = True
+        with mock.patch('pipe_twin.ai_workflow.accept_ai_result') as accept:
+            controller.handle(generation, 'ai_ok', (old_event, Path('stale.json'), {}))
+        accept.assert_not_called()
+        self.assertTrue(self.dialog.busy)
+        self.assertIs(controller.active[1], new_event)
+        controller.cancel()
+
+    def _saved_a_fixture(self):
+        self.dialog.submit(False)
+        self.finish_worker()
+        path = self.dialog.last_manifest
+        manifest = json.loads(path.read_text(encoding='utf-8'))
+        group = manifest['capture']['capture_groups'][-1]
+        report = {'pipes': [{'pipe_id': self.spec['pipe_id'], 'installation_state': 'INSTALLED'}],
+                  'counts': {'INSTALLED': 1, 'UNKNOWN': len(self.dialog.pipes)-1, 'NOT_INSTALLED': 0},
+                  'inputs': {'manifest': hashlib.sha256(path.read_bytes()).hexdigest(),
+                             'model': manifest['model']['sha256'],
+                             **{group['capture_id']+'_'+role: view['sha256'] for role, view in group['views'].items()}}}
+        path.with_name('report.json').write_text(json.dumps(report), encoding='utf-8')
+        self.dialog.report = copy.deepcopy(report)
+        self.dialog.refresh_table()
+        return path, report
+
+    @staticmethod
+    def _provider_fixture(messages, **_kwargs):
+        context = json.loads(messages[1]['content'][0]['text'])
+        return {'provider': 'fixture', 'model': 'fixture', 'request_id': 'fixture-no-network',
+                'response': {'input_hash': context['input_hash'], 'mapping_sha256': context['mapping_sha256'],
+                             'point_assessments': [
+                                 {'point_id': point['point_id'], 'section_status': 'UNRESOLVED',
+                                  'evidence_quality': 'LOW', 'observation_refs': ['scene_left']}
+                                 for point in context['model_points']]}}
+
+    def test_same_scene_a_and_b_coexist_and_reopen_without_rewriting_a(self):
+        from pipe_twin.ai_settings import AISettings
+        path, a_report = self._saved_a_fixture()
+        original_a_bytes = path.with_name('report.json').read_bytes()
+        with mock.patch('pipe_twin.ai_settings.configured_status', return_value={'configured': True}), \
+             mock.patch('pipe_twin.ai_settings.load_ai_settings', return_value=AISettings()), \
+             mock.patch('pipe_twin.ai_provider.request_section_assessment', side_effect=self._provider_fixture):
+            self.dialog.start_ai_evaluation()
+            self.assertEqual(self.dialog.report, a_report)
+            self.finish_worker()
+        self.app.messagebox.showerror.assert_not_called()
+        self.assertEqual(self.dialog.last_manifest, path)
+        self.assertEqual(self.dialog.report['pipes'], a_report['pipes'])
+        self.assertEqual(self.dialog.report['counts'], a_report['counts'])
+        self.assertIn('ai_section_assist', self.dialog.report)
+        self.assertEqual(path.with_name('report.json').read_bytes(), original_a_bytes)
+        self.dialog.load_session(path)
+        self.assertEqual(self.dialog.report['pipes'], a_report['pipes'])
+        self.assertIn('ai_section_assist', self.dialog.report)
+
+    def test_changed_region_starts_new_ai_scene_without_old_a_report(self):
+        from pipe_twin.ai_settings import AISettings
+        path, a_report = self._saved_a_fixture()
+        self.dialog.add_left_region([30, 40, 120, 160])
+        with mock.patch('pipe_twin.ai_settings.configured_status', return_value={'configured': True}), \
+             mock.patch('pipe_twin.ai_settings.load_ai_settings', return_value=AISettings()), \
+             mock.patch('pipe_twin.ai_provider.request_section_assessment', side_effect=self._provider_fixture):
+            self.dialog.start_ai_evaluation()
+            self.finish_worker()
+        self.app.messagebox.showerror.assert_not_called()
+        self.assertNotEqual(self.dialog.last_manifest, path)
+        self.assertEqual(self.dialog.report['strict_evaluation'], 'NOT_RUN')
+        self.assertEqual(self.dialog.report['pipes'], [])
+        self.assertEqual(json.loads(path.with_name('report.json').read_text()), a_report)
+
+    def test_same_scene_ai_failure_and_cancel_preserve_a(self):
+        from pipe_twin.ai_settings import AISettings
+        path, a_report = self._saved_a_fixture()
+        with mock.patch('pipe_twin.ai_settings.configured_status', return_value={'configured': True}), \
+             mock.patch('pipe_twin.ai_settings.load_ai_settings', return_value=AISettings()), \
+             mock.patch('pipe_twin.ai_provider.request_section_assessment', side_effect=ValueError('模拟网络错误')):
+            self.dialog.start_ai_evaluation()
+            self.finish_worker()
+        self.assertEqual(self.dialog.report, a_report)
+        self.assertEqual(self.dialog.last_manifest, path)
+        event = threading.Event()
+        self.dialog.ai_controller.active = (self.dialog.generation, event)
+        self.dialog.busy = True
+        self.dialog.ai_controller.cancel()
+        self.assertEqual(self.dialog.report, a_report)
+        self.assertFalse(path.with_name('ai_section_result.json').exists())
+
+    def test_restoring_old_invalid_burst_drops_legacy_identities_without_changing_sizes(self):
+        from pipe_twin.ai_gui import load_bound_local_report
+        path, report = self._saved_a_fixture()
+        report['temporal_fusion'] = {'status': 'INVALID', 'requested_frames': 10, 'accepted_frames': 4}
+        report['installation_assist'] = {'counts': {'LIKELY': 4}, 'ranked_hypotheses': [{'legacy': True}]}
+        report['section_evaluation'] = {'conditional_diameter_mm': 46.22}
+        path.with_name('report.json').write_text(json.dumps(report), encoding='utf-8')
+        raw = path.with_name('report.json').read_bytes()
+        loaded = load_bound_local_report(path)
+        self.assertEqual(loaded['installation_assist']['status'], 'INSUFFICIENT')
+        self.assertEqual(loaded['installation_assist']['counts']['LIKELY'], 0)
+        self.assertEqual(loaded['installation_assist']['counts']['NO_OBSERVATION'], len(self.dialog.pipes))
+        self.assertEqual(loaded['installation_assist']['reason_codes'], ['TEMPORAL_SEQUENCE_INVALID_FOR_IDENTITY'])
+        self.assertEqual(loaded['section_evaluation'], report['section_evaluation'])
+        self.assertEqual(loaded['pipes'], report['pipes'])
+        self.assertEqual(loaded['counts'], report['counts'])
+        self.assertEqual(path.with_name('report.json').read_bytes(), raw)
+
+    def test_input_change_cancels_pending_ai_and_prevents_persistence(self):
+        controller = self.dialog.ai_controller
+        old_event = threading.Event()
+        generation = self.dialog.generation
+        controller.active = (generation, old_event)
+        self.dialog.busy = True
+        self.dialog.invalidate()
+        with mock.patch('pipe_twin.ai_workflow.accept_ai_result') as accept:
+            controller.handle(generation, 'ai_ok', (old_event, Path('stale.json'), {}))
+        accept.assert_not_called()
+        self.assertTrue(old_event.is_set())
+        self.assertFalse(self.dialog.busy)
+
     def test_purchase_colour_hints_invalidate_old_suggestions_without_rewriting_model(self):
         from test_assist_display import report_fixture
         self.dialog.report = report_fixture()
@@ -268,6 +439,8 @@ class ElevationGuiTests(unittest.TestCase):
         self.root.update()
         self.assertGreater(self.dialog.run_button.winfo_rooty(), self.dialog.axial_button.winfo_rooty())
         self.assertGreater(self.dialog.run_button.winfo_rooty(), self.dialog.region_button.winfo_rooty())
+        self.assertEqual(self.dialog.ai_run_button.winfo_rooty(), self.dialog.run_button.winfo_rooty())
+        self.assertGreater(self.dialog.ai_run_button.winfo_rooty(), self.dialog.region_button.winfo_rooty())
 
     def test_redraw_replaces_old_region_preserves_ground_band_and_saved_history(self):
         self.dialog.set_axial_band({'image_size': [640, 480], 'axis_segment_px': [[300, 240], [600, 240]]})

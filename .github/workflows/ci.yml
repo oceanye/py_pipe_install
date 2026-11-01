@@ -34,7 +34,7 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install pytest==9.1.1
       - name: Run smoke tests
-        run: python -m pytest tests -v
+        run: python -c "import cv2,pytest; cv2.setNumThreads(2); raise SystemExit(pytest.main(['tests','-v']))"
       - name: Replay current M0 fixture
         run: >-
           python -m pipe_twin analyze

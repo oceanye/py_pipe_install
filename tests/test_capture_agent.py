@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import http.client
 import json
 import threading
 import time
@@ -184,6 +185,54 @@ def test_wrong_token_and_unknown_fields_are_rejected(tmp_path: Path):
         with pytest.raises(CaptureAgentError, match="400"):
             submit_remote_capture(agent_url, "test-token", {"shell": "whoami"})
     finally:
+        _stop(manager, server, thread)
+
+
+def test_rejected_post_with_delayed_body_returns_401_without_running_capture(tmp_path, monkeypatch):
+    calls = []
+    _config, manager, server, thread, agent_url, _token = _server(
+        tmp_path, capture_fn=lambda **kwargs: calls.append(kwargs))
+    original_send = http.client.HTTPConnection.send
+
+    def fragmented_send(connection, data):
+        # Headers reach the server before the separately transmitted JSON.
+        # Closing immediately on authentication failure used to cause WinError
+        # 10053 while this send was still in progress, masking the 401 response.
+        if isinstance(data, bytes) and data.startswith(b'{'):
+            time.sleep(0.02)
+        return original_send(connection, data)
+
+    monkeypatch.setattr(http.client.HTTPConnection, 'send', fragmented_send)
+    try:
+        for token in (None, 'wrong-token'):
+            with pytest.raises(CaptureAgentError, match='401'):
+                submit_remote_capture(agent_url, token, {'count': 1})
+        assert calls == []
+    finally:
+        _stop(manager, server, thread)
+
+
+@pytest.mark.parametrize('headers', [
+    [('Content-Length', '1000000')],
+    [('Content-Length', '16'), ('Content-Length', '16')],
+    [('Transfer-Encoding', 'chunked')],
+])
+def test_unauthorized_unbounded_or_ambiguous_body_is_not_awaited(tmp_path, headers):
+    _config, manager, server, thread, _agent_url, _token = _server(tmp_path)
+    connection = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=2)
+    try:
+        connection.putrequest('POST', '/v1/captures')
+        connection.putheader('Content-Type', 'application/json')
+        for name, value in headers:
+            connection.putheader(name, value)
+        connection.endheaders()
+        # No body follows. An unbounded drain would wait for the server's
+        # existing 10-second timeout and the client would not receive its 401.
+        response = connection.getresponse()
+        assert response.status == 401
+        assert json.loads(response.read())['error'] == 'UNAUTHORIZED'
+    finally:
+        connection.close()
         _stop(manager, server, thread)
 
 

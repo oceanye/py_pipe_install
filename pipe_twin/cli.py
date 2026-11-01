@@ -308,6 +308,14 @@ def build_parser() -> argparse.ArgumentParser:
     remote_parser.add_argument("--poll-s", type=float, default=1.0)
 
 
+    ai_parser = subparsers.add_parser(
+        "ai-section-evaluate", help="evaluate a saved scene with independent Kimi section candidates"
+    )
+    ai_parser.add_argument("--manifest", required=True, help="saved elevation scene manifest")
+    ai_parser.add_argument("--prepare-only", action="store_true",
+                           help="validate and summarize inputs without calling the provider or saving a result")
+    subparsers.add_parser("ai-status", help="show local AI configuration status without exposing credentials")
+
     gui_parser = subparsers.add_parser(
         "gui", help="open the local CAD-bound pipe status dashboard"
     )
@@ -319,6 +327,34 @@ def build_parser() -> argparse.ArgumentParser:
 def _main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     log_event(_LOGGER, "command_start", command=args.command)
+    if args.command == "ai-status":
+        from .ai_settings import configured_status
+        print(json.dumps(configured_status(), ensure_ascii=False, indent=2))
+        return 0
+    if args.command == "ai-section-evaluate":
+        from .ai_workflow import accept_ai_result, evaluate_ai_scene
+        scene_path = Path(args.manifest).resolve()
+        if scene_path.is_dir():
+            scene_path /= "manifest.json"
+        if args.prepare_only:
+            from .ai_inputs import prepare_ai_request
+            prepared = prepare_ai_request(scene_path)
+            summary = {key: prepared.get(key) for key in
+                       ("input_hash", "point_map", "control_section", "asset_refs", "source_binding")}
+            # Images and their data URLs are never printed to logs/terminals.
+            print(json.dumps({"status": "PREPARED_ONLY", "provider_called": False,
+                              **summary}, ensure_ascii=False, indent=2))
+            return 0
+        result = evaluate_ai_scene(scene_path)
+        merged = accept_ai_result(scene_path, result, save=True)
+        ai = merged.get("ai_section_assist", {})
+        print(json.dumps({"status": ai.get("status"), "run_status": ai.get("run_status"),
+                          "provider": ai.get("provider"), "model": ai.get("model"),
+                          "candidate_count": len(ai.get("candidates") or []),
+                          "reason_codes": ai.get("reason_codes", []),
+                          "result_path": str(scene_path.parent / "ai_section_result.json"),
+                          "strict_installation_state_changed": False}, ensure_ascii=False, indent=2))
+        return 1 if ai.get("run_status") == "REJECTED" else 0
     if args.command == "adapt-calibration":
         from .calibration_adapter import adapt_opencv_stereo_calibration, load_json
 

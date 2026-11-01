@@ -32,6 +32,9 @@ REASON_LABELS = {
     "SECTION_POINT_AMBIGUOUS": "断面点位存在重叠或遮挡，无法唯一定位。",
     "SECTION_POINT_NOT_VISIBLE": "模型断面点位在当前观察方向不可见。",
     "OBSERVATION_DIRECTION_MISSING": "缺少观察方向，不能将图像候选映射到模型断面。",
+    "OBSERVATION_DIRECTION_PARALLEL_TO_PIPE_AXIS": "观察侧沿管轴，无法确定横截面朝向，请调整模型观察方向。",
+    "AI_AGGREGATION_BAND_MISSING": "尚未指定管长方向与汇聚范围，请在左图画出后重新评估。",
+    "AI_SUPPORT_WITHOUT_FIELD_IMAGE": "AI 未引用本次实拍图，不能确认该点位。",
     "LOW_EVIDENCE_QUALITY": "证据质量较低，仅作候选参考。",
 }
 
@@ -121,15 +124,21 @@ def section_candidate_rows(report):
                        QUALITY_LABELS.get(quality, quality), reason),
         })
     if not rows:
+        status = str(data.get('status') or 'INSUFFICIENT')
+        if status not in ('NOT_RUN', 'REJECTED', 'UNRESOLVED', 'RECAPTURE_RECOMMENDED'):
+            status = 'INSUFFICIENT'
+        reason = _reason_text(data)
+        if reason == '—':
+            reason = 'AI 尚未运行。' if status == 'NOT_RUN' else 'AI 结果没有可显示的候选。'
         return [{
             "key": "__ai_section_empty__",
             "label": "AI 断面候选",
             "pipe_id": "—",
             "position": "—",
-            "status": "INSUFFICIENT",
+            "status": status,
             "quality": "UNKNOWN",
-            "reason": "AI 结果没有可显示的候选。",
-            "values": ("—", "—", STATUS_LABELS["INSUFFICIENT"], QUALITY_LABELS["UNKNOWN"], "没有候选"),
+            "reason": reason,
+            "values": ("—", "—", STATUS_LABELS[status], QUALITY_LABELS["UNKNOWN"], reason),
         }]
     return rows
 
@@ -148,17 +157,28 @@ def ai_section_summary_lines(report):
         "AI 断面候选 · " + STATUS_LABELS.get(status, status),
         "范围：仅定位模型断面中的候选点位；不判断三维管段或安装完成状态。",
         f"提供方：{data.get('provider') or '未记录'}；契约：{data.get('schema_version') or '未记录'}。",
+        f"模型：{data.get('model') or '未记录'}；结果生成时间：{data.get('generated_at') or '未记录'}。",
     ]
+    if data.get('observation_scope') == 'LATEST_REFERENCE_PAIR_ONLY_NOT_TEMPORAL_FUSION':
+        lines.append('输入范围：仅当前参考双目对；不代表整组多帧融合，也不是重新采集。')
+    captured = sorted({str(asset['captured_at']) for asset in data.get('asset_refs', [])
+                       if isinstance(asset, dict) and asset.get('kind') == 'FIELD_IMAGE' and asset.get('captured_at')})
+    if captured:
+        lines.append('实拍时间：' + ' / '.join(captured) + '。')
     control = data.get("control_section") or {}
     if isinstance(control, dict):
         if control.get("status") == "DEFINED":
-            interval = control.get("interval_mm") or []
-            station = control.get("station_mm")
-            try:
-                station_text = f"{float(station):.1f} mm"
-            except (TypeError, ValueError):
-                station_text = "已定义"
-            lines.append(f"控制断面：管段汇聚共同支撑区间中点 {station_text}（区间 {interval}）。")
+            if control.get('coordinate_space') == 'rectified_left_pixel':
+                lines.append(f"图像控制断面：左图汇聚范围中点垂线（像素），位置 {control.get('station_px')}。")
+                lines.append('这是照片上的断面采样位置；尚未形成毫米空间站位。')
+            else:
+                interval = control.get("interval_mm") or []
+                station = control.get("station_mm")
+                try:
+                    station_text = f"{float(station):.1f} mm"
+                except (TypeError, ValueError):
+                    station_text = "已定义"
+                lines.append(f"控制断面：管段汇聚共同支撑区间中点 {station_text}（区间 {interval}）。")
         elif control:
             lines.append("控制断面：管段汇聚共同支撑区间未能稳定确定。")
     codes = data.get("reason_codes") or []
