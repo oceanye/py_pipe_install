@@ -1,0 +1,1564 @@
+{
+  "input_hash": "b0f857590b195767899260bf8668f6397d6fbf51dac40cd9ddc5ddc1f55b4005",
+  "point_map": {
+    "schema_version": "section-point-map-v1",
+    "reference_kind": "FIXED_MODEL_SECTION_POINT_MAP",
+    "scope": "CROSS_SECTION_EVALUATION_ONLY",
+    "units": "millimetres",
+    "point_count": 12,
+    "point_id_format": "P%02d",
+    "view_id": "SECTION_VIEW",
+    "mapping_sha256": "01c637a0c443b868a928cf1c69628764bfe37d1c1f937689c0d06256df33376f",
+    "normal_source": "EXPLICIT_NORMAL",
+    "observation_direction_world": [
+      -0.0,
+      -0.0,
+      1.0
+    ],
+    "origin_world_mm": [
+      2217.110833062066,
+      1797.4565124511719,
+      341.5388188593751
+    ],
+    "basis_rows": {
+      "right_world": [
+        1.0,
+        -0.0,
+        0.0
+      ],
+      "up_world": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "normal_world": [
+        -0.0,
+        -0.0,
+        1.0
+      ]
+    },
+    "observation_view": {},
+    "ordering_rule": "SECTION_V_DESC_THEN_U_ASC_THEN_PIPE_ID",
+    "points": [
+      {
+        "point_id": "P01",
+        "pipe_id": "P003",
+        "instance_id": null,
+        "cad_object_id": "stl-8026a1990bb7e2d78af4",
+        "section_uv_mm": [
+          -134.99999321831592,
+          140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 26.000124,
+        "point_order": 1,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P02",
+        "pipe_id": "P004",
+        "instance_id": null,
+        "cad_object_id": "stl-87766d775655f2235777",
+        "section_uv_mm": [
+          -44.99999321831592,
+          140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 51.000073,
+        "point_order": 2,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P03",
+        "pipe_id": "P008",
+        "instance_id": null,
+        "cad_object_id": "stl-f44abbc04a35c2405703",
+        "section_uv_mm": [
+          44.99998643663184,
+          140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 41.000017,
+        "point_order": 3,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P04",
+        "pipe_id": "P012",
+        "instance_id": null,
+        "cad_object_id": "stl-8aae2a62782678e7ec5e",
+        "section_uv_mm": [
+          135.00000678168408,
+          140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 26.000124,
+        "point_order": 4,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P05",
+        "pipe_id": "P001",
+        "instance_id": null,
+        "cad_object_id": "stl-87bc0d33eae346de8450",
+        "section_uv_mm": [
+          -134.99999321831592,
+          0.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 51.000073,
+        "point_order": 5,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P06",
+        "pipe_id": "P006",
+        "instance_id": null,
+        "cad_object_id": "stl-03ef3fecfed994680303",
+        "section_uv_mm": [
+          -44.99999321831592,
+          0.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 26.000124,
+        "point_order": 6,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P07",
+        "pipe_id": "P007",
+        "instance_id": null,
+        "cad_object_id": "stl-74103116ad5a954723a2",
+        "section_uv_mm": [
+          45.00000678168408,
+          0.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 51.000073,
+        "point_order": 7,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P08",
+        "pipe_id": "P011",
+        "instance_id": null,
+        "cad_object_id": "stl-2677c1db4ee18896a527",
+        "section_uv_mm": [
+          134.99998643663184,
+          0.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 41.000017,
+        "point_order": 8,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P09",
+        "pipe_id": "P002",
+        "instance_id": null,
+        "cad_object_id": "stl-a1cf4b29bdf42357aa12",
+        "section_uv_mm": [
+          -135.00001356336816,
+          -140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 41.000017,
+        "point_order": 9,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P10",
+        "pipe_id": "P005",
+        "instance_id": null,
+        "cad_object_id": "stl-fb6a20dfcca473d3b33d",
+        "section_uv_mm": [
+          -45.00001356336816,
+          -140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 41.000017,
+        "point_order": 10,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P11",
+        "pipe_id": "P009",
+        "instance_id": null,
+        "cad_object_id": "stl-17298b8d5bb5744b1658",
+        "section_uv_mm": [
+          45.00000678168408,
+          -140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 26.000124,
+        "point_order": 11,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      },
+      {
+        "point_id": "P12",
+        "pipe_id": "P010",
+        "instance_id": null,
+        "cad_object_id": "stl-ac88c565eb007e27c560",
+        "section_uv_mm": [
+          135.00000678168408,
+          -140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 51.000073,
+        "point_order": 12,
+        "projection_ambiguity": "NONE",
+        "mapping_source": "MODEL_SECTION_PLUS_OBSERVATION_DIRECTION"
+      }
+    ],
+    "pairs": [
+      {
+        "point_ids": [
+          "P01",
+          "P02"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P004"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          0.0
+        ],
+        "center_distance_mm": 90.0,
+        "surface_clearance_mm": 51.4999015,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P03"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P008"
+        ],
+        "delta_uv_mm": [
+          179.99997965494777,
+          0.0
+        ],
+        "center_distance_mm": 179.99997965494777,
+        "surface_clearance_mm": 146.49990915494777,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P04"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P012"
+        ],
+        "delta_uv_mm": [
+          270.0,
+          0.0
+        ],
+        "center_distance_mm": 270.0,
+        "surface_clearance_mm": 243.999876,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P05"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P001"
+        ],
+        "delta_uv_mm": [
+          0.0,
+          -140.0
+        ],
+        "center_distance_mm": 140.0,
+        "surface_clearance_mm": 101.49990149999999,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P06"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P006"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          -140.0
+        ],
+        "center_distance_mm": 166.43316977093238,
+        "surface_clearance_mm": 140.43304577093238,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P07"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P007"
+        ],
+        "delta_uv_mm": [
+          180.0,
+          -140.0
+        ],
+        "center_distance_mm": 228.0350850198276,
+        "surface_clearance_mm": 189.53498651982758,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P08"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P011"
+        ],
+        "delta_uv_mm": [
+          269.99997965494777,
+          -140.0
+        ],
+        "center_distance_mm": 304.13810845349883,
+        "surface_clearance_mm": 270.63803795349884,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P09"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P002"
+        ],
+        "delta_uv_mm": [
+          -2.0345052234915784e-05,
+          -280.0
+        ],
+        "center_distance_mm": 280.00000000000074,
+        "surface_clearance_mm": 246.49992950000075,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          89.99997965494777,
+          -280.0
+        ],
+        "center_distance_mm": 294.10881717128274,
+        "surface_clearance_mm": 260.60874667128274,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          180.0,
+          -280.0
+        ],
+        "center_distance_mm": 332.86633954186476,
+        "surface_clearance_mm": 306.8662155418648,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P01",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P003",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          270.0,
+          -280.0
+        ],
+        "center_distance_mm": 388.9730067755345,
+        "surface_clearance_mm": 350.4729082755345,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P03"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P008"
+        ],
+        "delta_uv_mm": [
+          89.99997965494777,
+          0.0
+        ],
+        "center_distance_mm": 89.99997965494777,
+        "surface_clearance_mm": 43.999934654947765,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P04"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P012"
+        ],
+        "delta_uv_mm": [
+          180.0,
+          0.0
+        ],
+        "center_distance_mm": 180.0,
+        "surface_clearance_mm": 141.4999015,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P05"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P001"
+        ],
+        "delta_uv_mm": [
+          -90.0,
+          -140.0
+        ],
+        "center_distance_mm": 166.43316977093238,
+        "surface_clearance_mm": 115.43309677093238,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P06"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P006"
+        ],
+        "delta_uv_mm": [
+          0.0,
+          -140.0
+        ],
+        "center_distance_mm": 140.0,
+        "surface_clearance_mm": 101.49990149999999,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P07"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P007"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          -140.0
+        ],
+        "center_distance_mm": 166.43316977093238,
+        "surface_clearance_mm": 115.43309677093238,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P08"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P011"
+        ],
+        "delta_uv_mm": [
+          179.99997965494777,
+          -140.0
+        ],
+        "center_distance_mm": 228.03506896041586,
+        "surface_clearance_mm": 182.03502396041586,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P09"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P002"
+        ],
+        "delta_uv_mm": [
+          -90.00002034505223,
+          -280.0
+        ],
+        "center_distance_mm": 294.10882962282824,
+        "surface_clearance_mm": 248.10878462282824,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          -2.0345052234915784e-05,
+          -280.0
+        ],
+        "center_distance_mm": 280.00000000000074,
+        "surface_clearance_mm": 233.99995500000074,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          -280.0
+        ],
+        "center_distance_mm": 294.10882339705483,
+        "surface_clearance_mm": 255.60872489705483,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P02",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P004",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          180.0,
+          -280.0
+        ],
+        "center_distance_mm": 332.86633954186476,
+        "surface_clearance_mm": 281.8662665418648,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P04"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P012"
+        ],
+        "delta_uv_mm": [
+          90.00002034505223,
+          0.0
+        ],
+        "center_distance_mm": 90.00002034505223,
+        "surface_clearance_mm": 56.499949845052235,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P05"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P001"
+        ],
+        "delta_uv_mm": [
+          -179.99997965494777,
+          -140.0
+        ],
+        "center_distance_mm": 228.03506896041586,
+        "surface_clearance_mm": 182.03502396041586,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P06"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P006"
+        ],
+        "delta_uv_mm": [
+          -89.99997965494777,
+          -140.0
+        ],
+        "center_distance_mm": 166.4331587691918,
+        "surface_clearance_mm": 132.9330882691918,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P07"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P007"
+        ],
+        "delta_uv_mm": [
+          2.0345052234915784e-05,
+          -140.0
+        ],
+        "center_distance_mm": 140.00000000000148,
+        "surface_clearance_mm": 93.99995500000148,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P08"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P011"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          -140.0
+        ],
+        "center_distance_mm": 166.43316977093238,
+        "surface_clearance_mm": 125.43315277093238,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P09"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P002"
+        ],
+        "delta_uv_mm": [
+          -180.0,
+          -280.0
+        ],
+        "center_distance_mm": 332.86633954186476,
+        "surface_clearance_mm": 291.86632254186475,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          -90.0,
+          -280.0
+        ],
+        "center_distance_mm": 294.10882339705483,
+        "surface_clearance_mm": 253.10880639705482,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          2.0345052234915784e-05,
+          -280.0
+        ],
+        "center_distance_mm": 280.00000000000074,
+        "surface_clearance_mm": 246.49992950000075,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P03",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P008",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          90.00002034505223,
+          -280.0
+        ],
+        "center_distance_mm": 294.10882962282824,
+        "surface_clearance_mm": 248.10878462282824,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P04",
+          "P05"
+        ],
+        "pipe_ids": [
+          "P012",
+          "P001"
+        ],
+        "delta_uv_mm": [
+          -270.0,
+          -140.0
+        ],
+        "center_distance_mm": 304.138126514911,
+        "surface_clearance_mm": 265.638028014911,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P04",
+          "P06"
+        ],
+        "pipe_ids": [
+          "P012",
+          "P006"
+        ],
+        "delta_uv_mm": [
+          -180.0,
+          -140.0
+        ],
+        "center_distance_mm": 228.0350850198276,
+        "surface_clearance_mm": 202.0349610198276,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P04",
+          "P07"
+        ],
+        "pipe_ids": [
+          "P012",
+          "P007"
+        ],
+        "delta_uv_mm": [
+          -90.0,
+          -140.0
+        ],
+        "center_distance_mm": 166.43316977093238,
+        "surface_clearance_mm": 127.93307127093237,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P04",
+          "P08"
+        ],
+        "pipe_ids": [
+          "P012",
+          "P011"
+        ],
+        "delta_uv_mm": [
+          -2.0345052234915784e-05,
+          -140.0
+        ],
+        "center_distance_mm": 140.00000000000148,
+        "surface_clearance_mm": 106.49992950000149,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P04",
+          "P09"
+        ],
+        "pipe_ids": [
+          "P012",
+          "P002"
+        ],
+        "delta_uv_mm": [
+          -270.00002034505223,
+          -280.0
+        ],
+        "center_distance_mm": 388.9730208977592,
+        "surface_clearance_mm": 355.47295039775923,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P04",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P012",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          -180.00002034505223,
+          -280.0
+        ],
+        "center_distance_mm": 332.86635054360664,
+        "surface_clearance_mm": 299.36628004360665,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P04",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P012",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          -90.0,
+          -280.0
+        ],
+        "center_distance_mm": 294.10882339705483,
+        "surface_clearance_mm": 268.1086993970548,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P04",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P012",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          0.0,
+          -280.0
+        ],
+        "center_distance_mm": 280.0,
+        "surface_clearance_mm": 241.4999015,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P05",
+          "P06"
+        ],
+        "pipe_ids": [
+          "P001",
+          "P006"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          0.0
+        ],
+        "center_distance_mm": 90.0,
+        "surface_clearance_mm": 51.4999015,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P05",
+          "P07"
+        ],
+        "pipe_ids": [
+          "P001",
+          "P007"
+        ],
+        "delta_uv_mm": [
+          180.0,
+          0.0
+        ],
+        "center_distance_mm": 180.0,
+        "surface_clearance_mm": 128.999927,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P05",
+          "P08"
+        ],
+        "pipe_ids": [
+          "P001",
+          "P011"
+        ],
+        "delta_uv_mm": [
+          269.99997965494777,
+          0.0
+        ],
+        "center_distance_mm": 269.99997965494777,
+        "surface_clearance_mm": 223.99993465494777,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P05",
+          "P09"
+        ],
+        "pipe_ids": [
+          "P001",
+          "P002"
+        ],
+        "delta_uv_mm": [
+          -2.0345052234915784e-05,
+          -140.0
+        ],
+        "center_distance_mm": 140.00000000000148,
+        "surface_clearance_mm": 93.99995500000148,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P05",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P001",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          89.99997965494777,
+          -140.0
+        ],
+        "center_distance_mm": 166.4331587691918,
+        "surface_clearance_mm": 120.4331137691918,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P05",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P001",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          180.0,
+          -140.0
+        ],
+        "center_distance_mm": 228.0350850198276,
+        "surface_clearance_mm": 189.53498651982758,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P05",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P001",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          270.0,
+          -140.0
+        ],
+        "center_distance_mm": 304.138126514911,
+        "surface_clearance_mm": 253.138053514911,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P06",
+          "P07"
+        ],
+        "pipe_ids": [
+          "P006",
+          "P007"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          0.0
+        ],
+        "center_distance_mm": 90.0,
+        "surface_clearance_mm": 51.4999015,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P06",
+          "P08"
+        ],
+        "pipe_ids": [
+          "P006",
+          "P011"
+        ],
+        "delta_uv_mm": [
+          179.99997965494777,
+          0.0
+        ],
+        "center_distance_mm": 179.99997965494777,
+        "surface_clearance_mm": 146.49990915494777,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P06",
+          "P09"
+        ],
+        "pipe_ids": [
+          "P006",
+          "P002"
+        ],
+        "delta_uv_mm": [
+          -90.00002034505223,
+          -140.0
+        ],
+        "center_distance_mm": 166.4331807726747,
+        "surface_clearance_mm": 132.9331102726747,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P06",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P006",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          -2.0345052234915784e-05,
+          -140.0
+        ],
+        "center_distance_mm": 140.00000000000148,
+        "surface_clearance_mm": 106.49992950000149,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P06",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P006",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          -140.0
+        ],
+        "center_distance_mm": 166.43316977093238,
+        "surface_clearance_mm": 140.43304577093238,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P06",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P006",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          180.0,
+          -140.0
+        ],
+        "center_distance_mm": 228.0350850198276,
+        "surface_clearance_mm": 189.53498651982758,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P07",
+          "P08"
+        ],
+        "pipe_ids": [
+          "P007",
+          "P011"
+        ],
+        "delta_uv_mm": [
+          89.99997965494777,
+          0.0
+        ],
+        "center_distance_mm": 89.99997965494777,
+        "surface_clearance_mm": 43.999934654947765,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P07",
+          "P09"
+        ],
+        "pipe_ids": [
+          "P007",
+          "P002"
+        ],
+        "delta_uv_mm": [
+          -180.00002034505223,
+          -140.0
+        ],
+        "center_distance_mm": 228.03510107924004,
+        "surface_clearance_mm": 182.03505607924004,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P07",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P007",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          -90.00002034505223,
+          -140.0
+        ],
+        "center_distance_mm": 166.4331807726747,
+        "surface_clearance_mm": 120.43313577267469,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P07",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P007",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          0.0,
+          -140.0
+        ],
+        "center_distance_mm": 140.0,
+        "surface_clearance_mm": 101.49990149999999,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P07",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P007",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          -140.0
+        ],
+        "center_distance_mm": 166.43316977093238,
+        "surface_clearance_mm": 115.43309677093238,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P08",
+          "P09"
+        ],
+        "pipe_ids": [
+          "P011",
+          "P002"
+        ],
+        "delta_uv_mm": [
+          -270.0,
+          -140.0
+        ],
+        "center_distance_mm": 304.138126514911,
+        "surface_clearance_mm": 263.138109514911,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P08",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P011",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          -180.0,
+          -140.0
+        ],
+        "center_distance_mm": 228.0350850198276,
+        "surface_clearance_mm": 187.03506801982758,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P08",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P011",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          -89.99997965494777,
+          -140.0
+        ],
+        "center_distance_mm": 166.4331587691918,
+        "surface_clearance_mm": 132.9330882691918,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P08",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P011",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          2.0345052234915784e-05,
+          -140.0
+        ],
+        "center_distance_mm": 140.00000000000148,
+        "surface_clearance_mm": 93.99995500000148,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P09",
+          "P10"
+        ],
+        "pipe_ids": [
+          "P002",
+          "P005"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          0.0
+        ],
+        "center_distance_mm": 90.0,
+        "surface_clearance_mm": 48.999983,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P09",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P002",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          180.00002034505223,
+          0.0
+        ],
+        "center_distance_mm": 180.00002034505223,
+        "surface_clearance_mm": 146.49994984505224,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P09",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P002",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          270.00002034505223,
+          0.0
+        ],
+        "center_distance_mm": 270.00002034505223,
+        "surface_clearance_mm": 223.99997534505223,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P10",
+          "P11"
+        ],
+        "pipe_ids": [
+          "P005",
+          "P009"
+        ],
+        "delta_uv_mm": [
+          90.00002034505223,
+          0.0
+        ],
+        "center_distance_mm": 90.00002034505223,
+        "surface_clearance_mm": 56.499949845052235,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P10",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P005",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          180.00002034505223,
+          0.0
+        ],
+        "center_distance_mm": 180.00002034505223,
+        "surface_clearance_mm": 133.99997534505223,
+        "scope": "SAME_2D_SECTION_ONLY"
+      },
+      {
+        "point_ids": [
+          "P11",
+          "P12"
+        ],
+        "pipe_ids": [
+          "P009",
+          "P010"
+        ],
+        "delta_uv_mm": [
+          90.0,
+          0.0
+        ],
+        "center_distance_mm": 90.0,
+        "surface_clearance_mm": 51.4999015,
+        "scope": "SAME_2D_SECTION_ONLY"
+      }
+    ],
+    "installation_state": "OUT_OF_SCOPE_FOR_SECTION_REFERENCE",
+    "camera_side_world": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "orientation_scope": "CAMERA_SIDE_ONLY_NO_EXTRINSIC_REGISTRATION",
+    "section_v_meaning": "TOWARDS_CAMERA_SIDE"
+  },
+  "control_section": {
+    "schema_version": "ai-image-control-section-v1",
+    "status": "DEFINED",
+    "source": "IMAGE_AGGREGATION_BAND_MIDPOINT",
+    "coordinate_space": "rectified_left_pixel",
+    "station_px": 326.569579803929,
+    "interval_px": [
+      0.0,
+      653.139159607858
+    ],
+    "midpoint_px": [
+      1430.1308411214955,
+      660.2242990654206
+    ],
+    "axis_image": [
+      0.9945355195789258,
+      -0.10439875619889287
+    ],
+    "line_px": [
+      [
+        1360.8255279599318,
+        0.0
+      ],
+      [
+        1474.0907213300977,
+        1079.0
+      ]
+    ],
+    "aggregation_band": {
+      "revision": "left-image-axial-band-v1",
+      "coordinate_space": "rectified_left",
+      "image_size": [
+        1920,
+        1080
+      ],
+      "axis_segment_px": [
+        [
+          1105.3457943925234,
+          694.3177570093459
+        ],
+        [
+          1754.9158878504675,
+          626.1308411214953
+        ]
+      ]
+    },
+    "metric_registration_established": false,
+    "reason_codes": []
+  },
+  "asset_refs": [
+    {
+      "asset_ref": "scene_left",
+      "kind": "FIELD_IMAGE",
+      "role": "left",
+      "captured_at": "2026-10-30T18:32:50.882+08:00",
+      "source_sha256": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+      "encoded_sha256": "00f5ef5ea2ccdabc7668f21bdaf2571a9c2f950991be28c399f98bc0efd606aa",
+      "source_size_px": [
+        1920,
+        1080
+      ],
+      "encoded_size_px": [
+        1920,
+        1080
+      ],
+      "crop_rect_px": null,
+      "mime_type": "image/jpeg"
+    },
+    {
+      "asset_ref": "scene_right",
+      "kind": "FIELD_IMAGE",
+      "role": "right",
+      "captured_at": "2026-10-30T18:32:50.882+08:00",
+      "source_sha256": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+      "encoded_sha256": "71278b2ed18ff408b83e2146c255f1bf72f4edd235b18689cc44e348ea1b593f",
+      "source_size_px": [
+        1920,
+        1080
+      ],
+      "encoded_size_px": [
+        1920,
+        1080
+      ],
+      "crop_rect_px": null,
+      "mime_type": "image/jpeg"
+    },
+    {
+      "asset_ref": "model_section",
+      "kind": "DESIGN_REFERENCE",
+      "encoded_sha256": "6c9bdbea08ab13ad58b12fc1e152da5d9186935f2819b0f8f05e5f4cd7c18cf6",
+      "encoded_size_px": [
+        1000,
+        900
+      ],
+      "mime_type": "image/png"
+    }
+  ],
+  "source_binding": {
+    "input_version": "ai-section-input-v1",
+    "manifest_sha256": "7459437351de1335d6b33b52a9c3e91f96949b97ac0c488dbee20ff439b5fb52",
+    "manifest_semantic_sha256": "b3d7a64d5c417d32cd627ae8324d20fdac93fb4e925b0ada5040986a96aea158",
+    "model_sha256": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "capture_id": "elevation-20261031-071031-189194c4",
+    "mapping_sha256": "01c637a0c443b868a928cf1c69628764bfe37d1c1f937689c0d06256df33376f",
+    "control_section": {
+      "schema_version": "ai-image-control-section-v1",
+      "status": "DEFINED",
+      "source": "IMAGE_AGGREGATION_BAND_MIDPOINT",
+      "coordinate_space": "rectified_left_pixel",
+      "station_px": 326.569579803929,
+      "interval_px": [
+        0.0,
+        653.139159607858
+      ],
+      "midpoint_px": [
+        1430.1308411214955,
+        660.2242990654206
+      ],
+      "axis_image": [
+        0.9945355195789258,
+        -0.10439875619889287
+      ],
+      "line_px": [
+        [
+          1360.8255279599318,
+          0.0
+        ],
+        [
+          1474.0907213300977,
+          1079.0
+        ]
+      ],
+      "aggregation_band": {
+        "revision": "left-image-axial-band-v1",
+        "coordinate_space": "rectified_left",
+        "image_size": [
+          1920,
+          1080
+        ],
+        "axis_segment_px": [
+          [
+            1105.3457943925234,
+            694.3177570093459
+          ],
+          [
+            1754.9158878504675,
+            626.1308411214953
+          ]
+        ]
+      },
+      "metric_registration_established": false,
+      "reason_codes": []
+    },
+    "assets": [
+      {
+        "asset_ref": "scene_left",
+        "kind": "FIELD_IMAGE",
+        "role": "left",
+        "captured_at": "2026-10-30T18:32:50.882+08:00",
+        "source_sha256": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+        "encoded_sha256": "00f5ef5ea2ccdabc7668f21bdaf2571a9c2f950991be28c399f98bc0efd606aa",
+        "source_size_px": [
+          1920,
+          1080
+        ],
+        "encoded_size_px": [
+          1920,
+          1080
+        ],
+        "crop_rect_px": null,
+        "mime_type": "image/jpeg"
+      },
+      {
+        "asset_ref": "scene_right",
+        "kind": "FIELD_IMAGE",
+        "role": "right",
+        "captured_at": "2026-10-30T18:32:50.882+08:00",
+        "source_sha256": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+        "encoded_sha256": "71278b2ed18ff408b83e2146c255f1bf72f4edd235b18689cc44e348ea1b593f",
+        "source_size_px": [
+          1920,
+          1080
+        ],
+        "encoded_size_px": [
+          1920,
+          1080
+        ],
+        "crop_rect_px": null,
+        "mime_type": "image/jpeg"
+      },
+      {
+        "asset_ref": "model_section",
+        "kind": "DESIGN_REFERENCE",
+        "encoded_sha256": "6c9bdbea08ab13ad58b12fc1e152da5d9186935f2819b0f8f05e5f4cd7c18cf6",
+        "encoded_size_px": [
+          1000,
+          900
+        ],
+        "mime_type": "image/png"
+      }
+    ],
+    "encoding": {
+      "max_dimension": 1920,
+      "jpeg_quality": 94
+    }
+  },
+  "qualification_reason_codes": []
+}

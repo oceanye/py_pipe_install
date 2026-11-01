@@ -1,0 +1,300 @@
+{
+  "id": 41269041835,
+  "head_sha": "7bd319f73238ca541a1b1dee72ee60293cb0713d",
+  "status": "completed",
+  "conclusion": "success",
+  "html_url": "https://github.com/oceanye/py_pipe_install/actions/runs/41269041835",
+  "created_at": "2026-11-01T03:24:21Z",
+  "updated_at": "2026-11-01T03:34:30Z",
+  "scope": "READ_ONLY_GITHUB_ACTIONS_CI_VERIFICATION",
+  "recorded_at": "2026-11-01T03:36:30.275901+00:00",
+  "credentials_saved": false,
+  "signed_urls_saved": false,
+  "jobs": [
+    {
+      "id": 124737809583,
+      "name": "Smoke (windows-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check out repository",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up Python",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run smoke tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Replay current M0 fixture",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Generate pipe-group2 synthetic stereo fixture",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze field stereo software demo",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up Python",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Check out repository",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "log_summary": {
+        "sha256": "6e6746ae518b6b330239638878bc9da02b9ee0c472eae9ced7a172ddb18a3569",
+        "bytes": 214238,
+        "dependency_lines": [
+          "Successfully installed ezdxf-1.4.4 fonttools-4.68.0 numpy-2.5.2 opencv-python-headless-4.13.0.92 pyparsing-3.3.3 rhino3dm-8.32.1 scipy-1.18.1 typing_extensions-4.16.0"
+        ],
+        "office_auth_lines": [
+          "tests/test_office_client.py::test_office_client_can_opt_into_bearer_token PASSED [ 72%]"
+        ],
+        "skip_lines": [
+          "tests/test_gui.py::DashboardModelTests::test_module_import_does_not_eagerly_import_tkinter SKIPPED [ 60%]"
+        ],
+        "failed_tests": [],
+        "pytest_summaries": [
+          "====== 1238 passed, 1 skipped, 272 subtests passed in 458.44s (0:07:38) ======="
+        ],
+        "connection_abort_seen": false
+      },
+      "skip_counts_by_file": {
+        "tests/test_gui.py": 1
+      },
+      "skip_reason_groups": [
+        {
+          "category": "TK_ALREADY_IMPORTED_IN_SURROUNDING_TEST_PROCESS",
+          "count": 1,
+          "guard": "tests/test_gui.py:657-659",
+          "message": "tkinter was imported by the surrounding test process"
+        }
+      ],
+      "all_cli_smoke_steps_success": true
+    },
+    {
+      "id": 124737809795,
+      "name": "Smoke (ubuntu-latest)",
+      "status": "completed",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check out repository",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up Python",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install dependencies",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run smoke tests",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Replay current M0 fixture",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Generate pipe-group2 synthetic stereo fixture",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Analyze field stereo software demo",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up Python",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Check out repository",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "log_summary": {
+        "sha256": "5081e97445c3242280ef9190ad36a37d1234fe081a3d6387e8d204326c12bc48",
+        "bytes": 213757,
+        "dependency_lines": [
+          "Successfully installed ezdxf-1.4.4 fonttools-4.68.0 numpy-2.5.2 opencv-python-headless-4.13.0.92 pyparsing-3.3.3 rhino3dm-8.32.1 scipy-1.18.1 typing_extensions-4.16.0"
+        ],
+        "office_auth_lines": [
+          "tests/test_office_client.py::test_office_client_can_opt_into_bearer_token PASSED [ 72%]"
+        ],
+        "skip_lines": [
+          "tests/test_ai_settings.py::test_real_dpapi_round_trip_in_isolated_temp_directory SKIPPED [  3%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_ai_button_runs_independent_workflow_and_reopens_saved_result SKIPPED [ 41%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_ai_section_candidates_are_separate_and_read_only SKIPPED [ 41%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_ai_tab_hides_local_algorithm_overlays SKIPPED [ 41%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_analysis_button_follows_scope_controls_on_screen SKIPPED [ 41%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_assistance_without_metric_fit_links_photo_and_one_candidate_plan_only SKIPPED [ 41%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_auto_canvas_draws_unmatched_observation_overlay SKIPPED [ 41%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_auto_mode_is_roi_free_and_direction_is_normalized SKIPPED [ 41%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_auto_restore_uses_new_profile_calibration_and_clears_old_photos SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_axis_reverse_applies_to_both_views_and_invalid_axis_stays_unsaved SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_calibration_change_requires_new_images_and_regions SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_camera_arrow_updates_while_cross_section_remains_fixed SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_camera_preferences_keep_imported_rectification_recipe SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_camera_rejects_stale_rectification_after_calibration_change SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_camera_side_control_persists_and_clears_stale_results SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_cancel_or_invalid_replacement_keeps_current_region_and_result SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_cancelled_ai_response_cannot_save_or_unlock_a_new_task SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_candidate_ground_trial_toggle_is_explicit_and_invalidates_old_report SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_catalog_and_direction_share_selection_without_creating_identity SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_changed_region_starts_new_ai_scene_without_old_a_report SKIPPED [ 42%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_completed_assessment_refreshes_viewer_invalidated_by_submit SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_continuous_capture_save_reopen_and_calibration_change SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_empty_pipe_roi_band_intersection_stops_analysis_before_saving SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_external_photo_change_is_rejected_and_old_result_removed SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_first_run_stl_catalog_and_model_id_preview SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_ground_roi_is_separate_from_pooling_and_persists SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_image_guided_selection_and_diagnostic_overlay SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_input_change_cancels_pending_ai_and_prevents_persistence SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_left_drag_clamps_edges_rejects_small_boxes_and_blocks_while_busy SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_left_drag_saves_source_pixels_reopens_and_runs_zone_analysis SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_legacy_regions_restore_without_accumulation_or_modifying_source SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_live_dialogs_use_basic_owner_and_close_with_scene SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_matching_controls_roundtrip_and_preserve_other_settings SKIPPED [ 43%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_measurement_detail_opens_without_inventing_field_dimensions SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_missing_eye_provides_actionable_error SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_model_viewer_keeps_axis_in_stl_coordinates SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_new_photo_or_input_change_cancels_pending_drag SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_only_cad_tab_exposes_color_mutation_actions SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_pipe_scope_reset_preserves_independent_ground_and_pooling SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_pooling_selection_cancel_exclusive_modes_and_stale_drag SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_print_dimension_is_not_silently_used_as_measured_dimension SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_purchase_colour_hints_invalidate_old_suggestions_without_rewriting_model SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_quality_check_clears_changed_photos_and_retains_old_record SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_quality_check_operates_without_observations_and_preserves_analysis_regions SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_quality_color_application_invalidates_old_result_only_on_explicit_apply SKIPPED [ 44%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_quality_mouse_selection_and_matching_policy_changes SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_redraw_replaces_old_region_preserves_ground_band_and_saved_history SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_repeated_regions_replace_without_limit_and_clear_to_full_frame SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_restore_keeps_verified_registration_settings_after_photo_load SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_restoring_old_invalid_burst_drops_legacy_identities_without_changing_sizes SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_same_scene_a_and_b_coexist_and_reopen_without_rewriting_a SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_same_scene_ai_failure_and_cancel_preserve_a SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_save_reopen_and_repeat_save_without_json_editing SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_saved_scene_runs_real_analysis_and_renders_unknown_for_blank_images SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_scene_is_visible_without_registration_and_live_report_updates_cad_states SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_scene_status_is_visible_before_cad_assignment_and_clears_on_edit SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_settings_do_not_consume_photo_space_and_block_edits_while_evaluating SKIPPED [ 45%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_stale_tilt_worker_cannot_publish_previous_photo_angles SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_standalone_tilt_draws_angles_without_cad_and_clears_on_input_change SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_startup_clears_all_old_selections_but_explicit_open_restores_them SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_stl_zone_candidates_can_be_bound_confirmed_and_saved SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_stopping_burst_never_adopts_partial_capture SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_unapplied_view_direction_is_not_silently_discarded_by_save SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_unified_details_follow_selection_and_close_when_inputs_change SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_unmigrated_multiple_regions_cannot_be_saved_or_evaluated SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_viewer_separates_preview_from_applied_model_camera_side SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_wizard_and_measurement_release_each_others_camera SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_zone_editor_cannot_overwrite_new_main_view_selection SKIPPED [ 46%]",
+          "tests/test_elevation_gui.py::ElevationGuiTests::test_zoomed_direction_drag_handle_resize_save_and_reopen SKIPPED [ 46%]",
+          "tests/test_ground_monitor_gui.py::test_result_is_bound_to_sample_not_newest_preview_and_roi_change_discards_late_result SKIPPED [ 56%]",
+          "tests/test_ground_monitor_gui.py::test_no_more_frames_immediately_removes_old_support_and_angle SKIPPED [ 56%]",
+          "tests/test_ground_monitor_gui.py::test_dark_result_and_expired_result_cannot_retain_last_angle SKIPPED [ 56%]",
+          "tests/test_ground_monitor_gui.py::test_active_drag_survives_preview_redraw SKIPPED [ 56%]",
+          "tests/test_ground_monitor_gui.py::test_stop_discards_late_measurement_and_does_not_change_owner_scene SKIPPED [ 56%]",
+          "tests/test_ground_monitor_gui.py::test_tolerance_change_resets_previous_stability SKIPPED [ 57%]",
+          "tests/test_ground_monitor_gui.py::test_sample_roi_and_support_count_belong_to_frozen_measurement_not_current_drag SKIPPED [ 57%]",
+          "tests/test_gui.py::DashboardModelTests::test_module_import_does_not_eagerly_import_tkinter SKIPPED [ 60%]",
+          "tests/test_gui_entry.py::test_default_entry_uses_root_as_field_window_and_closes_event_loop SKIPPED [ 61%]"
+        ],
+        "failed_tests": [],
+        "pytest_summaries": [
+          "====== 1161 passed, 78 skipped, 267 subtests passed in 256.99s (0:04:16) ======="
+        ],
+        "connection_abort_seen": false
+      },
+      "skip_counts_by_file": {
+        "tests/test_ai_settings.py": 1,
+        "tests/test_elevation_gui.py": 68,
+        "tests/test_ground_monitor_gui.py": 7,
+        "tests/test_gui.py": 1,
+        "tests/test_gui_entry.py": 1
+      },
+      "skip_reason_groups": [
+        {
+          "category": "TK_ALREADY_IMPORTED_IN_SURROUNDING_TEST_PROCESS",
+          "count": 1,
+          "guard": "tests/test_gui.py:657-659",
+          "message": "tkinter was imported by the surrounding test process"
+        },
+        {
+          "category": "WINDOWS_ONLY_DPAPI",
+          "count": 1,
+          "guard": "tests/test_ai_settings.py:50",
+          "message": "Current-user Windows DPAPI; skipped on sys.platform != win32"
+        },
+        {
+          "category": "TK_DISPLAY_INITIALIZATION_UNAVAILABLE",
+          "count": 76,
+          "guards": [
+            "tests/test_elevation_gui.py:31-37",
+            "tests/test_ground_monitor_gui.py:81-87",
+            "tests/test_gui_entry.py:8-14"
+          ],
+          "message": "Tk() raised TclError in the Ubuntu CI environment; GUI tests skip when no usable display exists.",
+          "exact_runtime_tclerror_text_in_log": false
+        }
+      ],
+      "all_cli_smoke_steps_success": true
+    }
+  ],
+  "skip_reason_evidence_note": "Skipped test IDs are observed in the CI logs. Reasons below are mapped to the explicit skip guards in the tested 7bd319f source. CI ran pytest -v without -rs, so the exact runtime TclError text is not present in these logs."
+}

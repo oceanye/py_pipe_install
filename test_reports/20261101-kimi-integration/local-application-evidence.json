@@ -1,0 +1,13 @@
+{
+  "recorded_at": "2026-11-01T03:33:04.916234+00:00",
+  "implementation_commit": "7bd319f73238ca541a1b1dee72ee60293cb0713d",
+  "launch": ".venv/Scripts/pythonw.exe -m pipe_twin gui --manifest outputs/kimi-integration-20261101/gui-live-20261101-111026-285679/scene/manifest.json",
+  "window_title": "?????? ? ???????",
+  "visible_window_confirmed_by_screenshot": true,
+  "window_responding": true,
+  "screenshot": "outputs/kimi-integration-20261101/gui-applied.png",
+  "stderr_empty": true,
+  "default_pointer_unchanged": true,
+  "new_camera_capture": false,
+  "new_ai_request_on_open": false
+}

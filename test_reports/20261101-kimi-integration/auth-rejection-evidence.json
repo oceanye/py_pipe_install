@@ -1,0 +1,43 @@
+{
+  "scope": "TEMPORARY_LOOPBACK_HTTP_AUTH_REJECTION_ONLY",
+  "credentials_recorded": false,
+  "camera_opened": false,
+  "production_request_timeout_changed": false,
+  "post_retry_added": false,
+  "original_source_commit": "b00c1702e99b984c7d16d8c761b1d00539891eaa",
+  "fixed_source_sha256": "528b8d5b0b446c93c2e448c1838fea1faf6c4a41538c50146ee442c0cd429f83",
+  "environment": "outputs/kimi-integration-20261101/venv (Windows Python 3.12, locked dependencies)",
+  "independent_original_office_tests": "5 passed in 10.48s",
+  "before_fix": {
+    "0.0": {
+      "401": 33,
+      "remote capture request failed: [WinError 10053] 你的主机中的软件中止了一个已建立的连接。": 7
+    },
+    "0.005": {
+      "remote capture request failed: [WinError 10053] 你的主机中的软件中止了一个已建立的连接。": 39,
+      "401": 1
+    },
+    "0.02": {
+      "remote capture request failed: [WinError 10053] 你的主机中的软件中止了一个已建立的连接。": 39,
+      "401": 1
+    }
+  },
+  "after_fix": {
+    "0.0": {
+      "401": 40
+    },
+    "0.005": {
+      "401": 40
+    },
+    "0.02": {
+      "401": 40
+    }
+  },
+  "before_connection_abort_count": 85,
+  "after_http_401_count": 120,
+  "request_count_each_run": 120,
+  "fix": "Drain only unread POST bodies with one valid Content-Length <= 16384 before error response; never parse or submit; do not drain ambiguous, chunked or oversized input.",
+  "targeted_capture_and_office_tests": "23 passed in 14.24s",
+  "additional_delayed_body_and_bounded_drain_tests": "4 passed in 2.24s",
+  "before_test_assertion_not_relaxed": true
+}

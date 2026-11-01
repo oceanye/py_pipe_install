@@ -1,0 +1,22 @@
+{
+  "implementation_commit": "7bd319f73238ca541a1b1dee72ee60293cb0713d",
+  "environment": ".venv, Python 3.12.10, locked production dependencies",
+  "checks": [
+    {
+      "command": "python -m pipe_twin analyze --manifest test_model/manifest.json --output outputs/kimi-integration-20261101/current_demo_report.json",
+      "exit_code": 0,
+      "result": "M0 replay PASS: 1727/1727 frames, max event error=2 frame(s)"
+    },
+    {
+      "command": "python -m pipe_twin simulate-stereo --manifest test_model/pipe_group2_manifest.json --output-dir outputs/kimi-integration-20261101/pipe_group2_synthetic_stereo",
+      "exit_code": 0,
+      "result": "Synthetic stereo dataset pipe-group2-synthetic-stereo-v1 generated (9 instances)"
+    },
+    {
+      "command": "python -m pipe_twin analyze-stereo --manifest test_model/field_stereo_demo_manifest.json --output outputs/kimi-integration-20261101/field_stereo_demo_report.json",
+      "exit_code": 0,
+      "result": "Stereo CAD analysis completed: installed=8, not_installed=0, unknown=1"
+    }
+  ],
+  "scope": "Repository fixtures only; these are not current field installation results."
+}

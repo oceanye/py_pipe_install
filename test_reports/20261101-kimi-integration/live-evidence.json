@@ -1,0 +1,605 @@
+{
+  "started_at": "2026-11-01T02:53:34.481516+00:00",
+  "scope": "LIVE_KIMI_ARCHIVED_REFERENCE_PAIR",
+  "new_capture": false,
+  "manifest": "outputs\\kimi-integration-20261101\\live-20261101-105332\\scene\\manifest.json",
+  "input_hash": "b0f857590b195767899260bf8668f6397d6fbf51dac40cd9ddc5ddc1f55b4005",
+  "credentials_saved_in_report": false,
+  "request_assets": [
+    {
+      "asset_ref": "scene_left",
+      "kind": "FIELD_IMAGE",
+      "role": "left",
+      "captured_at": "2026-10-30T18:32:50.882+08:00",
+      "source_sha256": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+      "encoded_sha256": "00f5ef5ea2ccdabc7668f21bdaf2571a9c2f950991be28c399f98bc0efd606aa",
+      "source_size_px": [
+        1920,
+        1080
+      ],
+      "encoded_size_px": [
+        1920,
+        1080
+      ],
+      "crop_rect_px": null,
+      "mime_type": "image/jpeg"
+    },
+    {
+      "asset_ref": "scene_right",
+      "kind": "FIELD_IMAGE",
+      "role": "right",
+      "captured_at": "2026-10-30T18:32:50.882+08:00",
+      "source_sha256": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+      "encoded_sha256": "71278b2ed18ff408b83e2146c255f1bf72f4edd235b18689cc44e348ea1b593f",
+      "source_size_px": [
+        1920,
+        1080
+      ],
+      "encoded_size_px": [
+        1920,
+        1080
+      ],
+      "crop_rect_px": null,
+      "mime_type": "image/jpeg"
+    },
+    {
+      "asset_ref": "model_section",
+      "kind": "DESIGN_REFERENCE",
+      "encoded_sha256": "6c9bdbea08ab13ad58b12fc1e152da5d9186935f2819b0f8f05e5f4cd7c18cf6",
+      "encoded_size_px": [
+        1000,
+        900
+      ],
+      "mime_type": "image/png"
+    }
+  ],
+  "status": "COMPLETED",
+  "provider": "kimi",
+  "model": "kimi-k3.1-pro",
+  "usage": {
+    "prompt_tokens": 8386,
+    "completion_tokens": 1196,
+    "total_tokens": 9582
+  },
+  "strict_report_unchanged": true,
+  "save_and_reopen_identical": true,
+  "candidate_states": {
+    "AMBIGUOUS": 12
+  },
+  "result_status": "AMBIGUOUS",
+  "candidates": [
+    {
+      "point_id": "P01",
+      "pipe_id": "P003",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见细管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          -134.99999321831592,
+          140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 26.000124,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=-135.0, v=140.0 mm",
+        "section_uv_mm": [
+          -134.99999321831592,
+          140.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=-135.0, v=140.0 mm",
+        "section_uv_mm": [
+          -134.99999321831592,
+          140.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P02",
+      "pipe_id": "P004",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见粗管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          -44.99999321831592,
+          140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 51.000073,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=-45.0, v=140.0 mm",
+        "section_uv_mm": [
+          -44.99999321831592,
+          140.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=-45.0, v=140.0 mm",
+        "section_uv_mm": [
+          -44.99999321831592,
+          140.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P03",
+      "pipe_id": "P008",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见中粗管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          44.99998643663184,
+          140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 41.000017,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=45.0, v=140.0 mm",
+        "section_uv_mm": [
+          44.99998643663184,
+          140.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=45.0, v=140.0 mm",
+        "section_uv_mm": [
+          44.99998643663184,
+          140.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P04",
+      "pipe_id": "P012",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见细管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          135.00000678168408,
+          140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 26.000124,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=135.0, v=140.0 mm",
+        "section_uv_mm": [
+          135.00000678168408,
+          140.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=135.0, v=140.0 mm",
+        "section_uv_mm": [
+          135.00000678168408,
+          140.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P05",
+      "pipe_id": "P001",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见粗管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          -134.99999321831592,
+          0.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 51.000073,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=-135.0, v=0.0 mm",
+        "section_uv_mm": [
+          -134.99999321831592,
+          0.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=-135.0, v=0.0 mm",
+        "section_uv_mm": [
+          -134.99999321831592,
+          0.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P06",
+      "pipe_id": "P006",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见细管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          -44.99999321831592,
+          0.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 26.000124,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=-45.0, v=0.0 mm",
+        "section_uv_mm": [
+          -44.99999321831592,
+          0.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=-45.0, v=0.0 mm",
+        "section_uv_mm": [
+          -44.99999321831592,
+          0.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P07",
+      "pipe_id": "P007",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见粗管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          45.00000678168408,
+          0.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 51.000073,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=45.0, v=0.0 mm",
+        "section_uv_mm": [
+          45.00000678168408,
+          0.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=45.0, v=0.0 mm",
+        "section_uv_mm": [
+          45.00000678168408,
+          0.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P08",
+      "pipe_id": "P011",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见中粗管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          134.99998643663184,
+          0.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 41.000017,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=135.0, v=0.0 mm",
+        "section_uv_mm": [
+          134.99998643663184,
+          0.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=135.0, v=0.0 mm",
+        "section_uv_mm": [
+          134.99998643663184,
+          0.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P09",
+      "pipe_id": "P002",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见中粗管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          -135.00001356336816,
+          -140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 41.000017,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=-135.0, v=-140.0 mm",
+        "section_uv_mm": [
+          -135.00001356336816,
+          -140.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=-135.0, v=-140.0 mm",
+        "section_uv_mm": [
+          -135.00001356336816,
+          -140.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P10",
+      "pipe_id": "P005",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见中粗管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          -45.00001356336816,
+          -140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 41.000017,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=-45.0, v=-140.0 mm",
+        "section_uv_mm": [
+          -45.00001356336816,
+          -140.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=-45.0, v=-140.0 mm",
+        "section_uv_mm": [
+          -45.00001356336816,
+          -140.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P11",
+      "pipe_id": "P009",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见细管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          45.00000678168408,
+          -140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 26.000124,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=45.0, v=-140.0 mm",
+        "section_uv_mm": [
+          45.00000678168408,
+          -140.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=45.0, v=-140.0 mm",
+        "section_uv_mm": [
+          45.00000678168408,
+          -140.0
+        ],
+        "projected_center_px": null
+      }
+    },
+    {
+      "point_id": "P12",
+      "pipe_id": "P010",
+      "section_status": "AMBIGUOUS",
+      "evidence_quality": "MEDIUM",
+      "reason_codes": [
+        "可见粗管与多个同径候选重复，无法唯一对应",
+        "近远层遮挡及横向镜像关系未定"
+      ],
+      "observation_refs": [
+        "scene_left",
+        "scene_right"
+      ],
+      "model_section": {
+        "section_uv_mm": [
+          135.00000678168408,
+          -140.0
+        ],
+        "projected_center_px": null,
+        "nominal_diameter_mm": 51.000073,
+        "projection_ambiguity": "NONE"
+      },
+      "section_evidence": {
+        "available": false
+      },
+      "status": "AMBIGUOUS",
+      "quality": "MEDIUM",
+      "section_position": {
+        "label": "u=135.0, v=-140.0 mm",
+        "section_uv_mm": [
+          135.00000678168408,
+          -140.0
+        ],
+        "projected_center_px": null
+      },
+      "model_position": {
+        "label": "u=135.0, v=-140.0 mm",
+        "section_uv_mm": [
+          135.00000678168408,
+          -140.0
+        ],
+        "projected_center_px": null
+      }
+    }
+  ],
+  "sidecar_sha256": "47064fbdad9ec98d84a19bbf4fe67c3e945109dac9b7e605b7ea419574ea877d",
+  "seconds": 41.264999999984866,
+  "protected_source_count": 52,
+  "protected_sources_unchanged": true,
+  "changed_source_files": []
+}

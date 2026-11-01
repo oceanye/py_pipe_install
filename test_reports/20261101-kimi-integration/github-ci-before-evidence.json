@@ -1,0 +1,90 @@
+{
+  "recorded_at": "2026-11-01T03:27:23.375792+00:00",
+  "scope": "READ_ONLY_GITHUB_ACTIONS_ANNOTATIONS_AND_JOB_LOGS",
+  "run_id": 41264697249,
+  "run_url": "https://github.com/oceanye/py_pipe_install/actions/runs/41264697249",
+  "head_sha": "b00c1702e99b984c7d16d8c761b1d00539891eaa",
+  "git_credentials_exposed_or_saved": false,
+  "signed_download_urls_saved": false,
+  "log_redirect_followed_without_authorization": true,
+  "production_code_modified_by_ci_audit": false,
+  "jobs": [
+    {
+      "id": 124724957140,
+      "name": "Smoke (windows-latest)",
+      "conclusion": "failure",
+      "failed_step": "Run smoke tests",
+      "failed_tests": [
+        "FAILED tests/test_image_regions.py::test_local_windows_require_common_clean_segment_without_loosening_fit[False] - TypeError: Object of type int64 is not JSON serializable",
+        "FAILED tests/test_image_regions.py::test_local_windows_require_common_clean_segment_without_loosening_fit[True] - TypeError: Object of type int64 is not JSON serializable",
+        "FAILED tests/test_image_regions.py::test_zone_attempts_have_global_coordinates_and_candidate_links - TypeError: Object of type int64 is not JSON serializable"
+      ],
+      "pytest_summary": [
+        "= 3 failed, 1156 passed, 1 skipped, 272 subtests passed in 382.17s (0:06:22) =="
+      ],
+      "dependency_installation": [
+        "Successfully installed ezdxf-1.4.4 fonttools-4.68.0 numpy-2.5.2 opencv-python-headless-4.13.0.92 pyparsing-3.3.3 rhino3dm-8.32.1 scipy-1.18.1 typing_extensions-4.16.0"
+      ],
+      "office_auth_result": [
+        "tests/test_office_client.py::test_office_client_can_opt_into_bearer_token PASSED [ 70%]"
+      ],
+      "log_sha256": "37c5b19346197d3a2c50f6140136bb5cff3dcda8b54f842893af5bc98946101a",
+      "log_bytes": 217550,
+      "downstream_demo_steps_skipped": [
+        "Replay current M0 fixture",
+        "Generate pipe-group2 synthetic stereo fixture",
+        "Analyze field stereo software demo"
+      ]
+    },
+    {
+      "id": 124724957304,
+      "name": "Smoke (ubuntu-latest)",
+      "conclusion": "failure",
+      "failed_step": "Run smoke tests",
+      "failed_tests": [
+        "FAILED tests/test_image_regions.py::test_local_windows_require_common_clean_segment_without_loosening_fit[False] - TypeError: Object of type int64 is not JSON serializable",
+        "FAILED tests/test_image_regions.py::test_local_windows_require_common_clean_segment_without_loosening_fit[True] - TypeError: Object of type int64 is not JSON serializable",
+        "FAILED tests/test_image_regions.py::test_zone_attempts_have_global_coordinates_and_candidate_links - TypeError: Object of type int64 is not JSON serializable"
+      ],
+      "pytest_summary": [
+        "= 3 failed, 1088 passed, 69 skipped, 267 subtests passed in 255.67s (0:04:15) =="
+      ],
+      "dependency_installation": [
+        "Successfully installed ezdxf-1.4.4 fonttools-4.68.0 numpy-2.5.2 opencv-python-headless-4.13.0.92 pyparsing-3.3.3 rhino3dm-8.32.1 scipy-1.18.1 typing_extensions-4.16.0"
+      ],
+      "office_auth_result": [
+        "tests/test_office_client.py::test_office_client_can_opt_into_bearer_token PASSED [ 70%]"
+      ],
+      "log_sha256": "d8b6fdf7ab3f69c88c05a01e60d628d0660a45c69e7c3f8bf4a36255e566b88e",
+      "log_bytes": 216870,
+      "downstream_demo_steps_skipped": [
+        "Replay current M0 fixture",
+        "Generate pipe-group2 synthetic stereo fixture",
+        "Analyze field stereo software demo"
+      ]
+    }
+  ],
+  "root_cause": {
+    "observed_error": "TypeError: Object of type int64 is not JSON serializable",
+    "shared_failed_test_count": 3,
+    "installed_numpy_both_platforms": "2.5.2",
+    "affected_diagnostic": "image_regions.filter_disparity -> axial_bins_with_support",
+    "explanation": "The diagnostic coverage sum can be a NumPy integer scalar under the pinned NumPy version and is persisted in a normal JSON report.",
+    "fix_commit": "7bd319f73238ca541a1b1dee72ee60293cb0713d",
+    "fix": "Convert the coverage sum explicitly to Python int before updating the diagnostic audit."
+  },
+  "windows_post_race_comparison": {
+    "was_old_ci_failure": false,
+    "old_ci_office_auth_test": "PASSED on both Windows and Ubuntu",
+    "old_ci_logs_contain_winerror_10053": false,
+    "separate_local_reproduction": "85 connection aborts in 120 rejected POSTs before fix; 120/120 HTTP401 after bounded body drain.",
+    "evidence": "auth-rejection-evidence.json",
+    "meaning": "An independently reproduced local Windows timing defect, not the cause of this old GitHub CI failure."
+  },
+  "new_run": {
+    "id": 41269041835,
+    "head_sha": "7bd319f73238ca541a1b1dee72ee60293cb0713d",
+    "status_at_query": "in_progress",
+    "url": "https://github.com/oceanye/py_pipe_install/actions/runs/41269041835"
+  }
+}

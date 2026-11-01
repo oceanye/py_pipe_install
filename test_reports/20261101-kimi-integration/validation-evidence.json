@@ -1,0 +1,172 @@
+{
+  "recorded_at": "2026-11-01T03:24:14.796666+00:00",
+  "implementation_commit": "7bd319f73238ca541a1b1dee72ee60293cb0713d",
+  "starting_local_and_origin_commit": "b00c1702e99b984c7d16d8c761b1d00539891eaa",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "active_environment_versions": {
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "opencv-python-headless": "4.13.0.92",
+    "rhino3dm": "8.32.1",
+    "ezdxf": "1.4.4",
+    "pytest": "9.1.1",
+    "colorama": "0.4.6",
+    "iniconfig": "2.3.1",
+    "packaging": "26.3",
+    "pluggy": "1.7.0",
+    "pygments": "2.21.0",
+    "pyparsing": "3.3.3",
+    "typing_extensions": "4.16.0",
+    "fonttools": "4.68.0"
+  },
+  "clean_environment_versions": {
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "opencv-python-headless": "4.13.0.92",
+    "rhino3dm": "8.32.1",
+    "ezdxf": "1.4.4",
+    "pytest": "9.1.1",
+    "colorama": "0.4.6",
+    "iniconfig": "2.3.1",
+    "packaging": "26.3",
+    "pluggy": "1.7.0",
+    "pygments": "2.21.0",
+    "pyparsing": "3.3.3",
+    "typing_extensions": "4.16.0",
+    "fonttools": "4.68.0"
+  },
+  "active_and_clean_versions_equal": true,
+  "required_versions_equal": true,
+  "pytest_opencv_threads": 2,
+  "first_full_summary": "4 failed, 1230 passed, 1 skipped, 272 subtests passed in 465.22s (0:07:45)",
+  "first_full": {
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "4",
+        "skipped": "1",
+        "tests": "1507",
+        "time": "465.161",
+        "timestamp": "2026-11-01T11:00:33.282736+08:00",
+        "hostname": "ZJLZ1026"
+      }
+    ],
+    "failures": [
+      {
+        "classname": "tests.test_image_regions",
+        "name": "test_local_windows_require_common_clean_segment_without_loosening_fit[False]",
+        "time": "0.954"
+      },
+      {
+        "classname": "tests.test_image_regions",
+        "name": "test_local_windows_require_common_clean_segment_without_loosening_fit[True]",
+        "time": "0.919"
+      },
+      {
+        "classname": "tests.test_image_regions",
+        "name": "test_zone_attempts_have_global_coordinates_and_candidate_links",
+        "time": "2.435"
+      },
+      {
+        "classname": "tests.test_office_client",
+        "name": "test_office_client_can_opt_into_bearer_token",
+        "time": "0.656"
+      }
+    ],
+    "skips": [
+      {
+        "classname": "tests.test_gui.DashboardModelTests",
+        "name": "test_module_import_does_not_eagerly_import_tkinter",
+        "time": "0.001",
+        "reason": "tkinter was imported by the surrounding test process"
+      }
+    ]
+  },
+  "final_full_summary": "1238 passed, 1 skipped, 272 subtests passed in 454.04s (0:07:34)",
+  "final_full": {
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "1",
+        "tests": "1511",
+        "time": "453.996",
+        "timestamp": "2026-11-01T11:14:03.270276+08:00",
+        "hostname": "ZJLZ1026"
+      }
+    ],
+    "failures": [],
+    "skips": [
+      {
+        "classname": "tests.test_gui.DashboardModelTests",
+        "name": "test_module_import_does_not_eagerly_import_tkinter",
+        "time": "0.001",
+        "reason": "tkinter was imported by the surrounding test process"
+      }
+    ]
+  },
+  "isolated_tests": [
+    {
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "1",
+          "time": "0.156",
+          "timestamp": "2026-11-01T11:24:02.878485+08:00",
+          "hostname": "ZJLZ1026"
+        }
+      ],
+      "failures": [],
+      "skips": []
+    }
+  ],
+  "safe_ai_configuration_status": {
+    "configured": true,
+    "credential_source": "windows_dpapi",
+    "model": "kimi-k3.1-pro",
+    "base_url": "https://api.moonshot.cn/v1",
+    "error_code": null
+  },
+  "credentials_in_repository": false,
+  "new_camera_capture": false,
+  "real_provider_call_count": 2,
+  "real_provider_result": "AMBIGUOUS_ON_ALL_12_MODEL_POINTS",
+  "source_hash_normalization": "UTF8_LF",
+  "tested_changed_sources_sha256": {
+    ".github/workflows/ci.yml": "eb193256d5fae88ebbe1a43de592702890e035b121ff0548532b5f0cac18e9a4",
+    "pipe_twin/ai_gui.py": "304ae1fd003b7bd3ecc4cf13d3d414e0b719019d021823b6103a9b3b83c50805",
+    "pipe_twin/ai_inputs.py": "8e1402d9e2bf81393c73a5ba489c213cef9fcb1230d165898e19ee8d4f96672a",
+    "pipe_twin/ai_provider.py": "0257d19a20feb6948bf94abb41f95bc01b997cfc8e25933b502479fb6b72f6ce",
+    "pipe_twin/ai_section_display.py": "f0e1fabccfd7723f3297d7e61f2e585ec9b4403b3cebe623e4d6b879d79b40ec",
+    "pipe_twin/ai_settings.py": "594d0f7ecfb39da24e2e60732f42a5fd55f5bbfba59ef4043245088c179da81a",
+    "pipe_twin/ai_workflow.py": "06a879f4d60684d0a80021955c6f5b6fe8433c7c175da79d07a6a66ba0380ebc",
+    "pipe_twin/capture_agent.py": "528b8d5b0b446c93c2e448c1838fea1faf6c4a41538c50146ee442c0cd429f83",
+    "pipe_twin/cli.py": "06f33665888d00b96c77a8e33ea90f50411992da5362d22fca4062efaa5b0c2e",
+    "pipe_twin/elevation_gui.py": "2966f80f234021b6a0d882da1a93f7d95da1907aca923713fdbf2b95805ecd8c",
+    "pipe_twin/image_regions.py": "375db08702d0fac6aa2a801227717e5aa15c4918f1d1bc4725e690d8505a8ee7",
+    "tests/test_ai_cli.py": "70c1e2ec6f77ffad96eaf83938456c2fc42755ae274f948c30720d56ec0737fc",
+    "tests/test_ai_provider.py": "209620a16f6c147b11b332cad3e24aff8148cb353d9e2fbb4a37a579727cac55",
+    "tests/test_ai_section_display.py": "989114ac4d34417a8f62b6a02f04035ef6456e8e587ca139826754cef8b90b00",
+    "tests/test_ai_settings.py": "e9b546c5b50774d7a82aaf84ebb2731533cc7747575daa57785ee4ba3ecc90ad",
+    "tests/test_ai_workflow.py": "3d38446663097b83a8abf3d435cedf9f1ffda6dccf2e4041a66a67279c84c587",
+    "tests/test_capture_agent.py": "577f315b827c6fa1c4b4e0c144c8cb1f0f25888f36168e03f190890adc1d14c0",
+    "tests/test_elevation_gui.py": "48f4f6b31c876ad06ac4ae911d18f6332d6863b26bb624b82e9d5b8537cd530b"
+  },
+  "live-evidence.json": {
+    "sha256": "80c66b4ca67b2c316e43cd325bdd3d5d0b6278cc4d3b62345e79a2a434ca3b47"
+  },
+  "gui-evidence.json": {
+    "sha256": "aa6392448df0b6de9840c1fd36c637b5f2847b79868365026e41b3d04ff7c9a2"
+  },
+  "gui-live-evidence.json": {
+    "sha256": "63fb6e6e8e50ecef221ff4a18b028c0d5528ec595d833e753ca0d57d15e36940"
+  },
+  "auth-rejection-evidence.json": {
+    "sha256": "e4e68f9f94975cb2d1b8b47db5336a896fcad65a3d10093b109907ae9f1d7cac"
+  }
+}
