@@ -1,0 +1,154 @@
+{
+  "scope": "REAL_TK_ARCHIVED_SCENE_AND_SYNTHETIC_AI_CONTRACT_ONLY",
+  "source_scene": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\manifest.json",
+  "source_report": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\report.json",
+  "new_capture": false,
+  "external_ai_called": false,
+  "ai_network_validated": false,
+  "fixture_notice": "SIMULATED_AI_RESPONSE_IS_NOT_AN_ACTUAL_MODEL_JUDGEMENT",
+  "checks": [
+    {
+      "name": "archived_without_provider_shows_not_run",
+      "passed": true,
+      "statuses": [
+        "NOT_RUN"
+      ]
+    },
+    {
+      "name": "layout_1024x720",
+      "passed": true,
+      "clipped_controls": [],
+      "photo_height": 194
+    },
+    {
+      "name": "layout_1280x860",
+      "passed": true,
+      "clipped_controls": [],
+      "photo_height": 334
+    },
+    {
+      "name": "not_run_details_explicit",
+      "passed": true
+    },
+    {
+      "name": "explicit_not_run_namespace_shows_not_run",
+      "passed": false,
+      "statuses": [
+        "INSUFFICIENT"
+      ],
+      "core_status": "NOT_RUN"
+    },
+    {
+      "name": "simulated_candidates_render",
+      "passed": true,
+      "statuses": {
+        "P003": "SUPPORTED_VISIBLE",
+        "P004": "AMBIGUOUS",
+        "P008": "SUPPORTED_VISIBLE",
+        "P012": "SUPPORTED_VISIBLE",
+        "P001": "UNRESOLVED",
+        "P006": "UNRESOLVED",
+        "P007": "UNRESOLVED",
+        "P011": "UNRESOLVED",
+        "P002": "UNRESOLVED",
+        "P005": "UNRESOLVED",
+        "P009": "UNRESOLVED",
+        "P010": "UNRESOLVED"
+      }
+    },
+    {
+      "name": "overlap_downgraded_to_ambiguous",
+      "passed": true
+    },
+    {
+      "name": "missing_assessments_stay_unresolved",
+      "passed": true
+    },
+    {
+      "name": "ai_candidates_do_not_repaint_installation_states",
+      "passed": true
+    },
+    {
+      "name": "ai_selection_only_navigates_model",
+      "passed": true,
+      "selected_pipe": "P004"
+    },
+    {
+      "name": "strict_report_unchanged",
+      "passed": true
+    },
+    {
+      "name": "ui_does_not_mutate_simulated_report",
+      "passed": true
+    },
+    {
+      "name": "control_section_and_ambiguity_visible",
+      "passed": true,
+      "detail_text": "AI 断面候选 · 候选有歧义\n范围：仅定位模型断面中的候选点位；不判断三维管段或安装完成状态。\n提供方：LOCAL_UI_FIXTURE_NO_NETWORK；契约：ai-section-assist-v1。\n控制断面：管段汇聚共同支撑区间中点 321.5 mm（区间 [300.0, 343.0]）。\n提示：AI_RESPONSE_MISSING_MODEL_POINTS\n\nP01：支持定位\n模型管号：P003\n模型断面点位：P01 · u=-135.0, v=140.0 mm\n证据质量：高\n说明：LOCAL_UI_FIXTURE_NOT_MODEL_OUTPUT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP02：候选有歧义\n模型管号：P004\n模型断面点位：P02 · u=-45.0, v=140.0 mm\n证据质量：高\n说明：LOCAL_UI_FIXTURE_NOT_MODEL_OUTPUT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP03：支持定位\n模型管号：P008\n模型断面点位：P03 · u=45.0, v=140.0 mm\n证据质量：高\n说明：LOCAL_UI_FIXTURE_NOT_MODEL_OUTPUT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP04：支持定位\n模型管号：P012\n模型断面点位：P04 · u=135.0, v=140.0 mm\n证据质量：高\n说明：LOCAL_UI_FIXTURE_NOT_MODEL_OUTPUT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP05：未能定位\n模型管号：P001\n模型断面点位：P05 · u=-135.0, v=0.0 mm\n证据质量：低\n说明：MISSING_AI_ASSESSMENT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP06：未能定位\n模型管号：P006\n模型断面点位：P06 · u=-45.0, v=0.0 mm\n证据质量：低\n说明：MISSING_AI_ASSESSMENT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP07：未能定位\n模型管号：P007\n模型断面点位：P07 · u=45.0, v=0.0 mm\n证据质量：低\n说明：MISSING_AI_ASSESSMENT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP08：未能定位\n模型管号：P011\n模型断面点位：P08 · u=135.0, v=0.0 mm\n证据质量：低\n说明：MISSING_AI_ASSESSMENT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP09：未能定位\n模型管号：P002\n模型断面点位：P09 · u=-135.0, v=-140.0 mm\n证据质量：低\n说明：MISSING_AI_ASSESSMENT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP10：未能定位\n模型管号：P005\n模型断面点位：P10 · u=-45.0, v=-140.0 mm\n证据质量：低\n说明：MISSING_AI_ASSESSMENT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP11：未能定位\n模型管号：P009\n模型断面点位：P11 · u=45.0, v=-140.0 mm\n证据质量：低\n说明：MISSING_AI_ASSESSMENT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\n\nP12：未能定位\n模型管号：P010\n模型断面点位：P12 · u=135.0, v=-140.0 mm\n证据质量：低\n说明：MISSING_AI_ASSESSMENT\n范围：仅评估模型断面候选；不判断三维管段，也不写入安装验收状态。\nAI 候选只读展示，不会覆盖或改变严格安装状态。\n"
+    },
+    {
+      "name": "input_change_removes_ai_candidates",
+      "passed": true
+    },
+    {
+      "name": "stale_worker_result_not_restored",
+      "passed": true,
+      "message": "输入在计算时发生改变；已丢弃旧结果，请重新评估。"
+    },
+    {
+      "name": "protected_sources_unchanged",
+      "passed": true
+    },
+    {
+      "name": "archive_report_object_unchanged",
+      "passed": true
+    },
+    {
+      "name": "no_tk_callback_errors",
+      "passed": true
+    }
+  ],
+  "screens": {
+    "1024x720": {
+      "clipped_controls": [],
+      "photo_height": 194
+    },
+    "1280x860": {
+      "clipped_controls": [],
+      "photo_height": 334
+    }
+  },
+  "callback_errors": [],
+  "source_sha256": {
+    "outputs\\elevation_workbench\\last_scene.json": "3e8eed3e37ad183886e538226f5960c9a6de41719dc5f99da83d2985d33d1cdd",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\000_left.png": "d3a44d13e8413492854cc5c65baf536a3240a487ff3196ceb1bdc33fa724a55d",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\000_right.png": "48a6f2047e247758981242595a91b19d9b06bea4550665fbb0ae34255fbee993",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\001_left.png": "b995ad6b04b641088e713a988f5b5a5e79777ce881e268ac759f49a1fb15fa07",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\001_right.png": "adcf66bae243832535fa20d2a559febbeea2adbcffa195f203dfb80589b1462b",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\002_left.png": "836ea8cf012c4218b42f513bfef5a9941ed87ae72be6fc075180385f9dc148f3",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\002_right.png": "89c961158ad35a962b20db2292512602ae65cbfcbf7726e958e70f9c182c21ee",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\003_left.png": "a6fd56bd4645d633c2682222132340db7bac9e71a434a09ae511e345218f345e",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\003_right.png": "a70bf93b99b702f85a872394f9e906f9c4b7602203f289112b672f47bccb4827",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\004_left.png": "20e08cddc9e2d6ef3714635f0b0072165ce65c46558b3c047603e0170ca44a8d",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\004_right.png": "4e0adaf7040ae57ebefa3cd07688c2cfac5937ff21b035de48ca713a17523e46",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\005_left.png": "637e1385f38d934ecbf64f77c9479bde889490c800e1061cd0dde158d3e08d36",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\005_right.png": "5d28a8cc3bf7eec29739ef03c33fd15ee08e13ebcdbdf319a76bfa0eab18e89c",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\006_left.png": "80fc7793fee30748d102d368c8424e8debdfb12a0549297213e54f78da294271",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\006_right.png": "ae5bc57a5fe9640ad42c30cc5862d8da6e93ffbc70a285b75aa09e59850d2190",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\007_left.png": "afc656fc03de6d942e95c67d3a12fe572705a5577b7c2afc659faf3b2e1e32a3",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\007_right.png": "e201302b00c42200581933a71d77b49ac424e44c0df49c647311c249d7e6a2bd",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\008_left.png": "2e49a4d9717cdcd51c5fa00afbb6e14f8787345dc725c3fa57987a0684630463",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\008_right.png": "9a07ca2af135a955af9e80a82a8f79ca91916d6a3d5db74dc7b5fe9fd0b4c97e",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\009_left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\burst\\009_right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\manifest.json": "7459437351de1335d6b33b52a9c3e91f96949b97ac0c488dbee20ff439b5fb52",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\model\\管道布置.stl": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\photos\\left.png": "196bca3f0f88d60bdab8e6c5fc47cf4b38901038c03f934aeb2e6abba58e2e7d",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\photos\\right.png": "4236cb1a9fc95a5fcc2a71db1458b76d4bdeecc2959ffa168c24b2735a718660",
+    "outputs\\installation-assist-20261031\\scenes\\elevation-20261031-071031-189194c4\\report.json": "0954f43ab4e3dde69ae78843ca4d6a555a25040d4072114c74394361cf1f89db",
+    "outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "outputs\\measurement_workbench\\workbench_profile.json": "12bc0e6359bcae983a47b9b5da31b93ffa2a068214955cf813be779962f835d7"
+  },
+  "sources_unchanged": true,
+  "passed": false
+}

@@ -1,0 +1,24 @@
+{
+  "recorded_at": "2026-11-01T02:15:19.320078+00:00",
+  "endpoint": "https://api.moonshot.cn/v1/models",
+  "method": "GET",
+  "scope": "OFFICIAL_PROVIDER_MODEL_LIST_ONLY_NOT_APP_INTEGRATION",
+  "credential_saved": false,
+  "image_uploaded": false,
+  "inference_requested": false,
+  "application_ai_wiring_validated": false,
+  "documentation": "https://platform.kimi.com/docs/api/list-models",
+  "http_status": 200,
+  "model_ids": [
+    "kimi-k2.6",
+    "kimi-k3.1-pro-highspeed",
+    "kimi-k3",
+    "kimi-k2.7-code-highspeed",
+    "kimi-k2.7-code",
+    "kimi-k3.1-pro"
+  ],
+  "model_list_returned": true,
+  "status": "MODEL_LIST_RECEIVED",
+  "unauthenticated_http_status": 401,
+  "model_list_authentication_verified": true
+}

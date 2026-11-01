@@ -1,0 +1,105 @@
+{
+  "recorded_at": "2026-11-01T02:19:55.526844+00:00",
+  "tested_commit": "1ccf126e59b570b72f26d46dbed650e97dc0d1e2",
+  "scope": "LOCAL_REGRESSION_ARCHIVED_REPLAY_REAL_TK_AI_CONTRACT_AND_PROVIDER_AUTH_AUDIT",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "platform": "Windows-10-10.0.17763-SP0",
+  "opencv": "4.13.0",
+  "tk": 8.6,
+  "versions": {
+    "numpy": "2.2.6",
+    "scipy": "1.18.1",
+    "opencv-python-headless": "4.13.0.92",
+    "rhino3dm": "8.32.1",
+    "ezdxf": "1.4.4",
+    "pytest": "9.1.1"
+  },
+  "repository_pins": {
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "opencv-python-headless": "4.13.0.92",
+    "rhino3dm": "8.32.1",
+    "ezdxf": "1.4.4"
+  },
+  "pin_mismatches": {
+    "numpy": {
+      "installed": "2.2.6",
+      "required": "2.5.2"
+    }
+  },
+  "environment_was_upgraded": false,
+  "clean_pinned_environment_tested": false,
+  "pytest_opencv_threads": 2,
+  "full_pytest_summary": "1159 passed, 1 skipped, 272 subtests passed in 408.12s (0:06:48)",
+  "full_pytest": {
+    "path": "outputs/local-validation-20261101/pytest.xml",
+    "sha256": "7ea39e593bebdb7b20f9b27431bb4e748fbd62d24fb688b9ee8bd0e1c744d21d",
+    "suites": [
+      {
+        "name": "pytest",
+        "errors": "0",
+        "failures": "0",
+        "skipped": "1",
+        "tests": "1432",
+        "time": "408.089",
+        "timestamp": "2026-11-01T10:04:50.027335+08:00",
+        "hostname": "ZJLZ1026"
+      }
+    ],
+    "testcase_elements": 1160,
+    "skips": [
+      {
+        "classname": "tests.test_gui.DashboardModelTests",
+        "name": "test_module_import_does_not_eagerly_import_tkinter",
+        "time": "0.001",
+        "reason": "tkinter was imported by the surrounding test process"
+      }
+    ],
+    "failures": []
+  },
+  "isolated_pytest": [
+    {
+      "path": "outputs/local-validation-20261101/pytest-isolated-tk.xml",
+      "sha256": "5cc124ac88085377356bda3fb2dc04242f246aed5858ef090e949bd53c7d53e2",
+      "suites": [
+        {
+          "name": "pytest",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "tests": "1",
+          "time": "0.162",
+          "timestamp": "2026-11-01T10:12:18.413217+08:00",
+          "hostname": "ZJLZ1026"
+        }
+      ],
+      "testcase_elements": 1,
+      "skips": [],
+      "failures": []
+    }
+  ],
+  "external_ai_inference_called": false,
+  "field_images_uploaded_to_ai": false,
+  "application_ai_end_to_end_validated": false,
+  "camera_opened": false,
+  "new_field_capture": false,
+  "production_code_changed": false,
+  "credentials_saved": false,
+  "requirements-dry-run.txt": "Collecting numpy==2.5.2 (from -r requirements.txt (line 1))\n  Downloading numpy-2.5.2-cp312-cp312-win_amd64.whl.metadata (6.6 kB)\nCollecting scipy==1.18.1 (from -r requirements.txt (line 2))\n  Downloading scipy-1.18.1-cp312-cp312-win_amd64.whl.metadata (61 kB)\nCollecting opencv-python-headless==4.13.0.92 (from -r requirements.txt (line 3))\n  Downloading opencv_python_headless-4.13.0.92-cp37-abi3-win_amd64.whl.metadata (20 kB)\nCollecting rhino3dm==8.32.1 (from -r requirements.txt (line 4))\n  Downloading rhino3dm-8.32.1-cp312-cp312-win_amd64.whl.metadata (2.2 kB)\nCollecting ezdxf==1.4.4 (from -r requirements.txt (line 5))\n  Downloading ezdxf-1.4.4-cp312-cp312-win_amd64.whl.metadata (10 kB)\nWould install ezdxf-1.4.4 numpy-2.5.2 opencv-python-headless-4.13.0.92 rhino3dm-8.32.1 scipy-1.18.1",
+  "pip-check.txt": "No broken requirements found.",
+  "cli-help.txt": "usage: python -m pipe_twin [-h]\n                           {inspect-model,analyze,simulate-stereo,analyze-stereo,adapt-calibration,adapt-legacy-calibration,validate-calibration,calibrate-stereo,capture-stereo,fetch-stereo,serve-capture,office-client,remote-capture,gui}\n                           ...\n\nAudit and generate traceable pipe digital-twin fixtures.\n\npositional arguments:\n  {inspect-model,analyze,simulate-stereo,analyze-stereo,adapt-calibration,adapt-legacy-calibration,validate-calibration,calibrate-stereo,capture-stereo,fetch-stereo,serve-capture,office-client,remote-capture,gui}\n    inspect-model       inspect a mesh-backed 3MF, Rhino 3DM, or STL model\n    analyze             analyze a manifest-bound legacy video or scheduled\n                        still photos\n    simulate-stereo     render deterministic stereo/depth/instance and\n                        elevation truth\n    analyze-stereo      analyze manifest-bound stereo still photos against a\n                        CAD model\n    adapt-calibration   convert OpenCV K/D/R/T plus a CAD pose to manifest\n                        calibration JSON\n    adapt-legacy-calibration\n                        safely convert a legacy camera_config.py after\n                        explicit unit and CAD pose review\n    validate-calibration\n                        validate a manifest-bound calibration and print repair\n                        guidance\n    calibrate-stereo    automatically calibrate a stereo rig from paired\n                        chessboard photo folders\n    capture-stereo      unattended capture of paired raw stereo PNGs from a\n                        UVC camera\n    fetch-stereo        download a completed remote run and verify all file\n                        hashes over HTTP\n    serve-capture       serve an authenticated, bounded remote stereo-capture\n                        control plane\n    office-client       start the office GUI together with the remote capture\n                        and evidence services\n    remote-capture      submit a bounded capture job to a remote capture agent\n    gui                 open the local CAD-bound pipe status dashboard\n\noptions:\n  -h, --help            show this help message and exit",
+  "provider_model_list_called": true,
+  "provider_model_list_authentication_verified": true,
+  "replay-evidence.json": {
+    "sha256": "6b6b26784eae8104ecbeaa68f82aa646cb371e457103dbb69cbd4b321b602b1e"
+  },
+  "gui-evidence.json": {
+    "sha256": "2c6a7a27bb6a8be66c82ca5faeead4c306d67f9902290750eb1bb8f5ca3d2d7b"
+  },
+  "ai-readiness.json": {
+    "sha256": "0418b7c6ce1ff13bf1103df8337578f6e18fcb7e7b4036bac2907124d2bbf4fc"
+  },
+  "kimi-connectivity.json": {
+    "sha256": "e8b2060bf1bc8134608a641fe57d3e02d461f783528202cbc04dc63812afe3f5"
+  }
+}

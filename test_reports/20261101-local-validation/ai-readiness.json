@@ -1,0 +1,218 @@
+{
+  "schema_version": "ai-integration-readiness-audit-v1",
+  "tested_commit": "1ccf126e59b570b72f26d46dbed650e97dc0d1e2",
+  "recorded_at": "2026-11-01T02:09:34.423332+00:00",
+  "scope": "LOCAL_STATIC_CALL_GRAPH_AND_SYNTHETIC_MEMORY_PROBES_ONLY",
+  "ready_with_api_key_only": false,
+  "external_ai_called": false,
+  "network_used": false,
+  "user_credentials_read_or_saved": false,
+  "camera_opened": false,
+  "production_code_changed": false,
+  "production_python_files_scanned": 95,
+  "tracked_production_call_sites": {
+    "build_model_section_reference": [],
+    "build_ai_section_assist": [
+      {
+        "file": "pipe_twin/ai_section_assist.py",
+        "line": 473
+      }
+    ],
+    "attach_ai_section_assist": []
+  },
+  "call_site_scan_limit": "Direct function-name/attribute AST calls; not a general dynamic call-graph proof.",
+  "current_gui_chain": [
+    "elevation_gui.py:713 submit(True)",
+    "elevation_gui.py:2331 _worker",
+    "elevation_gui.py:2347 analyze_stereo_capture",
+    "elevation_auto.py:1030 local installation_assist",
+    "elevation_auto.py:1121 atomic local report save",
+    "elevation_gui.py:1552 read-only AI table refresh"
+  ],
+  "implemented": [
+    "Fixed model point-map builder (not wired to production GUI/analysis).",
+    "Section-only response validation, fixed-ID checks and evidence status caps.",
+    "Deep-copy attach helper preserving strict report states (not wired to producer).",
+    "Read-only AI result table and explicit not-run fallback."
+  ],
+  "missing_for_end_to_end_ai": [
+    "GUI/CLI AI task trigger and per-request asynchronous lifecycle.",
+    "Current-image/section-reference request packaging and prompt.",
+    "Provider adapter, endpoint/model/credential configuration and network error handling.",
+    "Actual request-response parsing with bound assets and task fingerprints.",
+    "Production attach, atomic AI report persistence and reopen/display integration.",
+    "Live-provider end-to-end acceptance on field images."
+  ],
+  "probes": {
+    "source_hash_not_verified": {
+      "reference_input_hash_for_probe": "d701b3c5f38d205952144796f3c508d0686b7408273d3e5428ea7e0888a7d2a2",
+      "supplied_input_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "echoed_input_hash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "observed": {
+        "run_status": "VALID",
+        "section_decision": "CANDIDATES_READY",
+        "candidate_statuses": [
+          "SUPPORTED_VISIBLE"
+        ],
+        "reason_codes": [],
+        "installation_state": "OUT_OF_SCOPE_FOR_AI_SECTION_ASSIST"
+      },
+      "source_lines": [
+        "pipe_twin/ai_section_assist.py:260",
+        "pipe_twin/ai_section_assist.py:331"
+      ]
+    },
+    "unknown_observation_reference_not_resolved": {
+      "reference_not_present_in_inputs": [
+        "MISSING_IMAGE:MISSING_OBSERVATION"
+      ],
+      "echoed_references": [
+        "MISSING_IMAGE:MISSING_OBSERVATION"
+      ],
+      "observed": {
+        "run_status": "VALID",
+        "section_decision": "CANDIDATES_READY",
+        "candidate_statuses": [
+          "SUPPORTED_VISIBLE"
+        ],
+        "reason_codes": [],
+        "installation_state": "OUT_OF_SCOPE_FOR_AI_SECTION_ASSIST"
+      },
+      "source_lines": [
+        "pipe_twin/ai_section_assist.py:374",
+        "pipe_twin/ai_section_assist.py:377",
+        "pipe_twin/ai_section_assist.py:394"
+      ]
+    },
+    "unresolved_control_plane_does_not_cap_candidate": {
+      "control_section": {
+        "schema_version": "pooled-control-section-v1",
+        "source": "PIPE_SEGMENT_AGGREGATION_COMMON_SUPPORT_MIDPOINT",
+        "status": "UNRESOLVED",
+        "station_mm": null,
+        "interval_mm": null,
+        "reason_codes": [
+          "COMMON_AXIAL_SUPPORT_NO_INTERSECTION"
+        ]
+      },
+      "observed": {
+        "run_status": "VALID",
+        "section_decision": "CANDIDATES_READY",
+        "candidate_statuses": [
+          "SUPPORTED_VISIBLE"
+        ],
+        "reason_codes": [],
+        "installation_state": "OUT_OF_SCOPE_FOR_AI_SECTION_ASSIST"
+      },
+      "source_lines": [
+        "pipe_twin/ai_section_assist.py:326",
+        "pipe_twin/ai_section_assist.py:380"
+      ]
+    }
+  },
+  "existing_test_scope": {
+    "static_response_fixture": "tests/test_ai_section_assist.py:40",
+    "provider_names_are_fixture_metadata": "tests/test_ai_section_assist.py:63",
+    "gui_direct_report_injection": "tests/test_elevation_gui.py:203",
+    "previous_full_test_evidence_commit": "cb04f90d43a85fcb4f4aa0d5ca1c5afaaa258abc",
+    "previous_evidence_precedes_ai_contract_and_control_plane_commits": true
+  },
+  "interpretation": "These observations identify safeguards still needed at the future integration boundary. No current production path sends images to an external AI, and these probes do not demonstrate a live-provider failure or validate recognition accuracy.",
+  "production_source_sha256": {
+    "pipe_twin/__init__.py": "a45b46b1eba274e4fe539b6e06fcaef00ab06d804e25a91cae3b5be225c02084",
+    "pipe_twin/__main__.py": "9db74feb31653aa7028ab831a0843a1e259585d87b5119b918e5abe7f1309819",
+    "pipe_twin/ai_section_assist.py": "dc6b582fb906e7a5792b14b64f21659f58379a280a097b2436dd44f713374e39",
+    "pipe_twin/ai_section_display.py": "a441e19baa110a07edf3f1d1b1e138866d1b1ebf9f4831e9714601a9ad9c34d1",
+    "pipe_twin/artifact_io.py": "06271775de033157890e54cd8935df613ddfe35ea00e01aa326a80a3903617ab",
+    "pipe_twin/assist_display.py": "de89245e08389f47b7230bde6960e7ea47021a56ec7d06f4dcc318f87b41c06e",
+    "pipe_twin/assist_prior_geometry.py": "8eef3d4efb50b0c4666ca34e93bf24597980b083e38c947f235a8b9ae1d83b6e",
+    "pipe_twin/axial_aggregation.py": "053a0eb4a20adea773aa9c4e2130a70a51f87d5cc47f455a68a1c127911af96f",
+    "pipe_twin/axial_consistency.py": "bc9038e3cb2a3d5abd269fba81cc7e65bbd35627b59434cd24324c29bb05ea30",
+    "pipe_twin/axial_selection.py": "bc19fcf8762f88ceeeca5448603ab265b25324019c297ff5d3abb4ead030ecc1",
+    "pipe_twin/axial_selection_gui.py": "fcc7563b1be1a4b1909507f67867c2e1702607e6b6174640231598b502a3c593",
+    "pipe_twin/cad_model.py": "48d5874792bc2c4b34cd289e2284ce57a41107d5419514c70dfc70bb5ce1b923",
+    "pipe_twin/calibration_adapter.py": "33e4c35c6c76d2a62cea522e7f63cce40e9793ee9ce3dc039fe129f6cdd995a8",
+    "pipe_twin/calibration_bundle.py": "da43d5954ad5202cb5d7a06eba844a22bdb012ae77ee3041e532c240c822eba9",
+    "pipe_twin/calibration_quality.py": "dce099f119e2b414c08f9101d708c6870aade2ec5c00d1911a4ea026c78fcaf4",
+    "pipe_twin/calibration_wizard.py": "4466e1d5a4f26d5d6e68be9c621ff2e886a99ae78419adb4b59a0edc2e93233e",
+    "pipe_twin/camera_exposure.py": "17ba381dd1b4281c661166302716d768e05392796d54b4646fae385363c45e20",
+    "pipe_twin/camera_lock.py": "310f53bb6773aa4ab89e4b3bb08704ac28c4ec4b524a91b3e2ec459e55f968d2",
+    "pipe_twin/camera_pose.py": "8fcd1c786d525de97645206cf250736642cb22c150f66013531f6de9ad1266e7",
+    "pipe_twin/camera_view.py": "faced668985eeb0be6b0a8adb4d5298ee0d8624c91aefbb5189b3ed045eb87d1",
+    "pipe_twin/capture_agent.py": "ea2a1255c763ae3f597aa6a237c5ea468c6e74fecf1463ba4416e506fa1015a2",
+    "pipe_twin/capture_contracts.py": "84f261b444eb539dfba2ca0af7ca582d18d6826f9c2beb0f3ab606ee0d5e2f63",
+    "pipe_twin/capture_gui.py": "d90a3835a9839e39f5d31fa041b09aacc6e02fab8b84403003ce643c54da6d4e",
+    "pipe_twin/capture_quality.py": "049db54b1bcce3d288eba659a93336db262f4a1ffe2b388c6a761a5468c89d09",
+    "pipe_twin/capture_quality_gui.py": "a9a3a8250d323879d91812306208409513498f7f24c8337e61d684e61519fda3",
+    "pipe_twin/cli.py": "9ff83274c31370ec17b0318492a47a228982ecbe976c0a76bfc248a12f86a6ec",
+    "pipe_twin/detector.py": "cb82feb2fb60d60f77b1a9b9c83cd9add0fe4f29c862706ea601ec5579b63b6f",
+    "pipe_twin/directshow_controls.py": "55e3568998a9f6c056e0250dc0bb2df6762ce64cd845d40222123c233e391279",
+    "pipe_twin/dxf_elevation.py": "e17188e216e908d823ff9015ebfef634757ef932cc47f21d379596eaa851af10",
+    "pipe_twin/elevation_auto.py": "8124c26135649b021373aa24f8ca0e97ab3f24fee6040826fb387d9d3e732d5e",
+    "pipe_twin/elevation_dataset.py": "da8073f52478812f2ea5e8c4b95020bac1461aaffa0249ec12d458975f977ea8",
+    "pipe_twin/elevation_gui.py": "c52cd20e0bf411030fed48d2b221f1f196c81539594dda079e9ce87b421f47e9",
+    "pipe_twin/elevation_presenters.py": "51f89bd569d67b9997e938c1b6024f23408f7b00dbd4a1302324df1587c6a840",
+    "pipe_twin/elevation_registration.py": "3f439829ae65a4eec5b643089770e6faaf62a2c37d8d623950f1d3e076064fd5",
+    "pipe_twin/elevation_viewer.py": "960b0be4d5e8c5ebeb96ef970066a729b717cbea2780e9922db26e5cdbad01f3",
+    "pipe_twin/elevation_zones.py": "a35b3eb73ee39077d0e51da2ad7b4f39f0085b1e55e4d2b8c5c310116ed51436",
+    "pipe_twin/epipolar_refinement.py": "4de0a4af2efdab49ebd08873111e9f73cbbaaac99d4f450316a2c61db6b97c90",
+    "pipe_twin/ground_check.py": "1cae81382edbded38fff4129e0de24b493ad9fd4f76a3c1a6d4057ee7433bbd7",
+    "pipe_twin/ground_correction.py": "0027f8e0403b44fd460e0ba37f694ea5061226b7ad6bb767ae7d4310548f3252",
+    "pipe_twin/ground_inspection.py": "2952c88b7ea2ade8b8139f76d34e3716232bd99460c2481856b8932a88f1d63e",
+    "pipe_twin/ground_monitor.py": "3d52e4ad8a4c2bf4e0c840d8c49cf5d8710338ccc5b3e19de4c451200de2c8e3",
+    "pipe_twin/ground_monitor_gui.py": "5e05f600dc42ba2a3889495533e2ee6abee851312d28dde63e58c0014082626b",
+    "pipe_twin/ground_source.py": "d77ab474d1edab59e4406d1e0d2650a08fbe1c9de48cbdfc786d239b3b7ad163",
+    "pipe_twin/ground_visualization.py": "e55c02b5aa51726e52e6c5a3f0ebb1dd63007619574dc595f6485ed6bd76a20b",
+    "pipe_twin/gui.py": "8c66a21ab019c2b525250ca63626301cbf21d84e4791b9f5ea8f1c7452d5fccd",
+    "pipe_twin/gui_dashboard.py": "f539b70cdfedc179650634fc64930fb4836764beb82b58509488595581d25b16",
+    "pipe_twin/image_line_geometry.py": "335587bd7dc99e3ddd99e6010158da53ab213f27bd28b49dcf7bb69d314bc852",
+    "pipe_twin/image_regions.py": "d567f3bce477439524f371393a28b203159f0e4e0319838ea7fe95e807cc9846",
+    "pipe_twin/installation_assist.py": "acc1554dd49f9c68da5efeb2d5866ab247ffbb3b5e8d77c957e6a0deda771f95",
+    "pipe_twin/installation_assist_config.py": "4ba0935b279dce32f1ccc930e4aae8459ac0b7cc0f0dd7b44d0e054aa10f9c1c",
+    "pipe_twin/local_surface.py": "1dfc3d2cf33ad547051a5ac454e44fc775537ea60ff546cd44584aaad1455c48",
+    "pipe_twin/log_viewer.py": "a448e78bf3ea289b79c02dc58bfc43a5a706e8179d412aeecbeb5540c0820612",
+    "pipe_twin/logging_config.py": "b0d3e094db3bca40bc09b4789c598af8466d533230a14f13b203a360c7b9fa63",
+    "pipe_twin/matching_config.py": "8cba46f95e43d83b4ae6cf0c6304a0d496ee0685e7b170f0e4dd8cf3e6bc034a",
+    "pipe_twin/measurement_book.py": "bee4133067aec3fc79cf09ab5f13300aad0090a769777a9bf9bd12735cc59197",
+    "pipe_twin/measurement_gui.py": "e70667344b7844b2150876ef9c11b7f3ec723fa916baba4c40957769eb8b4a3d",
+    "pipe_twin/metrology.py": "626921def89e3cf6a0e95b90d237c6622f8f3d7a7c2b53346cda8eeb8b81e1bd",
+    "pipe_twin/model_3mf.py": "862c4eb04e40bc08535bed8962b1b246e021c8360e1022f23609c51834e96f87",
+    "pipe_twin/model_section_reference.py": "5ca6ea85af9d0e0f956dbcfaa33c60d9241b50d4022445441247bf7d1404d0bd",
+    "pipe_twin/model_zones.py": "8044050a06bda4e156579a9b92aff764601991b0d71b75aa9ec296310ad34a19",
+    "pipe_twin/observation_evidence.py": "da66a56af57f76f77c12aa7b2fb86bdf669e90520e63f8c0398c8af058bf12e8",
+    "pipe_twin/office_client.py": "9328b253436bf8fe7e02fdb03dd122cbc6c3ee5a2980429d76fd3493d59d7c53",
+    "pipe_twin/parallel_local.py": "3d2118c13889aa333255c1b7355a10751656455ac7fab9f58d2f9c9829798748",
+    "pipe_twin/photo_capture.py": "3507ba77a5a51bbe45f834d4208cf74ebe16f5aa4970c652ee4ee45a86ec3a87",
+    "pipe_twin/pipe_geometry.py": "e918ef2c2ffb6f99b7b4ae2e12a92dcf324e579e730929743b4f1dcd19ed4d9e",
+    "pipe_twin/pipeline.py": "897a51015228c49375362126a205b60be5c03bca2f77253036ccfcdb8a45c90f",
+    "pipe_twin/pooled_sections.py": "fdc88f6c335e5afb33ce98f74d4e15d013a4c4671e550f43dd2538e98b939d9b",
+    "pipe_twin/projection_diagnostics.py": "c7c934ccabd854f0d24b9b10579f50655e489103d8188b04438358e2be4e3304",
+    "pipe_twin/qr_registration.py": "a5c9d03b014e6845d2912531798debedc796712eda9d873092cda04441fdaae0",
+    "pipe_twin/quick_capture_gui.py": "9cbaadc8618e17bf19a4f8d118e3a2f83baf3970715db42d4cb830d012972582",
+    "pipe_twin/recognition/__init__.py": "0efbe060eac21cf0132be143e25ae2c01771c9241a6f6ef4df2c0200950af293",
+    "pipe_twin/relative_scene.py": "20c375a27f33f06dfab626d636c74d428020d02d7499ac135ca364dc46d5e17c",
+    "pipe_twin/remote_capture.py": "f6f79a8171c59bc527df814f62e219561ed685658cba753ad49b0892f50248cc",
+    "pipe_twin/remote_fetch.py": "236208641a32117431b055cda41bf012505b655cda5eb0b723bd3420d217b2cd",
+    "pipe_twin/remote_files.py": "93f14a54b9aeb9c0ecd19eed7b46f19e94f0ff8523260b05f546cb98d640ef85",
+    "pipe_twin/section_diagnostics.py": "5c4cec57768e5d3d71be30cbf8305c6ccdc8bb0d5c8d0f0c4e0903405e290501",
+    "pipe_twin/section_display.py": "47e0c2b114b04c54b15ffb9bf3766d16ae645c81ef5683ce9b9fb8ba7dc4c0ba",
+    "pipe_twin/section_model.py": "094ccdb4c9196c74f118f2a2000e13e6c7f8bd526a6d08f5ecd3a33a0dd18c86",
+    "pipe_twin/section_position.py": "eaabd5f47d7627f65fcf4900072bce1df153d19ff715591cd486862ab3cc164f",
+    "pipe_twin/section_status.py": "beed3625b5a36ce2bf1937c75c2bc302497c10024284dd319b6d45676d8457c9",
+    "pipe_twin/state.py": "725113110e6ad0af8565849b88b8509d7a548d23d0f712052cf3b57041baa927",
+    "pipe_twin/stereo_analyzer.py": "d1e386cec8774b5cd36b41291baa00776164018ff1c3fb11765958242ce1b449",
+    "pipe_twin/stereo_camera.py": "c61ebafe95781f8556c0749fc7ae53300c25ae7aae01612c7be465a45f893acb",
+    "pipe_twin/stereo_contracts.py": "407da00df3b930f75368259cd985f9d6ab11a1fd265ea2ebd2d3baf12956b95e",
+    "pipe_twin/stereo_correspondence.py": "7f250e46d6caf48448c93f01fa339af307bc6c0418cc15f7a409aff1145725d7",
+    "pipe_twin/synthetic_stereo.py": "532b8a08f6a0e092e35e6a9f31ba566e986e893074fe1fb44c0b7c639c00af47",
+    "pipe_twin/temporal_sections.py": "0f13fb8494b1fcc318c6e1e75d00c286db36b2b992cc5855a9d6ed897d56f1e8",
+    "pipe_twin/temporal_stereo.py": "319410db1375161ac6f888268e3f92262b9fd54b8d38c09422c56624cdcf624c",
+    "pipe_twin/view_geometry.py": "64d37d9edfa7439539be792faae58a1c0186f20c538a2bd70a8070de211a873b",
+    "pipe_twin/workbench_profile.py": "3f6977fdca71e931a9b4f16c1581322ebe1c3cf847b949b23b4f68f0042321dd",
+    "pipe_twin/workflow_status.py": "40a98d8bfd37968d28ec9f0433a8216bd279512f8b4fde14cb21f3e30939a574",
+    "scripts/compare_stereo_processing.py": "baff2e6eaca5910f0932bc524ddf19c87a0cbcc6f517f2ab08f696264184d663",
+    "scripts/diagnose_stereo_preview.py": "ae8444ab48e083430139fb31b30372a8d53c9ab9fdfc0deb3d0cdb8183b9412a",
+    "scripts/replay_calibration_diagnostic.py": "e69290d40bae5ba4cbb06e008be3f58ed5ab0e3ffa50afa233e892493bbf17fe",
+    "scripts/smoke_measurement_gui.py": "fcbef12fe54168b7e131dcea759d56be84a899ca07493ca9ae14d59ab28dd483"
+  }
+}

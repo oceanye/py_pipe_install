@@ -1,5 +1,17 @@
 # 测试与远程开发交接
 
+## 2026-11-01 本机验收：Kimi 鉴权通过，应用接入仍未完成
+
+本机实测生产提交 `1ccf126`：**1159 passed、1 skipped、272 subtests passed（408.12 s）**；唯一跳过的 Tk 懒加载检查在独立进程 **1 passed**。同一组 10 对原图完整生产回放完成，**4/10、整组 INVALID**；新身份门禁正确返回 `TEMPORAL_SEQUENCE_INVALID_FOR_IDENTITY`，0 个管号候选，严格安装/就位仍 12 UNKNOWN。控制断面已定义，轴向公共区间 81.458～200.302 mm、中点 140.880 mm；4 个条件直径与旧归档完全一致，52 个源文件未变。地面轴向修正仍为试验模式，不是测量验收通过。
+
+真实 Tk 窗口 **17/18 项通过**，发现并保留一项失败：显式 `ai_section_assist.status=NOT_RUN` 且候选为空时，表格误显示“证据不足”，详情却显示“未运行”；无 AI 命名空间时正常。应修复 `ai_section_display.section_candidate_rows` 的空候选分支，覆盖三种状态。其他模型选择联动、控制断面、歧义/缺项、输入失效和过期结果丢弃通过。
+
+用户已提供 Kimi 凭据，官方模型列表接口带凭据 HTTP 200、不带凭据 HTTP 401。**不是只缺 key：生产代码仍没有提供方适配器、图像/提示词打包、GUI AI 任务入口和结果保存重载链。** 未请求 AI 推理或上传现场图片，凭据未写入仓库或本地配置。实际模型列表含 `kimi-k3.1-pro`，测试 fixture 的 `kimi-3.1-pro` 不是该模型 ID。
+
+下一步由远程接通上述链路，补来源/图片引用核验、控制断面资格和独立 AI 结果接纳；修复 NOT_RUN 显示，再用同一组图像完成真实 AI 对照。单元测试通过不能替代端到端验收。当前本机 NumPy 2.2.6 与锁定的 2.5.2 不同，需要独立环境补验；本轮没有修改现用依赖或生产代码。
+
+完整范围、证据与复现脚本见 [本地验收报告](test_reports/20261101-local-validation/report.md)。本节覆盖下文旧版本“完整回归”的数字及已完成边界；手机第三路径和相机运动配准仍未实现。
+
 ## 2026-11-01：独立 AI 断面候选模块
 
 新增 `pipe_twin.ai_section_assist`，把多模态提供方的断面判断限制在固定模型断面点位 P01…Pn。契约版本为 `ai-section-assist-v1`，只允许 `SUPPORTED_VISIBLE / AMBIGUOUS / UNRESOLVED / RECAPTURE_RECOMMENDED` 四类点位状态，不包含 `INSTALLED`、`NOT_INSTALLED` 或三维管段字段。模型断面由 `model_section_reference` 的观察方向和 2D 坐标提供；重叠点位、断面证据冲突、缺少候选会保守降级。
