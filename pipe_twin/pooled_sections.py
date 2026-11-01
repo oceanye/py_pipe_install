@@ -35,6 +35,56 @@ EDGE_EXTRACTION_POLICY = {'search_radius_px': 3., 'gaussian_sigma_px': .7, 'axia
 EDGE_EXTRACTION_POLICY_SHA256 = hashlib.sha256(json.dumps(EDGE_EXTRACTION_POLICY, sort_keys=True).encode()).hexdigest()
 
 
+def _control_section(candidates, axis, *, omitted_indices=()):
+    """Define the control plane at the midpoint of pooled common support.
+
+    ``synchronize_axial_blocks`` already computes a physical common interval
+    for each stable stereo silhouette.  Its interval is the only axial
+    evidence used here; image aggregation bands remain pixel-only and are
+    never converted to a millimetre station by assumption.  The intersection
+    midpoint is therefore the control section for the entire pooled result.
+    """
+    omitted = set(omitted_indices)
+    base = {
+        'schema_version': 'pooled-control-section-v1',
+        'source': 'PIPE_SEGMENT_AGGREGATION_COMMON_SUPPORT_MIDPOINT',
+        'definition': 'MIDPOINT_OF_POOLED_COMMON_AXIAL_SUPPORT',
+        'status': 'UNRESOLVED',
+        'station_mm': None,
+        'interval_mm': None,
+        'candidate_ids': [],
+        'reason_codes': [],
+    }
+    if axis is None:
+        base['reason_codes'] = ['COMMON_AXIS_UNRESOLVED']
+        return base
+    intervals = []
+    for index, candidate in enumerate(candidates):
+        if index in omitted or candidate.get('dimension_status') != 'CONDITIONAL':
+            continue
+        support = candidate.get('common_axial_support') or {}
+        interval = support.get('common_interval_mm')
+        if isinstance(interval, (list, tuple)) and len(interval) == 2:
+            try:
+                low, high = float(interval[0]), float(interval[1])
+            except (TypeError, ValueError):
+                continue
+            if np.isfinite([low, high]).all() and high > low:
+                intervals.append((low, high, candidate.get('candidate_id')))
+    if not intervals:
+        base['reason_codes'] = ['COMMON_AXIAL_SUPPORT_UNRESOLVED']
+        return base
+    low = max(item[0] for item in intervals)
+    high = min(item[1] for item in intervals)
+    if not np.isfinite([low, high]).all() or high <= low:
+        base['reason_codes'] = ['COMMON_AXIAL_SUPPORT_NO_INTERSECTION']
+        return base
+    base.update(status='DEFINED', station_mm=float((low + high) / 2.),
+                interval_mm=[float(low), float(high)],
+                candidate_ids=[item[2] for item in intervals if item[2] is not None])
+    return base
+
+
 def _colour_gradient(image, proposal, sampling_mask=None):
     """Localize the outer colour transition, without a fitted-line prior.
 
@@ -552,6 +602,7 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
               'occlusion_recovered': False, 'nominal_dimensions_used_in_fitting': False,
               'views': {role: [_compact(i) for i in items] for role, items in views.items()},
               'proposal_audit': proposal_audit, 'candidates': [], 'model': None,
+              'control_section': _control_section([], None),
               'epipolar_refinement': refinement,
               'ground_correction': correct_pipe_axis([], k, {}, ground_result)[1],
               'aggregation_band': band_audit,
@@ -559,14 +610,18 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
     # The projection fitter uses a shared rectified K. Translate right image
     # coordinates to that K after any asymmetric ROI crop; never recenter eyes.
     if not np.allclose(k[:2, :2], kr[:2, :2], atol=1e-7):
-        return result | {'status': 'UNSUPPORTED_RECTIFIED_INTRINSICS'}
+        return result | {'status': 'UNSUPPORTED_RECTIFIED_INTRINSICS',
+                         'control_section': _control_section([], None) | {
+                             'reason_codes': ['UNSUPPORTED_RECTIFIED_INTRINSICS']}}
     offset = k[:2, 2]-kr[:2, 2]
     reasons = [[_compatibility_reasons(a, b, offset, disparity_range) for b in views['right']] for a in views['left']]
     comparisons = np.array([[not codes for codes in row] for row in reasons], bool).reshape(
         len(views['left']), len(views['right']))
     result['pairing_audit'] = _pairing_audit(views, reasons, comparisons)
     if comparisons.ndim != 2 or not comparisons.size:
-        return result | {'status': 'NO_STABLE_STEREO_BOUNDARIES'}
+        return result | {'status': 'NO_STABLE_STEREO_BOUNDARIES',
+                         'control_section': _control_section([], None) | {
+                             'reason_codes': ['NO_STABLE_STEREO_BOUNDARIES']}}
     pair_indexes = [(i, j) for i, j in zip(*np.nonzero(comparisons))
                     if comparisons[i].sum() == 1 and comparisons[:, j].sum() == 1]
     all_lines = []
@@ -679,15 +734,21 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                     result['candidates'][index]['reason_codes'].append('POSSIBLE_SHARED_PIPE_INSTANCE')
     for index, candidate in enumerate(result['candidates']):
         candidate['included_in_section_model'] = index not in omitted
+    control_section = _control_section(result['candidates'], axis, omitted_indices=omitted)
+    if axis is not None:
+        control_section['axis_camera'] = np.asarray(axis, dtype=float).tolist()
+    result['control_section'] = control_section
     matched = {x for i, j in pair_indexes for x in (views['left'][i]['candidate_id'], views['right'][j]['candidate_id'])}
     result['unpaired_candidate_ids'] = [c['candidate_id'] for items in views.values() for c in items if c['candidate_id'] not in matched]
     if axis is not None:
         included = [m for index, m in enumerate(model_items) if index not in omitted]
         origin_id = next((m['id'] for m in included if m['fit']['status'] == 'CONDITIONAL_FIT'), None)
         result['model'] = build_section_model(included, axis, origin_id=origin_id,
+            station_mm=control_section['station_mm'] or 0.,
             metadata={'nominal_dimensions_used_in_fitting': False, 'occlusion_recovered': False,
                       'ground_correction': correction,
                       'epipolar_refinement': refinement,
-                      'candidate_quality': {c['candidate_id']: c['reason_codes'] for c in result['candidates']}})
+                      'candidate_quality': {c['candidate_id']: c['reason_codes'] for c in result['candidates']},
+                      'control_section': control_section})
     return result | {'status': 'ANALYZED', 'boundary_pair_count': len(pair_indexes),
                      'conditional_section_count': sum(c['dimension_status'] == 'CONDITIONAL' for c in result['candidates'])}

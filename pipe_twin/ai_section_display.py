@@ -149,6 +149,18 @@ def ai_section_summary_lines(report):
         "范围：仅定位模型断面中的候选点位；不判断三维管段或安装完成状态。",
         f"提供方：{data.get('provider') or '未记录'}；契约：{data.get('schema_version') or '未记录'}。",
     ]
+    control = data.get("control_section") or {}
+    if isinstance(control, dict):
+        if control.get("status") == "DEFINED":
+            interval = control.get("interval_mm") or []
+            station = control.get("station_mm")
+            try:
+                station_text = f"{float(station):.1f} mm"
+            except (TypeError, ValueError):
+                station_text = "已定义"
+            lines.append(f"控制断面：管段汇聚共同支撑区间中点 {station_text}（区间 {interval}）。")
+        elif control:
+            lines.append("控制断面：管段汇聚共同支撑区间未能稳定确定。")
     codes = data.get("reason_codes") or []
     lines.extend("提示：" + REASON_LABELS.get(str(code), str(code)) for code in codes)
     for row in section_candidate_rows(report):

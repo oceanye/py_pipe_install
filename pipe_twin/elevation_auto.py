@@ -451,6 +451,7 @@ def analyze_elevation_auto_groups(groups: list[Mapping], *, calibration: Any, pi
             "ground_check": ground,
             "pipes": rows, "registration": current["registration"], "local_surface": current_surface,
             "section_evaluation": section, "position_assessment": section['position_assessment'],
+            "control_section": copy.deepcopy(section.get('control_section')),
             "status_refresh": current.get("status_refresh"),
             "capture_audit": {"count": len(captures), "groups": captures},
             "registration_required": True, "qr_registration_required": False,
@@ -841,6 +842,15 @@ def _merge_zone_reports(zone_reports: list[Mapping[str, Any]], *, groups: list[M
         "mode": "elevation_auto", "scope": "zones", "scope_settings": copy.deepcopy(dict(scope)),
         "counts": {state: sum(row["installation_state"] == state for row in rows) for state in STATE_ZH},
         "pipes": rows, "registration": registration,
+        "control_section": (copy.deepcopy(section_evaluations[0].get('control_section'))
+                            if len(section_evaluations) == 1 else {
+                                'schema_version': 'pooled-control-section-v1',
+                                'source': 'MULTIPLE_ZONE_CONTROL_SECTIONS',
+                                'definition': 'ZONE_CONTROL_SECTIONS_REQUIRE_SEPARATE_REVIEW',
+                                'status': 'UNRESOLVED', 'station_mm': None,
+                                'interval_mm': None, 'candidate_ids': [],
+                                'reason_codes': ['MULTIPLE_ZONE_CONTROL_SECTIONS']
+                            }),
         "section_evaluations": section_evaluations, "position_assessment": position,
         "local_surface": {"observations": observations, "rejected": rejected, "point_cloud": point_cloud, "audit": audit,
                           "image_candidates":image_candidates},

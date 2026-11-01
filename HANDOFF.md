@@ -6,6 +6,8 @@
 
 `attach_ai_section_assist()` 深拷贝报告后写入 `report['ai_section_assist']`，输入报告、`pipes`、`counts` 和严格安装状态保持不变。`elevation_gui.py` 新增 **AI 断面候选** 分页和详情页：显示模型管号、断面点位、候选状态、证据质量及原因；选择行只做模型高亮，不产生安装关联。没有提供方结果时显示 `NOT_RUN / AI_PROVIDER_NOT_CONFIGURED`，不会把本地辅助识别冒充 AI。
 
+控制断面与现有管段汇聚统一：`pooled_sections.py` 从纳入共同断面模型的候选中取 `common_axial_support` 区间交集的中点，写入 `control_section`，并把该 `station_mm` 传入断面模型。交集不存在时控制断面保持 `UNRESOLVED`；多分区各自形成控制面时不强行合并。AI 命名空间只复制这一断面来源和坐标元数据，不改变主线安装判定。
+
 本轮新增契约与隔离回归 `tests/test_ai_section_assist.py`，并补充 GUI 只读分页检查。Kimi 或其他提供方尚未在主线自动调用；后续接入应把固定断面图、观察方向、点位映射和输入哈希交给可替换适配器，再将结构化结果通过该契约回填。
 
 ## 2026-10-31 三路径识别规划 仅文档交付

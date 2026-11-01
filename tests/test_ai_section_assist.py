@@ -90,6 +90,12 @@ def test_report_section_evidence_gate_does_not_read_or_change_strict_pipes_and_c
         "counts": {"INSTALLED": 1, "UNKNOWN": 1},
         "pipes": [{"pipe_id": "UP", "installation_state": "INSTALLED"}],
         "section_evaluation": {
+            "control_section": {
+                "schema_version": "pooled-control-section-v1",
+                "status": "DEFINED", "station_mm": 321.5,
+                "interval_mm": [300.0, 343.0],
+                "source": "PIPE_SEGMENT_AGGREGATION_COMMON_SUPPORT_MIDPOINT",
+            },
             "position_assessment": {
                 "pipes": [
                     {"pipe_id": "UP", "state": "UNKNOWN", "reason_codes": ["NO_UNIQUE_VISIBLE_SECTION"]},
@@ -108,6 +114,8 @@ def test_report_section_evidence_gate_does_not_read_or_change_strict_pipes_and_c
     assert "NO_UNIQUE_VISIBLE_SECTION" in result["ai_section_assist"]["candidates"][0]["reason_codes"]
     assert result["ai_section_assist"]["candidates"][1]["section_status"] == "AMBIGUOUS"
     assert result["ai_section_assist"]["evidence_source"] == "REPORT_SECTION_EVALUATION"
+    assert result["ai_section_assist"]["control_section"]["station_mm"] == 321.5
+    assert result["ai_section_assist"]["control_section"]["source"] == "PIPE_SEGMENT_AGGREGATION_COMMON_SUPPORT_MIDPOINT"
 
 
 def test_section_namespace_does_not_echo_strict_evidence_state():
@@ -152,3 +160,19 @@ def test_no_response_is_explicit_not_run_and_has_no_candidates():
     assert result["run_status"] == "NOT_RUN"
     assert result["candidates"] == []
     assert result["reason_codes"] == ["AI_SECTION_NOT_RUN"]
+
+
+def test_pooled_control_section_is_carried_into_ai_namespace_without_installation_fields():
+    control = {
+        "schema_version": "pooled-control-section-v1",
+        "source": "PIPE_SEGMENT_AGGREGATION_COMMON_SUPPORT_MIDPOINT",
+        "status": "DEFINED", "station_mm": 123.4,
+        "interval_mm": [100.0, 146.8], "candidate_ids": ["A"],
+        "reason_codes": [],
+    }
+    report = {"section_evaluation": {"control_section": control,
+                                     "position_assessment": {"pipes": []}}}
+    result = build_ai_section_assist(_point_map(), report=report)
+    assert result["control_section"] == control
+    assert "installation_state" in result
+    assert result["installation_state"] == "OUT_OF_SCOPE_FOR_AI_SECTION_ASSIST"

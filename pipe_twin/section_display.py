@@ -32,6 +32,9 @@ REASONS = {
     'AXIAL_IMAGE_PARAMETERIZATION_UNSUPPORTED': '当前轴向投影不适用此汇聚方式',
     'AXIAL_DIRECTION_MISMATCH': '左右候选的管轴投影方向不一致',
     'GROUND_AXIS_CONFLICT': '水平管假设与图像边界不一致',
+    'COMMON_AXIAL_SUPPORT_UNRESOLVED': '管段汇聚没有形成可用的共同轴向支撑区间',
+    'COMMON_AXIAL_SUPPORT_NO_INTERSECTION': '各候选的共同轴向支撑区间没有交集',
+    'MULTIPLE_ZONE_CONTROL_SECTIONS': '多个分区各有控制断面，需分别查看，未合并为一个断面',
 }
 
 
@@ -63,6 +66,18 @@ def section_summary_lines(report, *, detailed=False):
     lines += ['', pooling_summary(report)]
     for stage in stages:
         lines += ['', f"{stage.get('zone_id', '全幅')}：稳定双目边界 {stage.get('boundary_pair_count', 0)} 对"]
+        control = stage.get('control_section') or {}
+        if control.get('status') == 'DEFINED':
+            interval = control.get('interval_mm') or []
+            station = control.get('station_mm')
+            try:
+                station_text = f'{float(station):.1f} mm'
+            except (TypeError, ValueError):
+                station_text = '已定义'
+            lines.append(f'控制断面：管段汇聚共同支撑区间中点 {station_text}；区间 {interval}。')
+        elif control:
+            reasons = '、'.join(REASONS.get(r, r) for r in control.get('reason_codes', []))
+            lines.append('控制断面：未能从管段汇聚共同支撑区间确定中间面。'+((' '+reasons) if reasons else ''))
         if any(edge.get('status') == 'STABLE' and 'retained_column_runs_px' not in edge and 'retained_axial_runs_px' not in edge
                for view in stage.get('views', {}).values() for item in view
                for edge in item.get('aggregation', {}).get('boundaries', [])):

@@ -323,6 +323,11 @@ def build_ai_section_assist(
     rows, metadata = _point_rows(point_map)
     evidence, evidence_source = _extract_section_evidence(report, section_evidence)
     payload = _base_payload(rows, metadata, evidence_source=evidence_source)
+    control_section = evidence.get("control_section") if isinstance(evidence, Mapping) else None
+    if isinstance(control_section, Mapping):
+        # The pooled-section midpoint is the only control-plane metadata
+        # copied into the AI namespace.  It contains no installation state.
+        payload["control_section"] = copy.deepcopy(dict(control_section))
     payload.update(_source_metadata(source))
     if ai_response is None:
         return payload

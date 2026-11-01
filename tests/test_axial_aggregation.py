@@ -111,6 +111,10 @@ def test_independent_geometry_flows_from_stable_boundaries_to_free_radius(monkey
     assert not candidate['reason_codes']
     assert result['nominal_dimensions_used_in_fitting'] is False
     assert result['occlusion_recovered'] is False
+    assert result['control_section']['status'] == 'DEFINED'
+    assert result['control_section']['source'] == 'PIPE_SEGMENT_AGGREGATION_COMMON_SUPPORT_MIDPOINT'
+    assert result['control_section']['interval_mm'][0] < result['control_section']['station_mm'] < result['control_section']['interval_mm'][1]
+    assert result['model']['section']['station_mm_along_axis_from_left_origin'] == result['control_section']['station_mm']
     json.dumps(result, allow_nan=False)
 
 
