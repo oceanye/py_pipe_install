@@ -241,6 +241,104 @@ class ElevationGuiTests(unittest.TestCase):
         self.assertFalse(self.dialog.views['left'].canvas.find_withtag('image-candidate'))
         self.assertTrue(self.dialog.views['left'].canvas.find_withtag('ai-photo-source'))
 
+    def test_ai_cross_section_shows_independent_states_and_bidirectional_selection(self):
+        from test_ai_section_plot import _report
+        report = _report()
+        report['pipes'][0]['installation_evidence_qualified'] = True
+        before = copy.deepcopy(report)
+        self.dialog.report = report
+        self.dialog.refresh_table()
+        self.dialog.show_ai_section()
+        self.root.update()
+        viewer = self.dialog.model_viewer
+        self.assertEqual(viewer.section_result_mode.get(), 'AI')
+        self.assertEqual(len(viewer.section_canvas.find_withtag('ai-section-pipe')), len(self.dialog.pipes))
+        self.assertTrue(viewer.section_canvas.find_withtag('ai-state:SUPPORTED_VISIBLE'))
+        self.assertTrue(viewer.section_canvas.find_withtag('ai-state:AMBIGUOUS'))
+        self.assertFalse(viewer.section_canvas.find_withtag('state:INSTALLED'))
+        self.assertIn('CAD', viewer.section_canvas.itemcget(viewer.section_canvas.find_withtag('ai-section-caption')[0], 'text'))
+
+        _, x, y, _ = next(hit for hit in viewer.section_hits if hit[0] == 'P002')
+        viewer.pick_section_pipe(SimpleNamespace(x=x, y=y))
+        self.root.update()
+        self.assertEqual(self.dialog.selected_ai_section_row()['pipe_id'], 'P002')
+        self.assertTrue(viewer.section_canvas.find_withtag('ai-selection-ring'))
+        self.assertTrue(viewer.section_canvas.find_withtag('ai-state:AMBIGUOUS'))
+        key = next(key for key, row in self.dialog.ai_section_rows.items() if row['pipe_id'] == 'P003')
+        self.dialog.ai_section_tree.selection_set(key)
+        self.root.update()
+        self.assertEqual(self.dialog.selected_id(), 'P003')
+        self.assertTrue(all('pipe:P003' in viewer.section_canvas.gettags(i)
+                            for i in viewer.section_canvas.find_withtag('ai-selection-ring')))
+        self.assertIn('CAD 名义外径', viewer.selection_info.get())
+
+        viewer.section_result_mode.set('LOCAL')
+        viewer._section_mode_changed()
+        self.root.update()
+        self.assertFalse(viewer.section_canvas.find_withtag('ai-section-pipe'))
+        self.assertTrue(viewer.section_canvas.find_withtag('state:INSTALLED'))
+        self.assertEqual(report, before)
+
+        viewer.window.geometry('1000x660')
+        self.root.update()
+        def descendants(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from descendants(child)
+        buttons = [child for child in descendants(viewer.window) if isinstance(child, self.ttk.Button)]
+        self.assertGreaterEqual(len(buttons), 4)
+        bottom = viewer.window.winfo_rooty() + viewer.window.winfo_height()
+        for button in buttons:
+            self.assertTrue(button.winfo_ismapped(), button.cget('text'))
+            self.assertLessEqual(button.winfo_rooty() + button.winfo_height(), bottom)
+
+    def test_ai_cross_section_refreshes_new_result_and_clears_on_invalidation(self):
+        from test_ai_section_plot import _report
+        self.dialog.report = _report()
+        self.dialog.refresh_table()
+        self.dialog.show_ai_section()
+        self.root.update()
+        viewer = self.dialog.model_viewer
+        self.assertTrue(viewer.section_canvas.find_withtag('ai-state:SUPPORTED_VISIBLE'))
+        newer = copy.deepcopy(self.dialog.report)
+        for item in newer['ai_section_assist']['candidates']:
+            item['section_status'] = 'RECAPTURE_RECOMMENDED'
+        self.dialog.report = newer
+        self.dialog.redraw()
+        self.assertFalse(viewer.section_canvas.find_withtag('ai-state:SUPPORTED_VISIBLE'))
+        self.assertEqual(len(viewer.section_canvas.find_withtag('ai-state:RECAPTURE_RECOMMENDED')), 4)
+        self.dialog.invalidate()
+        self.root.update()
+        self.assertFalse(viewer.section_canvas.find_withtag('ai-state:RECAPTURE_RECOMMENDED'))
+        self.assertEqual(len(viewer.section_canvas.find_withtag('ai-state:STALE')), len(self.dialog.pipes))
+        viewer.sync_from_owner()
+        self.assertEqual(len(viewer.section_canvas.find_withtag('ai-state:NOT_RUN')), len(self.dialog.pipes))
+
+    def test_ai_cross_section_keeps_applied_direction_during_unsaved_preview(self):
+        from test_ai_section_plot import _report
+        self.dialog._set_camera_side([1, 0, 0])
+        self.dialog.report = _report()
+        self.dialog.refresh_table()
+        self.dialog.show_ai_section()
+        self.root.update()
+        viewer = self.dialog.model_viewer
+        positions = list(viewer.section_hits)
+        def arrow():
+            return [viewer.section_canvas.coords(i) for i in viewer.section_canvas.find_withtag('camera_direction')
+                    if viewer.section_canvas.type(i) == 'line']
+        original_arrow = arrow()
+        viewer.view_mode.set('从 -X 侧朝 +X 看')
+        viewer.preview_side()
+        self.assertEqual(arrow(), original_arrow)
+        self.assertEqual(viewer.section_hits, positions)
+        self.assertIn('预览尚未应用', viewer.section_canvas.itemcget(viewer.section_canvas.find_withtag('camera_side_status')[0], 'text'))
+        viewer.reverse_axis()
+        self.assertEqual(viewer.section_hits, positions)
+        self.assertTrue(viewer.section_canvas.find_withtag('ai-state:SUPPORTED_VISIBLE'))
+        viewer.apply_camera_side()
+        self.root.update()
+        self.assertFalse(viewer.section_canvas.find_withtag('ai-state:SUPPORTED_VISIBLE'))
+
     def test_ai_button_runs_independent_workflow_and_reopens_saved_result(self):
         from pipe_twin.ai_settings import AISettings
 

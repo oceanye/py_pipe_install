@@ -216,7 +216,7 @@ class AISectionController:
             status = STATUS_LABELS.get(data.get('status'), data.get('status', '已完成'))
             owner.summary.set('AI 与本地断面结果已并列保存，严格安装状态保持原值。' if base_report is not None
                               else 'AI 独立断面判断；本现场未运行严格安装验收。')
-            owner.message.set(f'Kimi 评估完成：{status}。结果已保存；打开现场可恢复。')
+            owner.message.set(f'Kimi 评估完成：{status}。结果已保存；点击“查看 AI 断面图”查看模型管位分布，打开现场可恢复。')
             from .artifact_io import atomic_write_text
             atomic_write_text(owner.output_root / 'last_scene.json', json.dumps({'manifest_path': str(path)}, ensure_ascii=False))
         except (OSError, ValueError) as error:

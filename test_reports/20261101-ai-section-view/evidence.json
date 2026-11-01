@@ -1,0 +1,173 @@
+{
+  "scope": "READ_ONLY_REAL_TK_AI_SECTION_PLOT",
+  "source": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\manifest.json",
+  "started_at": "2026-11-01T04:24:26.995589+00:00",
+  "new_camera_capture": false,
+  "new_provider_calls": 0,
+  "checks": [
+    {
+      "name": "current_real_ai_result_loaded",
+      "passed": true,
+      "run_status": "VALID",
+      "states": {
+        "AMBIGUOUS": 12
+      }
+    },
+    {
+      "name": "ai_plot_matches_saved_states",
+      "passed": true,
+      "states": {
+        "P001": "AMBIGUOUS",
+        "P002": "AMBIGUOUS",
+        "P003": "AMBIGUOUS",
+        "P004": "AMBIGUOUS",
+        "P005": "AMBIGUOUS",
+        "P006": "AMBIGUOUS",
+        "P007": "AMBIGUOUS",
+        "P008": "AMBIGUOUS",
+        "P009": "AMBIGUOUS",
+        "P010": "AMBIGUOUS",
+        "P011": "AMBIGUOUS",
+        "P012": "AMBIGUOUS"
+      }
+    },
+    {
+      "name": "show_ai_section_button_selects_ai",
+      "passed": true
+    },
+    {
+      "name": "all_cad_pipes_have_ai_circles",
+      "passed": true
+    },
+    {
+      "name": "all_ai_states_have_text_labels",
+      "passed": true
+    },
+    {
+      "name": "no_local_installation_legend_in_ai_section",
+      "passed": true
+    },
+    {
+      "name": "nominal_geometry_scope_visible",
+      "passed": true
+    },
+    {
+      "name": "table_selection_highlights_section",
+      "passed": true
+    },
+    {
+      "name": "selection_keeps_ai_status_style",
+      "passed": true
+    },
+    {
+      "name": "section_click_selects_ai_table",
+      "passed": true,
+      "selected_pipe": "P001"
+    },
+    {
+      "name": "selected_info_names_ai_and_nominal_diameter",
+      "passed": true
+    },
+    {
+      "name": "layout_1000x660",
+      "passed": true,
+      "clipped_controls": [],
+      "outside_canvas": [],
+      "unmapped_required_buttons": [],
+      "legend_axis_collisions": []
+    },
+    {
+      "name": "layout_1320x820",
+      "passed": true,
+      "clipped_controls": [],
+      "outside_canvas": [],
+      "unmapped_required_buttons": [],
+      "legend_axis_collisions": []
+    },
+    {
+      "name": "local_switch_restores_local_mode_and_list",
+      "passed": true
+    },
+    {
+      "name": "ai_switch_restores_real_results",
+      "passed": true
+    },
+    {
+      "name": "selection_and_mode_switch_do_not_mutate_report",
+      "passed": true
+    },
+    {
+      "name": "no_messagebox_errors",
+      "passed": true
+    },
+    {
+      "name": "protected_scene_photos_report_and_defaults_unchanged",
+      "passed": true,
+      "protected_file_count": 28
+    },
+    {
+      "name": "no_tk_callback_errors",
+      "passed": true
+    }
+  ],
+  "screens": {
+    "1000x660": {
+      "canvas_width": 483,
+      "canvas_height": 426,
+      "clipped_controls": [],
+      "outside_canvas": [],
+      "unmapped_required_buttons": [],
+      "legend_axis_collisions": []
+    },
+    "1320x820": {
+      "canvas_width": 643,
+      "canvas_height": 586,
+      "clipped_controls": [],
+      "outside_canvas": [],
+      "unmapped_required_buttons": [],
+      "legend_axis_collisions": []
+    }
+  },
+  "callback_errors": [],
+  "source_sha256": {
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\ai_section_result.json": "007e81fcf99b6de7cc842ef7e34f2d65352500fe73585e4140e455cba26f5046",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\000_left.png": "7d93864a03a19425928850968abfef46f3153cb2dd0ea2771a710be45225ceba",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\000_right.png": "9cc39fd4903a79584c830b4640bcce64ba73289ee21585d114a5eed0648ab8a9",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\001_left.png": "aea2cd65758b59c79cb1f91050715cdf5687a790c992e790c77c1619657969c6",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\001_right.png": "506c583ca93238a68ca11139c50fe72106435b6ed896ed29b3ed15890b77c4c2",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\002_left.png": "4a15a6359b58d22d445c07fce92f4cb0b655becea5eba65092a9f4c5642a9975",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\002_right.png": "9c4c52c48d08e21430ce183bfcda9a6df4cb67a0c99748060f62466d2b3c94eb",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\003_left.png": "79e2bfe9d5ee8dac229c5bae011328086818246a78a346823f1de8fa2a9dc054",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\003_right.png": "0dc20bbffb593df1985ae3bd840bbfcf818cd194cb12864a99a15b30e0f62109",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\004_left.png": "fa28cd839645d2097487338261f097a05dca167043498ad38a13f37a89b76390",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\004_right.png": "9965e36c90b05ad543adf5141654ec28b5430c58e084796df785b6b873a34daa",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\005_left.png": "fa171169766e128c9e0b36d96cb885f96e4ba37c94da8f8bd3be62d0c91776cd",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\005_right.png": "94eb19f69e1c45c3ee43747f4cd4b96891ec781d24b3c7c459187a05fc63f6eb",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\006_left.png": "ecdf58b67aa855be5cfba66594dd4d62f8888771741623bce0e289f81b90c011",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\006_right.png": "2babe88e9ff97923bbfbb88ee04f45c11dee1933a6d5468d504417b91d47a89d",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\007_left.png": "2750d24878160980f674444499dcce94261e140ec61b1a232ccffb5119ad438a",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\007_right.png": "f94ed33a5c75ab69ac419e4d0572b4db3bb98b1bce5fd7bddb58b691d171d5f0",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\008_left.png": "0c5e90298a417c603be80e30c3517c892f746b2c42cfc5de2526335aa880e406",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\008_right.png": "fef08dd052c42817167880b04dda9429ca2fa7acfe5a98e460aae51d487644e7",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\009_left.png": "b8e05aa2df236f863eba6895e26cc63ec0c904053f85f884e59c879a3ea1f830",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\burst\\009_right.png": "74083cb8a28e67dd9da96a3ccc5168f517eecacc3ef10d323a5329e2cd5d4b19",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\manifest.json": "42b8d995f0b56fb28d8a063bfed173bfbee753c106664cfb5d3cb5a7c011aa21",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\model\\管道布置.stl": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\photos\\left.png": "b8e05aa2df236f863eba6895e26cc63ec0c904053f85f884e59c879a3ea1f830",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261101-115147-598db27f\\photos\\right.png": "74083cb8a28e67dd9da96a3ccc5168f517eecacc3ef10d323a5329e2cd5d4b19",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\last_scene.json": "d47e1e96bd34f3578dcfa8bdf67c66af3ba3e18fc2ea4f38d34f6aafda0502df",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\measurement_workbench\\calibration_current.json": "783d47c1ec8da23cdc27684f2a23353883c093f999988746140e80ab862ac92e",
+    "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\measurement_workbench\\workbench_profile.json": "f06d0b0da2cdeeaa7ff3a5748038525393e0e3e6e0d8d626153624cbc85f29d4"
+  },
+  "sources_unchanged": true,
+  "finished_at": "2026-11-01T04:24:32.717984+00:00",
+  "passed": true,
+  "visual_review_after_checks": {
+    "passed": true,
+    "reviewed_screens": [
+      "ai-section-1000x660.png",
+      "ai-section-1320x820.png"
+    ],
+    "findings": "Required bottom controls and selected-pipe details remain visible at both sizes; AI legend and axis labels no longer overlap."
+  }
+}

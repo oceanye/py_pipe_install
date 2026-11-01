@@ -8,6 +8,7 @@ import numpy as np
 from .camera_view import CAMERA_SIDE_PRESETS, camera_side_label, preview_rotation
 from .relative_scene import STATE_COLORS, STATE_LABELS, model_states, scene_sections, draw_scene
 from .assist_display import assist_preview_states, hypotheses, hypothesis_assignments
+from .ai_section_plot import ai_section_plot
 
 
 def model_section_basis(lines: np.ndarray, axis: np.ndarray | None = None) -> np.ndarray:
@@ -31,15 +32,20 @@ class ElevationModelViewer:
         tk, ttk = owner.app.tk, owner.app.ttk
         self.window = tk.Toplevel(owner.window); self.window.title("现场相对模型 · CAD 管位与方向联动"); self.window.geometry("1320x820")
         self.window.minsize(1000, 660)
+        # Reserve the controls before giving the remaining height to canvases.
+        # Packing the large canvas first can silently unmap the footer at 660px.
+        footer = ttk.Frame(self.window)
+        footer.pack(side='bottom', fill='x')
         panes = ttk.Panedwindow(self.window, orient="horizontal")
         panes.pack(fill="both", expand=True, padx=8, pady=8)
         model_panel = ttk.LabelFrame(panes, text="现场建模与观察方向")
         section_panel = ttk.LabelFrame(panes, text="模型管道编号 · 沿共同长度轴观察的截面")
+        self.section_panel = section_panel
         panes.add(model_panel, weight=1); panes.add(section_panel, weight=1)
         self.scene_tabs = ttk.Notebook(model_panel)
         self.scene_tabs.pack(fill='both', expand=True)
         scene_panel, direction_panel = ttk.Frame(self.scene_tabs), ttk.Frame(self.scene_tabs)
-        self.scene_tabs.add(scene_panel, text='现场相对断面')
+        self.scene_tabs.add(scene_panel, text='本地相对断面')
         self.scene_tabs.add(direction_panel, text='三维方向示意')
         self.scene_zone = tk.StringVar()
         self.scene_zone_box = ttk.Combobox(scene_panel, textvariable=self.scene_zone, state='readonly')
@@ -51,11 +57,20 @@ class ElevationModelViewer:
         self.scene_canvas.bind('<Button-1>', self.pick_scene_pipe)
         self.canvas = tk.Canvas(direction_panel, width=580, height=540, bg="#101923", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
+        section_controls = ttk.Frame(section_panel)
+        section_controls.pack(fill='x', padx=6, pady=4)
+        ttk.Label(section_controls, text='断面结果：').pack(side='left')
+        self.section_result_mode = tk.StringVar(value='AI' if owner.ai_display_active() else 'LOCAL')
+        for label, value in (('本地结果', 'LOCAL'), ('AI 候选', 'AI')):
+            ttk.Radiobutton(section_controls, text=label, variable=self.section_result_mode,
+                            value=value, command=self._section_mode_changed).pack(side='left', padx=5)
         self.section_canvas = tk.Canvas(section_panel, width=580, height=540, bg="#F2F5F8", highlightthickness=0)
         self.section_canvas.pack(fill="both", expand=True)
         self.selection_info = tk.StringVar()
-        ttk.Label(self.window, textvariable=self.selection_info, foreground="#355371").pack(fill="x", padx=8)
-        controls = ttk.Frame(self.window); controls.pack(fill="x", padx=8)
+        selection_label = ttk.Label(footer, textvariable=self.selection_info, foreground="#355371", wraplength=1250)
+        selection_label.pack(fill="x", padx=8)
+        selection_label.bind('<Configure>', lambda event: selection_label.configure(wraplength=max(200, event.width)))
+        controls = ttk.Frame(footer); controls.pack(fill="x", padx=8)
         ttk.Label(controls, text="管长方向").pack(side="left")
         self.direction_mode = tk.StringVar(value="自动")
         direction_values = ("自动", "Z", "自定义") if getattr(owner, "model_kind", "") == "dxf" else ("自动", "X", "Y", "Z", "自定义")
@@ -63,7 +78,7 @@ class ElevationModelViewer:
         self.custom = tk.StringVar(value="0,0,1"); ttk.Entry(controls, textvariable=self.custom, width=16).pack(side="left")
         ttk.Button(controls, text="应用方向", command=self.apply_direction).pack(side="left", padx=5)
         ttk.Button(controls, text="反向", command=self.reverse_axis).pack(side="left")
-        view_controls = ttk.Frame(self.window); view_controls.pack(fill="x", padx=8, pady=6)
+        view_controls = ttk.Frame(footer); view_controls.pack(fill="x", padx=8, pady=6)
         ttk.Label(view_controls, text="相机观察侧").pack(side="left")
         self.view_mode = tk.StringVar(value=camera_side_label(camera_side_world))
         self.view_choices = dict(CAMERA_SIDE_PRESETS)
@@ -75,7 +90,7 @@ class ElevationModelViewer:
         ttk.Button(view_controls, text="应用相机观察侧", command=self.apply_camera_side).pack(side="left", padx=5)
         ttk.Button(view_controls, text="恢复已应用方向", command=self.restore_camera_side).pack(side="left", padx=5)
         self.info = tk.StringVar(value="右键拖动只改变预览，滚轮缩放。X/Y/Z 为模型坐标；选择观察侧后点击应用保存。")
-        ttk.Label(self.window, textvariable=self.info, wraplength=830).pack(fill="x", padx=8, pady=(3, 8))
+        ttk.Label(footer, textvariable=self.info, wraplength=830).pack(fill="x", padx=8, pady=(3, 8))
         self.zoom, self.yaw, self.pitch, self.drag_start = 1.0, 0.0, 0.0, None
         self.base_rotation = np.eye(3)
         self.projected_lines = np.empty((0, 2, 2))
@@ -139,6 +154,12 @@ class ElevationModelViewer:
     def focus_section(self) -> None:
         self.section_canvas.focus_set()
         self.info.set("左右视图和主列表共享管道选择；截面固定沿管长轴。" + self.camera_side_status())
+
+    def _section_mode_changed(self) -> None:
+        """Keep the result source explicit and linked to the corresponding list."""
+        target = self.owner.ai_section_status_tab if self.section_result_mode.get() == 'AI' else self.owner.assist_status_tab
+        self.owner.status_tabs.select(target)
+        self.draw()
 
     def has_pending_camera_side(self) -> bool:
         selected = self.view_choices[self.view_mode.get()]
@@ -249,7 +270,13 @@ class ElevationModelViewer:
         mapping = hypothesis_assignments(self.report, getattr(self.owner, 'assist_hypothesis_index', 0)) if self._is_current() else {}
         self.scene_hits = draw_scene(self.scene_canvas, scene, selected_pipe=selected, advisory_assignments=mapping)
         spec = next((p for p in self.pipes if p["pipe_id"] == selected), None)
-        self.selection_info.set(f"当前选择：{selected} · 模型外径 {spec['nominal_diameter_mm']:g} mm · {STATE_LABELS[self.installation_states.get(selected, 'UNKNOWN')]}（点击编号只作选择，不创建照片身份）" if spec else "点击任一视图中的管道，与主列表同步选择。")
+        if self.section_result_mode.get() == 'AI' and spec:
+            row = self.ai_plot['by_pipe'][selected]
+            point = f" / {row['point_id']}" if row.get('point_id') else ''
+            reason = str(row.get('reason') or '')
+            self.selection_info.set(f"选中：{selected}{point} · CAD 名义外径 {spec['nominal_diameter_mm']:g} mm · AI {row['label']}\n{reason[:160]}")
+        else:
+            self.selection_info.set(f"当前选择：{selected} · 模型外径 {spec['nominal_diameter_mm']:g} mm · {STATE_LABELS[self.installation_states.get(selected, 'UNKNOWN')]}（点击编号只作选择，不创建照片身份）" if spec else "点击任一视图中的管道，与主列表同步选择。")
         if not self._is_current():
             self.info.set("现场输入已改变，请重新打开联动视图；旧图不能用于选择或应用设置。")
 
@@ -258,8 +285,27 @@ class ElevationModelViewer:
         canvas.delete("all"); self.section_hits = []
         if not self.pipes:
             return
+        ai_mode = self.section_result_mode.get() == 'AI'
+        self.ai_plot = ai_section_plot(self.report, self.pipes, current=self._is_current())
+        self.section_panel.configure(text='AI 候选 · 设计模型横断面' if ai_mode else '模型管道编号 · 沿共同长度轴观察的截面')
+        basis = self.section_basis
+        side = self.view_choices[self.view_mode.get()]
+        direction_status = self.camera_side_status()
+        if ai_mode:
+            # AI annotations are joined by pipe ID, never by coordinates from
+            # the provider's differently oriented reference diagram. Unapplied
+            # direction previews must not rotate or relabel accepted evidence.
+            applied = self.owner.registration_settings
+            axis = applied.get('axis_world')
+            basis = model_section_basis(self.source_lines, np.asarray(axis, float) if axis is not None else None)
+            side = applied.get('camera_side_world')
+            direction_status = 'AI 结果方向：' + camera_side_label(side)
+            if self.has_pending_camera_side():
+                direction_status += '；方向预览尚未应用'
+            if not self._is_current():
+                direction_status = '现场输入已改变；AI 颜色已清除，请重新评估。'
         w, h = max(canvas.winfo_width(), 100), max(canvas.winfo_height(), 100)
-        centers = (self.source_lines.mean(axis=1) @ self.section_basis.T)[:, :2]
+        centers = (self.source_lines.mean(axis=1) @ basis.T)[:, :2]
         radii = np.asarray([p["nominal_diameter_mm"] / 2 for p in self.pipes])
         low, high = (centers-radii[:, None]).min(axis=0), (centers+radii[:, None]).max(axis=0)
         scale = max(.01, min(max(w-150, 20)/max(high[0]-low[0], 1), max(h-220, 20)/max(high[1]-low[1], 1)))
@@ -270,25 +316,41 @@ class ElevationModelViewer:
             radius = max(3., radii[index]*scale)
             active = pipe["pipe_id"] == selected
             tags = (f"pipe:{pipe['pipe_id']}", "selected" if active else "pipe")
-            state = self.installation_states.get(pipe['pipe_id'], 'UNKNOWN')
-            canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=STATE_COLORS[state], outline="#D47D00" if active else "#273B51", width=4 if active else 1, tags=(*tags, f'state:{state}'))
-            canvas.create_text(x, y-radius-5, text=pipe["pipe_id"], anchor="s", fill="#A45C00" if active else "#273B51", tags=tags)
+            if ai_mode:
+                row = self.ai_plot['by_pipe'][pipe['pipe_id']]
+                canvas.create_oval(x-radius, y-radius, x+radius, y+radius,
+                    fill=row['fill'], outline=row['outline'], dash=row['dash'], width=row['width'],
+                    tags=(*tags, 'ai-section-pipe', f"ai-state:{row['status']}"))
+                if active:
+                    canvas.create_oval(x-radius-5, y-radius-5, x+radius+5, y+radius+5,
+                        outline='#7434A6', width=3, tags=(*tags, 'ai-selection-ring'))
+                if row.get('point_id'):
+                    canvas.create_text(x, y, text=row['point_id'], fill='#243447', font=('Microsoft YaHei UI', 8), tags=tags)
+                canvas.create_text(x, y+radius+6, text=row['label'], anchor='n', fill=row['outline'],
+                    font=('Microsoft YaHei UI', 9), tags=(*tags, 'ai-state-label'))
+            else:
+                state = self.installation_states.get(pipe['pipe_id'], 'UNKNOWN')
+                canvas.create_oval(x-radius, y-radius, x+radius, y+radius, fill=STATE_COLORS[state], outline="#D47D00" if active else "#273B51", width=4 if active else 1, tags=(*tags, f'state:{state}'))
+            canvas.create_text(x, y-radius-7 if ai_mode else y-radius-5, text=pipe["pipe_id"], anchor="s", fill="#7434A6" if active and ai_mode else "#A45C00" if active else "#273B51", tags=tags)
             self.section_hits.append((pipe["pipe_id"], float(x), float(y), radius))
-        canvas.create_text(12, 12, anchor="nw", text=f"固定截面 · 从管长轴正侧看，轴={np.round(self.section_basis[2], 3).tolist()}", fill="#273B51")
-        canvas.create_text(12, 34, anchor="nw", text=self.camera_side_status(), width=max(w-24, 50),
+        header = self.ai_plot['summary'] if ai_mode else f"固定截面 · 从管长轴正侧看，轴={np.round(self.section_basis[2], 3).tolist()}"
+        canvas.create_text(12, 12, anchor="nw", text=header, fill="#273B51", font=('Microsoft YaHei UI', 9), width=max(w-24, 50))
+        canvas.create_text(12, 34, anchor="nw", text=direction_status, width=max(w-24, 50),
                            fill="#355371", tags="camera_side_status")
-        origin = np.array([48., 110.])
+        if ai_mode:
+            canvas.create_text(12, 57, anchor='nw', text=self.ai_plot['legend'], width=max(w-24, 50),
+                font=('Microsoft YaHei UI', 9), fill='#355371', tags='ai-section-legend')
+        origin = np.array([34., h/2]) if ai_mode else np.array([48., 110.])
         for index, (name, color) in enumerate(zip("XYZ", ("#AA3333", "#237541", "#2464A0"))):
-            vector = self.section_basis[:, index]
+            vector = basis[:, index]
             end = origin+30*vector[:2]*[1, -1]
             if np.linalg.norm(end-origin) > 4:
                 canvas.create_line(*origin, *end, fill=color, width=2, arrow="last")
                 canvas.create_text(*end, text=f"+{name}", fill=color, anchor="sw")
             else:
                 canvas.create_text(*(origin+[2, 16]), text=f"+{name} " + ("朝向你" if vector[2] > 0 else "背向你"), fill=color, anchor="nw")
-        side = self.view_choices[self.view_mode.get()]
         if side is not None:
-            projected = self.section_basis @ side
+            projected = basis @ side
             transverse = float(np.linalg.norm(projected[:2]))
             if transverse > 1.e-6:
                 direction = projected[:2] / transverse * [1, -1]
@@ -303,6 +365,10 @@ class ElevationModelViewer:
             canvas.create_text(12, h-48, anchor="nw", text=caption, fill="#995200", tags="camera_direction")
         else:
             canvas.create_text(12, h-48, anchor="nw", text="相机侧未指定；求解前不猜测观察方向。", fill="#355371")
+        if ai_mode:
+            canvas.create_text(12, h-25, anchor='nw', text='位置 / 圆径来自 CAD；AI 候选不代表安装验收。紫环：选中',
+                font=('Microsoft YaHei UI', 9), fill='#355371', tags='ai-section-caption')
+            return
         choices = hypotheses(self.report) if self._is_current() else []
         legend = (f"辅助方案 {getattr(self.owner, 'assist_hypothesis_index', 0)+1}/{len(choices)}：黄为候选，待确认；灰为未确认"
                   if choices else "绿：相对就位  蓝：已识别安装  橙：不符  灰：待确认")

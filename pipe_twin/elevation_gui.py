@@ -936,6 +936,9 @@ class ElevationCaptureDialog:
         row = ttk.Frame(footer)
         row.pack(fill="x")
         ttk.Button(row, text='查看详情 / 诊断', command=self.show_analysis_details).pack(side='left', padx=2)
+        self.ai_section_actions = ttk.Frame(row)
+        self.ai_section_view_button = ttk.Button(self.ai_section_actions, text='查看 AI 断面图', command=self.show_ai_section)
+        self.ai_section_view_button.pack(side='left', padx=3)
         self.assist_actions = ttk.Frame(row)
         ttk.Label(self.assist_actions, text='候选方案').pack(side='left', padx=3)
         self.assist_plan_label = tk.StringVar(value='暂无方案')
@@ -1175,6 +1178,14 @@ class ElevationCaptureDialog:
             self.assist_actions.pack(side='left', padx=4)
         else:
             self.assist_actions.pack_forget()
+        if self.ai_display_active():
+            self.ai_section_actions.pack(side='left', padx=4)
+        else:
+            self.ai_section_actions.pack_forget()
+        if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
+            self.model_viewer.section_result_mode.set('AI' if self.ai_display_active() else 'LOCAL')
+        if self.ai_display_active():
+            self._ai_section_selected()
         self.redraw()
 
     def _cad_selected(self):
@@ -1490,6 +1501,14 @@ class ElevationCaptureDialog:
                     self.assist_tree.see(keys[0])
                 elif not keys and selected:
                     self.assist_tree.selection_remove(*selected)
+            if self.ai_display_active():
+                keys = [key for key, row in self.ai_section_rows.items() if row.get('pipe_id') == pipe_id]
+                selected = self.ai_section_tree.selection()
+                if len(keys) == 1 and selected != (keys[0],):
+                    self.ai_section_tree.selection_set(keys[0])
+                    self.ai_section_tree.see(keys[0])
+                elif not keys and selected:
+                    self.ai_section_tree.selection_remove(*selected)
             self.redraw()
 
     def _local_observation_selected(self) -> None:
@@ -1595,6 +1614,8 @@ class ElevationCaptureDialog:
 
     def _ai_section_selected(self):
         """Highlight a model pipe for inspection only; never change its state."""
+        if not self.ai_display_active():
+            return
         row = self.selected_ai_section_row()
         pipe_id = row.get('pipe_id') if row else None
         if pipe_id and pipe_id in {p.get('pipe_id') for p in self.pipes}:
@@ -1890,6 +1911,15 @@ class ElevationCaptureDialog:
         self.open_model_viewer()
         if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
             self.model_viewer.focus_section()
+
+    def show_ai_section(self) -> None:
+        """Open the existing CAD cross-section with independent AI annotations."""
+        self.status_tabs.select(self.ai_section_status_tab)
+        self.open_model_viewer()
+        if self.model_viewer is not None and self.model_viewer.window.winfo_exists():
+            self.model_viewer.section_result_mode.set('AI')
+            self.model_viewer.focus_section()
+            self.model_viewer.draw()
 
     def _restore_camera_side_control(self) -> None:
         label = camera_side_label(self.registration_settings.get("camera_side_world"))

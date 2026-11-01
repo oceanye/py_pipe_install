@@ -1,0 +1,16 @@
+{
+  "base_commit": "87654baded06be5899ed2f935cb3e932f65e4cdf",
+  "command": ".venv/Scripts/python.exe -m pytest tests/test_elevation_gui.py tests/test_elevation_viewer.py tests/test_ai_section_plot.py tests/test_ai_section_display.py tests/test_ai_section_assist.py tests/test_ai_workflow.py -q",
+  "result": "127 passed, 5 subtests passed in 32.23s",
+  "real_gui_checks": "19/19 passed after layout fixes",
+  "source_sha256_utf8_lf": {
+    "pipe_twin/ai_section_plot.py": "d1a9aa41d030aaa7a60393b9a98457743bbbf39f7daf2671f57486cb6ee36f35",
+    "pipe_twin/ai_gui.py": "a088c2213822a4ee487ae9fde461bab1f5049b8469917c1c84b847a12c27cafe",
+    "pipe_twin/elevation_gui.py": "aa02acf32936602693c58fed67bb6d9cc2e7d35a68818023cad040c00f1d226d",
+    "pipe_twin/elevation_viewer.py": "6a868f3a9840bf7250f3ddee6ff69f7ca3f5314165cfae3b12d09dbed77a1a15",
+    "tests/test_ai_section_plot.py": "7f472819448fc402d3c9c687ccdc31b940176513e1b3b143df5db14bc45103bf",
+    "tests/test_elevation_gui.py": "5c6f1f28983622d80b6317076f51b71328b4112ed3420c2c6642a835b6238add"
+  },
+  "new_provider_calls": 0,
+  "new_camera_capture": false
+}
