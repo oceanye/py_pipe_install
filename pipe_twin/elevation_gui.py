@@ -849,6 +849,30 @@ class ElevationCaptureDialog:
         self.assist_tree.pack(side='left', fill='x', expand=True)
         self.assist_tree.bind('<<TreeviewSelect>>', lambda _e: self._assist_selected())
         self.assist_tree.bind('<Double-1>', lambda _e: self.show_analysis_details('assist'))
+        ai_section_frame = ttk.Frame(self.status_tabs)
+        self.ai_section_status_tab = ai_section_frame
+        self.status_tabs.add(ai_section_frame, text='AI 断面候选')
+        self.ai_section_rows = {}
+        self.ai_section_tree = ttk.Treeview(
+            ai_section_frame,
+            columns=('pipe_id', 'position', 'status', 'quality', 'reason'),
+            height=4,
+            selectmode='browse',
+        )
+        self.ai_section_tree.heading('#0', text='观测')
+        self.ai_section_tree.column('#0', width=100, stretch=False)
+        for column, label, width in zip(
+                ('pipe_id', 'position', 'status', 'quality', 'reason'),
+                ('模型管号', '模型断面点位', '候选状态', '证据质量', '说明'),
+                (100, 170, 110, 90, 360)):
+            self.ai_section_tree.heading(column, text=label)
+            self.ai_section_tree.column(column, width=width, stretch=column == 'reason')
+        ai_section_scroll = ttk.Scrollbar(ai_section_frame, orient='vertical', command=self.ai_section_tree.yview)
+        self.ai_section_tree.configure(yscrollcommand=ai_section_scroll.set)
+        ai_section_scroll.pack(side='right', fill='y')
+        self.ai_section_tree.pack(side='left', fill='x', expand=True)
+        self.ai_section_tree.bind('<<TreeviewSelect>>', lambda _e: self._ai_section_selected())
+        self.ai_section_tree.bind('<Double-1>', lambda _e: self.show_analysis_details('ai_section'))
         solver_frame = ttk.Frame(self.status_tabs)
         table_frame = ttk.Frame(self.status_tabs)
         self.status_tabs.add(solver_frame, text='现场求解状态')
@@ -1502,6 +1526,7 @@ class ElevationCaptureDialog:
             key = selected_solver[0] if selected_solver and selected_solver[0] in self.solver_rows else next(iter(self.solver_rows))
             self.solver_tree.selection_set(key)
         self.refresh_assist_table()
+        self.refresh_ai_section_table()
         self._solver_selected()
         self.redraw()
 
@@ -1523,6 +1548,31 @@ class ElevationCaptureDialog:
             self.assist_tree.insert('', 'end', iid=key, text=row['label'], values=row['values'])
         if self.assist_rows:
             self.assist_tree.selection_set(selected[0] if selected and selected[0] in self.assist_rows else next(iter(self.assist_rows)))
+
+    def refresh_ai_section_table(self):
+        """Refresh the optional AI section channel without touching strict results."""
+        from .ai_section_display import section_candidate_rows
+        selected = self.ai_section_tree.selection() if hasattr(self, 'ai_section_tree') else ()
+        self.ai_section_tree.delete(*self.ai_section_tree.get_children())
+        self.ai_section_rows = {row['key']: row for row in section_candidate_rows(self.report)}
+        for key, row in self.ai_section_rows.items():
+            self.ai_section_tree.insert('', 'end', iid=key, text=row['label'], values=row['values'])
+        if self.ai_section_rows:
+            key = selected[0] if selected and selected[0] in self.ai_section_rows else next(iter(self.ai_section_rows))
+            self.ai_section_tree.selection_set(key)
+
+    def selected_ai_section_row(self):
+        selected = self.ai_section_tree.selection() if hasattr(self, 'ai_section_tree') else ()
+        return self.ai_section_rows.get(selected[0]) if selected else None
+
+    def _ai_section_selected(self):
+        """Highlight a model pipe for inspection only; never change its state."""
+        row = self.selected_ai_section_row()
+        pipe_id = row.get('pipe_id') if row else None
+        if pipe_id and pipe_id in {p.get('pipe_id') for p in self.pipes}:
+            self.select_model_pipe(pipe_id)
+        self.redraw()
+        self._refresh_open_details()
 
     def selected_assist_row(self):
         selected = self.assist_tree.selection() if hasattr(self, 'assist_tree') else ()
@@ -1613,6 +1663,7 @@ class ElevationCaptureDialog:
         from .ground_check import ground_summary_lines
         from .view_geometry import view_geometry_summary_lines
         from .assist_display import assist_summary_lines
+        from .ai_section_display import ai_section_summary_lines
         tk, ttk = self.app.tk, self.app.ttk
         row = self.selected_solver_row()
         spec = self.selected_pipe()
@@ -1620,6 +1671,7 @@ class ElevationCaptureDialog:
         if spec is not None:
             cad_lines += ['', '所选 CAD 管号：'+spec['pipe_id']]+measurement_summary_lines(spec, self.results.get(spec['pipe_id']))
         pages = [('assist', '辅助安装识别', '\n'.join(assist_summary_lines(self.report, self.assist_hypothesis_index))),
+                 ('ai_section', 'AI 断面候选', '\n'.join(ai_section_summary_lines(self.report))),
                  ('candidate', '当前候选', row['detail'] if row else '评估后选择一个现场候选，查看轮廓、尺寸与重复性。'),
                  ('sections', '断面与汇聚', '\n'.join(section_summary_lines(self.report, detailed=True))),
                  ('ground', '地面倾角', '\n'.join(ground_summary_lines(self.current_ground_check()))),
@@ -1648,6 +1700,7 @@ class ElevationCaptureDialog:
             text.configure(state='normal'); text.delete('1.0', 'end')
             text.insert('1.0', content); text.configure(state='disabled')
         tab = tab or ('assist' if self.status_tabs.select() == str(self.assist_status_tab) else
+                      'ai_section' if self.status_tabs.select() == str(self.ai_section_status_tab) else
                       'cad' if self.status_tabs.select() == str(self.cad_status_tab) else 'candidate')
         self.detail_tabs.select(self.detail_pages[tab])
         dialog.lift()

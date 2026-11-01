@@ -1,5 +1,13 @@
 # 测试与远程开发交接
 
+## 2026-11-01：独立 AI 断面候选模块
+
+新增 `pipe_twin.ai_section_assist`，把多模态提供方的断面判断限制在固定模型断面点位 P01…Pn。契约版本为 `ai-section-assist-v1`，只允许 `SUPPORTED_VISIBLE / AMBIGUOUS / UNRESOLVED / RECAPTURE_RECOMMENDED` 四类点位状态，不包含 `INSTALLED`、`NOT_INSTALLED` 或三维管段字段。模型断面由 `model_section_reference` 的观察方向和 2D 坐标提供；重叠点位、断面证据冲突、缺少候选会保守降级。
+
+`attach_ai_section_assist()` 深拷贝报告后写入 `report['ai_section_assist']`，输入报告、`pipes`、`counts` 和严格安装状态保持不变。`elevation_gui.py` 新增 **AI 断面候选** 分页和详情页：显示模型管号、断面点位、候选状态、证据质量及原因；选择行只做模型高亮，不产生安装关联。没有提供方结果时显示 `NOT_RUN / AI_PROVIDER_NOT_CONFIGURED`，不会把本地辅助识别冒充 AI。
+
+本轮新增契约与隔离回归 `tests/test_ai_section_assist.py`，并补充 GUI 只读分页检查。Kimi 或其他提供方尚未在主线自动调用；后续接入应把固定断面图、观察方向、点位映射和输入哈希交给可替换适配器，再将结构化结果通过该契约回填。
+
 ## 2026-10-31 三路径识别规划 仅文档交付
 
 用户要求先完成完整规划，暂不修改代码。三条路径已明确为 **A 固定双目现有图像逻辑、B 同批固定双目照片的多模态 AI、C 手机手持局部拍摄与模型匹配**。神经双目只是可选能力，不作为第三路径。A 已实现；B 尚未接入；C 最后做四组探索，不能将“三根及以上”直接视为唯一模型定位的保证。

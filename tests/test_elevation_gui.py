@@ -141,7 +141,7 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.refresh_table()
         self.dialog.show_analysis_details()
         window = self.dialog.analysis_details_window
-        self.assertEqual(len(self.dialog.detail_tabs.tabs()), 7)
+        self.assertEqual(len(self.dialog.detail_tabs.tabs()), 8)
         self.dialog.solver_tree.selection_set('0:1')
         self.root.update()
         self.assertIn('/ S2', self.dialog.detail_texts['candidate'].get('1.0', 'end'))
@@ -199,6 +199,34 @@ class ElevationGuiTests(unittest.TestCase):
         self.dialog.invalidate()
         self.assertFalse(self.dialog.assist_tree.get_children())
         self.assertFalse(viewer.section_canvas.find_withtag('state:ASSIST_CANDIDATE'))
+
+    def test_ai_section_candidates_are_separate_and_read_only(self):
+        report = {
+            'counts': {'INSTALLED': 0, 'NOT_INSTALLED': 0, 'UNKNOWN': 1},
+            'pipes': [{'pipe_id': 'P001', 'installation_state': 'UNKNOWN'}],
+            'ai_section_assist': {
+                'scope': 'SECTION_ONLY', 'status': 'CANDIDATES_READY',
+                'provider': 'test-provider', 'schema_version': 'ai-section-assist-v1',
+                'candidates': [{
+                    'point_id': 'P01', 'pipe_id': 'P001',
+                    'section_status': 'SUPPORTED_VISIBLE', 'evidence_quality': 'HIGH',
+                    'section_position': {'label': 'u=0.0, v=12.0 mm'},
+                    'reason_codes': ['AI_SEES_SECTION_CANDIDATE'],
+                }],
+            },
+        }
+        before = copy.deepcopy(report)
+        self.dialog.report = report
+        self.dialog.refresh_table()
+        self.root.update()
+        rows = self.dialog.ai_section_tree.get_children()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(self.dialog.ai_section_tree.item(rows[0], 'values')[0], 'P001')
+        self.dialog.status_tabs.select(self.dialog.ai_section_status_tab)
+        self.dialog.show_analysis_details('ai_section')
+        self.assertIn('仅定位模型断面', self.dialog.detail_texts['ai_section'].get('1.0', 'end'))
+        self.assertEqual(report, before)
+        self.assertEqual(self.dialog.results, {})
 
     def test_purchase_colour_hints_invalidate_old_suggestions_without_rewriting_model(self):
         from test_assist_display import report_fixture
