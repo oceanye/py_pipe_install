@@ -1,0 +1,1237 @@
+{
+  "schema_version": "2.0",
+  "dataset_id": "elevation-20261101-142239-ad25d1fb",
+  "model_revision": "cbe4c74b54aed6b6",
+  "validation_scope": "ELEVATION_AUTO_CAPTURE_PENDING_ACCEPTANCE",
+  "model": {
+    "kind": "optional_reference",
+    "path": "model/管道布置.stl",
+    "sha256": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "unit": "millimeter",
+    "format": "stl",
+    "source_unit": "millimeter"
+  },
+  "stereo_calibration": {
+    "calibration_id": "field-chess-42b9fd287add",
+    "validated": true,
+    "registration_validated": false,
+    "rectified": true,
+    "baseline_mm": 59.82261029553183,
+    "max_sync_delta_ms": 1.0,
+    "left_camera": {
+      "camera_id": "chessboard-left",
+      "width": 1920,
+      "height": 1080,
+      "fx": 1834.370328897513,
+      "fy": 1834.370328897513,
+      "cx": 973.8779449462891,
+      "cy": 516.5512046813965,
+      "distortion_coefficients": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_world_to_camera": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "center_world_mm": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "right_camera": {
+      "camera_id": "chessboard-right",
+      "width": 1920,
+      "height": 1080,
+      "fx": 1834.370328897513,
+      "fy": 1834.370328897513,
+      "cx": 973.8779449462891,
+      "cy": 516.5512046813965,
+      "distortion_coefficients": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_world_to_camera": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "center_world_mm": [
+        59.82261029553183,
+        0.0,
+        0.0
+      ]
+    },
+    "quality_audit": {
+      "algorithm_revision": "stereo-holdout-quality-v1",
+      "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+      "solve_mode": "joint_intrinsics_scaled_bundle",
+      "square_mm": 17.0,
+      "pattern_inner_corners": [
+        8,
+        6
+      ],
+      "training_pair_count": 19,
+      "stereo_rms_px": 0.35960273120971753,
+      "rectification_geometry": {
+        "vertical_rms_px": 0.15829171240329742,
+        "vertical_p95_abs_px": 0.285221129655838,
+        "vertical_max_abs_px": 0.8857421875,
+        "per_pair_vertical_rms_px": [
+          0.1349823772907257,
+          0.13856415450572968,
+          0.16824223101139069,
+          0.11699365079402924,
+          0.11276085674762726,
+          0.10421018302440643,
+          0.15533499419689178,
+          0.09391381591558456,
+          0.1498851329088211,
+          0.17667199671268463,
+          0.23282739520072937,
+          0.12971729040145874,
+          0.20151188969612122,
+          0.10502418130636215,
+          0.15503033995628357,
+          0.2212345451116562,
+          0.12603572010993958,
+          0.14233951270580292,
+          0.23378798365592957
+        ],
+        "median_disparity_px": 93.94839477539062,
+        "positive_disparity_ratio": 1.0,
+        "horizontal_encoded_baseline_mm": 59.82261029553183,
+        "vertical_projection_mm": -0.0,
+        "p1_p2_k_identical": true
+      },
+      "left_rms_px": 0.35608515804738955,
+      "right_rms_px": 0.36308622778252314,
+      "per_pair_rms_px": [
+        [
+          0.34823142715503197,
+          0.37903993554095433
+        ],
+        [
+          0.4341589099309379,
+          0.402625502230857
+        ],
+        [
+          0.4481689918029521,
+          0.503393202173855
+        ],
+        [
+          0.453668314776565,
+          0.44359378579333614
+        ],
+        [
+          0.422091328184973,
+          0.43464747752534266
+        ],
+        [
+          0.33176098759903866,
+          0.3213425342103427
+        ],
+        [
+          0.34003586654827633,
+          0.36322068016542935
+        ],
+        [
+          0.3142314498292775,
+          0.29049402795850293
+        ],
+        [
+          0.3239939784001441,
+          0.35701091829957515
+        ],
+        [
+          0.2514473822422823,
+          0.2656932784673269
+        ],
+        [
+          0.23579319703957166,
+          0.26703055974300005
+        ],
+        [
+          0.27519911779561346,
+          0.27354216016936633
+        ],
+        [
+          0.32867711152892054,
+          0.3381057633344792
+        ],
+        [
+          0.3165356776445922,
+          0.3193506443260965
+        ],
+        [
+          0.32932777072184,
+          0.290529822794254
+        ],
+        [
+          0.241799247124747,
+          0.2449087014657202
+        ],
+        [
+          0.34039674163941797,
+          0.3544470132156209
+        ],
+        [
+          0.35239034888368603,
+          0.3342582002053397
+        ],
+        [
+          0.5247738014813889,
+          0.5460005237221176
+        ]
+      ],
+      "diversity": {
+        "pair_count": 19,
+        "unique_zones": 9,
+        "centroid_spread_ratio": 0.16192648691547723,
+        "zones": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ]
+        ]
+      },
+      "image_pose_geometry": {
+        "pose_count": 19,
+        "projected_scale_min_px": 20.405083111026247,
+        "projected_scale_median_px": 24.834290904763336,
+        "projected_scale_max_px": 38.630689480908885,
+        "projected_scale_span_ratio": 0.5657415426644373,
+        "projected_scale_to_image_ratio": 0.011273416892930424,
+        "projective_shape_span": 0.19579252081752277,
+        "shape_component_spans": [
+          0.17511288924617557,
+          0.19579252081752277,
+          0.04991472607760775,
+          0.04065139837275771
+        ]
+      },
+      "calibration_pose_geometry": {
+        "pose_count": 19,
+        "failed_pose_count": 0,
+        "tilt_x_span_deg": 11.54798104564361,
+        "tilt_y_span_deg": 40.100133796696795,
+        "tilt_span_deg": 40.100133796696795,
+        "depth_min_mm": 802.1821678175872,
+        "depth_median_mm": 1179.0644522100781,
+        "depth_max_mm": 1355.8988849696805,
+        "depth_spread_ratio": 0.37903077673575813
+      },
+      "joint_refinement": {
+        "attempted": true,
+        "selected": true,
+        "algorithm": "scaled-stereo-bundle-v1",
+        "converged": true,
+        "positive_depth": true,
+        "training_pair_count": 19,
+        "baseline_constrained": false,
+        "validation_used_for_selection": false,
+        "evaluations": [
+          46,
+          2
+        ],
+        "termination": [
+          "`ftol` termination condition is satisfied.",
+          "`ftol` termination condition is satisfied."
+        ],
+        "restart_parameter_steps": {
+          "intrinsic_px": 0.0010904528314767958,
+          "distortion": 8.181603490600708e-07,
+          "rotation_rad": 1.1807972859819577e-07,
+          "translation_mm": 2.759292036502714e-05
+        },
+        "restart_step_limits": {
+          "intrinsic_px": 0.01,
+          "distortion": 1e-05,
+          "rotation_rad": 1e-06,
+          "translation_mm": 0.001
+        },
+        "restart_rms_change_px": 3.968547712673853e-12,
+        "training_rms_before_px": 0.9138675277955398,
+        "training_rms_after_px": 0.35960273120971753,
+        "baseline_mm": 59.82261029553183,
+        "problems": []
+      },
+      "scale_verified_independently": false,
+      "holdout": {
+        "algorithm_revision": "stereo-holdout-quality-v1",
+        "policy": {
+          "minimum_holdout_pairs": 3,
+          "holdout_fraction": 0.2,
+          "max_vertical_rms_px": 0.5,
+          "max_vertical_p95_px": 1.0,
+          "max_cross_reprojection_rms_px": 1.0,
+          "max_pair_cross_rms_px": 1.5
+        },
+        "policy_sha256": "f792dc6f08990be71fbb7c5899d70c305d7fb956e8e24efba655a86b61381e60",
+        "status": "PASSED",
+        "pair_count": 4,
+        "pairs": [
+          {
+            "holdout_index": 1,
+            "passed": true,
+            "cross_reprojection_rms_px": 0.5906970093067527,
+            "vertical_rms_px": 0.33712457033310217,
+            "vertical_p95_px": 0.49459994992540074,
+            "positive_disparity_fraction": 1.0,
+            "input_pair_index": 5
+          },
+          {
+            "holdout_index": 2,
+            "passed": true,
+            "cross_reprojection_rms_px": 0.8701860061091403,
+            "vertical_rms_px": 0.16744939222235003,
+            "vertical_p95_px": 0.3393648615169411,
+            "positive_disparity_fraction": 1.0,
+            "input_pair_index": 9
+          },
+          {
+            "holdout_index": 3,
+            "passed": true,
+            "cross_reprojection_rms_px": 0.5917374229358967,
+            "vertical_rms_px": 0.07045513159636317,
+            "vertical_p95_px": 0.12783938989386454,
+            "positive_disparity_fraction": 1.0,
+            "input_pair_index": 14
+          },
+          {
+            "holdout_index": 4,
+            "passed": true,
+            "cross_reprojection_rms_px": 0.2979101753958268,
+            "vertical_rms_px": 0.1507916006181285,
+            "vertical_p95_px": 0.2639340245763293,
+            "positive_disparity_fraction": 1.0,
+            "input_pair_index": 18
+          }
+        ],
+        "cross_reprojection_rms_px": 0.6215002599233783,
+        "vertical_rms_px": 0.20578769840733385,
+        "vertical_p95_px": 0.42609940774253086,
+        "scale_verified_independently": false,
+        "validation_scope": "HELD_OUT_IMAGES_SAME_BOARD_SCALE_NOT_ABSOLUTE_ACCURACY",
+        "input_pair_indices": [
+          5,
+          9,
+          14,
+          18
+        ]
+      }
+    }
+  },
+  "analysis": {
+    "minimum_focus_laplacian_variance": 0.0,
+    "minimum_luminance_p05": 0.0,
+    "maximum_luminance_p95": 255.0,
+    "minimum_amodal_pixels": 25,
+    "minimum_valid_depth_fraction": 0.25,
+    "minimum_target_depth_fraction": 0.1,
+    "minimum_color_support_fraction": 0.1,
+    "minimum_width_assessable_fraction": 0.25,
+    "maximum_width_relative_error": 0.6,
+    "depth_tolerance_mm": 50.0,
+    "occlusion_margin_mm": 30.0,
+    "free_space_margin_mm": 40.0,
+    "minimum_free_space_fraction": 0.65,
+    "fully_occluded_fraction": 0.9,
+    "color_delta_e76_tolerance": 70.0,
+    "minimum_local_contrast_delta_e76": 8.0,
+    "minimum_repeated_absence_captures": 2,
+    "minimum_depth_mm": 100.0,
+    "maximum_depth_mm": 5000.0,
+    "left_right_consistency_px": 2.0,
+    "matching": {
+      "diameter_filter_enabled": true,
+      "diameter_tolerance_mm": 3.0,
+      "diameter_tolerance_ratio": 0.1,
+      "color_filter_enabled": false,
+      "color_filter_mode": "hint",
+      "color_delta_lab": 45.0
+    },
+    "stereo_matching": {
+      "preprocessing": "low_light",
+      "min_disparity": 0,
+      "num_disparities": 256,
+      "block_size": 5,
+      "uniqueness_ratio": 5,
+      "speckle_window_size": 50,
+      "speckle_range": 2,
+      "disp12_max_diff": 2
+    },
+    "mode": "elevation_auto",
+    "elevation_auto": {
+      "pipes": [
+        {
+          "pipe_id": "P001",
+          "color_srgb": "#FFFFFF",
+          "nominal_diameter_mm": 51.000073,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-87bc0d33eae346de8450",
+          "centerline_world_mm": [
+            [
+              2082.11083984375,
+              1797.4565124511719,
+              9.99999883788405e-07
+            ],
+            [
+              2082.11083984375,
+              1797.4565124511719,
+              683.0776367187501
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P002",
+          "color_srgb": "#3498DB",
+          "nominal_diameter_mm": 41.000017,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-a1cf4b29bdf42357aa12",
+          "centerline_world_mm": [
+            [
+              2082.1108194986978,
+              1657.4565124511719,
+              9.999999974752427e-07
+            ],
+            [
+              2082.1108194986978,
+              1657.4565124511719,
+              683.07763671875
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P003",
+          "color_srgb": "#E74C3C",
+          "nominal_diameter_mm": 26.000124,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-8026a1990bb7e2d78af4",
+          "centerline_world_mm": [
+            [
+              2082.11083984375,
+              1937.4565124511719,
+              9.999999974752427e-07
+            ],
+            [
+              2082.11083984375,
+              1937.4565124511719,
+              683.07763671875
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P004",
+          "color_srgb": "#FFFFFF",
+          "nominal_diameter_mm": 51.000073,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-87766d775655f2235777",
+          "centerline_world_mm": [
+            [
+              2172.11083984375,
+              1937.4565124511719,
+              9.99999883788405e-07
+            ],
+            [
+              2172.11083984375,
+              1937.4565124511719,
+              683.0776367187501
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P005",
+          "color_srgb": "#3498DB",
+          "nominal_diameter_mm": 41.000017,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-fb6a20dfcca473d3b33d",
+          "centerline_world_mm": [
+            [
+              2172.1108194986978,
+              1657.4565124511719,
+              9.999999974752427e-07
+            ],
+            [
+              2172.1108194986978,
+              1657.4565124511719,
+              683.07763671875
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P006",
+          "color_srgb": "#E74C3C",
+          "nominal_diameter_mm": 26.000124,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-03ef3fecfed994680303",
+          "centerline_world_mm": [
+            [
+              2172.11083984375,
+              1797.4565124511719,
+              9.999999974752427e-07
+            ],
+            [
+              2172.11083984375,
+              1797.4565124511719,
+              683.07763671875
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P007",
+          "color_srgb": "#FFFFFF",
+          "nominal_diameter_mm": 51.000073,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-74103116ad5a954723a2",
+          "centerline_world_mm": [
+            [
+              2262.11083984375,
+              1797.4565124511719,
+              9.99999883788405e-07
+            ],
+            [
+              2262.11083984375,
+              1797.4565124511719,
+              683.0776367187501
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P008",
+          "color_srgb": "#3498DB",
+          "nominal_diameter_mm": 41.000017,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-f44abbc04a35c2405703",
+          "centerline_world_mm": [
+            [
+              2262.1108194986978,
+              1937.4565124511719,
+              9.999999974752427e-07
+            ],
+            [
+              2262.1108194986978,
+              1937.4565124511719,
+              683.07763671875
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P009",
+          "color_srgb": "#E74C3C",
+          "nominal_diameter_mm": 26.000124,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-17298b8d5bb5744b1658",
+          "centerline_world_mm": [
+            [
+              2262.11083984375,
+              1657.4565124511719,
+              9.999999974752427e-07
+            ],
+            [
+              2262.11083984375,
+              1657.4565124511719,
+              683.07763671875
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P010",
+          "color_srgb": "#FFFFFF",
+          "nominal_diameter_mm": 51.000073,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-ac88c565eb007e27c560",
+          "centerline_world_mm": [
+            [
+              2352.11083984375,
+              1657.4565124511719,
+              9.99999883788405e-07
+            ],
+            [
+              2352.11083984375,
+              1657.4565124511719,
+              683.0776367187501
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P011",
+          "color_srgb": "#3498DB",
+          "nominal_diameter_mm": 41.000017,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-2677c1db4ee18896a527",
+          "centerline_world_mm": [
+            [
+              2352.1108194986978,
+              1797.4565124511719,
+              9.999999974752427e-07
+            ],
+            [
+              2352.1108194986978,
+              1797.4565124511719,
+              683.07763671875
+            ]
+          ]
+        },
+        {
+          "pipe_id": "P012",
+          "color_srgb": "#E74C3C",
+          "nominal_diameter_mm": 26.000124,
+          "color_source": "stl_synthetic_by_diameter",
+          "cad_object_id": "stl-8aae2a62782678e7ec5e",
+          "centerline_world_mm": [
+            [
+              2352.11083984375,
+              1937.4565124511719,
+              9.999999974752427e-07
+            ],
+            [
+              2352.11083984375,
+              1937.4565124511719,
+              683.07763671875
+            ]
+          ]
+        }
+      ],
+      "registration": {
+        "axis_world": null,
+        "anchors": {},
+        "local_observation_mode": "auto",
+        "installation_assist": {
+          "appearance_diameter_hints": {
+            "BLUE": 50.0,
+            "RED": 40.0,
+            "WHITE": 25.0
+          },
+          "hint_source": "USER_STATED_PURCHASE_DIAMETERS"
+        },
+        "ground_candidate_trial": true,
+        "camera_side_world": [
+          0.0,
+          1.0,
+          0.0
+        ]
+      },
+      "scope": "full_frame",
+      "zone_schema_version": 1,
+      "right_roi_padding_px": 128,
+      "zones": []
+    }
+  },
+  "capture": {
+    "kind": "stereo_still_capture_set",
+    "camera_layout": "stereo",
+    "capture_group_id": "elevation-20261101-142239-ad25d1fb",
+    "interval_minutes": 5,
+    "capture_groups": [
+      {
+        "capture_id": "elevation-20261101-142239-ad25d1fb",
+        "sync_valid": true,
+        "sync_delta_ms": 0.0,
+        "views": {
+          "left": {
+            "camera_id": "chessboard-left",
+            "path": "photos/left.png",
+            "sha256": "a2a56213943aa311a50184d1cdc7fec464dc29b0128ca7ca8028ff72c8ea5df1",
+            "expected_width": 1920,
+            "expected_height": 1080,
+            "captured_at": "2026-11-01T14:22:31.609+08:00",
+            "timestamp_source": "HOST_SYSTEM_CLOCK",
+            "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          },
+          "right": {
+            "camera_id": "chessboard-right",
+            "path": "photos/right.png",
+            "sha256": "95925a3ee39382e0084fd671d8f8dafd841a98d63de5ad82b9c1ec7057e62cc6",
+            "expected_width": 1920,
+            "expected_height": 1080,
+            "captured_at": "2026-11-01T14:22:31.609+08:00",
+            "timestamp_source": "HOST_SYSTEM_CLOCK",
+            "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+            "capture_backend": "OpenCV",
+            "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+            "capture_device_index": 0,
+            "side_by_side_order": "LEFT_THEN_RIGHT",
+            "capture_sync_method": "SAME_UVC_FRAME",
+            "capture_exposure_status": "AUTO"
+          }
+        },
+        "temporal_frames": [
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F001",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/000_left.png",
+                "sha256": "24201e32dc8e91012910dba263cc8b74039d9be8562adfb16e1658252fee829e",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:24.282+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/000_right.png",
+                "sha256": "903e83746ded995968c0f9721f72b17727a44e1606c96270a5fba5dc9968a363",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:24.282+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F002",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/001_left.png",
+                "sha256": "996207f8e419ee2679f3b4b8fed5b768be6081520026e2a55cae31c412093438",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:24.820+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/001_right.png",
+                "sha256": "89ba0b4c86db7d63a678b84fa60aa52eb4d590c87b8621a21f6a4491623aef4f",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:24.820+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F003",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/002_left.png",
+                "sha256": "4407666b212b20c13502ee630b66e7c8e2d7e869959ad0134a3e04f33416f4a5",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:25.584+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/002_right.png",
+                "sha256": "0002a1ac1291212a54b452068868a66ea831d6b2137c289d7818ccca63d59918",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:25.584+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F004",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/003_left.png",
+                "sha256": "2d9ff5e0f381ac224cd47f0334d9a8358b3e2b6995439f0a2109e645eec91ecf",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:26.443+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/003_right.png",
+                "sha256": "1273a82e175e39e72d33a779780df3b0edbe3e86ba4f03236ea97850e75665d0",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:26.443+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F005",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/004_left.png",
+                "sha256": "3a8b5aebbdbe1431ef7cb547132b8bc092d2aa974f7498836da622274bdbc8f5",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:27.300+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/004_right.png",
+                "sha256": "51d8b56401b0f7798f18f78a6a52d0b645f04ae0928a64ba22d6dc153c51c162",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:27.300+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F006",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/005_left.png",
+                "sha256": "176b689468eebcdb5e60fc1027497ad08916f3f69d53063242a4d93a2052585c",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:28.162+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/005_right.png",
+                "sha256": "c87ef52e0c7acd38b2ce6f42ced37f600a018605effe9ac7f5c4ae936e4dfaf1",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:28.162+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F007",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/006_left.png",
+                "sha256": "0e554dd9f0cdb2f8713f91419fe81af23c6fffd1edd8502a712f1f8200b544b5",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:29.026+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/006_right.png",
+                "sha256": "7584d97f16cb72d307fccfb0e8b2a413551ab47f1801c5400f58ff95c25ff7ea",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:29.026+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F008",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/007_left.png",
+                "sha256": "4907154ebd8ecd8ce8b90ec3353e615c8b76f80ae320a71de3c5275f3c555e87",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:29.890+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/007_right.png",
+                "sha256": "8c2e3d9d5e4cc2eb743accdcafa8e073318911c5ecccb2ad1434db387902293e",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:29.890+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F009",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/008_left.png",
+                "sha256": "0a8750614bd9bdbe75a11c13e87220aa96c9906a5e1855e359df31907ac19a74",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:30.767+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/008_right.png",
+                "sha256": "e8bcd21ac2038d6ba3e7af57c9e1ae582646c843fb7e41b4f00f0df4e61cc508",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:30.767+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          },
+          {
+            "capture_id": "elevation-20261101-142239-ad25d1fb-F010",
+            "views": {
+              "left": {
+                "camera_id": "chessboard-left",
+                "path": "burst/009_left.png",
+                "sha256": "a2a56213943aa311a50184d1cdc7fec464dc29b0128ca7ca8028ff72c8ea5df1",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:31.609+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              },
+              "right": {
+                "camera_id": "chessboard-right",
+                "path": "burst/009_right.png",
+                "sha256": "95925a3ee39382e0084fd671d8f8dafd841a98d63de5ad82b9c1ec7057e62cc6",
+                "expected_width": 1920,
+                "expected_height": 1080,
+                "captured_at": "2026-11-01T14:22:31.609+08:00",
+                "timestamp_source": "HOST_SYSTEM_CLOCK",
+                "orientation_policy": "RAW_PIXELS_NO_EXIF_TRANSFORM",
+                "capture_backend": "OpenCV",
+                "capture_layout": "SINGLE_FRAME_SIDE_BY_SIDE",
+                "capture_device_index": 0,
+                "side_by_side_order": "LEFT_THEN_RIGHT",
+                "capture_sync_method": "SAME_UVC_FRAME",
+                "capture_exposure_status": "AUTO"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "rectification_recipe": {
+    "calibration_id": "field-chess-42b9fd287add",
+    "K1": [
+      [
+        1726.5435054485665,
+        0.0,
+        926.8247821693776
+      ],
+      [
+        0.0,
+        1733.7713325879404,
+        528.5868011299646
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "D1": [
+      0.004054279735864326,
+      0.13842874885319742,
+      -0.001655143427826891,
+      -0.0068682381350673675,
+      0.0
+    ],
+    "K2": [
+      [
+        1718.8930570051123,
+        0.0,
+        882.4335551674459
+      ],
+      [
+        0.0,
+        1725.3885060527539,
+        507.4981192790627
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "D2": [
+      -0.009613895612270653,
+      0.20905581676202392,
+      -0.00360809972695938,
+      -0.009153684155159547,
+      0.0
+    ],
+    "R1": [
+      [
+        0.999494166738952,
+        -0.003949745299714167,
+        -0.03155645998643356
+      ],
+      [
+        0.004094198912160457,
+        0.9999814290494383,
+        0.004514320714208304
+      ],
+      [
+        0.0315380435359529,
+        -0.004641235644788108,
+        0.9994917762251043
+      ]
+    ],
+    "R2": [
+      [
+        0.9993245493859206,
+        -0.004744795526483882,
+        -0.036440800074071175
+      ],
+      [
+        0.004577878601839782,
+        0.9999786515089142,
+        -0.0046625694547472295
+      ],
+      [
+        0.03646214505666644,
+        0.004492598560452824,
+        0.9993249364125972
+      ]
+    ],
+    "P1": [
+      [
+        1834.370328897513,
+        0.0,
+        973.8779449462891,
+        0.0
+      ],
+      [
+        0.0,
+        1834.370328897513,
+        516.5512046813965,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ]
+    ],
+    "P2": [
+      [
+        1834.370328897513,
+        0.0,
+        973.8779449462891,
+        -109736.82132332247
+      ],
+      [
+        0.0,
+        1834.370328897513,
+        516.5512046813965,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ]
+    ],
+    "image_width_px": 1920,
+    "image_height_px": 1080,
+    "output_width_px": 1920,
+    "output_height_px": 1080,
+    "alpha": 0.0,
+    "right_frame_transform": "none",
+    "created_at": "2026-10-30T07:48:37.268232+00:00",
+    "definition": "cv2.stereoRectify(alpha=0) raw->rectified remap"
+  }
+}

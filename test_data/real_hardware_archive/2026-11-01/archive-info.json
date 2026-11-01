@@ -1,0 +1,28 @@
+{
+  "schema_version": "field-archive-v1",
+  "archived_at": "2026-11-01T06:28:41.939563+00:00",
+  "scene": "elevation-20261101-142239-ad25d1fb",
+  "manifest": "elevation-20261101-142239-ad25d1fb/manifest.json",
+  "capture_time_first": "2026-11-01T14:22:24.282+08:00",
+  "capture_time_last": "2026-11-01T14:22:31.609+08:00",
+  "stereo_pair_count": 10,
+  "image_width": 1920,
+  "image_height": 1080,
+  "photo_file_count": 22,
+  "photo_duplication_note": "photos/left.png and photos/right.png duplicate the final burst pair for direct GUI preview.",
+  "package_file_count": 25,
+  "package_bytes": 66947561,
+  "png_bytes_match_original_capture": true,
+  "manifest_and_ai_load_after_relocation": true,
+  "saved_ai_run_status": "VALID",
+  "saved_ai_candidate_states": {
+    "UNRESOLVED": 12
+  },
+  "strict_local_report_in_package": false,
+  "contains_api_credentials": false,
+  "usage_gui": "Open scene in GUI and select this archive manifest.json; AI results are already saved and do not require a new provider request.",
+  "usage_command": "python -m pipe_twin gui --manifest test_data/real_hardware_archive/2026-11-01/elevation-20261101-142239-ad25d1fb/manifest.json",
+  "new_camera_capture": false,
+  "new_provider_calls": 0,
+  "original_scene_unchanged": true
+}
