@@ -53,6 +53,7 @@ def report_view_geometry(report):
                      calibration_id=audit.get('calibration_id'),
                      axis_source=direction.get('source', 'IMAGE_BOUNDARIES'),
                      ground_boundary_check_passed=(stage.get('ground_correction') or {}).get('boundary_check_passed'),
+                     ground_correction_applied=bool((stage.get('ground_correction') or {}).get('applied')),
                      ground_trial=bool((stage.get('ground_correction') or {}).get('trial_mode')))
         results.append(value)
     return results
@@ -76,8 +77,12 @@ def view_geometry_summary_lines(report):
                   f"垂直管轴的有效分量：{value['baseline_perpendicular_to_axis_mm']:.2f} mm",
                   f"双目连线与管轴锐夹角：{value['baseline_axis_acute_angle_deg']:.2f}°",
                   f"横跨程度：{value['baseline_cross_axis_fraction']:.1%}（0% 沿管轴，100% 横跨管轴）"]
-        if value['ground_trial']:
+        if value['ground_trial'] and value['ground_correction_applied']:
             lines.append('轴向使用地面试验约束，上述数值也属于条件诊断。')
+        elif value['ground_trial']:
+            lines.append('地面试验未应用；上述数值来自图像轴向，仍属于条件诊断。')
+        elif value['ground_correction_applied']:
+            lines.append('轴向已使用地面约束；上述数值仍属于条件诊断。')
         if value['ground_boundary_check_passed'] is False:
             lines.append('本次地面约束与管轴轮廓检查未通过；不能据此确认机位或尺寸已可靠。')
     lines += ['', '如何调整：',

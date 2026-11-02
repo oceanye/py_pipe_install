@@ -74,6 +74,23 @@ def test_ground_boundary_failure_remains_visible_even_when_trial_produces_an_axi
     assert '管轴轮廓检查未通过' in text and '60.00 mm' in text
 
 
+@pytest.mark.parametrize('applied', [False, None, True])
+def test_ground_trial_switch_does_not_claim_correction_was_applied(applied):
+    source = report()
+    if applied is not None:
+        source['section_evaluation']['ground_correction']['applied'] = applied
+    value = report_view_geometry(source)[0]
+    text = '\n'.join(view_geometry_summary_lines(source))
+    assert value['ground_trial'] is True
+    assert value['ground_correction_applied'] is bool(applied)
+    if applied:
+        assert '轴向使用地面试验约束' in text
+        assert '地面试验未应用' not in text
+    else:
+        assert '地面试验未应用' in text and '来自图像轴向' in text
+        assert '轴向使用地面试验约束' not in text
+
+
 def test_no_report_displays_next_action_and_no_old_measurement():
     assert report_view_geometry(None) == []
     assert '请先抓拍并评估' in '\n'.join(view_geometry_summary_lines(None))

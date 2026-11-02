@@ -64,3 +64,48 @@ def test_malformed_nonunique_plan_cannot_light_model_pipes():
     plan['assignments'][1]['pipe_id'] = 'P001'
     assert hypothesis_assignments(report) == {}
     assert assist_preview_states(report, {'P001': 'UNKNOWN'}) == {'P001': 'UNKNOWN'}
+
+
+def test_coarse_tolerances_and_measured_size_remain_distinct_from_purchase_hint():
+    report = report_fixture()
+    data = report['installation_assist']
+    data['policy'] = {'measured_diameter_tolerance_ratio': .10,
+                      'relative_distance_tolerance_ratio': .10}
+    data['observations'][0].update(estimated_diameter_mm=47.08, prior_diameter_mm=50.)
+    before = copy.deepcopy(report)
+    text = '\n'.join(assist_summary_lines(report))
+    assert '估计管径 10%' in text and '相对距离 10%' in text
+    assert '轮廓估计外径 47.08 mm' in text
+    assert '采购外径提示 50 mm' in text
+    assert set(assist_preview_states(report, model_states(report)).values()) == {
+        'ASSIST_CANDIDATE', 'UNKNOWN'}
+    assert report == before
+
+
+def test_installed_set_consensus_lights_positions_without_claiming_observation_identity():
+    report = report_fixture()
+    data = report['installation_assist']
+    data['ranked_hypotheses'][1]['assignments'] = [
+        {'observation_id': 'a', 'pipe_id': 'P002'},
+        {'observation_id': 'b', 'pipe_id': 'P001'}]
+    data['pipes'] = [{'pipe_id': pid, 'status': 'LIKELY', 'presence_consensus': True,
+                     'identity_basis': 'COMMON_INSTALLED_SET'} for pid in ('P001', 'P002')]
+    before = copy.deepcopy(report)
+    for index in (0, 1):
+        states = assist_preview_states(report, model_states(report), index)
+        assert states == {'P001': 'SUSPECTED_INSTALLED', 'P002': 'SUSPECTED_INSTALLED',
+                          'P003': 'UNKNOWN', 'P004': 'UNKNOWN'}
+        assert all(row['status'] == 'AMBIGUOUS' for row in assist_rows(report, index))
+    assert '逐根对应仍可能互换' in '\n'.join(assist_summary_lines(report))
+    assert report == before
+
+
+def test_diagnostic_plan_outside_recognition_conditions_cannot_light_positions():
+    report = report_fixture()
+    data = report['installation_assist']
+    data['ranked_hypotheses'][1]['near_best'] = False
+    data['pipes'] = [{'pipe_id': 'P003', 'status': 'LIKELY', 'presence_consensus': True}]
+    strict = model_states(report)
+    assert assist_preview_states(report, strict, 1) == strict
+    assert '不点亮安装管位' in '\n'.join(assist_summary_lines(report, 1))
+    assert all(row['values'][-1] == '未满足识别条件，仅供诊断' for row in assist_rows(report, 1))

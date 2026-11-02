@@ -53,3 +53,16 @@ def test_portable_hints_do_not_invent_installations_from_blank_photos(tmp_path):
     source = loaded['manifest']['capture']['capture_groups'][-1]
     assert assist['source']['photo_sha256'] == {role: source['views'][role]['sha256'] for role in ('left', 'right')}
     assert path.read_bytes() == before
+
+
+def test_recognition_tolerances_are_portable_without_purchase_hints():
+    options = {'measured_diameter_tolerance_ratio': .1, 'relative_distance_tolerance_ratio': .12}
+    normalized = normalize_registration_settings({'installation_assist': options})
+    assert normalized['installation_assist'] == options
+    assert normalize_registration_settings(normalized) == normalized
+
+
+@pytest.mark.parametrize('value', [True, 0, -1, .51, float('inf'), float('nan'), '0.1'])
+def test_invalid_recognition_tolerance_is_rejected(value):
+    with pytest.raises(ValueError):
+        normalize_installation_assist_settings({'relative_distance_tolerance_ratio': value})

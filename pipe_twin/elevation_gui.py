@@ -1650,8 +1650,8 @@ class ElevationCaptureDialog:
             return False
         from .elevation_dataset import normalize_registration_settings
         settings = dict(self.registration_settings)
-        settings['installation_assist'] = {'appearance_diameter_hints': values,
-                                           'hint_source': 'USER_STATED_PURCHASE_DIAMETERS'}
+        settings['installation_assist'] = dict(settings.get('installation_assist') or {},
+            appearance_diameter_hints=values, hint_source='USER_STATED_PURCHASE_DIAMETERS')
         self.registration_settings = normalize_registration_settings(settings)
         self.invalidate()
         self.message.set('已设置颜色与采购规格，仅用于辅助识别；点击⑤重新评估并保存到本次现场。')

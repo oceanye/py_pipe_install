@@ -53,3 +53,24 @@ def test_gaps_survive_right_refinement_and_zone_offsets():
     segments = boundary_overlay_segments(report, 'right')
     assert [(a, c) for a, _, c, _ in segments] == [(102, 146), (177, 274), (305, 402), (433, 485)]
     assert segments[0][1] == pytest.approx(127)
+
+
+@pytest.mark.parametrize('revision', [
+    'pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3',
+    'pooled-sections-oriented-boundaries-v4', 'pooled-sections-global-assignment-v5',
+])
+def test_common_section_geometry_explanation_survives_global_pairing_revision(revision):
+    report = {'section_evaluation': {'section_revision': revision,
+                                    'aggregation_band': {'span_px': 530.}}}
+    text = '\n'.join(section_summary_lines(report))
+    assert '鼠标仅提供大致方向，实际边缘方向从图像重新估计' in text
+    assert '圆心差在同一法向断面上比较' in text
+    assert '不把沿管长的位移算作误差' in text
+
+
+def test_legacy_unknown_revision_does_not_claim_common_station_alignment():
+    report = {'section_evaluation': {'section_revision': 'legacy',
+                                    'aggregation_band': {'span_px': 530.}}}
+    text = '\n'.join(section_summary_lines(report))
+    assert '所画方向是二维取样方向' in text
+    assert '圆心差在同一法向断面上比较' not in text

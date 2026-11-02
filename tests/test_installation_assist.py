@@ -184,3 +184,110 @@ def test_right_observation_box_restores_refinement_then_crop_offset():
     stage['zone_offsets'] = {'right_x': 7., 'right_y': 11.}
     result = assist.analyze_installation_assist(report, models, settings())
     assert result['observations'][0]['right_region_px'] == pytest.approx([20., 36., 100., 20.])
+
+
+def measured_fixture(*, scale=1., with_occluded=False):
+    from types import SimpleNamespace
+    import numpy as np
+    models = [spec('RED', 0, 100, 41), spec('WHITE', 100, 0, 26), spec('BLUE', 220, 100, 51)]
+    if with_occluded:
+        models += [spec('OCCLUDED', 100, 200, 26), spec('OTHER_WHITE', 450, 300, 26)]
+    rows = []
+    for m in models[:4 if with_occluded else 3]:
+        x, y, _ = m['centerline_world_mm'][0]
+        depth = 1000-y*scale
+        rows.append(((x*scale+50)/depth*1000, m['nominal_diameter_mm']/depth*1000, COLORS[m['nominal_diameter_mm']]))
+    report = image_report(rows, solved=True)
+    stage = report['section_evaluation']
+    stage.update(axis={'status': 'STABLE', 'axis': [1., 0., 0.]},
+                 ground_correction={'applied': False, 'status': 'GROUND_NORMAL_INVALID'},
+                 epipolar_refinement={'applied': True})
+    for i, candidate in enumerate(stage['candidates']):
+        if i == 3:
+            candidate['fit'] = {'status': 'UNRESOLVED'}
+            continue
+        x, y, _ = models[i]['centerline_world_mm'][0]
+        candidate['fit'] = {'status': 'CONDITIONAL_FIT', 'trial_diameter_mm': models[i]['nominal_diameter_mm']*.91,
+            'known_diameter_mm': None, 'section_center_parameters_mm': [x*scale+50., 1000.-y*scale],
+            'axis': [1., 0., 0.]}
+    calibration = SimpleNamespace(left=SimpleNamespace(rectified_intrinsic=np.diag([1000., 1000., 1.])))
+    return models, report, calibration
+
+
+def test_conditional_centres_identify_pipes_with_ten_percent_error_without_metric_acceptance():
+    models, report, _ = measured_fixture(scale=1.09)
+    original = copy.deepcopy(report)
+    result = assist.analyze_installation_assist(report, models, settings())
+    assert result['counts']['LIKELY'] == 3
+    assert result['position_source'] == 'CONDITIONAL_OBSERVED_RELATIVE_SECTION'
+    assert not result['known_diameter_used_for_localization']
+    assert not result['accepted_measurement'] and not result['installation_acceptance']
+    assert result['ranked_hypotheses'][0]['maximum_pairwise_relative_difference'] == pytest.approx(.09)
+    assert result['policy']['measured_diameter_tolerance_ratio'] == .10
+    assert report == original
+
+
+def test_measurement_tolerance_boundary_and_outside_size_are_distinguished():
+    models, report, _ = measured_fixture()
+    fit = report['section_evaluation']['candidates'][0]['fit']
+    fit['trial_diameter_mm'] = 41*.9
+    result = assist.analyze_installation_assist(report, models, settings())
+    assert result['observations'][0]['suggested_pipe_id'] == 'RED'
+    fit['trial_diameter_mm'] = 41*.8999
+    result = assist.analyze_installation_assist(report, models, settings())
+    assert result['observations'][0]['status'] == 'INSUFFICIENT'
+    assert 'MEASURED_DIAMETER_OUTSIDE_ASSIST_TOLERANCE' in result['observations'][0]['reason_codes']
+
+
+def test_relative_distance_outside_budget_cannot_promote_even_when_radius_matches():
+    models, report, _ = measured_fixture(scale=1.11)
+    result = assist.analyze_installation_assist(report, models, settings())
+    assert result['counts']['LIKELY'] == 0
+    assert result['status'] == 'INSUFFICIENT'
+    assert result['reason_codes'] == ['RELATIVE_LAYOUT_CONFLICT']
+
+
+def test_occluded_image_candidate_is_projected_from_three_free_centres_not_given_a_radius():
+    models, report, calibration = measured_fixture(with_occluded=True)
+    result = assist.analyze_installation_assist(report, models, settings(), calibration=calibration)
+    last = result['observations'][3]
+    assert last['suggested_pipe_id'] == 'OCCLUDED'
+    assert 'estimated_diameter_mm' not in last and 'observed_position' not in last
+    check = result['ranked_hypotheses'][0]['unresolved_image_checks'][0]
+    assert check['transverse_difference_px'] < 1e-9 and check['passed']
+    assert not check['measured_center_or_diameter']
+    assert result['counts'] == {'LIKELY': 4, 'AMBIGUOUS': 0, 'NO_OBSERVATION': 1}
+
+
+def test_unmatched_image_candidate_does_not_veto_three_observed_sections():
+    models, report, calibration = measured_fixture(with_occluded=True)
+    report['section_evaluation']['views']['left'][3]['region_px'][1] = 10000.
+    result = assist.analyze_installation_assist(report, models, settings(), calibration=calibration)
+    assert result['counts']['LIKELY'] == 3
+    assert result['observations'][3]['status'] == 'INSUFFICIENT'
+    assert result['image_projection_fallback']['observed_section_identity_retained']
+
+
+def test_symmetric_observation_exchange_can_resolve_installed_set_without_individual_ids():
+    models = [spec('A', 0, 0, 41), spec('B', 100, 0, 41), spec('C', 50, 90, 51)]
+    report = image_report([(100, 41, COLORS[41]), (200, 41, COLORS[41]), (150, 51, COLORS[51])], solved=True)
+    stage = report['section_evaluation']; stage['axis'] = {'status': 'STABLE', 'axis': [1, 0, 0]}
+    for candidate, model in zip(stage['candidates'], models):
+        x, y, _ = model['centerline_world_mm'][0]
+        candidate['fit'] = {'status': 'CONDITIONAL_FIT', 'trial_diameter_mm': model['nominal_diameter_mm'],
+            'axis': [1, 0, 0], 'section_center_parameters_mm': [x+50, 1000-y]}
+    result = assist.analyze_installation_assist(report, models)
+    assert result['plausible_hypothesis_count'] == 2
+    assert all(o['status'] == 'AMBIGUOUS' for o in result['observations'][:2])
+    assert all(p['status'] == 'LIKELY' and p['presence_consensus'] for p in result['pipes'])
+    assert [p['identity_basis'] for p in result['pipes'][:2]] == ['COMMON_INSTALLED_SET']*2
+
+
+def test_repeated_section_patterns_remain_ambiguous_under_measured_geometry():
+    models, report, _ = measured_fixture()
+    models += [spec('OTHER_'+m['pipe_id'], m['centerline_world_mm'][0][0]+500,
+                    m['centerline_world_mm'][0][1], m['nominal_diameter_mm']) for m in models[:]]
+    result = assist.analyze_installation_assist(report, models, settings())
+    assert result['plausible_hypothesis_count'] >= 2
+    assert result['counts']['LIKELY'] == 0
+    assert all(not p['presence_consensus'] for p in result['pipes'])

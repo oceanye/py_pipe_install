@@ -12,7 +12,7 @@ import math
 from itertools import combinations
 import numpy as np
 
-POLICY = {'revision': 'static-section-repeatability-v1', 'maximum_frames': 7,
+POLICY = {'revision': 'static-section-repeatability-v2', 'maximum_frames': 7,
           'minimum_frames': 3, 'minimum_fraction': .8, 'minimum_box_iou': .5,
           'diameter_span_mm': 1., 'diameter_span_ratio': .05, 'pair_distance_span_mm': 5.}
 POLICY_SHA256 = hashlib.sha256(json.dumps(POLICY, sort_keys=True).encode()).hexdigest()
@@ -67,7 +67,8 @@ def check_sections(latest, stages, sources, *, requested_frames):
                 distances.append(float(np.linalg.norm(np.asarray(x['estimated_center_uv_mm'])-y['estimated_center_uv_mm'])))
         values = _range(distances)
         pairs.append({'ids': [a, b], 'sample_count': len(distances), 'distance': values,
-                      'repeatable': bool(len(distances) >= required and values['span_mm'] <= POLICY['pair_distance_span_mm'])})
+                      'repeatable': bool(values['span_mm'] <= POLICY['pair_distance_span_mm'])
+                                    if len(distances) >= required else None})
     for row in latest.get('candidates', []):
         identity = row['candidate_id']; values, frame_results = [], []
         for index, (mapping, by_id) in enumerate(zip(maps, candidates)):
@@ -82,19 +83,32 @@ def check_sections(latest, stages, sources, *, requested_frames):
         tolerance = max(POLICY['diameter_span_mm'], POLICY['diameter_span_ratio']*spread['median_mm']) if spread else None
         repeatable = bool(len(values) >= required and spread['span_mm'] <= tolerance)
         related = [p for p in pairs if identity in p['ids']]
-        position = bool(related and all(p['repeatable'] for p in related))
+        # A missing comparison is not observed motion. Keep it distinct from a
+        # measured distance that changes beyond the repeatability threshold.
+        if not related:
+            layout_status, position = 'NOT_ASSESSABLE', None
+        elif any(p['repeatable'] is False for p in related):
+            layout_status, position = 'UNSTABLE', False
+        elif any(p['repeatable'] is None for p in related):
+            layout_status, position = 'INSUFFICIENT_SUPPORT', None
+        else:
+            layout_status, position = 'REPEATABLE', True
         reasons = []
         if len(values) < required:
             reasons.append('TEMPORAL_SECTION_SUPPORT_INSUFFICIENT')
         elif not repeatable:
             reasons.append('TEMPORAL_SECTION_DIAMETER_UNSTABLE')
-        if not position:
-            reasons.append('TEMPORAL_SECTION_LAYOUT_UNSTABLE')
+        layout_reason = {'UNSTABLE': 'TEMPORAL_SECTION_LAYOUT_UNSTABLE',
+                         'NOT_ASSESSABLE': 'TEMPORAL_SECTION_LAYOUT_NOT_ASSESSABLE',
+                         'INSUFFICIENT_SUPPORT': 'TEMPORAL_SECTION_LAYOUT_SUPPORT_INSUFFICIENT'}.get(layout_status)
+        if layout_reason:
+            reasons.append(layout_reason)
         row['temporal_consistency'] = {'sampled_frames': count, 'solved_frames': len(values),
             'required_frames': required, 'diameter': spread, 'diameter_span_limit_mm': tolerance,
-            'diameter_repeatable': repeatable, 'layout_repeatable': position,
+            'diameter_repeatable': repeatable, 'layout_repeatable': position, 'layout_status': layout_status,
             'frames': frame_results, 'reason_codes': reasons, 'accuracy_validated': False}
-        row['reason_codes'] = sorted(set(row.get('reason_codes', [])+reasons))
+        row['reason_codes'] = sorted(set([r for r in row.get('reason_codes', [])
+            if not r.startswith('TEMPORAL_SECTION_')]+reasons))
     latest['temporal_sections'] = {'status': 'CHECKED', 'policy': dict(POLICY), 'policy_sha256': POLICY_SHA256,
         'requested_frames': requested_frames, 'sampled_frames': count, 'required_frames': required,
         'sources': sources, 'pairwise': pairs, 'geometry_source': 'CURRENT_REFERENCE_FRAME',

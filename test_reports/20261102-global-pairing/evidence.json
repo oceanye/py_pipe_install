@@ -1,0 +1,450 @@
+{
+  "scope": "COARSE_INSTALLATION_IDENTITY_REPLAY_NOT_METRIC_ACCEPTANCE",
+  "generated_at": "2026-11-02T03:32:35.390424+00:00",
+  "source_dataset": "elevation-20261102-093519-f1d6650e",
+  "source_capture_interval": [
+    "2026-11-02T09:29:48.845+08:00",
+    "2026-11-02T09:29:56.151+08:00"
+  ],
+  "source_unchanged": true,
+  "source_file_count": 35,
+  "source_sha256": {
+    "ai_section_result.json": "07b540843842c9b2b59fbaa1b2762b6800898e83b340de3e0b7159d2e2adb894",
+    "manifest.json": "8ff47aedbda7232362624a0674110175304e69ab47c8ffad973fee1bc4e2eb86",
+    "report.json": "1f79049431f536b9038af95717919be00eb541b7108c1c5ffdf4d4d0ac48f0dc",
+    "burst\\000_left.png": "26585451146e328cf06bdd46c510eb56d8c99dac35a094ffeb817d1da64774ed",
+    "burst\\000_right.png": "db2807ecedef78da1873133ec3843e64b43f2613a15b34ab91a4712c615d6ca7",
+    "burst\\001_left.png": "528eb685662286087cd74758e52edd8b1b6e5375da85f21a39c276b54fb58b06",
+    "burst\\001_right.png": "faa19ee1ec238c58977ea9fdc9ae6f80baa752fabdbafd3d0576a8a69dd97278",
+    "burst\\002_left.png": "bb58c8a20b9914f8f82cc12b0ded1d36afc596ec88cffac3dde8f6e6fa67ae12",
+    "burst\\002_right.png": "8cbb2db19fa0d19f162f00423bede3fa6d8c0267c99ca1a7ec461b6bc8f4a74b",
+    "burst\\003_left.png": "2d8f123ae650f6a9de2cd8cd9421e67a7ce564385ff7f49d92ca6cde8d3aa21e",
+    "burst\\003_right.png": "5d5da15ae5c6f2c3d731671cf80438d875d079d04f1cc564ea7a45b3579a4184",
+    "burst\\004_left.png": "28d4040c04151c605488c524a5deb6718f466252451cda38ce0b269d25e63879",
+    "burst\\004_right.png": "69ec66ed2281f85545a6356c450f4ccabd1e6bd451aec80df069fd2ce571b6f9",
+    "burst\\005_left.png": "d70b6986b56606f67b011cf796e0234fefa9b6647cdd1524e5f6118a6895cb2c",
+    "burst\\005_right.png": "820db44117685dec213774a3d49b80467c583cdf9437f462e6cbac165eb5f561",
+    "burst\\006_left.png": "58f911a2355a090ad247dc9291d2be97b7fe5f9e690b919957034eb964222d3a",
+    "burst\\006_right.png": "26138a1f2c1ebce8314bb9c40ca30ff85a013ea0cb636907c088554af9ada274",
+    "burst\\007_left.png": "384151fd597c3701fe061d21f3ceb0dd5848971dbd9c03a5c1f18cb55afb7970",
+    "burst\\007_right.png": "57a1f23d9b00a272ced4643a52091124b8854425290e01bab99505e53372c8bd",
+    "burst\\008_left.png": "b2406ed75a7acbdbbe889bb0801781130883c10e1ee04d449c8503568ab12612",
+    "burst\\008_right.png": "b3437c7f9df12c025c569312e11d0858d224b1db8955af04c2b38c5129d9c24e",
+    "burst\\009_left.png": "9b8648893b3155b770405f048a5fe64a141608722dc41f7246cace1504563103",
+    "burst\\009_right.png": "d11783bc1dbf0dba525df0e63b2d10306bac723cbd49237cf761ed93ffa28e01",
+    "evidence\\elevation-20261102-093519-f1d6650e_left_overlay.png": "40a655b2ccc163e73a21bdc1c2b55cd40baddab9d3c349c54a4ad30d343361c2",
+    "evidence\\elevation-20261102-093519-f1d6650e_right_overlay.png": "3b4f395d775d865edabf1faba1714ee62030c5d3a5612423fe322883325461f4",
+    "evidence\\local_surface.ply": "11052bb8202dd26880dc0fc8ae3a5fb0245cdc8fa78832e0cae4b338cdec6e50",
+    "model\\管道布置.stl": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "photos\\left.png": "9b8648893b3155b770405f048a5fe64a141608722dc41f7246cace1504563103",
+    "photos\\right.png": "d11783bc1dbf0dba525df0e63b2d10306bac723cbd49237cf761ed93ffa28e01",
+    "evidence\\section-01\\index.html": "2727fba72a04830b966d51e1ca6bee1b37d489560ac1caf5d119f6cad71b2ec4",
+    "evidence\\section-01\\pair-dimensions.csv": "d04a9ea0ef847017a1ad510daf16aea1cc182b6e99f3db24dfa0937adf0fb046",
+    "evidence\\section-01\\pipe-dimensions.csv": "9342258a47d547a53fab903168ddbc603bde82b4fe39e59b5a74e8027e5c801c",
+    "evidence\\section-01\\section-model.json": "a802785ab3585dc72db1f2352ceb467c3e2672c96c79ef1ab7d4f46f30662af5",
+    "evidence\\section-01\\section.dxf": "582b7d6552bc92c4649747e1afb86c2a1f8786639dad5a474dfc2283d703fb5c",
+    "evidence\\section-01\\section.svg": "25639930f3dc510e91750a3d87e92f0572b01761dd9ea726f3dc51f82b7dbcca"
+  },
+  "new_capture": false,
+  "new_ai_request": false,
+  "source_pipe_ids_used_as_fit_inputs": false,
+  "replay_elapsed_seconds": 129.15599999998813,
+  "temporal_depth": {
+    "status": "VALID",
+    "requested_frames": 10,
+    "accepted_frames": 10
+  },
+  "before": {
+    "solved_sections": 1,
+    "assist_counts": {
+      "LIKELY": 0,
+      "AMBIGUOUS": 12,
+      "NO_OBSERVATION": 0
+    },
+    "plausible_hypothesis_count": 26
+  },
+  "after": {
+    "solved_sections": 3,
+    "assist_counts": {
+      "LIKELY": 4,
+      "AMBIGUOUS": 0,
+      "NO_OBSERVATION": 8
+    },
+    "plausible_hypothesis_count": 1,
+    "assignment": [
+      {
+        "observation_id": "POOL-L01-POOL-R01",
+        "color": "RED",
+        "pipe_id": "P011",
+        "estimated_diameter_mm": 39.849832997515094,
+        "observed_position": {
+          "status": "CONDITIONAL_OBSERVED_CENTER",
+          "section_center_uv_mm": [
+            -64.0623074475131,
+            992.7069763699745
+          ],
+          "axis_camera": [
+            0.06032082634214153,
+            0.9761674256347433,
+            0.20846715578008745
+          ],
+          "estimated_diameter_mm": 39.849832997515094,
+          "diameter_source": "IMAGE_FIT",
+          "accepted_measurement": false,
+          "known_diameter_used": false,
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM"
+        },
+        "status": "LIKELY"
+      },
+      {
+        "observation_id": "POOL-L02-POOL-R02",
+        "color": "RED",
+        "pipe_id": "P008",
+        "estimated_diameter_mm": 39.25708809016998,
+        "observed_position": {
+          "status": "CONDITIONAL_OBSERVED_CENTER",
+          "section_center_uv_mm": [
+            -3.274094345660869,
+            838.9008328022765
+          ],
+          "axis_camera": [
+            0.06032082634214153,
+            0.9761674256347433,
+            0.20846715578008745
+          ],
+          "estimated_diameter_mm": 39.25708809016998,
+          "diameter_source": "IMAGE_FIT",
+          "accepted_measurement": false,
+          "known_diameter_used": false,
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM"
+        },
+        "status": "LIKELY"
+      },
+      {
+        "observation_id": "POOL-L03",
+        "color": "WHITE",
+        "pipe_id": "P009",
+        "estimated_diameter_mm": null,
+        "observed_position": null,
+        "status": "LIKELY"
+      },
+      {
+        "observation_id": "POOL-L04-POOL-R04",
+        "color": "BLUE",
+        "pipe_id": "P004",
+        "estimated_diameter_mm": 47.0805200756415,
+        "observed_position": {
+          "status": "CONDITIONAL_OBSERVED_CENTER",
+          "section_center_uv_mm": [
+            82.742513841415,
+            824.6230194179631
+          ],
+          "axis_camera": [
+            0.06032082634214153,
+            0.9761674256347433,
+            0.20846715578008745
+          ],
+          "estimated_diameter_mm": 47.0805200756415,
+          "diameter_source": "IMAGE_FIT",
+          "accepted_measurement": false,
+          "known_diameter_used": false,
+          "coordinate_frame": "LEFT_RECTIFIED_CAMERA_MM"
+        },
+        "status": "LIKELY"
+      }
+    ],
+    "pairwise_distances": [
+      {
+        "observation_ids": [
+          "POOL-L01-POOL-R01",
+          "POOL-L02-POOL-R02"
+        ],
+        "estimated_center_distance_mm": 165.38299988597242,
+        "design_center_distance_mm": 166.43316977093238,
+        "relative_difference": 0.00630985930512129
+      },
+      {
+        "observation_ids": [
+          "POOL-L01-POOL-R01",
+          "POOL-L04-POOL-R04"
+        ],
+        "estimated_center_distance_mm": 223.167811608932,
+        "design_center_distance_mm": 228.03506896041586,
+        "relative_difference": 0.02134433696392879
+      },
+      {
+        "observation_ids": [
+          "POOL-L02-POOL-R02",
+          "POOL-L04-POOL-R04"
+        ],
+        "estimated_center_distance_mm": 87.19353668160392,
+        "design_center_distance_mm": 89.99997965494777,
+        "relative_difference": 0.03118270675286272
+      }
+    ],
+    "unresolved_image_checks": [
+      {
+        "observation_id": "POOL-L03",
+        "transverse_difference_px": 9.664517007735345,
+        "allowed_difference_px": 29.611387252807617,
+        "passed": true,
+        "source": "MODEL_AXIS_PROJECTED_FROM_OTHER_OBSERVED_SECTIONS",
+        "measured_center_or_diameter": false
+      }
+    ],
+    "tolerances": {
+      "measured_diameter_tolerance_ratio": 0.1,
+      "relative_distance_tolerance_ratio": 0.1
+    },
+    "ground_correction_applied": false,
+    "strict_counts": {
+      "INSTALLED": 0,
+      "NOT_INSTALLED": 0,
+      "UNKNOWN": 12
+    }
+  },
+  "identity_repeatability": {
+    "available_stereo_pairs": 10,
+    "independently_evaluated_pairs": 7,
+    "matching_reference_identity_frames": 7,
+    "matching_reference_correspondence_frames": 7,
+    "identity_sets": [
+      {
+        "pipe_ids": [
+          "P004",
+          "P008",
+          "P009",
+          "P011"
+        ],
+        "frame_count": 7
+      }
+    ],
+    "pairwise_repeatability": [
+      {
+        "observation_ids": [
+          "POOL-L01-POOL-R01",
+          "POOL-L02-POOL-R02"
+        ],
+        "frame_count": 7,
+        "design_center_distance_mm": 166.43316977093238,
+        "minimum_mm": 149.89402503547117,
+        "maximum_mm": 168.81623846282184,
+        "median_mm": 164.22719253590392,
+        "span_mm": 18.92221342735067,
+        "span_over_design_distance": 0.1136925617254899,
+        "maximum_frame_relative_difference_from_design": 0.09937408966148153
+      },
+      {
+        "observation_ids": [
+          "POOL-L01-POOL-R01",
+          "POOL-L04-POOL-R04"
+        ],
+        "frame_count": 7,
+        "design_center_distance_mm": 228.03506896041586,
+        "minimum_mm": 220.08225926304513,
+        "maximum_mm": 226.34589676553372,
+        "median_mm": 222.2823361637473,
+        "span_mm": 6.263637502488592,
+        "span_over_design_distance": 0.02746786944237899,
+        "maximum_frame_relative_difference_from_design": 0.03487538006161339
+      },
+      {
+        "observation_ids": [
+          "POOL-L02-POOL-R02",
+          "POOL-L04-POOL-R04"
+        ],
+        "frame_count": 7,
+        "design_center_distance_mm": 89.99997965494777,
+        "minimum_mm": 87.17031599255891,
+        "maximum_mm": 89.79852676956476,
+        "median_mm": 87.22787605676545,
+        "span_mm": 2.6282107770058474,
+        "span_over_design_distance": 0.029202348568101714,
+        "maximum_frame_relative_difference_from_design": 0.031440714467242614
+      }
+    ],
+    "source_unchanged": true
+  },
+  "identity_frames": [
+    {
+      "capture_id": "elevation-20261102-093519-f1d6650e-F001",
+      "sha256": {
+        "left": "26585451146e328cf06bdd46c510eb56d8c99dac35a094ffeb817d1da64774ed",
+        "right": "db2807ecedef78da1873133ec3843e64b43f2613a15b34ab91a4712c615d6ca7"
+      },
+      "likely_pipe_ids": [
+        "P004",
+        "P008",
+        "P009",
+        "P011"
+      ],
+      "plausible_hypothesis_count": 1,
+      "best_maximum_pairwise_relative_difference": 0.09937408966148153,
+      "observation_to_pipe_id": {
+        "POOL-L01-POOL-R01": "P011",
+        "POOL-L02-POOL-R02": "P008",
+        "POOL-L03": "P009",
+        "POOL-L04-POOL-R04": "P004"
+      }
+    },
+    {
+      "capture_id": "elevation-20261102-093519-f1d6650e-F003",
+      "sha256": {
+        "left": "bb58c8a20b9914f8f82cc12b0ded1d36afc596ec88cffac3dde8f6e6fa67ae12",
+        "right": "8cbb2db19fa0d19f162f00423bede3fa6d8c0267c99ca1a7ec461b6bc8f4a74b"
+      },
+      "likely_pipe_ids": [
+        "P004",
+        "P008",
+        "P009",
+        "P011"
+      ],
+      "plausible_hypothesis_count": 1,
+      "best_maximum_pairwise_relative_difference": 0.03487538006161339,
+      "observation_to_pipe_id": {
+        "POOL-L01-POOL-R01": "P011",
+        "POOL-L02-POOL-R02": "P008",
+        "POOL-L03": "P009",
+        "POOL-L04-POOL-R04": "P004"
+      }
+    },
+    {
+      "capture_id": "elevation-20261102-093519-f1d6650e-F004",
+      "sha256": {
+        "left": "2d8f123ae650f6a9de2cd8cd9421e67a7ce564385ff7f49d92ca6cde8d3aa21e",
+        "right": "5d5da15ae5c6f2c3d731671cf80438d875d079d04f1cc564ea7a45b3579a4184"
+      },
+      "likely_pipe_ids": [
+        "P004",
+        "P008",
+        "P009",
+        "P011"
+      ],
+      "plausible_hypothesis_count": 1,
+      "best_maximum_pairwise_relative_difference": 0.030962468221397144,
+      "observation_to_pipe_id": {
+        "POOL-L01-POOL-R01": "P011",
+        "POOL-L02-POOL-R02": "P008",
+        "POOL-L03": "P009",
+        "POOL-L04-POOL-R04": "P004"
+      }
+    },
+    {
+      "capture_id": "elevation-20261102-093519-f1d6650e-F005",
+      "sha256": {
+        "left": "28d4040c04151c605488c524a5deb6718f466252451cda38ce0b269d25e63879",
+        "right": "69ec66ed2281f85545a6356c450f4ccabd1e6bd451aec80df069fd2ce571b6f9"
+      },
+      "likely_pipe_ids": [
+        "P004",
+        "P008",
+        "P009",
+        "P011"
+      ],
+      "plausible_hypothesis_count": 1,
+      "best_maximum_pairwise_relative_difference": 0.030801158053705313,
+      "observation_to_pipe_id": {
+        "POOL-L01-POOL-R01": "P011",
+        "POOL-L02-POOL-R02": "P008",
+        "POOL-L03": "P009",
+        "POOL-L04-POOL-R04": "P004"
+      }
+    },
+    {
+      "capture_id": "elevation-20261102-093519-f1d6650e-F007",
+      "sha256": {
+        "left": "58f911a2355a090ad247dc9291d2be97b7fe5f9e690b919957034eb964222d3a",
+        "right": "26138a1f2c1ebce8314bb9c40ca30ff85a013ea0cb636907c088554af9ada274"
+      },
+      "likely_pipe_ids": [
+        "P004",
+        "P008",
+        "P009",
+        "P011"
+      ],
+      "plausible_hypothesis_count": 1,
+      "best_maximum_pairwise_relative_difference": 0.031440714467242614,
+      "observation_to_pipe_id": {
+        "POOL-L01-POOL-R01": "P011",
+        "POOL-L02-POOL-R02": "P008",
+        "POOL-L03": "P009",
+        "POOL-L04-POOL-R04": "P004"
+      }
+    },
+    {
+      "capture_id": "elevation-20261102-093519-f1d6650e-F009",
+      "sha256": {
+        "left": "b2406ed75a7acbdbbe889bb0801781130883c10e1ee04d449c8503568ab12612",
+        "right": "b3437c7f9df12c025c569312e11d0858d224b1db8955af04c2b38c5129d9c24e"
+      },
+      "likely_pipe_ids": [
+        "P004",
+        "P008",
+        "P009",
+        "P011"
+      ],
+      "plausible_hypothesis_count": 1,
+      "best_maximum_pairwise_relative_difference": 0.030570179109573048,
+      "observation_to_pipe_id": {
+        "POOL-L01-POOL-R01": "P011",
+        "POOL-L02-POOL-R02": "P008",
+        "POOL-L03": "P009",
+        "POOL-L04-POOL-R04": "P004"
+      }
+    },
+    {
+      "capture_id": "elevation-20261102-093519-f1d6650e-F010",
+      "sha256": {
+        "left": "9b8648893b3155b770405f048a5fe64a141608722dc41f7246cace1504563103",
+        "right": "d11783bc1dbf0dba525df0e63b2d10306bac723cbd49237cf761ed93ffa28e01"
+      },
+      "likely_pipe_ids": [
+        "P004",
+        "P008",
+        "P009",
+        "P011"
+      ],
+      "plausible_hypothesis_count": 1,
+      "best_maximum_pairwise_relative_difference": 0.03118270675286272,
+      "observation_to_pipe_id": {
+        "POOL-L01-POOL-R01": "P011",
+        "POOL-L02-POOL-R02": "P008",
+        "POOL-L03": "P009",
+        "POOL-L04-POOL-R04": "P004"
+      }
+    }
+  ],
+  "gui": {
+    "valid_manifest_load": true,
+    "bound_local_report_load": true,
+    "highlighted_pipe_states": {
+      "P004": "SUSPECTED_INSTALLED",
+      "P008": "SUSPECTED_INSTALLED",
+      "P009": "SUSPECTED_INSTALLED",
+      "P011": "SUSPECTED_INSTALLED"
+    },
+    "diagnostic_hypotheses_do_not_light": true,
+    "old_ai_result_rejected_as_changed": true
+  },
+  "tests": {
+    "command": ".venv/Scripts/python.exe -m pytest tests -q",
+    "passed": 1302,
+    "skipped": 1,
+    "subtests_passed": 272,
+    "elapsed_seconds": 449.27,
+    "isolated_tk_import_test": "1 passed in 0.46s",
+    "collection_note": "Initial pytest without tests path traversed ignored backup/dependency directories and failed collection; corrected to repository CI test path.",
+    "cli_smokes": {
+      "legacy_replay": "PASS 1727/1727 frames, max event error 2 frames",
+      "synthetic_generation": "PASS 9 instances",
+      "field_demo_analysis": "PASS 8 installed, 0 not installed, 1 unknown (software fixture only)"
+    }
+  },
+  "report_sha256": "92e698fce8cba378ac7cfba8bcdf61cb1a9a030897e663d362a3df735c04a9df",
+  "limitations": [
+    "White pipe identity is projection-supported; no measured white radius or centre.",
+    "One frame reaches 9.94% pair-distance error, close to recognition tolerance.",
+    "All seven identity checks use the same short static burst, not independent placement sessions.",
+    "Ground correction and precise installation acceptance remain unqualified."
+  ]
+}

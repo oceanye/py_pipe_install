@@ -12,15 +12,17 @@ import itertools
 import math
 import numpy as np
 
-from .image_line_geometry import canonical_image_axis, normal_from_axis
+from .image_line_geometry import canonical_image_axis, normal_from_axis, point_at_station
 from .section_diagnostics import section_basis
-from .installation_assist_config import SUPPORTED_COLOR_CLASSES
+from .installation_assist_config import SUPPORTED_COLOR_CLASSES, assist_tolerances
 
-REVISION = 'relative-layout-installation-assist-v1'
+REVISION = 'relative-layout-installation-assist-v2'
 POLICY = {'maximum_assignments': 50000, 'maximum_displayed_hypotheses': 5,
           'near_best_difference': .12, 'maximum_relative_difference': .8,
           'minimum_layout_observations': 3, 'view_sample_step_deg': 5,
-          'hint_diameter_tolerance_mm': 3., 'hint_diameter_tolerance_ratio': .15}
+          'hint_diameter_tolerance_mm': 3., 'hint_diameter_tolerance_ratio': .15,
+          'occluded_image_center_allowance_widths': .75,
+          'minimum_image_center_allowance_px': 4.}
 
 
 def _invalid_temporal_sequence(report):
@@ -159,11 +161,24 @@ def _observations(stage):
             'source': 'CURRENT_POOLED_IMAGE_BOUNDARIES', 'metric_fit_required': False,
             'measurement_reason_codes': pair.get('reason_codes', []), 'status': 'INSUFFICIENT',
             'suggested_pipe_id': None, 'candidate_pipe_ids': [], 'reason_codes': []})
+        stable_pixels = [b['reference_pixel'] for b in (view.get('aggregation') or {}).get('boundaries', [])
+                         if b.get('status') == 'STABLE' and b.get('reference_pixel') is not None]
+        x, y, w, h = view['region_px']
+        reference = np.mean(stable_pixels, axis=0) if stable_pixels else np.array([x+w/2, y+h/2])
+        values[-1]['image_reference_pixel'] = (reference+np.array(
+            [offsets.get('left_x', 0.), offsets.get('left_y', 0.)])).tolist()
+        fit = pair.get('fit') or {}
+        diameter = fit.get('trial_diameter_mm')
+        if (fit.get('status') == 'CONDITIONAL_FIT' and fit.get('known_diameter_mm') is None
+                and type(diameter) in (float, int) and math.isfinite(diameter) and diameter > 0):
+            values[-1]['estimated_diameter_mm'] = float(diameter)
+            values[-1]['diameter_measurement_accepted'] = False
     return values
 
 
-def _candidate_sets(observations, model, hints):
+def _candidate_sets(observations, model, hints, tolerances=None):
     candidates = []
+    tolerances = assist_tolerances(tolerances)
     classes = sorted({round(m['diameter'], 2) for m in model})
     for observation in observations:
         hint = hints.get(observation['color_class'])
@@ -182,11 +197,61 @@ def _candidate_sets(observations, model, hints):
             choices = [i for i, m in enumerate(model) if m['color_class'] == 'UNKNOWN'
                        or observation['color_class'] == 'UNKNOWN' or m['color_class'] == observation['color_class']]
             observation.update(prior_diameter_mm=None, diameter_source='IMAGE_WIDTH_ONLY', relative_size_class='UNRESOLVED')
+        measured = observation.get('estimated_diameter_mm')
+        if measured is not None:
+            # A free image fit is useful for size-class identification even
+            # when it is not an accepted dimension. Do not overwrite it with
+            # a purchase hint, or silently widen a contradictory tolerance.
+            choices = [i for i in choices if abs(measured/model[i]['diameter']-1.) <=
+                       tolerances['measured_diameter_tolerance_ratio']+1e-12]
+            observation['diameter_source'] = 'CONDITIONAL_IMAGE_FIT_NOT_METRIC_ACCEPTANCE'
+            observation['measured_diameter_tolerance_ratio'] = tolerances['measured_diameter_tolerance_ratio']
+            if not choices:
+                observation['reason_codes'].append('MEASURED_DIAMETER_OUTSIDE_ASSIST_TOLERANCE')
         observation['candidate_pipe_ids'] = [model[i]['pipe_id'] for i in choices]
         if not choices:
             observation['reason_codes'].append('NO_COMPATIBLE_MODEL_SIZE_OR_COLOR_CLASS')
         candidates.append(choices)
     return candidates
+
+
+def _measured_positions(stage):
+    """Current free section centres, with no ground or metric acceptance gate.
+
+    All centres must use a common axis/basis. A failed radius fit, an excluded
+    duplicate, or a supplied radius cannot supply an independently observed
+    centre. Image micro-refinement is already accounted for by the fitter.
+    """
+    result = {}
+    axis_data = stage.get('axis') or {}
+    if axis_data.get('status') != 'STABLE':
+        return result
+    try:
+        axis = _unit(axis_data['axis'])
+    except (ValueError, KeyError):
+        return result
+    identities = [c.get('candidate_id') for c in stage.get('candidates', [])]
+    for candidate in stage.get('candidates', []):
+        fit = candidate.get('fit') or {}
+        identity = candidate.get('candidate_id')
+        if (not identity or identities.count(identity) != 1 or candidate.get('included_in_section_model') is False
+                or fit.get('status') != 'CONDITIONAL_FIT' or fit.get('known_diameter_mm') is not None):
+            continue
+        try:
+            fitted_axis = _unit(fit['axis'])
+            params = np.asarray(fit['section_center_parameters_mm'], float)
+            diameter = float(fit['trial_diameter_mm'])
+            if (fitted_axis@axis < .999999 or params.shape != (2,) or not np.isfinite(params).all()
+                    or not math.isfinite(diameter) or diameter <= 0):
+                continue
+        except (TypeError, ValueError, KeyError):
+            continue
+        result[identity] = {'status': 'CONDITIONAL_OBSERVED_CENTER',
+            'section_center_uv_mm': params.tolist(), 'axis_camera': axis.tolist(),
+            'estimated_diameter_mm': diameter, 'diameter_source': 'IMAGE_FIT',
+            'accepted_measurement': False, 'known_diameter_used': False,
+            'coordinate_frame': 'LEFT_RECTIFIED_CAMERA_MM'}
+    return result
 
 
 def _image_hypothesis(observations, points, diameters, axis_world, side):
@@ -228,7 +293,8 @@ def _image_hypothesis(observations, points, diameters, axis_world, side):
             'camera_side_world_hypothesis': views[best].tolist(), 'scale_is_measurement': False}
 
 
-def _prior_hypothesis(observations, points, axis_world, side, prior, characteristic):
+def _prior_hypothesis(observations, points, axis_world, side, prior, characteristic, *, tolerances=None,
+                      intrinsic=None):
     indexes = [i for i, o in enumerate(observations) if o['observation_id'] in prior]
     if len(indexes) < POLICY['minimum_layout_observations']:
         return None
@@ -239,6 +305,17 @@ def _prior_hypothesis(observations, points, axis_world, side, prior, characteris
     bw, bc = section_basis(axis_world), section_basis(axis_camera)
     p = points[indexes]@bw
     q = np.array([v['section_center_uv_mm'] for v in values])
+    p_mean, q_mean = p.mean(axis=0), q.mean(axis=0)
+    relations = []
+    if tolerances is not None:
+        for i, j in itertools.combinations(range(len(indexes)), 2):
+            design = float(np.linalg.norm(p[j]-p[i]))
+            observed = float(np.linalg.norm(q[j]-q[i]))
+            difference = abs(observed/design-1.) if design > 1e-8 else math.inf
+            relations.append({'observation_ids': [observations[indexes[i]]['observation_id'],
+                                                  observations[indexes[j]]['observation_id']],
+                              'estimated_center_distance_mm': observed,
+                              'design_center_distance_mm': design, 'relative_difference': difference})
     p -= p.mean(axis=0); q -= q.mean(axis=0)
     # No scale adjustment and no tight millimetre acceptance threshold. A
     # model-neighbour-normalized difference ranks topology hypotheses only.
@@ -258,7 +335,43 @@ def _prior_hypothesis(observations, points, axis_world, side, prior, characteris
             'conditional_layout_rms_mm': rms, 'not_a_metric_acceptance_test': True,
             'camera_side_world_hypothesis': view.tolist(), 'scale_adjusted': False,
             'prior_position_count': len(indexes)})
-    return min(results, key=lambda r: r['difference_score']) if results else None
+        if tolerances is not None:
+            worst = max(pair['relative_difference'] for pair in relations)
+            results[-1].update(method='CONDITIONAL_OBSERVED_RELATIVE_SECTION',
+                observed_position_count=len(indexes), known_diameter_used=False,
+                pairwise_distances=relations, maximum_pairwise_relative_difference=worst,
+                within_relative_distance_tolerance=worst <= tolerances['relative_distance_tolerance_ratio']+1e-12,
+                within_section_alignment_tolerance=rms/characteristic <= tolerances['relative_distance_tolerance_ratio']+1e-12)
+            results[-1].pop('prior_position_count', None)
+            projection_checks = []
+            if intrinsic is not None:
+                for i, observation in enumerate(observations):
+                    if i in indexes:
+                        continue
+                    centre = bc@((points[i]@bw-p_mean)@r+q_mean)
+                    line = np.cross(intrinsic@centre, intrinsic@axis_camera)
+                    image_axis = np.asarray(observation['image_axis'])
+                    normal = normal_from_axis(image_axis)
+                    reference = np.asarray(observation['image_reference_pixel'])
+                    try:
+                        predicted = point_at_station(line, image_axis, float(reference@image_axis))
+                        error = abs(float((predicted-reference)@normal))
+                    except (ValueError, np.linalg.LinAlgError):
+                        error = math.inf
+                    # An occluded strip is not a whole cylinder silhouette.
+                    # Permit its observed midpoint to move by 3/4 of the
+                    # visible width; never fill its missing radius/depth.
+                    allowance = max(POLICY['minimum_image_center_allowance_px'],
+                                    POLICY['occluded_image_center_allowance_widths']*observation['image_width_px'])
+                    projection_checks.append({'observation_id': observation['observation_id'],
+                        'transverse_difference_px': error if math.isfinite(error) else None,
+                        'allowed_difference_px': allowance, 'passed': math.isfinite(error) and error <= allowance,
+                        'source': 'MODEL_AXIS_PROJECTED_FROM_OTHER_OBSERVED_SECTIONS',
+                        'measured_center_or_diameter': False})
+            results[-1]['unresolved_image_checks'] = projection_checks
+            results[-1]['image_projection_supported'] = all(c['passed'] for c in projection_checks)
+    return min(results, key=lambda r: (not (r.get('image_projection_supported', True)
+                    and r.get('within_section_alignment_tolerance', True)), r['difference_score'])) if results else None
 
 
 def _model_labels(model, axis, side):
@@ -328,6 +441,7 @@ def analyze_installation_assist(report, pipe_specs, settings=None, *, calibratio
     """Return advisory suggestions without altering reports, inputs or strict states."""
     settings = dict(settings or {})
     options = settings.get('installation_assist') or settings
+    tolerances = assist_tolerances(options)
     hints = options.get('appearance_diameter_hints') or {}
     if not isinstance(hints, dict) or any(key not in SUPPORTED_COLOR_CLASSES for key in hints):
         raise ValueError('INVALID_ASSIST_COLOR_HINTS')
@@ -336,7 +450,7 @@ def analyze_installation_assist(report, pipe_specs, settings=None, *, calibratio
     model, axis = _model(pipe_specs, settings)
     side = _unit(settings['camera_side_world']) if settings.get('camera_side_world') is not None else None
     model_labels = _model_labels(model, axis, side)
-    output = {'revision': REVISION, 'policy': dict(POLICY), 'advisory_only': True,
+    output = {'revision': REVISION, 'policy': {**POLICY, **tolerances}, 'advisory_only': True,
         'accepted_measurement': False, 'installation_acceptance': False, 'status': 'INSUFFICIENT',
         'observations': [], 'pipes': [{'pipe_id': m['pipe_id'], 'status': 'NO_OBSERVATION', 'observation_ids': [],
                                      **model_labels[m['pipe_id']]} for m in model],
@@ -363,28 +477,51 @@ def analyze_installation_assist(report, pipe_specs, settings=None, *, calibratio
     observations = _observations(stage)
     output['observations'] = observations
     output['pairwise_relations'] = _relations(observations)
-    candidates = _candidate_sets(observations, model, hints)
+    candidates = _candidate_sets(observations, model, hints, tolerances)
     active = [i for i, c in enumerate(candidates) if c]
     if len(active) < POLICY['minimum_layout_observations']:
         output['reason_codes'] = ['TOO_FEW_LAYOUT_OBSERVATIONS']
         return output
     selected = [observations[i] for i in active]
     choices = [candidates[i] for i in active]
+    measured = _measured_positions(stage)
+    use_measured = sum(o['observation_id'] in measured for o in selected) >= POLICY['minimum_layout_observations']
+    output['relative_section_geometry'] = {'status': 'AVAILABLE' if measured else 'UNAVAILABLE',
+        'source': 'CURRENT_FREE_IMAGE_SECTION_FITS', 'candidates': measured,
+        'accepted_measurement': False, 'used_for_identity': use_measured}
+    if use_measured:
+        for relation in output['pairwise_relations']:
+            first, second = relation['observation_ids']
+            if first in measured and second in measured:
+                delta = np.asarray(measured[second]['section_center_uv_mm'])-measured[first]['section_center_uv_mm']
+                relation.update(estimated_center_distance_mm=float(np.linalg.norm(delta)),
+                    distance_source='CURRENT_FREE_IMAGE_SECTION_FITS', accepted_measurement=False)
     prior, prior_audit = {}, {'status': 'NOT_AVAILABLE'}
-    if calibration is not None and hints:
+    if not use_measured and calibration is not None and hints:
         from .assist_prior_geometry import prior_positions
         prior_candidates = prior_positions(stage, calibration, hints)
         prior = {key: value for key, value in prior_candidates.items() if value.get('status') == 'PRIOR_CONDITIONAL_CENTER'}
         prior_audit = {'status': 'AVAILABLE' if prior else 'UNAVAILABLE', 'candidates': prior_candidates}
     output['prior_geometry'] = prior_audit
-    use_prior = sum(o['observation_id'] in prior for o in selected) >= POLICY['minimum_layout_observations']
-    if use_prior:
-        qualified = [i for i, observation in enumerate(selected) if observation['observation_id'] in prior]
+    use_prior = not use_measured and sum(o['observation_id'] in prior for o in selected) >= POLICY['minimum_layout_observations']
+    positions = measured if use_measured else prior
+    intrinsic = None
+    if use_measured and calibration is not None:
+        try:
+            intrinsic = np.asarray(calibration.left.rectified_intrinsic, float)
+            if intrinsic.shape != (3, 3) or not np.isfinite(intrinsic).all():
+                intrinsic = None
+        except (AttributeError, TypeError, ValueError):
+            pass
+    if use_prior or use_measured:
+        qualified = [i for i, observation in enumerate(selected)
+                     if observation['observation_id'] in positions or use_measured and intrinsic is not None]
         for observation in selected:
-            if observation['observation_id'] not in prior:
-                observation['reason_codes'] = ['PRIOR_POSITION_UNAVAILABLE']
+            if observation['observation_id'] not in positions and not (use_measured and intrinsic is not None):
+                observation['reason_codes'] = ['OBSERVED_POSITION_UNAVAILABLE' if use_measured else 'PRIOR_POSITION_UNAVAILABLE']
         selected, choices = [selected[i] for i in qualified], [choices[i] for i in qualified]
-    output['position_source'] = 'USER_DIAMETER_PRIOR_RELATIVE_SECTION' if use_prior else 'IMAGE_LAYOUT_ONLY'
+    output['position_source'] = ('CONDITIONAL_OBSERVED_RELATIVE_SECTION' if use_measured else
+                                 'USER_DIAMETER_PRIOR_RELATIVE_SECTION' if use_prior else 'IMAGE_LAYOUT_ONLY')
     output['method'] = output['position_source']
     output['known_diameter_used_for_localization'] = use_prior
     all_points = np.array([m['center'] for m in model])
@@ -400,7 +537,9 @@ def analyze_installation_assist(report, pipe_specs, settings=None, *, calibratio
         evaluated += 1
         points = np.array([model[i]['center'] for i in assignment])
         diameters = np.array([model[i]['diameter'] for i in assignment])
-        result = (_prior_hypothesis(selected, points, axis, side, prior, characteristic) if use_prior else
+        result = (_prior_hypothesis(selected, points, axis, side, positions, characteristic,
+                                   tolerances=tolerances if use_measured else None,
+                                   intrinsic=intrinsic) if use_prior or use_measured else
                   _image_hypothesis(selected, points, diameters, axis, side))
         if result is None:
             continue
@@ -417,9 +556,28 @@ def analyze_installation_assist(report, pipe_specs, settings=None, *, calibratio
     if not hypotheses:
         output['reason_codes'] = ['NO_COMPATIBLE_LAYOUT_HYPOTHESIS']
         return output
-    best = hypotheses[0]['difference_score']
-    plausible = [h for h in hypotheses if h['difference_score'] <= best+POLICY['near_best_difference']]
+    eligible_hypotheses = ([h for h in hypotheses if h['within_relative_distance_tolerance']
+                           and h['within_section_alignment_tolerance'] and h['image_projection_supported']]
+                          if use_measured else hypotheses)
+    if (use_measured and intrinsic is not None and not eligible_hypotheses
+            and any(o['observation_id'] not in measured for o in selected)):
+        # An occluded/image-only candidate must not veto independently
+        # observed pipes. Keep it visible but unresolved if projection cannot
+        # support its identity, and retain the section-only comparison.
+        fallback = analyze_installation_assist(report, pipe_specs, settings, calibration=None)
+        fallback['image_projection_fallback'] = {
+            'reason': 'UNRESOLVED_IMAGE_CANDIDATES_HAVE_NO_SUPPORTED_ASSIGNMENT',
+            'observed_section_identity_retained': True,
+            'unresolved_observation_ids': [o['observation_id'] for o in selected if o['observation_id'] not in measured]}
+        return fallback
+    # Keep all alternatives inside the declared 10% distance budget. Picking
+    # only the smallest residual could falsely resolve similar CAD patterns.
+    plausible = eligible_hypotheses if use_measured else [h for h in hypotheses
+        if h['difference_score'] <= hypotheses[0]['difference_score']+POLICY['near_best_difference']]
+    best = eligible_hypotheses[0]['difference_score'] if eligible_hypotheses else math.inf
     output['plausible_hypothesis_count'] = len(plausible)
+    if use_measured:
+        hypotheses = eligible_hypotheses+[h for h in hypotheses if h not in eligible_hypotheses]
     output['ranked_hypotheses'] = [dict(h, rank=i+1, near_best=h in plausible)
         for i, h in enumerate(hypotheses[:POLICY['maximum_displayed_hypotheses']])]
     good = best <= POLICY['maximum_relative_difference'] and not truncated
@@ -434,12 +592,21 @@ def analyze_installation_assist(report, pipe_specs, settings=None, *, calibratio
             ['MULTIPLE_PLAUSIBLE_LAYOUTS'] if good else list(output['reason_codes']))
         if observation['observation_id'] in prior:
             observation['prior_position'] = prior[observation['observation_id']]
+        if use_measured and observation['observation_id'] in measured:
+            observation['observed_position'] = measured[observation['observation_id']]
         if observation['suggested_pipe_id']:
             observation.update(model_labels[observation['suggested_pipe_id']])
     for row in output['pipes']:
         matching = [o for o in observations if row['pipe_id'] in o['candidate_pipe_ids'] and o['status'] != 'INSUFFICIENT']
         row['observation_ids'] = [o['observation_id'] for o in matching]
-        row['status'] = ('LIKELY' if any(o['suggested_pipe_id'] == row['pipe_id'] for o in matching)
+        # Presence can be determined even when two observations may exchange
+        # identities: both CAD members occur in every feasible assignment.
+        consensus = bool((use_measured or use_prior) and good and plausible and all(any(a['pipe_id'] == row['pipe_id']
+                         for a in h['assignments']) for h in plausible))
+        row['presence_consensus'] = consensus
+        row['identity_basis'] = ('INDIVIDUAL_OBSERVATION' if any(o['suggested_pipe_id'] == row['pipe_id'] for o in matching)
+                                 else 'COMMON_INSTALLED_SET' if consensus else 'UNRESOLVED')
+        row['status'] = ('LIKELY' if consensus or any(o['suggested_pipe_id'] == row['pipe_id'] for o in matching)
                          else 'AMBIGUOUS' if matching else 'NO_OBSERVATION')
     output['counts'] = {status: sum(p['status'] == status for p in output['pipes']) for status in ('LIKELY', 'AMBIGUOUS', 'NO_OBSERVATION')}
     output['status'] = 'LIKELY' if output['counts']['LIKELY'] else 'AMBIGUOUS' if good else 'INSUFFICIENT'

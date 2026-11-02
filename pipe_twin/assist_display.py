@@ -61,6 +61,8 @@ def assist_rows(report, index=0):
         status = STATUS_LABELS.get(item.get('status'), '待评估')
         if chosen and item.get('suggested_pipe_id') and chosen != item['suggested_pipe_id']:
             status = '备选对照，待确认'
+        if chosen and choices[index].get('near_best') is False:
+            status = '未满足识别条件，仅供诊断'
         colour = COLORS.get(item.get('color_class'), item.get('color_class') or '未分类')
         size = SIZE_LABELS.get(item.get('relative_size_class'), item.get('relative_size_class') or '待比较')
         detail = [f'{label}：{status}', f'颜色：{colour}；相对大小：{size}。',
@@ -71,6 +73,8 @@ def assist_rows(report, index=0):
                   '方案排序不是正确率；切换方案仅供比较，不代表确认安装或尺寸合格。']
         if item.get('image_width_px') is not None:
             detail.append(f"图像可见宽度约 {item['image_width_px']:.1f} px；受距离和遮挡影响。")
+        if item.get('estimated_diameter_mm') is not None:
+            detail.append(f"轮廓估计外径 {item['estimated_diameter_mm']:.2f} mm，用于管号识别；不是尺寸验收结果。")
         if item.get('prior_diameter_mm') is not None:
             detail.append(f"采用采购外径提示 {item['prior_diameter_mm']:g} mm，仅作识别先验。")
         detail += ['提示：'+REASONS.get(reason, str(reason)) for reason in item.get('reason_codes') or []]
@@ -91,6 +95,16 @@ def assist_summary_lines(report, index=0):
              f"疑似已安装 {counts.get('LIKELY', 0)}；对应有歧义 {counts.get('AMBIGUOUS', 0)}；未观察到 {counts.get('NO_OBSERVATION', 0)}。"]
     if data.get('known_diameter_used_for_localization'):
         lines.append('采用已知管径辅助定位；管径来自识别先验，不是本次实测，也不覆盖原测量。')
+    policy = data.get('policy') or {}
+    diameter_tolerance = policy.get('measured_diameter_tolerance_ratio')
+    distance_tolerance = policy.get('relative_distance_tolerance_ratio')
+    if diameter_tolerance is not None and distance_tolerance is not None:
+        lines.append(f'安装识别容差：估计管径 {diameter_tolerance:.0%}，管间相对距离 {distance_tolerance:.0%}；用于区分模型位置。')
+    common = [p['pipe_id'] for p in data.get('pipes', [])
+              if p.get('status') == 'LIKELY' and p.get('presence_consensus') is True
+              and p.get('identity_basis') == 'COMMON_INSTALLED_SET']
+    if common:
+        lines.append('各合理方案共同支持的安装管位：'+'、'.join(common)+'；现场同规格管之间的逐根对应仍可能互换。')
     relations = data.get('relation_summary') or []
     lines.extend([relations] if isinstance(relations, str) else [str(r) for r in relations])
     lines.extend('提示：'+REASONS.get(reason, str(reason)) for reason in data.get('reason_codes') or [])
@@ -101,7 +115,7 @@ def assist_summary_lines(report, index=0):
         if selected.get('difference_score') is not None:
             lines.append(f"关系差异分数 {selected['difference_score']:.3f}；越小越相符，不是概率。")
         if selected.get('near_best') is False:
-            lines.append('此方案弱于首选，仅供对照，不纳入疑似已安装。')
+            lines.append('此方案未满足识别条件，仅供诊断；不点亮安装管位。')
         for row in selected.get('assignments') or []:
             label = next((r['label'] for r in assist_rows(report, index) if r['key'] == row['observation_id']), row['observation_id'])
             lines.append(f"{label} → {row['pipe_id']} · {relation_label(row)}")
@@ -119,10 +133,16 @@ def assist_preview_states(report, strict_states, index=0):
     data = assist_data(report)
     if data.get('status') not in ('LIKELY', 'AMBIGUOUS'):
         return states
+    choices = hypotheses(report)
+    if choices and isinstance(index, int) and 0 <= index < len(choices) and choices[index].get('near_best') is False:
+        return states
     observations = {o['observation_id']: o for o in data.get('observations') or []}
+    presence = {p['pipe_id'] for p in data.get('pipes', [])
+                if p.get('status') == 'LIKELY' and p.get('presence_consensus') is True}
     for oid, pid in hypothesis_assignments(report, index).items():
         if states.get(pid, 'UNKNOWN') == 'UNKNOWN':
             observation = observations.get(oid, {})
-            states[pid] = ('SUSPECTED_INSTALLED' if observation.get('status') == 'LIKELY'
-                          and observation.get('suggested_pipe_id') == pid else 'ASSIST_CANDIDATE')
+            states[pid] = ('SUSPECTED_INSTALLED' if pid in presence or (
+                          observation.get('status') == 'LIKELY'
+                          and observation.get('suggested_pipe_id') == pid) else 'ASSIST_CANDIDATE')
     return states

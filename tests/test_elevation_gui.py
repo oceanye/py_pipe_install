@@ -501,8 +501,13 @@ class ElevationGuiTests(unittest.TestCase):
         from test_assist_display import report_fixture
         self.dialog.report = report_fixture()
         before = copy.deepcopy(self.dialog.pipes)
+        self.dialog.registration_settings['installation_assist'] = {
+            'measured_diameter_tolerance_ratio': .08,
+            'relative_distance_tolerance_ratio': .10}
         self.assertTrue(self.dialog.apply_assist_hints({'BLUE': 50., 'RED': 40., 'WHITE': 25.}))
         self.assertEqual(self.dialog.registration_settings['installation_assist']['appearance_diameter_hints']['BLUE'], 50.)
+        self.assertEqual(self.dialog.registration_settings['installation_assist']['measured_diameter_tolerance_ratio'], .08)
+        self.assertEqual(self.dialog.registration_settings['installation_assist']['relative_distance_tolerance_ratio'], .10)
         self.assertIsNone(self.dialog.report)
         self.assertEqual(self.dialog.pipes, before)
         with self.assertRaises(ValueError):

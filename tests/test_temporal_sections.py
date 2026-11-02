@@ -73,6 +73,55 @@ def test_pair_distance_changes_are_not_hidden_by_individually_stable_diameters()
     result = check(stages)
     assert all(c['temporal_consistency']['diameter_repeatable'] for c in result['candidates'])
     assert all(not c['temporal_consistency']['layout_repeatable'] for c in result['candidates'])
+    assert all(c['temporal_consistency']['layout_status'] == 'UNSTABLE' for c in result['candidates'])
+    assert all('TEMPORAL_SECTION_LAYOUT_UNSTABLE' in c['reason_codes'] for c in result['candidates'])
+
+
+def test_single_repeatable_pipe_has_no_relative_distance_to_assess():
+    result = check([stage((47.1,)), stage((47.2,)), stage((47.1,))])
+    row = result['candidates'][0]
+    assert result['temporal_sections']['pairwise'] == []
+    assert row['temporal_consistency']['diameter_repeatable']
+    assert row['temporal_consistency']['layout_repeatable'] is None
+    assert row['temporal_consistency']['layout_status'] == 'NOT_ASSESSABLE'
+    assert 'TEMPORAL_SECTION_LAYOUT_UNSTABLE' not in row['reason_codes']
+    shown = solver_status_rows({'section_evaluation': result})[0]
+    assert shown['values'][4] == '缺少对照管'
+    assert '管径重复性通过；心距未评' in shown['values'][-1]
+    assert '缺少第二根已解管道' in shown['detail']
+    assert '重复性待改善' not in shown['detail']
+
+
+def test_missing_pair_support_is_not_measured_distance_instability():
+    stages = [stage() for _ in range(3)]
+    for value in stages[:2]:
+        value['model']['candidates'][1]['estimated_center_uv_mm'] = None
+    result = check(stages)
+    pair = result['temporal_sections']['pairwise'][0]
+    assert pair['sample_count'] == 1 and pair['repeatable'] is None
+    for row in result['candidates']:
+        assert row['temporal_consistency']['diameter_repeatable']
+        assert row['temporal_consistency']['layout_status'] == 'INSUFFICIENT_SUPPORT'
+        assert row['temporal_consistency']['layout_repeatable'] is None
+        assert 'TEMPORAL_SECTION_LAYOUT_UNSTABLE' not in row['reason_codes']
+    rows = solver_status_rows({'section_evaluation': result})
+    assert all(r['values'][4] == '比较帧不足' for r in rows)
+
+
+def test_old_single_pipe_report_is_displayed_truthfully_without_mutation():
+    result = check([stage((47.1,)) for _ in range(3)])
+    row = result['candidates'][0]
+    del row['temporal_consistency']['layout_status']
+    row['temporal_consistency']['layout_repeatable'] = False
+    row['temporal_consistency']['reason_codes'] = ['TEMPORAL_SECTION_LAYOUT_UNSTABLE']
+    row['reason_codes'] = ['TEMPORAL_SECTION_LAYOUT_UNSTABLE']
+    before = copy.deepcopy(result)
+    shown = solver_status_rows({'section_evaluation': result})[0]
+    assert shown['temporal_consistency']['layout_repeatable'] is None
+    assert 'TEMPORAL_SECTION_LAYOUT_UNSTABLE' not in shown['reason_codes']
+    assert '缺少第二根已解管道' in shown['detail']
+    assert '重复性待改善' not in shown['detail']
+    assert result == before
 
 
 def test_sampling_is_bounded_and_retains_current_reference():

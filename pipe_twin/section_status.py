@@ -11,6 +11,41 @@ PAIRING_REASONS = {
     'NO_STABLE_BOUNDARY': '没有通过子段一致性检查的边界',
 }
 STATUS_REASONS = {'PIXEL_UNCERTAINTY_UNRESOLVED': '几何条件过弱，像素误差估计无法稳定求解'}
+LAYOUT_REASONS = {
+    'UNSTABLE': 'TEMPORAL_SECTION_LAYOUT_UNSTABLE',
+    'NOT_ASSESSABLE': 'TEMPORAL_SECTION_LAYOUT_NOT_ASSESSABLE',
+    'INSUFFICIENT_SUPPORT': 'TEMPORAL_SECTION_LAYOUT_SUPPORT_INSUFFICIENT',
+}
+
+
+def _temporal_consistency(stage, candidate):
+    """Present older reports without treating an absent comparison as motion."""
+    temporal = dict(candidate.get('temporal_consistency') or {})
+    if not temporal:
+        return temporal
+    status = temporal.get('layout_status')
+    if status is None:
+        audit = stage.get('temporal_sections') or {}
+        related = [p for p in audit.get('pairwise', []) if candidate['candidate_id'] in p['ids']]
+        if temporal.get('layout_repeatable'):
+            status = 'REPEATABLE'
+        elif 'pairwise' not in audit:
+            # Without stored comparisons an old failure cannot establish motion.
+            status = 'INSUFFICIENT_SUPPORT'
+        elif not related:
+            status = 'NOT_ASSESSABLE'
+        else:
+            observed = [p for p in related if p.get('distance') is not None
+                        and p.get('sample_count', 0) >= temporal.get('required_frames', 3)]
+            status = ('UNSTABLE' if any(p.get('repeatable') is False for p in observed) else
+                      'INSUFFICIENT_SUPPORT' if len(observed) < len(related) else 'REPEATABLE')
+    temporal['layout_status'] = status
+    temporal['layout_repeatable'] = {'REPEATABLE': True, 'UNSTABLE': False}.get(status)
+    reasons = [r for r in temporal.get('reason_codes', []) if r not in LAYOUT_REASONS.values()]
+    if status in LAYOUT_REASONS:
+        reasons.append(LAYOUT_REASONS[status])
+    temporal['reason_codes'] = reasons
+    return temporal
 
 
 def pairing_detail_lines(audit):
@@ -73,9 +108,12 @@ def solver_status_rows(report):
             fit = candidate.get('fit') or {}
             solved = fit.get('status') == 'CONDITIONAL_FIT' and identity in labels
             diameter = fit.get('trial_diameter_mm') if solved else None
-            temporal = candidate.get('temporal_consistency') or {}
+            temporal = _temporal_consistency(stage, candidate)
             spread = temporal.get('diameter')
             reasons = list(candidate.get('reason_codes', []))
+            if temporal:
+                reasons = [r for r in reasons if r not in LAYOUT_REASONS.values()]
+                reasons += [r for r in temporal['reason_codes'] if r in LAYOUT_REASONS.values()]
             if solved and not candidate.get('window_sensitivity', {}).get('stable'):
                 reasons.append('POOLED_DIMENSIONS_UNSTABLE')
             assessment = stage.get('position_assessment') or {}
@@ -89,7 +127,9 @@ def solver_status_rows(report):
                 if spread:
                     repeat += f" {spread['min_mm']:.1f}～{spread['max_mm']:.1f}"
                 frames = f"{temporal['solved_frames']}/{temporal['sampled_frames']}"
-                layout = '通过' if temporal['layout_repeatable'] else '待稳定'
+                layout = {'REPEATABLE': '通过', 'UNSTABLE': '待稳定',
+                          'NOT_ASSESSABLE': '缺少对照管',
+                          'INSUFFICIENT_SUPPORT': '比较帧不足'}.get(temporal['layout_status'], '未复核')
             else:
                 repeat, frames, layout = '未复核', '单帧', '未复核'
                 if (stage.get('temporal_sections') or {}).get('status') == 'BURST_REJECTED':
@@ -98,8 +138,10 @@ def solver_status_rows(report):
             current = '断面已解（条件估计）' if solved else '断面未解'
             if not solved and pairing and pairing.get('status') == 'INSUFFICIENT_INDEPENDENT_SILHOUETTES':
                 current = '断面未解（稳定轮廓不足）'
-            if temporal and temporal.get('reason_codes'):
+            if temporal and (not temporal.get('diameter_repeatable') or temporal['layout_status'] == 'UNSTABLE'):
                 current = '断面已解，重复性待改善' if solved else '断面未解'
+            elif solved and temporal and temporal['layout_repeatable'] is None:
+                current = '断面已解，管径重复性通过；心距未评'
             correction = stage.get('ground_correction') or {}
             if correction.get('trial_mode'):
                 current = ('倾角试验 · ' if correction.get('applied') else '倾角试验未应用 · ')+current

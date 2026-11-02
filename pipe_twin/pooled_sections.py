@@ -19,6 +19,7 @@ from .section_diagnostics import axis_from_image_lines
 from .section_model import build_section_model
 from .axial_consistency import synchronize_axial_blocks
 from .ground_correction import correct_pipe_axis
+from .stereo_assignment import global_assignment, POLICY as ASSIGNMENT_POLICY
 from .image_line_geometry import (canonical_image_axis, normal_from_axis, sampling_coordinates,
                                   fit_image_line, point_at_station)
 
@@ -477,8 +478,8 @@ def _compatibility_reasons(first, second, offset=(0., 0.), disparity_range=(0., 
     overlap = max(min(end, finish+shift)-max(x, u+shift) for shift in (0., *shifts, sum(shifts)/2))
     if overlap < .4*min(end-x, finish-u):
         reasons.append('INSUFFICIENT_AXIAL_IMAGE_OVERLAP')
-    # Rectified parallel axes: this is a bounded proposal association only,
-    # not point correspondence or depth. Multiple choices stay ambiguous.
+    # Rectified parallel axes: this bounds proposal association, not point
+    # correspondence or depth. The joint assignment compares surviving pairs.
     station = (max(x, u)+min(end, finish))/2
     reverse = bool(axis@_item_axis(second) < 0)
     secondary = _edge_order(second['aggregation']['boundaries'], reverse)
@@ -508,21 +509,79 @@ def _compatible(first, second, offset=(0., 0.)):
     return not _compatibility_reasons(first, second, offset)
 
 
-def _pairing_audit(views, reasons, comparisons):
+def _pair_evidence(first, second, offset, disparity_range):
+    """Dimensionless image evidence; no fitted diameter or model identity."""
+    axis = _item_axis(first)
+    start, end = _item_interval(first, axis)
+    low, high = _item_interval(second, axis, offset)
+    shifts = [float(d)*axis[0] for d in disparity_range]
+    overlap = max(0., max(min(end, high+shift)-max(start, low+shift)
+                         for shift in (0., *shifts, sum(shifts)/2)))
+    support = float(np.clip(overlap/max(1., min(end-start, high-low)), 0., 1.))
+    width = abs(first['width_px']-second['width_px'])/max(1., first['width_px'], second['width_px'])
+    return {'score': float(width+ASSIGNMENT_POLICY['axial_support_weight']*(1-support)),
+            'relative_width_difference': float(width), 'axial_support_fraction': support}
+
+
+def _observed_order(first, second):
+    """Order cue only for disjoint image envelopes with common axial support.
+
+    Bounding boxes deliberately make this conservative: partially overlapping
+    silhouettes and disconnected pieces have no usable ordering cue.
+    """
+    if first.get('reason_codes') or second.get('reason_codes') or not _directions_agree(first, second):
+        return 0
+    axis = _item_axis(first)
+    a, b = _item_interval(first, axis), _item_interval(second, axis)
+    if min(a[1], b[1])-max(a[0], b[0]) < .4*min(a[1]-a[0], b[1]-b[0]):
+        return 0
+    normal = normal_from_axis(axis)
+    ranges = []
+    for item in (first, second):
+        x, y, w, h = item['region_px']
+        transverse = np.array([[x, y], [x+w, y], [x, y+h], [x+w, y+h]])@normal
+        ranges.append((transverse.min(), transverse.max()))
+    if ranges[0][1]+2 < ranges[1][0]:
+        return 1
+    if ranges[1][1]+2 < ranges[0][0]:
+        return -1
+    return 0
+
+
+def _assign_pairs(views, comparisons, offset, disparity_range):
+    evidence = {(int(i), int(j)): _pair_evidence(views['left'][i], views['right'][j], offset, disparity_range)
+                for i, j in zip(*np.nonzero(comparisons))}
+
+    def order_cue(a, b):
+        left = _observed_order(views['left'][a[0]], views['left'][b[0]])
+        right = _observed_order(views['right'][a[1]], views['right'][b[1]])
+        return int(left*right < 0)
+
+    return global_assignment(comparisons, evidence, order_cue)
+
+
+def _pairing_audit(views, reasons, comparisons, pair_indexes=(), assignment=None):
     """Explain rejected/ambiguous pairings without inventing missing tangents."""
-    audit = {'revision': 'stereo-boundary-pairing-v1',
+    audit = {'revision': 'stereo-boundary-pairing-v2',
              'minimum_independent_boundaries': 3, 'nominal_dimensions_used': False}
+    selected = set(pair_indexes)
+    selection_basis = {(p['left_index'], p['right_index']): p['basis']
+                       for p in (assignment or {}).get('selected_pairs', [])}
+    if assignment is not None:
+        audit['global_assignment'] = assignment
     distant = {'APPEARANCE_MISMATCH', 'INSUFFICIENT_AXIAL_IMAGE_OVERLAP', 'TRANSVERSE_POSITION_MISMATCH'}
     for role, other in [('left', 'right'), ('right', 'left')]:
         rows = []
         for index, item in enumerate(views[role]):
-            compatible, nearby, unique = [], [], False
+            compatible, nearby, counterpart_id, basis = [], [], None, None
             for opposite, counterpart in enumerate(views[other]):
                 i, j = (index, opposite) if role == 'left' else (opposite, index)
                 codes = reasons[i][j]
                 if comparisons[i, j]:
                     compatible.append(counterpart['candidate_id'])
-                    unique = comparisons[i].sum() == 1 and comparisons[:, j].sum() == 1
+                    if (i, j) in selected:
+                        counterpart_id = counterpart['candidate_id']
+                        basis = selection_basis.get((i, j))
                 if not distant.intersection(codes):
                     nearby.append({'candidate_id': counterpart['candidate_id'],
                         'stable_boundary_count': counterpart['aggregation']['stable_boundary_count'],
@@ -530,7 +589,7 @@ def _pairing_audit(views, reasons, comparisons):
                             + counterpart['aggregation']['stable_boundary_count'],
                         'reason_codes': codes})
             stable = item['aggregation']['stable_boundary_count']
-            status = ('PAIRED' if unique and len(compatible) == 1 else
+            status = ('PAIRED' if counterpart_id is not None else
                       'AMBIGUOUS_STEREO_CANDIDATES' if compatible else
                       'NO_STABLE_BOUNDARY' if stable == 0 else
                       'INSUFFICIENT_INDEPENDENT_SILHOUETTES' if nearby and all(
@@ -538,6 +597,8 @@ def _pairing_audit(views, reasons, comparisons):
                       'NO_COMPATIBLE_STEREO_CANDIDATE')
             rows.append({'candidate_id': item['candidate_id'], 'stable_boundary_count': stable,
                          'status': status, 'compatible_candidate_ids': compatible,
+                         'selected_candidate_id': counterpart_id,
+                         'selection_basis': basis,
                          'nearby_candidates': nearby})
         audit[role] = rows
     return audit
@@ -594,7 +655,7 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
         views[role], proposal_audit[role] = (aggregate_image(image, role, sampling_mask=masks[role],
             axis_hint_image=band_audit['axis_image']) if band_audit else aggregate_image(image, role))
     result = {'revision': REVISION, 'policy_sha256': POLICY_SHA256, 'policy': dict(POLICY),
-              'section_revision': 'pooled-sections-oriented-boundaries-v4',
+              'section_revision': 'pooled-sections-global-assignment-v5',
               'edge_extraction_revision': EDGE_EXTRACTION_REVISION,
               'edge_extraction_policy_sha256': EDGE_EXTRACTION_POLICY_SHA256,
               'edge_extraction_policy': dict(EDGE_EXTRACTION_POLICY),
@@ -617,13 +678,12 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
     reasons = [[_compatibility_reasons(a, b, offset, disparity_range) for b in views['right']] for a in views['left']]
     comparisons = np.array([[not codes for codes in row] for row in reasons], bool).reshape(
         len(views['left']), len(views['right']))
-    result['pairing_audit'] = _pairing_audit(views, reasons, comparisons)
+    pair_indexes, assignment = _assign_pairs(views, comparisons, offset, disparity_range)
+    result['pairing_audit'] = _pairing_audit(views, reasons, comparisons, pair_indexes, assignment)
     if comparisons.ndim != 2 or not comparisons.size:
         return result | {'status': 'NO_STABLE_STEREO_BOUNDARIES',
                          'control_section': _control_section([], None) | {
                              'reason_codes': ['NO_STABLE_STEREO_BOUNDARIES']}}
-    pair_indexes = [(i, j) for i, j in zip(*np.nonzero(comparisons))
-                    if comparisons[i].sum() == 1 and comparisons[:, j].sum() == 1]
     all_lines = []
     paired_observations = []
     for i, j in pair_indexes:
@@ -661,6 +721,8 @@ def analyze_pooled_sections(left, right, calibration, *, aggregation_band=None, 
                      'left_candidate_id': a['candidate_id'], 'right_candidate_id': b['candidate_id'],
                      'left_region_px': a['region_px'], 'right_region_px': b['region_px'],
                      'boundary_status': 'STABLE', 'reason_codes': sorted(set(a['reason_codes']+b['reason_codes']))}
+        candidate['pairing_basis'] = next(p['basis'] for p in assignment['selected_pairs']
+                                         if p['left_index'] == i and p['right_index'] == j)
         candidate['observed_boundary_count'] = len(observations)
         reference_pixel = np.mean(a['pooled_edges'][0]['points'], axis=0)
         image_axis = _item_axis(a)

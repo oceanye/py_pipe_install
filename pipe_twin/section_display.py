@@ -6,6 +6,8 @@ REASONS = {
     'TEMPORAL_SECTION_SUPPORT_INSUFFICIENT': '当前连拍中可独立解算的帧数不足',
     'TEMPORAL_SECTION_DIAMETER_UNSTABLE': '当前连拍的外径变化超出重复性门限',
     'TEMPORAL_SECTION_LAYOUT_UNSTABLE': '当前连拍的相对心距不稳定或比较帧数不足',
+    'TEMPORAL_SECTION_LAYOUT_NOT_ASSESSABLE': '缺少第二根已解管道，尚不能比较相对心距；不表示管道移动',
+    'TEMPORAL_SECTION_LAYOUT_SUPPORT_INSUFFICIENT': '可比较心距的帧数不足，尚不能判断相对位置重复性',
     'STEREO_SECTION_PAIR_UNRESOLVED': '已有图像边界，左右候选尚未唯一配对',
     'PARTIAL_STEREO_BOUNDARY_SUPPORT': '仅三条稳定轮廓参与拟合；缺失边界未补齐，尚不用于就位验收',
     'EPIPOLAR_REFINEMENT_NOT_METRIC_VALIDATED': '图像微校正改善了对齐，毫米精度尚未独立验证',
@@ -36,6 +38,11 @@ REASONS = {
     'COMMON_AXIAL_SUPPORT_NO_INTERSECTION': '各候选的共同轴向支撑区间没有交集',
     'MULTIPLE_ZONE_CONTROL_SECTIONS': '多个分区各有控制断面，需分别查看，未合并为一个断面',
 }
+
+COMMON_STATION_REVISIONS = frozenset({
+    'pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3',
+    'pooled-sections-oriented-boundaries-v4', 'pooled-sections-global-assignment-v5',
+})
 
 
 def section_evaluations(report):
@@ -88,12 +95,12 @@ def section_summary_lines(report, *, detailed=False):
         band = stage.get('aggregation_band')
         if band:
             lines += [f"手动汇聚范围：沿左图指定方向 {band['span_px']:.1f} px，两条垂线之间取样。"]
-            if stage.get('section_revision') in ('pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3', 'pooled-sections-oriented-boundaries-v4'):
+            if stage.get('section_revision') in COMMON_STATION_REVISIONS:
                 lines += ['右图使用对应视差搜索带；鼠标仅提供大致方向，实际边缘方向从图像重新估计。',
                           '三维轴向和毫米尺寸仍需解算；图像内倾斜与纵深倾斜分别处理。']
             else:
                 lines += ['右图使用对应视差搜索带；所画方向是二维取样方向，三维轴向和毫米尺寸仍需解算。']
-        if stage.get('section_revision') in ('pooled-sections-common-station-v2', 'pooled-sections-ground-constrained-v3', 'pooled-sections-oriented-boundaries-v4'):
+        if stage.get('section_revision') in COMMON_STATION_REVISIONS:
             lines += ['子段按两眼共同轴向区间对齐；圆心差在同一法向断面上比较，不把沿管长的位移算作误差。']
         if stage.get('ground_correction'):
             from .ground_correction import correction_summary
