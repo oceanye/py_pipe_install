@@ -623,7 +623,8 @@ class ElevationCaptureDialog:
     analysis_mode = "elevation_auto"
 
     def __init__(self, app: Any, manifest_path: Path | None = None, *, output_root: Path | None = None,
-                 restore: bool = True, model_path: Path | None = None, window=None) -> None:
+                 restore: bool = True, model_path: Path | None = None, window=None,
+                 runtime_settings_path: Path | None = None) -> None:
         from .workbench_profile import load_profile
 
         self.app = app
@@ -646,6 +647,8 @@ class ElevationCaptureDialog:
         self.messages: queue.Queue = queue.Queue()
         from .ai_gui import AISectionController
         self.ai_controller = AISectionController(self)
+        from .analysis_runtime_gui import AnalysisRuntimeController
+        self.runtime = AnalysisRuntimeController(self, settings_path=runtime_settings_path)
         self.timestamp_sources = {role: "MANIFEST_OPERATOR_CONFIRMED" for role in ("left", "right")}
         self.camera_capture_provenance = {}
         self.temporal_frames: list[dict] = []
@@ -804,7 +807,8 @@ class ElevationCaptureDialog:
             ttk.Label(photo_row, text='拍摄时间').pack(side='left', padx=8)
             ttk.Entry(photo_row, textvariable=self.fields[f"{role}_time"], width=29).pack(side="left", fill='x', expand=True)
         ttk.Checkbutton(photos_page, text="左右图来自同一次同步拍摄；机位、镜头设置和区域位置正确", variable=self.confirmed).pack(anchor="w")
-        ttk.Checkbutton(photos_page, text="沿用上次场景历史（相机未移动）", variable=self.history).pack(anchor='w', pady=10)
+        self.history_button = ttk.Checkbutton(photos_page, text="沿用上次场景历史（相机未移动）", variable=self.history)
+        self.history_button.pack(anchor='w', pady=10)
         ttk.Label(photos_page, text='相机抓拍会自动记录配对时间；手工导入时请核对拍摄时间与同步关系。', wraplength=780).pack(anchor='w')
         ttk.Label(photos_page, textvariable=self.calibration_details, wraplength=780, foreground='#355371').pack(anchor='w', pady=12)
         matching_bar = ttk.Frame(analysis_page)
@@ -1014,6 +1018,7 @@ class ElevationCaptureDialog:
             self.load_model(Path(model_path).resolve())
         self.refresh_calibration_status()
         self.redraw()
+        self.runtime.build(self.controls, self.capture_settings)
         self.poll_id = self.window.after(100, self.poll)
 
     def _refresh_status_text(self) -> None:
@@ -1247,6 +1252,8 @@ class ElevationCaptureDialog:
 
     def inspect_ground(self) -> None:
         """Run a ground-only job without requiring CAD or recomputing pipe fits."""
+        if not self.runtime.permits():
+            return
         if self.busy:
             return
         try:
@@ -2061,6 +2068,8 @@ class ElevationCaptureDialog:
             self.calibration_details.set(str(error))
 
     def open_calibration(self) -> None:
+        if not self.runtime.permits(camera=True):
+            return
         if not self.busy:
             if not self._release_ground_monitor():
                 return
@@ -2073,6 +2082,8 @@ class ElevationCaptureDialog:
                 self.calibration_dialog = ChessboardWizardDialog(self.app, owner=self)
 
     def open_ground_monitor(self) -> None:
+        if not self.runtime.permits(camera=True):
+            return
         if self.busy:
             return
         if self.ground_monitor is not None:
@@ -2106,6 +2117,8 @@ class ElevationCaptureDialog:
             self.profile = dict(self.profile or {}, camera=copy.deepcopy(camera))
 
     def capture_camera(self, *, analyze_after_capture: bool = False) -> None:
+        if not self.runtime.permits(camera=True):
+            return
         if self.busy:
             return
         if not self._release_ground_monitor():
@@ -2119,7 +2132,7 @@ class ElevationCaptureDialog:
                 # The wizard archives accepted pairs. Release its UVC session
                 # (including an in-flight open) before opening measurement.
                 self.calibration_dialog.close()
-            self._analyze_after_camera_capture = bool(analyze_after_capture)
+            self._analyze_after_camera_capture = bool(analyze_after_capture or self.runtime.mode == 'client')
             if self.camera_dialog is not None and self.camera_dialog.window.winfo_exists():
                 self.camera_dialog.on_capture = self._camera_capture_finished
                 self.camera_dialog.window.lift()
@@ -2319,6 +2332,9 @@ class ElevationCaptureDialog:
                   ground_region=bool(self.registration_settings.get('ground_region')))
 
     def start_ai_evaluation(self):
+        if self.runtime.mode == 'server':
+            self.message.set('服务器端仅接收计算任务；AI 断面评估请在前端或本地运算模式使用。')
+            return
         try:
             if not self.busy and self.ai_controller.configured():
                 self.submit(False, ai=True)
@@ -2326,7 +2342,7 @@ class ElevationCaptureDialog:
             self.show_error(error)
 
     def submit(self, analyze: bool, *, ai: bool = False) -> None:
-        if self.busy:
+        if self.busy or not self.runtime.permits():
             return
         viewer = self.model_viewer
         if viewer is not None and viewer.window.winfo_exists() and viewer.has_pending_camera_side():
@@ -2378,7 +2394,7 @@ class ElevationCaptureDialog:
                 left_path=Path(self.fields["left"].get()), right_path=Path(self.fields["right"].get()),
                 left_time=self.fields["left_time"].get(), right_time=self.fields["right_time"].get(),
                 pipe_specs=copy.deepcopy(self.pipes), pair_confirmed=True,
-                previous_manifest=self.last_manifest if self.history.get() else None,
+                previous_manifest=self.last_manifest if self.history.get() and self.runtime.mode == 'local' else None,
                 model_path=Path(self.fields["model"].get()) if self.fields["model"].get() else None,
                 stl_unit=self.stl_unit.get(), timestamp_sources=copy.deepcopy(self.timestamp_sources),
                 rectification_recipe=copy.deepcopy((self.profile or {}).get("rectification_recipe")),
@@ -2411,6 +2427,8 @@ class ElevationCaptureDialog:
             self.message.set("正在保存并分析双目深度……" if analyze else "正在保存基础现场……")
             if ai:
                 self.ai_controller.start(arguments, generation)
+            elif analyze and self.runtime.mode == 'client':
+                self.runtime.start_remote(arguments, generation)
             else:
                 threading.Thread(target=self._worker, args=(arguments, analyze, generation), daemon=True).start()
         except (OSError, ValueError) as error:
@@ -2421,19 +2439,8 @@ class ElevationCaptureDialog:
 
     def _worker(self, arguments: dict, analyze: bool, generation: int) -> None:
         try:
-            from .elevation_dataset import create_elevation_dataset, elevation_history_compatible, load_elevation_dataset
-            expected_hashes = arguments.pop("_preview_hashes")
-            previous = arguments["previous_manifest"]
-            history_kwargs = dict(calibration=arguments["calibration"], pipe_specs=arguments["pipe_specs"], model_path=arguments["model_path"], stl_unit=arguments["stl_unit"], rectification_recipe=arguments["rectification_recipe"], analysis_settings=arguments["analysis_settings"], scope_settings=arguments["scope_settings"])
-            history_kwargs.update(mode="elevation_auto", registration_settings=arguments.get("registration_settings"))
-            reset_history = bool(previous and not elevation_history_compatible(previous, **history_kwargs))
-            if reset_history:
-                arguments["previous_manifest"] = None
-            path = create_elevation_dataset(**arguments)
-            loaded = load_elevation_dataset(path)
-            latest = loaded["manifest"]["capture"]["capture_groups"][-1]["views"]
-            if any(latest[role]["sha256"] != expected_hashes[role] for role in ("left", "right")):
-                raise ValueError("保存期间照片发生变化，请重新载入")
+            from .analysis_runtime_gui import save_scene_snapshot
+            path, reset_history = save_scene_snapshot(arguments)
             from .stereo_analyzer import analyze_stereo_capture
             report = analyze_stereo_capture(path, report_output_path=path.parent / "report.json", evidence_dir=path.parent / "evidence",
                 progress=lambda text: self.messages.put((generation, "progress", text))) if analyze else None
@@ -2456,15 +2463,27 @@ class ElevationCaptureDialog:
         for button in (self.run_button, self.save_button):
             button.configure(state="normal" if enabled else "disabled")
         self.ai_cancel_button.configure(state='normal' if self.ai_controller.active else 'disabled')
+        self.runtime.refresh_controls()
 
     def poll(self) -> None:
         if self.closed:
             return
+        self.runtime.tick()
         try:
             generation, kind, payload = self.messages.get_nowait()
         except queue.Empty:
             self.poll_id = self.window.after(100, self.poll)
             return
+        if kind.startswith('runtime_'):
+            self.runtime.handle(generation, kind, payload)
+            self.poll_id = self.window.after(100, self.poll)
+            return
+        if kind.startswith('remote_'):
+            accepted = self.runtime.accept_remote(generation, kind, payload)
+            if accepted is None:
+                self.poll_id = self.window.after(100, self.poll)
+                return
+            kind, payload = accepted
         if kind.startswith('ai_'):
             self.ai_controller.handle(generation, kind, payload)
             self.poll_id = self.window.after(100, self.poll)
@@ -2477,7 +2496,6 @@ class ElevationCaptureDialog:
         self.busy = False
         self._set_controls(True)
         if generation != self.generation:
-            self.invalidate()
             self.message.set("输入在计算时发生改变；已丢弃旧结果，请重新评估。")
         elif kind == "error":
             self.invalidate()
@@ -2545,7 +2563,10 @@ class ElevationCaptureDialog:
         self.app.messagebox.showerror("基础立面评估", str(error), parent=self.window)
 
     def close(self) -> None:
+        if self.closed:
+            return
         self.closed = True
+        self.runtime.close()
         self.ai_controller.close()
         for dialog in (self.ground_monitor, self.camera_dialog, self.calibration_dialog, self.model_viewer, self.quality_dialog):
             if dialog is not None and dialog.window.winfo_exists():

@@ -1,0 +1,53 @@
+{
+  "branch": "feature/remote-analysis",
+  "base_commit": "3999a7b9b483be0d35dc4191171d65c3ae8d8162",
+  "platform": "Windows-10-10.0.17763-SP0",
+  "python": "3.12.10",
+  "full_suite": {
+    "command": "python -c \"import cv2,pytest; cv2.setNumThreads(2); raise SystemExit(pytest.main(['tests','-q']))\"",
+    "passed": 1370,
+    "skipped": 1,
+    "subtests_passed": 279,
+    "elapsed_seconds": 605.29,
+    "failures": 0
+  },
+  "fresh_process_tk_lazy_import": {
+    "passed": 1,
+    "deselected": 24
+  },
+  "cli_smokes": {
+    "m0_frames_passed": 1727,
+    "m0_frames_total": 1727,
+    "m0_max_event_error_frames": 2,
+    "synthetic_stereo_instances": 9,
+    "stereo_demo_counts": {
+      "INSTALLED": 8,
+      "NOT_INSTALLED": 0,
+      "UNKNOWN": 1
+    }
+  },
+  "real_scene": "real-scene-evidence.json",
+  "received_report_gui": "received-gui-evidence.json",
+  "gui_mode_screenshots": "../20261102-remote-analysis-gui/gui-evidence.json",
+  "isolated_clone": true,
+  "original_main_unchanged": true,
+  "original_source_files_unchanged": true,
+  "second_physical_computer_tested": false,
+  "gpu_execution_implemented": false,
+  "new_camera_capture": false,
+  "real_ai_requests": 0,
+  "fixed_during_review": [
+    "cancel request body rejected by server",
+    "partial evidence replacement on failed result save",
+    "cancellation and changed-source checks during result publication",
+    "Windows temporary evidence path overflow",
+    "wrong service/protocol connection acceptance",
+    "frontend AI compatibility and server capability display"
+  ],
+  "remaining_limits": [
+    "trusted LAN/Tailscale HTTP without account authentication or TLS",
+    "no server restart resume",
+    "CPU backend only; GPU detection is not GPU execution",
+    "loopback Windows test, not cross-machine performance or Linux validation"
+  ]
+}

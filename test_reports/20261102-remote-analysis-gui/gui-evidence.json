@@ -1,0 +1,18 @@
+{
+  "modes": [
+    "服务器端",
+    "前端",
+    "本地运算"
+  ],
+  "status": "计算服务运行中 · 空闲",
+  "service_url": "http://127.0.0.1:54485",
+  "local_capabilities": "本机计算：CPU · CPU 8 核；CUDA 设备 0 个，GPU 执行暂未启用。",
+  "server_capabilities": "计算服务（本机）计算：CPU · CPU 8 核；CUDA 设备 0 个，GPU 执行暂未启用。",
+  "camera_opened": false,
+  "address_candidates_isolated": true,
+  "address_candidates_note": "截图 IP 候选固定为 127.0.0.1，未展示当前主机 LAN/VPN 地址。",
+  "server_capture_disabled": true,
+  "settings_path_isolated": "C:\\Users\\ZJLZ1026\\AppData\\Local\\Temp\\tmpbcy3uqgw\\runtime.json",
+  "services": "temporary loopback-only service, no jobs",
+  "ai_requests": 0
+}

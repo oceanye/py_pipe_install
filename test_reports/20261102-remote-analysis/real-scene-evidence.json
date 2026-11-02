@@ -1,0 +1,148 @@
+{
+  "scope": "LOOPBACK_HTTP_PROCESS_SEPARATION_NOT_REMOTE_HARDWARE_BENCHMARK",
+  "source_dataset": "elevation-20261102-115517-4e0034c9",
+  "source_hashes": {
+    "burst/005_left.png": "0bacf783639999730bc12e62278bddbaeba489a9c998f6ddd2b646d0b844c53d",
+    "burst/002_left.png": "e8db05f1ef9ba123eaa19bd7ae6650e5ec27c563846272c58b53b27f37a1fd58",
+    "photos/right.png": "d80bec0bc9e264dfb7abcbdd8bc6bd7f238873369c4d74383359af96ede9bd1d",
+    "burst/003_right.png": "391562d9863ec42e2ad5d8b3eb7de73de94d55254d2f47ef4c9f58bad8ee67a1",
+    "burst/004_left.png": "ab6f7866a9e671f324a8474684dde0c29a9cc4a0f28b2bde8aea5d2ee35e3049",
+    "burst/006_left.png": "7ecf6bffe513b9ffa707fc769dc343562b0a82fc3596a3bd7b65a982daaa159b",
+    "burst/009_left.png": "f61e48a33b9b2fb32236015966e09ec422480c18e2a98939dd328e0ab39d992e",
+    "burst/003_left.png": "f39d316d6fcac9dcd3abf383ac99d0de14352c44746017d8d03774f72830ca16",
+    "burst/005_right.png": "9eafd8b3572015267ad04bea5e8aae528be8d63d2e5d8ff0f5e271328dbf7fdd",
+    "burst/002_right.png": "e63c5f54f8e4dd07565a26466ab0a4853c35b36542b4708e802d0b1e7ac1bfc1",
+    "burst/007_right.png": "cbe1a6cf465d032557ced842206b6ff9abfc1e79142c4e46704ac50c6eb4f6d4",
+    "burst/008_left.png": "0e5a7a2e5df66976ad08caa1fdf60ed68c3dbb851fafdb31e90b52aa8f4e383f",
+    "burst/001_right.png": "95229c0f752d005e4c904d5cfb75968a05bb43ddbc408be43686b60d1fa2325f",
+    "burst/001_left.png": "9eba188bc6173927143ba24b45c6bb59a776d54591579afae0f8ad6b5b1a9195",
+    "burst/008_right.png": "a57cc9acbada4f957ebfbe2b8e22320dd27cab1a9d99a1f833a8470826f7bf7d",
+    "burst/006_right.png": "c4e503dccccd1e3e4e24929298fd08284742e8093acd081cb46cd20a10a635fc",
+    "burst/000_right.png": "ffb28eeb82f16ab6fe15206c8ef967d8baeb3cf988a9e067e0e6fbca78c6b1f4",
+    "burst/009_right.png": "d80bec0bc9e264dfb7abcbdd8bc6bd7f238873369c4d74383359af96ede9bd1d",
+    "burst/007_left.png": "47050aee5282f03a946a743633b852300b7406fb01e982c2e7c2cacadc3bc18c",
+    "burst/000_left.png": "6a4f64d40415160303a0ec5d490a6fa76983908b0c4e1a5e75f0cb75c2087708",
+    "photos/left.png": "f61e48a33b9b2fb32236015966e09ec422480c18e2a98939dd328e0ab39d992e",
+    "burst/004_right.png": "8b5c32cdbe84f666de323d5bed5b07b89a3f32782e7070307872a243efdf3344",
+    "model/管道布置.stl": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "manifest.json": "7e01fcf8cb2943a7af08038a8c73c6318eca0fd4fb853c9f6fb71d9108794cae",
+    "report.json": "d33b697fa16c86a1b830e26edffae9e33fac03b075f078e388ceecab2a4cde31"
+  },
+  "source_unchanged": true,
+  "current_groups": 1,
+  "stereo_pairs": 10,
+  "local_seconds": 142.68799999996554,
+  "http_seconds": 177.48399999999674,
+  "local_remote_identity_equal": true,
+  "strict_counts_equal": true,
+  "gui_bound_report_restore_passed": true,
+  "identity": {
+    "status": "LIKELY",
+    "counts": {
+      "AMBIGUOUS": 0,
+      "LIKELY": 4,
+      "NO_OBSERVATION": 8
+    },
+    "plausible_hypotheses": 1,
+    "observations": {
+      "POOL-L01-POOL-R01": {
+        "pipe_id": "P008",
+        "status": "LIKELY",
+        "diameter_mm": 38.97938603097547
+      },
+      "POOL-L02": {
+        "pipe_id": "P009",
+        "status": "LIKELY",
+        "diameter_mm": null
+      },
+      "POOL-L03-POOL-R03": {
+        "pipe_id": "P004",
+        "status": "LIKELY",
+        "diameter_mm": 47.514014502554666
+      },
+      "POOL-L04-POOL-R04": {
+        "pipe_id": "P002",
+        "status": "LIKELY",
+        "diameter_mm": 40.40686435973148
+      }
+    }
+  },
+  "server_health": {
+    "service": "pipe-twin-analysis",
+    "protocol_version": "1",
+    "status": "RUNNING",
+    "bind": "127.0.0.1",
+    "port": 54968,
+    "base_url": "http://127.0.0.1:54968",
+    "capabilities": {
+      "backend": "CPU",
+      "execution_backend": "CPU",
+      "supported_backends": [
+        "CPU"
+      ],
+      "opencv_version": "4.13.0",
+      "cpu": {
+        "logical_cores": 8,
+        "opencv_threads": 8
+      },
+      "gpu": {
+        "cuda_device_count": 0,
+        "cuda_stereo_api_available": false,
+        "execution_supported": false,
+        "reason": "CUDA_STEREO_UNAVAILABLE",
+        "probe_error": null
+      },
+      "note": "当前算法使用 CPU；CUDA 设备检测不代表已启用 GPU 解算。"
+    },
+    "active_job": null,
+    "queued_jobs": 0,
+    "max_pending_jobs": 4,
+    "is_busy": false,
+    "jobs": []
+  },
+  "server_jobs": [
+    {
+      "job_id": "c4e72ee6aaa84abeb50b2afad49db177",
+      "request_id": "7e804cc1815146508f70a9b2fd201c99",
+      "status": "SUCCEEDED",
+      "progress": "分析完成",
+      "error": null,
+      "created_at": "2026-11-02T06:22:10.579+00:00",
+      "started_at": "2026-11-02T06:22:10.579+00:00",
+      "finished_at": "2026-11-02T06:24:55.912+00:00"
+    }
+  ],
+  "progress_messages": [
+    "正在校验并打包模型和本次拍摄照片……",
+    "正在上传到计算服务器……",
+    "正在启动 CPU 分析进程……",
+    "正在读取输入并运行 CPU 分析……",
+    "正在处理拍摄组 1/1 的双目深度……",
+    "拍摄组 1/1：多帧深度 1/10……",
+    "拍摄组 1/1：多帧深度 2/10……",
+    "拍摄组 1/1：多帧深度 3/10……",
+    "拍摄组 1/1：多帧深度 4/10……",
+    "拍摄组 1/1：多帧深度 5/10……",
+    "拍摄组 1/1：多帧深度 6/10……",
+    "拍摄组 1/1：多帧深度 7/10……",
+    "拍摄组 1/1：多帧深度 8/10……",
+    "拍摄组 1/1：多帧深度 9/10……",
+    "拍摄组 1/1：多帧深度 10/10……",
+    "正在汇聚可见边界、检查断面尺寸并比较模型相对就位……",
+    "试验采用候选地面倾角：重算管轴、自由管径及相对心距……",
+    "断面重复性检查 1/7：独立提取边界和解算尺寸……",
+    "断面重复性检查 2/7：独立提取边界和解算尺寸……",
+    "断面重复性检查 3/7：独立提取边界和解算尺寸……",
+    "断面重复性检查 4/7：独立提取边界和解算尺寸……",
+    "断面重复性检查 5/7：独立提取边界和解算尺寸……",
+    "断面重复性检查 6/7：独立提取边界和解算尺寸……",
+    "断面重复性检查 7/7 完成：当前解出 3 个断面，正在检查 CAD 对应……",
+    "正在按层位、左右排列和管径大小生成辅助安装对应……",
+    "正在校验并打包报告和证据文件……",
+    "分析完成"
+  ],
+  "new_camera_capture": false,
+  "ai_request": false,
+  "verified_evidence_files": 9,
+  "timing_context": "Sequential local/HTTP replays on the same Windows computer while regression tests also ran; not a remote hardware speed benchmark."
+}

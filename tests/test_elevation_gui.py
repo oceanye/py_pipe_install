@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 import tempfile
 import time
 import threading
@@ -44,6 +45,9 @@ class ElevationGuiTests(unittest.TestCase):
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
+        self.runtime_patch = mock.patch.dict(os.environ, {"PIPE_TWIN_RUNTIME_SETTINGS": str(Path(self.tmp.name) / "runtime.json")})
+        self.runtime_patch.start()
+        self.addCleanup(self.runtime_patch.stop)
         self.output = Path(self.tmp.name) / "workbench"
         self.app = SimpleNamespace(root=self.root, tk=self.tk, ttk=self.ttk, messagebox=mock.Mock(), filedialog=mock.Mock())
         self.profile_patch = mock.patch("pipe_twin.workbench_profile.load_profile", return_value=(None, None))

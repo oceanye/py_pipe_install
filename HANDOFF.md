@@ -1,5 +1,25 @@
 # 测试与远程开发交接
 
+## 2026-11-02 前后台计算分离分支
+
+本轮在独立克隆的 `feature/remote-analysis` 分支实现，原工作目录及 `main` 保持不变。目标是同一 GUI 提供“服务器端 / 前端 / 本地运算”三档，远端 CPU 执行完整双目评估，前端保留相机与结果展示。操作见 [README](README.md#前后台分离featureremote-analysis)。
+
+实现分工：`analysis_runtime_gui.py` 管理运行模式、连接与任务生命周期；`analysis_runtime_settings.py` 存储每台机器的模式/IP/端口；`analysis_server.py` 提供队列与独立计算子进程；`analysis_transport.py` 传输当前现场及绑定结果；`analysis_capabilities.py` 如实报告 CPU 和 CUDA 能力。主算法仍复用 `analyze_stereo_capture`，未改动识别阈值、标定、安装判定或观察方向约定。
+
+计算服务默认端口 **8771**。协议提供 `/health`、`POST /jobs`、`GET /jobs/{id}`、`GET /jobs/{id}/result` 与 `POST /jobs/{id}/cancel`。服务默认回环监听，只接受回环、RFC1918、Tailscale 或 ULA 来源；这是可信网络内的无认证 HTTP 服务。GUI 选择可达本机 IP 后显式启动，显示端口与任务进度，关闭窗口会停止自有服务。单次串行计算，等待队列有上限，取消通过结束独立子进程实现，异常进程不阻塞后续任务。未实现跨重启续算或外网认证。
+
+前端每次保存独立当前批，`previous_manifest=None`，不依赖旧批。上传内容仅包含 manifest 明确引用的模型、左右照片及连拍；标定、观察侧、范围与分析参数随 manifest 保留。返回报告绑定请求 ID、manifest 与所有素材哈希，证据路径迁移至前端历史目录。结果先写入独立证据目录，再原子更新报告；取消、输入变化或保存失败不覆盖原报告和原证据。GUI 还核对任务代次和原始文件，拒绝迟到结果。Kimi 仍由前端本机调用，凭据不随现场包传输；服务器模式禁用本机相机/AI操作。
+
+首轮真实图联调暴露 Windows 深目录下证据临时文件超出 MAX_PATH。已缩短后台任务/结果目录与前端接收目录，同时保留完整协议身份及哈希；未改系统注册表。当前 CPU 数值路径保持原样，GPU 仅做探测，后续 CUDA 移植需独立验证视差、缺失值、尺寸和安装匹配一致性。
+
+验证脚本为 `test_reports/20261102-remote-analysis/verify_real_scene.py`：复制 11:55 换位实拍的当前 10 对照片，在独立目录分别执行本地计算和 HTTP 子进程计算，检查安装对应、管径、严格计数、GUI 绑定恢复与原始文件未变化。该检查使用本机回环网络，不能代表另一台机器的性能或跨机连通性。
+
+实拍对照已通过：本地/后台均为 **P002 红 40.4069 mm、P004 蓝 47.5140 mm、P008 红 38.9794 mm、P009 白（投影支持，无实测径）**，4 LIKELY、8 NO_OBSERVATION、1 个合理方案，身份和管径值完全相同。严格状态计数相同，9 个证据文件已落地并核验哈希，GUI 可以恢复绑定报告；原始现场及报告哈希未变。本地评估 **142.688 s**，HTTP 整体 **177.484 s**（其中后台任务约 165.333 s）；同时有回归测试占用 CPU，仅作为本机流程耗时记录。[实拍完整证据](test_reports/20261102-remote-analysis/real-scene-evidence.json)；[三档 GUI 截图与状态记录](test_reports/20261102-remote-analysis-gui/gui-evidence.json)。截图使用合成照片和回环地址，无真实相机或 AI 调用。
+
+最终 Windows 全量回归 **1370 passed、1 skipped、279 subtests passed，605.29 s**；Tk 懒导入跳过项在新进程单跑 **1 passed**。CLI 的 M0 重放、合成双目生成、现场双目演示均通过；新增测试覆盖真实 HTTP/子进程/GUI 往返、取消、异常恢复、队列容量、输入哈希、损坏与越界 ZIP、原子接收及 Windows 长路径。真实后台报告在前端 GUI 加载后恢复 4 个辅助候选，未打开相机或调用 AI。完整记录见 [验证清单](test_reports/20261102-remote-analysis/validation.json)。尚未在第二台物理机器或 Linux 服务器实测；当前 GitHub CI 仅 main push/PR 触发，不能将功能分支推送视作已跑远端 CI。
+
+GPU 后续可在服务器内部增加计算后端，不需要改变前端采集/回传协议。现有 `opencv-python-headless` 预编译包为 CPU 构建，需独立准备 CUDA 版 OpenCV；优先比较视差与重投影阶段，保留 CPU 回退，再用同一批实拍核对安装集合与尺寸。CUDA StereoSGM 与当前 StereoSGBM 不保证数值相同，不能仅更换函数名就认定结果等价。参考 [OpenCV Python 构建说明](https://github.com/opencv/opencv-python/blob/4.x/README.md) 与 [CUDA 双目接口](https://docs.opencv.org/4.13.0/dd/d47/group__cudastereo.html)。本轮未安装 GPU 依赖、未实现或宣称 GPU 加速。
+
 ## 2026-11-02 11:55 换位后实拍：当前布局与方向基准
 
 用户反馈移动一根管道后识别依然正确。最新独立拍摄为 **11:55:00.900—11:55:08.227**，现场 `outputs/elevation_workbench/captures/elevation-20261102-115517-4e0034c9/manifest.json`，评估于 **11:58:35.916** 完成。10/10 对有效，3 根自由断面均 7/7 解出，管径与心距重复性均通过。唯一辅助组合为 **P002 红 40.41 mm、P004 蓝 47.51 mm、P008 红 38.98 mm、P009 白（投影支持，无实测径）**，4 LIKELY、8 NO_OBSERVATION。前一独立拍摄 11:51 仍为 P004/P008/P009/P011；本次 P011 不再观察、P002 新出现，与用户换位操作一致，未实现跨批物理实体追踪。本轮没有 AI 结果，未调用 AI。
