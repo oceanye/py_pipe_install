@@ -25,6 +25,11 @@ def probe_capabilities() -> dict:
     return {
         'backend': 'CPU', 'execution_backend': 'CPU', 'supported_backends': ['CPU'],
         'opencv_version': cv2.__version__,
+        'preprocessing': {
+            'fast_nl_means_available': callable(getattr(cv2, 'fastNlMeansDenoising', None)),
+            'bilateral_available': callable(getattr(cv2, 'bilateralFilter', None)),
+            'clahe_available': callable(getattr(cv2, 'createCLAHE', None)),
+        },
         'cpu': {'logical_cores': os.cpu_count() or 1, 'opencv_threads': cv2.getNumThreads()},
         'gpu': {'cuda_device_count': count, 'cuda_stereo_api_available': stereo_api,
                 'execution_supported': False, 'reason': reason, 'probe_error': probe_error},

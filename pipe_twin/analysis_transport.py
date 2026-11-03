@@ -517,6 +517,22 @@ class RemoteAnalysisClient:
     def analyze(self, manifest_path: str | Path, report_output_path: str | Path,
                 evidence_dir: str | Path, progress: Callable[[str], None] | None = None,
                 cancel_event=None) -> dict:
+        from .logging_config import get_logger, log_event
+        logger = get_logger('analysis_transport')
+        context = {'server': self.base_url, 'manifest': str(manifest_path)}
+        log_event(logger, 'remote_analysis_start', **context)
+        try:
+            report = self._analyze(manifest_path, report_output_path, evidence_dir, progress, cancel_event)
+        except RemoteAnalysisCancelled as error:
+            log_event(logger, 'remote_analysis_cancelled', error=str(error), **context)
+            raise
+        except Exception as error:
+            log_event(logger, 'remote_analysis_failed', error_type=type(error).__name__, error=str(error), **context)
+            raise
+        log_event(logger, 'remote_analysis_finished', report=str(report_output_path), **context)
+        return report
+
+    def _analyze(self, manifest_path, report_output_path, evidence_dir, progress, cancel_event):
         def cancelled() -> bool:
             return cancel_event is not None and cancel_event.is_set()
 
@@ -536,6 +552,9 @@ class RemoteAnalysisClient:
         if not isinstance(job_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", job_id):
             raise RemoteAnalysisError("Server returned an invalid job identity")
         route = "/jobs/" + job_id
+        from .logging_config import get_logger, log_event
+        log_event(get_logger('analysis_transport'), 'remote_analysis_submitted', server=self.base_url,
+                  job_id=job_id, request_id=sent_binding['request_id'], manifest=str(manifest_path))
         deadline = time.monotonic() + self.job_timeout
         last_progress = None
         finished = False

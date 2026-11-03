@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-03",
+  "base_commit": "5f735deaa6be12fca79b4d52eefad76b8e35ba9a",
+  "tests": [
+    {
+      "files": ["test_opencv_preprocessing_compat.py", "test_analysis_capabilities.py", "test_analysis_transport.py", "test_analysis_runtime_gui.py", "test_stereo_analyzer.py"],
+      "passed": 84,
+      "subtests_passed": 9,
+      "seconds": 104.25
+    },
+    {
+      "files": ["test_opencv_preprocessing_compat.py", "test_low_light_stereo.py", "test_ground_inspection.py", "test_analysis_capabilities.py"],
+      "passed": 28,
+      "seconds": 3.63,
+      "note": "Includes the additional missing-CLAHE capability/error test. Suites overlap."
+    }
+  ],
+  "real_archived_image_replay": "evidence.json",
+  "same_local_candidates_and_conditional_diameters": true,
+  "standard_nlm_pixels_unchanged": true,
+  "raw_source_files_unchanged": true,
+  "remote_environment_modified": false,
+  "remote_updated_server_validated": false,
+  "physical_camera_opened": false,
+  "remote_deployment_and_acceptance": "User will arrange server update and restart."
+}

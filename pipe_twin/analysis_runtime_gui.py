@@ -350,9 +350,17 @@ class AnalysisRuntimeController:
     def _capability_text(label, capabilities):
         cpu, gpu = capabilities.get("cpu", {}), capabilities.get("gpu", {})
         backend = capabilities.get("execution_backend") or capabilities.get("backend") or "未报告"
+        preprocessing = capabilities.get('preprocessing', {})
+        denoising_note = ''
+        if preprocessing.get('clahe_available') is False:
+            denoising_note = ' 缺少弱光处理接口，请补齐 OpenCV 或使用原始灰度。'
+        elif preprocessing.get('fast_nl_means_available') is False:
+            denoising_note = (' 弱光去噪使用双边兼容处理（缺少 photo 接口）。'
+                if preprocessing.get('bilateral_available') and preprocessing.get('clahe_available')
+                else ' 缺少弱光处理接口，请补齐 OpenCV 或使用原始灰度。')
         return (f"{label}计算：{backend} · CPU {cpu.get('logical_cores', '未报告')} 核；"
                 f"CUDA 设备 {gpu.get('cuda_device_count', '未报告')} 个，"
-                + ("GPU 执行可用。" if gpu.get("execution_supported") else "GPU 执行暂未启用。"))
+                + ("GPU 执行可用。" if gpu.get("execution_supported") else "GPU 执行暂未启用。") + denoising_note)
 
     def permits(self, *, camera=False):
         if self.mode == "server" or self.changing:
@@ -402,7 +410,7 @@ class AnalysisRuntimeController:
         self.active = None
         if kind == "remote_error":
             _, path, error = payload
-            self.status.set("远程分析失败，可检查连接后重试。")
+            self.status.set(f"远程分析失败：{error}")
             suffix = f"\n当前批现场包已保存：{path}" if path else ""
             return "error", ValueError(str(error) + suffix)
         _, path, report, reset, fingerprints = payload

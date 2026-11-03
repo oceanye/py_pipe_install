@@ -1,5 +1,22 @@
 # 测试与远程开发交接
 
+## 2026-11-03 服务器可连接、抓拍后计算失败：OpenCV 去噪接口兼容
+
+**远程服务器需要更新本节修复并重启服务，仅更新相机前端不足以修复。** 服务器 `10.26.0.201:8771` 的健康接口已确认两次任务于 11:06:48、11:07:12 失败：`AttributeError: module 'cv2' has no attribute 'fastNlMeansDenoising'`。上传与任务创建成功，失败发生在 CPU 弱光预处理。该机 OpenCV 4.13.0 检测到 CUDA 设备及 StereoSGM 接口，但未提供此 CPU 去噪函数；有 CUDA 不代表 CPU 算法所需接口齐全。本项目仍使用 CPU 分析。
+
+修复保留完整 OpenCV 上原有 NLM + CLAHE 像素路径；缺少 NLM 时使用 imgproc 的双边去噪 + CLAHE，报告深度审计新增 `preprocessing_backend`（`NLM_CLAHE / BILATERAL_CLAHE / GRAYSCALE`），不把两种方法标成相同。若连双边滤波或 CLAHE 也缺失，给出补齐接口/切换原始灰度的明确提示。健康接口新增预处理能力，GUI 显示是否采用兼容处理。前端真实计算错误不再笼统归因为连接失败；上传任务 ID、成功/失败及源清单写入 `analysis_transport` 结构化日志。不会自动修改用户的“弱光降噪”选择、照片或现用环境。
+
+远程执行步骤：
+
+1. 关闭服务器 GUI 或停止计算服务，拉取 `main`：`git pull --ff-only origin main`。前端也更新并重新打开 GUI。
+2. 在服务器实际运行 GUI 的 Python 环境检查：`python -c "import cv2; print(cv2.__version__); print({n: callable(getattr(cv2,n,None)) for n in ['StereoSGBM_create','fastNlMeansDenoising','bilateralFilter','createCLAHE']})"`。Windows 项目环境可把 `python` 替换为 `.venv\Scripts\python.exe`。新版允许 NLM 缺失但双边滤波/CLAHE 可用；若其它必要接口也缺失，应补齐该 OpenCV 构建，或另建 CPU 环境安装项目依赖。保留 CUDA 定制环境时不要直接覆盖安装另一份 `cv2`。
+3. 根目录 `run_gui.bat --check` 检查 Python/Tk/依赖导入，再用 `run_gui.bat` 打开 GUI，选择“服务器端”，监听原 IP/8771 并启动服务。此导入检查不代替上一步的 OpenCV 函数检查。
+4. 前端检测连接后，手动“打开现场”恢复 `outputs/elevation_workbench/captures/elevation-20261103-110710-5b8316da/manifest.json` 的照片、方向及范围，点击“保存并提交服务器”。确认任务 `SUCCEEDED` 且前端收到当前批报告；再测新抓拍和自动监控。严格安装 UNKNOWN 与服务任务 FAILED 是不同状态。
+
+本地复现使用这次 11:07 现场包，分别执行完整 NLM 路径与人为移除 NLM 的兼容路径，均成功：44.562 / 37.593 秒，辅助管号候选及五个条件断面尺寸一致，原始输入哈希未变。该结果只证明同图兼容回放，没有验证本次所有管号的物理正确性；两种预处理也不保证对其他图像数值相同。针对传输、GUI、双目和兼容处理的一轮回归 **84 passed / 9 subtests passed**，补充弱光/地面/缺少 CLAHE 检查 **28 passed**。见 [回放证据](test_reports/20261103-opencv-compat/evidence.json) 与 [验证范围](test_reports/20261103-opencv-compat/validation.json)。
+
+物理服务器复测发起前该端口已停止监听（10061），因此未完成服务器升级后的真实端到端验收；按用户安排，远端自行部署和复测。本轮未修改远程环境、未拍新照片、未把原始照片上传 GitHub。原错误记录见 [服务器失败任务](test_reports/20261103-opencv-compat/server-failure.json)。
+
 ## 2026-11-03 合并 main 与统一启动环境
 
 按用户要求将 `feature/remote-analysis` 的 `aa33997`、`26ff1f6` 快进合并到 `main`，包含三档运行模式和自动单帧监控。下文“main 未改”“只能从开发目录启动”为此前阶段记录，现由本节取代。根目录 `run_gui.bat` 可进入新版本；已经打开的旧进程需关闭后重新启动。

@@ -870,11 +870,28 @@ def _image_signal_diagnostics(gray: np.ndarray) -> dict[str, Any]:
             "warning_codes": warnings}
 
 
+def _stereo_preprocessing_backend(preprocessing: str) -> str:
+    if preprocessing != 'low_light':
+        return 'GRAYSCALE'
+    if not callable(getattr(cv2, 'createCLAHE', None)):
+        raise StereoAnalysisError('当前 OpenCV 缺少 createCLAHE；请补齐 imgproc 模块，或选择原始灰度。')
+    if callable(getattr(cv2, 'fastNlMeansDenoising', None)):
+        return 'NLM_CLAHE'
+    if callable(getattr(cv2, 'bilateralFilter', None)):
+        return 'BILATERAL_CLAHE'
+    raise StereoAnalysisError('当前 OpenCV 缺少去噪接口；请安装包含 photo/imgproc 的完整构建，或选择原始灰度。')
+
+
 def _stereo_gray(image: np.ndarray, preprocessing: str) -> np.ndarray:
     """Enhance only the matching copy; color evidence always uses original BGR."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     if preprocessing == "low_light":
-        gray = cv2.fastNlMeansDenoising(gray, None, 5.0, 7, 21)
+        if _stereo_preprocessing_backend(preprocessing) == 'NLM_CLAHE':
+            gray = cv2.fastNlMeansDenoising(gray, None, 5.0, 7, 21)
+        else:
+            # Some CUDA builds omit the CPU photo module. Keep edge-preserving
+            # denoising in imgproc and report the changed backend explicitly.
+            gray = cv2.bilateralFilter(gray, 5, 5.0, 3.0)
         gray = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)
     return gray
 
@@ -915,6 +932,7 @@ def _compute_stereo_depth(
         "algorithm_revision": STEREO_ALGORITHM_REVISION,
         "opencv_version": cv2.__version__,
         "matcher": dict(matching),
+        "preprocessing_backend": _stereo_preprocessing_backend(matching['preprocessing']),
         "validation_scope": "BIDIRECTIONAL_MATCHES_ONLY_NOT_METRIC_ACCURACY",
     }
     if matching["min_disparity"] + matching["num_disparities"] >= width:

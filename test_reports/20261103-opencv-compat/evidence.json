@@ -1,0 +1,150 @@
+{
+  "source": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\elevation_workbench\\captures\\elevation-20261103-110710-5b8316da",
+  "camera_opened": false,
+  "cases": [
+    {
+      "name": "local-nlm",
+      "manifest": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\oc111604\\local-nlm\\manifest.json",
+      "seconds": 44.562,
+      "strict_counts": {
+        "INSTALLED": 0,
+        "NOT_INSTALLED": 0,
+        "UNKNOWN": 12
+      },
+      "observations": [
+        {
+          "label": "S1",
+          "suggested_pipe_id": "P011",
+          "status": "LIKELY"
+        },
+        {
+          "label": "S2",
+          "suggested_pipe_id": "P009",
+          "status": "LIKELY"
+        },
+        {
+          "label": "S3",
+          "suggested_pipe_id": "P004",
+          "status": "LIKELY"
+        },
+        {
+          "label": "S4",
+          "suggested_pipe_id": "P001",
+          "status": "LIKELY"
+        },
+        {
+          "label": "S5",
+          "suggested_pipe_id": null,
+          "status": "INSUFFICIENT"
+        }
+      ],
+      "sections": [
+        {
+          "label": "S1",
+          "diameter_mm": 38.21543007776004,
+          "solved": true
+        },
+        {
+          "label": "S2",
+          "diameter_mm": 26.333287724092955,
+          "solved": true
+        },
+        {
+          "label": "S3",
+          "diameter_mm": 48.81451072457779,
+          "solved": true
+        },
+        {
+          "label": "S4",
+          "diameter_mm": 48.7965473244573,
+          "solved": true
+        },
+        {
+          "label": "S5",
+          "diameter_mm": 59.006512699422444,
+          "solved": true
+        }
+      ],
+      "preprocessing_backends": [
+        "NLM_CLAHE"
+      ]
+    },
+    {
+      "name": "local-missing-photo",
+      "manifest": "C:\\Users\\ZJLZ1026\\Documents\\py_pipe_install\\outputs\\oc111604\\local-missing-photo\\manifest.json",
+      "seconds": 37.593,
+      "strict_counts": {
+        "INSTALLED": 0,
+        "NOT_INSTALLED": 0,
+        "UNKNOWN": 12
+      },
+      "observations": [
+        {
+          "label": "S1",
+          "suggested_pipe_id": "P011",
+          "status": "LIKELY"
+        },
+        {
+          "label": "S2",
+          "suggested_pipe_id": "P009",
+          "status": "LIKELY"
+        },
+        {
+          "label": "S3",
+          "suggested_pipe_id": "P004",
+          "status": "LIKELY"
+        },
+        {
+          "label": "S4",
+          "suggested_pipe_id": "P001",
+          "status": "LIKELY"
+        },
+        {
+          "label": "S5",
+          "suggested_pipe_id": null,
+          "status": "INSUFFICIENT"
+        }
+      ],
+      "sections": [
+        {
+          "label": "S1",
+          "diameter_mm": 38.21543007776004,
+          "solved": true
+        },
+        {
+          "label": "S2",
+          "diameter_mm": 26.333287724092955,
+          "solved": true
+        },
+        {
+          "label": "S3",
+          "diameter_mm": 48.81451072457779,
+          "solved": true
+        },
+        {
+          "label": "S4",
+          "diameter_mm": 48.7965473244573,
+          "solved": true
+        },
+        {
+          "label": "S5",
+          "diameter_mm": 59.006512699422444,
+          "solved": true
+        }
+      ],
+      "preprocessing_backends": [
+        "BILATERAL_CLAHE"
+      ]
+    }
+  ],
+  "original_sha256": {
+    "manifest.json": "b8da119b148b17f402badf550e72e4b8b90787092d0764319b97f9707669e79e",
+    "model\\管道布置.stl": "cbe4c74b54aed6b6a3e2f62402b22cae958abe581318ffaefbe0cfa93d3237db",
+    "photos\\left.png": "d104ebdbcc45c680be24965806d1d573951ca28c7f5f9a5593dc449ff07cbe86",
+    "photos\\right.png": "9db6778ca6fc9c778529585feaf2de7d6b806365063840ec83b6ca0ebf6bbfeb"
+  },
+  "source_unchanged": true,
+  "same_pipe_candidates": true,
+  "same_section_sizes": true,
+  "physical_server_replay": "NOT_COMPLETED: service refused connection before upload; server deployment/retest delegated to user"
+}

@@ -1,0 +1,27 @@
+{
+  "source": "GET http://10.26.0.201:8771/health",
+  "service": "pipe-twin-analysis",
+  "protocol_version": "1",
+  "execution_backend": "CPU",
+  "opencv_version": "4.13.0",
+  "cuda_device_count": 1,
+  "cuda_stereo_api_available": true,
+  "gpu_execution_supported": false,
+  "jobs": [
+    {
+      "job_id": "94c77c037ecc4c11a2ece07fa28b749f",
+      "status": "FAILED",
+      "created_at": "2026-11-03T03:06:47.697+00:00",
+      "finished_at": "2026-11-03T03:06:48.836+00:00",
+      "error": "AttributeError: module 'cv2' has no attribute 'fastNlMeansDenoising'"
+    },
+    {
+      "job_id": "debe9d70436740b3af5c2ea6ac994769",
+      "status": "FAILED",
+      "created_at": "2026-11-03T03:07:11.156+00:00",
+      "finished_at": "2026-11-03T03:07:12.249+00:00",
+      "error": "AttributeError: module 'cv2' has no attribute 'fastNlMeansDenoising'"
+    }
+  ],
+  "subsequent_replay_attempt": "Connection refused (10061) before upload; no updated-server result obtained"
+}
