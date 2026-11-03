@@ -75,7 +75,7 @@ def scene_sections(report):
     return scenes
 
 
-def draw_scene(canvas, scene, *, selected_pipe=None, advisory_assignments=None):
+def draw_scene(canvas, scene, *, selected_pipe=None, advisory_assignments=None, clockwise_quarters=0):
     """Equal-scale normal section; dashed circles denote conditional fits."""
     canvas.delete('all')
     w, h = max(canvas.winfo_width(), 150), max(canvas.winfo_height(), 150)
@@ -85,6 +85,9 @@ def draw_scene(canvas, scene, *, selected_pipe=None, advisory_assignments=None):
         canvas.create_text(w/2, h/2, text='尚未生成现场断面\n请先点击⑤保存并评估', justify='center', fill='#355371')
         return []
     centers = np.asarray([r['center_uv_mm'][::-1] for r in items], float)
+    # Canvas Y points down: this matrix turns rightward into downward.
+    rotation = np.linalg.matrix_power(np.array([[0., -1.], [1., 0.]]), clockwise_quarters % 4)
+    centers = centers @ rotation.T
     radii = np.asarray([r['diameter_mm']/2 for r in items])
     low = (centers-radii[:, None]).min(axis=0); high = (centers+radii[:, None]).max(axis=0)
     scale = min(max(40, w-160)/max(high[0]-low[0], 1), max(40, h-220)/max(high[1]-low[1], 1))
@@ -93,7 +96,8 @@ def draw_scene(canvas, scene, *, selected_pipe=None, advisory_assignments=None):
     for row, (x, y), radius in zip(items, positions, radii*scale):
         covariance = row['center_covariance_mm2']
         if covariance is not None:
-            eigenvalues, eigenvectors = np.linalg.eigh(np.asarray(covariance)[::-1, ::-1])
+            displayed_covariance = rotation @ np.asarray(covariance)[::-1, ::-1] @ rotation.T
+            eigenvalues, eigenvectors = np.linalg.eigh(displayed_covariance)
             if np.all(eigenvalues >= 0):
                 # A conditional 95% joint centre ellipse, not total accuracy.
                 angle = np.linspace(0, 2*np.pi, 49)
@@ -106,7 +110,10 @@ def draw_scene(canvas, scene, *, selected_pipe=None, advisory_assignments=None):
                            outline='#C17A00' if selected else '#344A60', width=3 if selected else 1,
                            dash=(4, 3), tags=('scene-pipe', row['id']))
         suffix = (f" → {row['pipe_id']}" if row['pipe_id'] else f' · 辅助 → {preview}' if preview else ' · 待对应')
-        canvas.create_text(x, y-radius-8, text=f"{row['label']}  Ø{row['diameter_mm']:.1f} mm{suffix}",
+        label = f"{row['label']}  Ø{row['diameter_mm']:.1f} mm{suffix}"
+        if clockwise_quarters % 4:
+            label = f"{row['label']}  Ø{row['diameter_mm']:.1f} mm\n{suffix.strip(' ·')}"
+        canvas.create_text(x, y-radius-8, text=label,
                            anchor='s', fill='#20374B', tags='scene-label')
         hits.append(({**row, 'assist_pipe_id': preview}, float(x), float(y), max(radius, 12.)))
     unstable = sum(not r['subset_stable'] for r in items)
@@ -114,10 +121,18 @@ def draw_scene(canvas, scene, *, selected_pipe=None, advisory_assignments=None):
     canvas.create_text(12, 12, anchor='nw', text=f"现场相对断面 · {scene['zone_id']} · {len(items)} 根候选", fill='#20374B', tags='scene-title')
     caption = ('坐标和直径为独立条件量测；辅助管号来自当前方案，待确认。'
                if advisory_assignments else '三维管轴从图像解算；无需假定相机与地面垂直。')
-    canvas.create_text(12, 36, anchor='nw', text='横轴 V（纵深分量），纵轴 U；以 S1 为原点，单位 mm。\n'+caption, fill='#355371', width=w-24)
+    axes = ('横轴 V（纵深分量），纵轴 U；以 S1 为原点，单位 mm。',
+            '顺时针90°：右 −U、下 V；S1 原点，mm。',
+            '顺时针180°：右 −V、下 −U；S1 原点，mm。',
+            '顺时针270°：右 U、下 −V；S1 原点，mm。')[clockwise_quarters % 4]
+    canvas.create_text(12, 36, anchor='nw', text=axes+'\n'+caption, fill='#355371', width=w-24)
     canvas.create_rectangle(0, h-83, w, h, fill='#F2F5F8', outline='')
     note = f'条件估计；{unstable} 根尚未通过完整尺寸/边界检查。'
     note += '\n虚线椭圆仅表示像素误差假设，不含标定和轴向误差。'
     note += '\n原始估计保留；未用 CAD 管径或间距替换。'
+    if clockwise_quarters % 4:
+        note = (f'条件估计：{unstable} 根尚未通过完整检查。'
+                '\n椭圆仅含像素误差，不含标定/轴向误差。'
+                '\n未用 CAD 管径或间距替换实测值。')
     canvas.create_text(12, h-76, text=note, anchor='nw', fill='#8A5815', width=w-24, tags='scene-limitations')
     return hits

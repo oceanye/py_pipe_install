@@ -1,7 +1,8 @@
 import copy
 import numpy as np
 
-from pipe_twin.relative_scene import scene_sections, model_states
+from pipe_twin.relative_scene import scene_sections, model_states, draw_scene
+from unittest import mock
 
 
 def report_fixture():
@@ -64,3 +65,23 @@ def test_unrelated_zones_have_separate_origins_and_covariance_is_relative():
     assert scenes[0]['items'] == scenes[1]['items']
     np.testing.assert_array_equal(scenes[0]['items'][0]['center_covariance_mm2'], np.zeros((2, 2)))
     np.testing.assert_array_equal(scenes[0]['items'][1]['center_covariance_mm2'], 2*np.eye(2))
+
+
+def test_clockwise_display_rotates_centers_and_uncertainty_but_preserves_measurements():
+    scene = scene_sections(report_fixture())[0]
+    scene['items'][1]['center_covariance_mm2'] = [[9., 0.], [0., 4.]]
+    original = copy.deepcopy(scene)
+    canvas = mock.Mock()
+    canvas.winfo_width.return_value = canvas.winfo_height.return_value = 800
+    unrotated = draw_scene(canvas, scene)
+    old_ellipse = np.asarray(canvas.create_line.call_args.args).reshape(-1, 2)
+    canvas.reset_mock()
+    rotated = draw_scene(canvas, scene, clockwise_quarters=1)
+    new_ellipse = np.asarray(canvas.create_line.call_args.args).reshape(-1, 2)
+    before = np.subtract(unrotated[1][1:3], unrotated[0][1:3])
+    after = np.subtract(rotated[1][1:3], rotated[0][1:3])
+    np.testing.assert_allclose(after / np.linalg.norm(after), [-before[1], before[0]] / np.linalg.norm(before))
+    assert np.ptp(old_ellipse[:, 1]) > np.ptp(old_ellipse[:, 0])
+    assert np.ptp(new_ellipse[:, 0]) > np.ptp(new_ellipse[:, 1])
+    assert scene == original
+    assert [hit[0]['diameter_mm'] for hit in rotated] == [42., 48.]

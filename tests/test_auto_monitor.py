@@ -116,7 +116,7 @@ class AutoMonitorTests(unittest.TestCase):
         return session
 
     def monitor(self, **options):
-        params = dict(interval_seconds=.8, warmup_seconds=.2, session_factory=self.factory,
+        params = dict(interval_seconds=.8, warmup_seconds=.2, preparation_seconds=0, session_factory=self.factory,
                       analyzer=fake_analyzer, clock=self.clock)
         params.update(options)
         monitor = SingleFrameMonitor(self.arguments, self.camera, **params)
@@ -174,6 +174,57 @@ class AutoMonitorTests(unittest.TestCase):
         self.assertEqual(self.sessions[0].options['left_index'], 0)
         self.assertTrue(self.sessions[0].closed.is_set())
         self.assertIsNone(monitor.next_due)
+
+    def stationary_clock_factory(self, **options):
+        session = self.factory(**options)
+        session.clock_step = 0
+        return session
+
+    def test_every_capture_reserves_ten_seconds_for_warning(self):
+        monitor = self.monitor(warmup_seconds=0, preparation_seconds=10, interval_seconds=60,
+                               session_factory=self.stationary_clock_factory).start()
+        first = self.event(monitor, 'state', lambda e: e['state'] == 'PREPARING')
+        self.assertEqual(first['next_cycle_id'], 1)
+        self.assertAlmostEqual(first['next_due'] - first['at'], 10)
+        self.clock.advance(9.9)
+        time.sleep(.04)
+        self.assertEqual(monitor._cycle_id, 0)
+        self.clock.advance(.2)
+        captured = self.event(monitor, 'capture')
+        self.assertGreaterEqual(captured['capture_started'], first['at'] + 10)
+        result = self.event(monitor, 'result')
+        self.clock.advance(result['next_due'] - self.clock() - 9.9)
+        second = self.event(monitor, 'state', lambda e: e['state'] == 'PREPARING')
+        self.assertEqual(second['next_cycle_id'], 2)
+        self.clock.advance(9.9)
+        time.sleep(.04)
+        self.assertEqual(monitor._cycle_id, 1)
+        self.clock.advance(.2)
+        captured = self.event(monitor, 'capture')
+        self.assertGreaterEqual(captured['capture_started'], second['at'] + 10)
+        self.finish(monitor)
+
+    def test_stop_during_warning_never_takes_a_photo(self):
+        monitor = self.monitor(warmup_seconds=0, preparation_seconds=10,
+                               session_factory=self.stationary_clock_factory).start()
+        self.event(monitor, 'state', lambda e: e['state'] == 'PREPARING')
+        self.finish(monitor)
+        self.assertFalse(list((self.root / 'scenes').glob('*/manifest.json')))
+        self.assertEqual(monitor._cycle_id, 0)
+
+    def test_analysis_leaving_less_than_ten_seconds_extends_next_capture(self):
+        def analyze(*args, **kwargs):
+            self.clock.advance(18)
+            return fake_analyzer(*args, **kwargs)
+        monitor = self.monitor(warmup_seconds=0, preparation_seconds=10, interval_seconds=20,
+                               session_factory=self.stationary_clock_factory, analyzer=analyze).start()
+        self.event(monitor, 'state', lambda e: e['state'] == 'PREPARING')
+        self.clock.advance(10.1)
+        result = self.event(monitor, 'result')
+        warning = self.event(monitor, 'state', lambda e: e['state'] == 'PREPARING')
+        self.assertAlmostEqual(warning['next_due'] - warning['at'], 10)
+        self.assertGreaterEqual(warning['next_due'], result['at'] + 10)
+        self.finish(monitor)
 
     def test_slow_analysis_keeps_reader_live_and_never_overlaps_or_catches_up(self):
         calls = []

@@ -55,12 +55,14 @@ class SingleFrameMonitor:
     def __init__(self, dataset_arguments: dict, camera_options: dict, *,
                  interval_seconds: float = 60, mode: str = "local", server_url: str | None = None,
                  session_factory: Callable | None = None, analyzer: Callable | None = None,
-                 warmup_seconds: float = 8.0, clock: Callable[[], float] = time.monotonic) -> None:
-        for name, value in (("interval_seconds", interval_seconds), ("warmup_seconds", warmup_seconds)):
+                 warmup_seconds: float = 8.0, preparation_seconds: float = 10.0,
+                 clock: Callable[[], float] = time.monotonic) -> None:
+        for name, value in (("interval_seconds", interval_seconds), ("warmup_seconds", warmup_seconds),
+                            ("preparation_seconds", preparation_seconds)):
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
                 raise ValueError(f"{name} must be a finite number")
-        if interval_seconds <= 0 or warmup_seconds < 0:
-            raise ValueError("interval_seconds must be positive; warmup_seconds must be non-negative")
+        if interval_seconds <= 0 or warmup_seconds < 0 or preparation_seconds < 0:
+            raise ValueError("interval_seconds must be positive; warmup/preparation must be non-negative")
         if mode not in {"local", "client"}:
             raise ValueError("自动监控只支持本地或前端模式，服务器模式不可采集")
         if mode == "client" and not server_url:
@@ -71,6 +73,7 @@ class SingleFrameMonitor:
         self._camera_options = copy.deepcopy(camera_options)
         self.interval_seconds = float(interval_seconds)
         self.warmup_seconds = float(warmup_seconds)
+        self.preparation_seconds = float(preparation_seconds)
         self.mode, self.server_url = mode, server_url
         self._session_factory = session_factory or StereoCameraSession
         self._analyzer = analyzer
@@ -328,6 +331,19 @@ class SingleFrameMonitor:
             if not self._stop.is_set() and self._next_due is not None and now >= self._next_due:
                 self._next_due = now + self.interval_seconds
 
+    def _prepare_capture(self) -> None:
+        """Reserve the full warning interval even after slow computation."""
+        due = self.next_due
+        if due is None:
+            raise _Stopped()
+        self._wait_until(due - self.preparation_seconds)
+        with self._condition:
+            self._check()
+            self._next_due = max(due, self._clock() + self.preparation_seconds)
+        if self.preparation_seconds:
+            self._state('PREPARING', next_cycle_id=self._cycle_id + 1)
+        self._wait_until(self.next_due)
+
     def _run(self) -> None:
         stage = "configuration"
         try:
@@ -344,6 +360,7 @@ class SingleFrameMonitor:
             self._state("WARMING_UP")
             self._wait_until(self.next_due)
             while not self._stop.is_set():
+                self._prepare_capture()
                 self._cycle_id += 1
                 started = self._clock()
                 with self._condition:
@@ -377,7 +394,6 @@ class SingleFrameMonitor:
                         break
                 self._check()
                 self._state("WAITING")
-                self._wait_until(self.next_due)
         except (_Stopped, RemoteAnalysisCancelled):
             pass
         except Exception as error:

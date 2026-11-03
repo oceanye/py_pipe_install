@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from datetime import datetime, timedelta
 import hashlib
 import json
 from pathlib import Path
@@ -65,6 +66,7 @@ class AutoMonitorGuiTests(unittest.TestCase):
         model.saveas(self.model_path)
         specs, _ = catalog_from_dxf(self.model_path, axis_world=(0, 0, 1), unitless_unit="millimeter")
         self.configuration = {"dataset_arguments": {"pipe_specs": specs, "model_path": self.model_path,
+            "output_root": Path(self.tmp.name) / 'captures',
             "calibration": _calibration(), "stl_unit": "millimeter",
             "registration_settings": {"axis_world": [0, 0, 1], "camera_side_world": [0, 1, 0]}},
             "camera_options": {"device_index": 0}, "mode": "local", "server_url": None}
@@ -94,10 +96,12 @@ class AutoMonitorGuiTests(unittest.TestCase):
             cv2.rectangle(image, (350, 30), (425, 340), (210, 90, 35), -1)
             cv2.imwrite(str(path), image)
             paths[role + "_path"] = path
-        path = create_elevation_dataset(**copy.deepcopy(self.configuration["dataset_arguments"]),
-            output_root=root / "scenes", **paths, pair_confirmed=True, previous_manifest=None,
-            left_time="2026-11-03T10:30:00+08:00", right_time="2026-11-03T10:30:00+08:00")
-        return {"kind": "capture", "cycle_id": cycle, "manifest_path": str(path), "captured_at": "2026-11-03T10:30:00+08:00"}
+        arguments = copy.deepcopy(self.configuration['dataset_arguments'])
+        arguments['output_root'] = root / 'scenes'
+        captured_at = (datetime.fromisoformat('2026-11-03T10:30:00+08:00') + timedelta(minutes=cycle-1)).isoformat()
+        path = create_elevation_dataset(**arguments, **paths, pair_confirmed=True, previous_manifest=None,
+            left_time=captured_at, right_time=captured_at)
+        return {"kind": "capture", "cycle_id": cycle, "manifest_path": str(path), "captured_at": captured_at}
 
     def result(self, capture):
         from test_assist_display import report_fixture
@@ -109,7 +113,7 @@ class AutoMonitorGuiTests(unittest.TestCase):
             for assignment, identity in zip(choice["assignments"], ("0", "1")):
                 assignment["observation_id"] = identity
         report["section_evaluation"] = stage()
-        report["generated_at"] = "2026-11-03T10:30:12+08:00"
+        report['generated_at'] = (datetime.fromisoformat(capture['captured_at']) + timedelta(seconds=12)).isoformat()
         raw = Path(capture["manifest_path"]).read_bytes()
         manifest = json.loads(raw)
         report["inputs"] = {"manifest": hashlib.sha256(raw).hexdigest(), "model": manifest["model"]["sha256"]}
@@ -189,6 +193,83 @@ class AutoMonitorGuiTests(unittest.TestCase):
         self.complete_cycle()
         self.dialog.handle_event({"kind": "state", "cycle_id": 2, "state": "ANALYZING"})
         self.assert_results_empty()
+
+    def test_pre_capture_red_warning_blinks_for_ten_seconds_without_hiding_last_result(self):
+        self.dialog.start()
+        self.complete_cycle()
+        current = self.dialog.report
+        self.dialog.monitor.next_due = 110.
+        self.dialog.handle_event({'kind': 'state', 'cycle_id': 1, 'state': 'PREPARING'})
+        self.dialog._countdown()
+        self.assertIn('10 秒', self.dialog.capture_warning.get())
+        self.assertEqual(str(self.dialog.warning_label.cget('foreground')), '#C62828')
+        self.now = 100.6
+        self.dialog._countdown()
+        self.assertEqual(self.dialog.capture_warning.get(), '')
+        self.now = 105.
+        self.dialog._countdown()
+        self.assertIn('5 秒', self.dialog.capture_warning.get())
+        self.assertIs(self.dialog.report, current)
+        self.dialog.handle_event({'kind': 'state', 'cycle_id': 2, 'state': 'CAPTURING'})
+        self.assert_results_empty()
+        self.assertEqual(self.dialog.capture_warning.get(), '')
+        self.assertTrue(self.dialog.history_table.get_children())
+
+    def hinted_cycle(self, cycle, pipes):
+        self.dialog.handle_event({'kind': 'state', 'cycle_id': cycle, 'state': 'CAPTURING'})
+        capture = self.capture(cycle)
+        self.dialog.handle_event(capture)
+        event = self.result(capture)
+        data = event['report']['installation_assist']
+        data['status'] = 'LIKELY'
+        data['observations'] = data['observations'][:len(pipes)]
+        data['ranked_hypotheses'] = data['ranked_hypotheses'][:1]
+        data['ranked_hypotheses'][0]['assignments'] = [
+            {'observation_id': str(i), 'pipe_id': pipe} for i, pipe in enumerate(pipes)]
+        for observation, pipe in zip(data['observations'], pipes):
+            observation.update(status='LIKELY', suggested_pipe_id=pipe)
+        self.dialog.handle_event(event)
+        return event
+
+    def test_history_records_added_removed_time_and_ignores_duplicate_result(self):
+        self.dialog.start()
+        first = self.hinted_cycle(1, ['P001'])
+        second = self.hinted_cycle(2, ['P002'])
+        self.dialog.handle_event(second)
+        rows = [self.dialog.history_table.item(item, 'values') for item in self.dialog.history_table.get_children()]
+        self.assertEqual([row[2:] for row in rows], [('基线', 'P001'), ('新增提示', 'P002'), ('减少提示', 'P001')])
+        saved = [json.loads(line) for line in self.dialog.history_path.read_text(encoding='utf-8').splitlines()]
+        self.assertEqual(len(saved), 2)
+        self.assertEqual(saved[1]['captured_at'], second['captured_at'])
+        self.assertEqual(saved[1]['removed'], ['P001'])
+        self.assertEqual(saved[1]['added'], ['P002'])
+        self.dialog.handle_event({'kind': 'state', 'cycle_id': 3, 'state': 'CAPTURING'})
+        self.dialog.handle_event({'kind': 'error', 'cycle_id': 3, 'message': 'test failure'})
+        self.assert_results_empty()
+        saved = [json.loads(line) for line in self.dialog.history_path.read_text(encoding='utf-8').splitlines()]
+        self.assertEqual(saved[-1]['kind'], 'ERROR')
+        self.assertEqual(saved[-1]['removed'], [])
+        self.dialog.handle_event(first)
+        self.assertEqual(len(self.dialog.history_path.read_text(encoding='utf-8').splitlines()), 3)
+
+    def test_failed_history_file_write_does_not_hide_valid_current_result(self):
+        self.dialog.start()
+        self.dialog.history_path = Path(self.tmp.name)  # Existing directory cannot be appended as a file.
+        self.hinted_cycle(1, ['P001'])
+        self.assertIsNotNone(self.dialog.report)
+        self.assertTrue(self.dialog.history_table.get_children())
+        self.assertIn('记录保存失败', self.dialog.error.get())
+
+    def test_restart_retains_visible_history_but_creates_new_baseline(self):
+        self.dialog.start()
+        self.hinted_cycle(1, ['P001'])
+        first_path = self.dialog.history_path
+        self.dialog.monitor.active = False
+        self.dialog.start()
+        self.hinted_cycle(1, ['P002'])
+        self.assertNotEqual(self.dialog.history_path, first_path)
+        rows = [self.dialog.history_table.item(item, 'values') for item in self.dialog.history_table.get_children()]
+        self.assertEqual([row[2] for row in rows], ['基线', '基线'])
 
     def test_failure_keeps_sections_empty_and_late_same_cycle_result_cannot_reappear(self):
         self.dialog.start()

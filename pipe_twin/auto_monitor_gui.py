@@ -21,12 +21,14 @@ from .elevation_viewer import ElevationModelViewer, model_section_basis
 from .relative_scene import draw_scene, model_states, scene_sections
 from .section_status import solver_status_rows
 from .photo_capture import load_photo_snapshot, resolve_photo_path
+from .monitor_history import MonitorHistory, history_rows
 
 
 INTERVAL_MINUTES = (1, 2, 3, 5, 10)
 MAX_MANIFEST_BYTES = 4 * 1024 * 1024
 MAX_ASSET_BYTES = 256 * 1024 * 1024
 PHASE_LABELS = {"IDLE": "尚未开始", "OPENING": "正在连接相机", "WARMING_UP": "相机预热中",
+                "PREPARING": "准备拍摄",
                 "CAPTURING": "① 单帧获取中", "ANALYZING": "② 分析中", "RESULT": "③ 结果已显示",
                 "WAITING": "等待下一轮", "STOPPING": "正在停止并释放相机", "STOPPED": "监控已停止"}
 
@@ -147,6 +149,8 @@ class AutoMonitorDialog:
         self.snapshot = {}
         self.pipes, self.registration, self.rows = [], {}, {}
         self.selected_pipe = None
+        self.history = self.history_path = None
+        self.warning_started = None
         tk, ttk = self.app.tk, self.app.ttk
         self.window = tk.Toplevel(owner.window)
         self.window.title("自动监控 · 单帧分析")
@@ -158,9 +162,11 @@ class AutoMonitorDialog:
         style.configure("Monitor.Title.TLabel", font=("Microsoft YaHei UI", 11, "bold"))
         style.configure("Monitor.TButton", padding=(10, 5))
         style.configure("Monitor.Treeview", rowheight=25)
+        style.configure("Monitor.History.Treeview", rowheight=22)
         self.interval = tk.StringVar(value="1 分钟")
         self.phase = tk.StringVar(value=PHASE_LABELS["IDLE"])
         self.countdown = tk.StringVar(value="下一轮：开始后计时")
+        self.capture_warning = tk.StringVar()
         self.progress = tk.StringVar(value="每轮只获取一对新照片；完成后再进入下一轮。")
         self.result_caption = tk.StringVar(value="断面结果 · 尚未开始")
         self.error = tk.StringVar()
@@ -184,6 +190,9 @@ class AutoMonitorDialog:
         status.grid(row=1, column=0, sticky="ew", pady=(0, 8))
         ttk.Label(status, text="单帧获取 → 分析 → 结果显示", style="Monitor.TLabel").pack(side="left")
         ttk.Label(status, textvariable=self.phase, style="Monitor.Title.TLabel").pack(side="left", padx=20)
+        self.warning_label = ttk.Label(status, textvariable=self.capture_warning,
+                                      foreground='#C62828', style='Monitor.Title.TLabel')
+        self.warning_label.pack(side='right')
         photos = ttk.Frame(frame)
         photos.grid(row=2, column=0, sticky="nsew")
         photos.columnconfigure((0, 1), weight=1, uniform="photos")
@@ -195,7 +204,7 @@ class AutoMonitorDialog:
         results = ttk.Frame(frame)
         results.grid(row=4, column=0, sticky="nsew")
         results.columnconfigure((0, 1), weight=1, uniform="sections")
-        results.columnconfigure(2, weight=0, minsize=285)
+        results.columnconfigure(2, weight=0, minsize=345)
         results.rowconfigure(0, weight=1)
         self.cad_panel = ttk.LabelFrame(results, text="CAD 对应断面")
         self.cad_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
@@ -206,11 +215,15 @@ class AutoMonitorDialog:
         self.section_canvas = tk.Canvas(measured_panel, bg="#F2F5F8", width=200, height=250, highlightthickness=0)
         self.section_canvas.pack(fill="both", expand=True)
         self.cad = _CADSection(self, self.cad_panel, self.cad_canvas)
-        table_panel = ttk.LabelFrame(results, text="管径 / 管号 / 辅助状态")
-        table_panel.grid(row=0, column=2, sticky="nsew", padx=(5, 0))
+        sidebar = ttk.Frame(results)
+        sidebar.grid(row=0, column=2, sticky='nsew', padx=(5, 0))
+        sidebar.columnconfigure(0, weight=1)
+        sidebar.rowconfigure((0, 1), weight=1, minsize=115)
+        table_panel = ttk.LabelFrame(sidebar, text="管径 / 管号 / 辅助状态")
+        table_panel.grid(row=0, column=0, sticky="nsew", pady=(0, 6))
         self.table = ttk.Treeview(table_panel, columns=("section", "diameter", "pipe", "status"),
                                  show="headings", height=6, style="Monitor.Treeview", selectmode="browse")
-        for key, title, width in (("section", "断面", 42), ("diameter", "测径 mm", 65), ("pipe", "管号", 63), ("status", "辅助状态", 101)):
+        for key, title, width in (("section", "断面", 42), ("diameter", "测径 mm", 65), ("pipe", "管号", 63), ("status", "辅助状态", 155)):
             self.table.heading(key, text=title)
             self.table.column(key, width=width, minwidth=35, stretch=True)
         scroll = ttk.Scrollbar(table_panel, command=self.table.yview)
@@ -219,6 +232,19 @@ class AutoMonitorDialog:
         self.table.pack(fill="both", expand=True)
         self.table.bind("<<TreeviewSelect>>", self._selected)
         self.table.bind("<Return>", self._selected)
+        history_panel = ttk.LabelFrame(sidebar, text='辅助提示增减记录 · 最近200条')
+        history_panel.grid(row=1, column=0, sticky='nsew')
+        self.history_table = ttk.Treeview(history_panel, columns=('time', 'cycle', 'change', 'pipe'),
+                                         show='headings', height=5, style='Monitor.History.Treeview')
+        for key, title, width in (('time', '时间', 112), ('cycle', '轮次', 38), ('change', '变化', 80), ('pipe', '管号', 75)):
+            self.history_table.heading(key, text=title)
+            self.history_table.column(key, width=width, minwidth=35)
+        history_scroll = ttk.Scrollbar(history_panel, command=self.history_table.yview)
+        self.history_table.configure(yscrollcommand=history_scroll.set)
+        history_scroll.pack(side='right', fill='y')
+        self.history_table.pack(fill='both', expand=True)
+        ttk.Label(sidebar, text='提示减少 ≠ 确认拆除；完整记录自动保存。',
+                  foreground='#355371').grid(row=2, column=0, sticky='w', pady=(4, 0))
         self.cad_canvas.bind("<Configure>", lambda _event: self._draw_results())
         self.section_canvas.bind("<Configure>", lambda _event: self._draw_results())
         footer = ttk.Frame(frame)
@@ -263,6 +289,9 @@ class AutoMonitorDialog:
                 from .auto_monitor import SingleFrameMonitor
                 factory = SingleFrameMonitor
             self.monitor = factory(**configuration, interval_seconds=minutes * 60)
+            self.history = MonitorHistory(self.pipes)
+            self.history_path = (Path(configuration['dataset_arguments']['output_root']).parent /
+                                 f'monitor-history-{self.history.session_id}.jsonl')
             self.cycle_id = self.result_cycle = 0
             self.failed_cycle = None
             self.manifest_path = self.manifest_hash = None
@@ -292,8 +321,12 @@ class AutoMonitorDialog:
 
     def _phase(self, state):
         self.state = state
-        prefix = f"第 {self.cycle_id} 轮 · " if self.cycle_id else ""
+        self.warning_started = self.clock() if state == 'PREPARING' else None
+        cycle = self.cycle_id + 1 if state == 'PREPARING' else self.cycle_id
+        prefix = f"第 {cycle} 轮 · " if cycle else ""
         self.phase.set(prefix + PHASE_LABELS.get(state, state))
+        if state != 'PREPARING':
+            self.capture_warning.set('')
 
     def _controls(self):
         active = self.active
@@ -333,7 +366,7 @@ class AutoMonitorDialog:
         scenes = scene_sections(self.report)
         if scenes and scenes[0]["items"]:
             draw_scene(self.section_canvas, scenes[0], selected_pipe=self.selected_pipe,
-                       advisory_assignments=hypothesis_assignments(self.report))
+                       advisory_assignments=hypothesis_assignments(self.report), clockwise_quarters=1)
         else:
             self._placeholder(self.section_canvas, "本轮未解出可用断面\n详见辅助状态与进度说明")
 
@@ -403,6 +436,8 @@ class AutoMonitorDialog:
             self.failed_cycle = cycle
             self._clear_results("本轮未完成，断面暂不显示")
             self.error.set(f"第 {cycle} 轮 · {event.get('message', '监控失败')}")
+            self.capture_warning.set('')
+            self._record_history(error=event.get('message', '监控失败'))
         elif kind == "result":
             if cycle != self.cycle_id or cycle == self.failed_cycle or self.manifest_path is None or Path(event["manifest_path"]).resolve() != self.manifest_path:
                 return
@@ -428,6 +463,7 @@ class AutoMonitorDialog:
             self._fill_table()
             self._draw_results()
             self.progress.set("本轮结果已显示。测径为条件量测；CAD 圆径为设计值；辅助管号仍待确认。")
+            self._record_history(report=report, evaluated_at=str(result_time))
         elif kind == "stopped":
             if not self.active:
                 self._phase("STOPPED")
@@ -455,7 +491,29 @@ class AutoMonitorDialog:
             self.table.insert("", "end", iid=str(index), values=(row.get("label", identity),
                               f"{diameter:.2f}" if isinstance(diameter, (int, float)) else "—", pipe_id or "待对应", status))
 
+    def _record_history(self, *, report=None, evaluated_at=None, error=None):
+        if self.history is None:
+            return
+        entry = self.history.record(self.cycle_id, report=report, captured_at=self.captured_at,
+                                    evaluated_at=evaluated_at, manifest_path=self.manifest_path, error=error)
+        if entry is None:
+            return
+        stamp = _time_text(entry['captured_at'] or entry['recorded_at'])
+        for change, pipe in history_rows(entry):
+            last = self.history_table.insert('', 'end', values=(stamp, self.cycle_id or '—', change, pipe))
+        rows = self.history_table.get_children()
+        if len(rows) > 200:
+            self.history_table.delete(*rows[:-200])
+        self.history_table.see(last)
+        try:
+            self.history_path.parent.mkdir(parents=True, exist_ok=True)
+            with self.history_path.open('a', encoding='utf-8') as stream:
+                stream.write(json.dumps(entry, ensure_ascii=False, allow_nan=False) + '\n')
+        except OSError as failure:
+            self.error.set(f'本轮结果已保留，但增减记录保存失败：{failure}')
+
     def _countdown(self):
+        self.capture_warning.set('')
         if not self.active:
             self.countdown.set("下一轮：已停止" if self.monitor is not None else "下一轮：开始后计时")
             return
@@ -467,7 +525,11 @@ class AutoMonitorDialog:
             self.countdown.set("下一轮：等待相机就绪")
             return
         seconds = max(0, math.ceil(due - self.clock()))
-        if seconds == 0 and self.state in ("CAPTURING", "ANALYZING"):
+        if self.state == 'PREPARING':
+            self.countdown.set(f'距拍摄：{seconds} 秒')
+            if int((self.clock() - self.warning_started) * 2) % 2 == 0:
+                self.capture_warning.set(f'准备拍摄：{seconds} 秒，请保持静止')
+        elif seconds == 0 and self.state in ("CAPTURING", "ANALYZING"):
             self.countdown.set("已到期 · 等待本轮完成，不累积任务")
         elif self.state == "WARMING_UP":
             self.countdown.set(f"首次采集：预热剩余 {seconds} 秒")
@@ -492,6 +554,7 @@ class AutoMonitorDialog:
                     self.failed_cycle = self.cycle_id
                     self._clear_results("本轮结果未显示")
                     self.error.set(str(error))
+                    self._record_history(error=error)
         self._release_if_idle()
         self._controls()
         self._countdown()

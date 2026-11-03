@@ -1,0 +1,62 @@
+{
+  "real_camera_opened": false,
+  "network_requests": 0,
+  "ai_requests": 0,
+  "production_preferences_changed": false,
+  "screenshots": [
+    "result-history-1024x720.png",
+    "result-history-1280x860.png"
+  ],
+  "warning_visible_text": "准备拍摄：10 秒，请保持静止",
+  "warning_off_text": "",
+  "records": [
+    {
+      "schema_version": "pipe-monitor-history-v1",
+      "session_id": "569e84aba339480fb6538855440d6be0",
+      "cycle_id": 1,
+      "kind": "BASELINE",
+      "advisory_only": true,
+      "captured_at": "2026-11-03T10:30:00+08:00",
+      "evaluated_at": "2026-11-03T10:30:12+08:00",
+      "recorded_at": "2026-11-03T03:39:54.414034+00:00",
+      "manifest_path": "<temporary synthetic scene>",
+      "model_pipe_ids": [
+        "P001",
+        "P002"
+      ],
+      "pipe_ids": [
+        "P001"
+      ],
+      "added": [],
+      "removed": [],
+      "error": null
+    },
+    {
+      "schema_version": "pipe-monitor-history-v1",
+      "session_id": "569e84aba339480fb6538855440d6be0",
+      "cycle_id": 2,
+      "kind": "CHANGED",
+      "advisory_only": true,
+      "captured_at": "2026-11-03T10:31:00+08:00",
+      "evaluated_at": "2026-11-03T10:31:12+08:00",
+      "recorded_at": "2026-11-03T03:39:54.532601+00:00",
+      "manifest_path": "<temporary synthetic scene>",
+      "model_pipe_ids": [
+        "P001",
+        "P002"
+      ],
+      "pipe_ids": [
+        "P002"
+      ],
+      "added": [
+        "P002"
+      ],
+      "removed": [
+        "P001"
+      ],
+      "error": null
+    }
+  ],
+  "analysis_sections_empty": true,
+  "analysis_history_rows": 3
+}

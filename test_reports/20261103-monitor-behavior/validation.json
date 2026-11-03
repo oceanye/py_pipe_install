@@ -1,0 +1,20 @@
+{
+  "date": "2026-11-03",
+  "branch": "main",
+  "base_commit": "f35e4217bb613dba3fbd05954f84d5791d25bd09",
+  "targeted_tests": {
+    "files": ["test_auto_monitor.py", "test_auto_monitor_gui.py", "test_auto_monitor_integration.py", "test_monitor_history.py", "test_relative_scene.py", "test_elevation_viewer.py", "test_camera_monitor_ownership.py"],
+    "passed": 63,
+    "subtests_passed": 26,
+    "seconds": 9.85
+  },
+  "gui_evidence": "gui-evidence.json",
+  "gui_sizes": ["1024x720", "1280x860"],
+  "display_rotation": "Clockwise 90 degrees for measured section in auto-monitor only; centers and covariance rotate together; CAD and measurement data unchanged",
+  "pre_capture_warning": "10 seconds before each capture; 0.5 second on/off; slow analysis postpones deadline rather than skipping warning",
+  "history": "Per-session baseline and per-cycle auxiliary hint changes; current sections clear during capture/analysis but historical rows remain; JSONL persists all accepted cycles",
+  "physical_camera_opened": false,
+  "network_or_ai_used_for_validation": false,
+  "production_preferences_changed": false,
+  "full_algorithm_suite_rerun_for_display_scheduler_change": false
+}
