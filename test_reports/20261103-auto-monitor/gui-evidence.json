@@ -1,0 +1,17 @@
+{
+  "backend": "FakeMonitor",
+  "real_camera_opened": false,
+  "network_requests": 0,
+  "ai_requests": 0,
+  "user_preferences_written": false,
+  "result_snapshots": [
+    "result-1024x720.png",
+    "result-1280x860.png"
+  ],
+  "analysis_has_report": false,
+  "analysis_has_cad_pipe": false,
+  "analysis_has_measured_section": false,
+  "analysis_table_rows": 0,
+  "countdown": "已到期 · 等待本轮完成，不累积任务",
+  "error": "第 2 轮 · 模拟：计算连接断开，本轮未完成。"
+}

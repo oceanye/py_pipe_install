@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-03",
+  "branch": "feature/remote-analysis",
+  "base_commit": "aa33997e707abeee61a2cfbbeed23cf47185cf40",
+  "original_main_commit_unchanged": "3999a7b9b483be0d35dc4191171d65c3ae8d8162",
+  "platform": "Windows",
+  "full_suite": {
+    "command": "python -c \"import cv2,pytest; cv2.setNumThreads(2); raise SystemExit(pytest.main(['tests','-q','--junitxml=outputs/monitor-full-tests.xml']))\"",
+    "passed": 1413,
+    "skipped": 1,
+    "subtests_passed": 305,
+    "seconds": 572.01,
+    "exit_code": 0
+  },
+  "targeted_suite": {
+    "files": ["test_auto_monitor.py", "test_auto_monitor_gui.py", "test_auto_monitor_integration.py", "test_camera_monitor_ownership.py", "test_capture_gui.py", "test_calibration_wizard.py"],
+    "passed": 72,
+    "subtests_passed": 29,
+    "seconds": 15.31
+  },
+  "fresh_process_lazy_tk_import": {"passed": 1, "seconds": 0.20},
+  "cli": {
+    "analyze_m0": "PASS: 1727/1727 frames, maximum event error 2 frames",
+    "simulate_stereo": "PASS: 9 instances",
+    "analyze_stereo_software_demo": "PASS: installed 8, not_installed 0, unknown 1"
+  },
+  "gui_entries": "entries-evidence.json",
+  "gui_clear_on_new_cycle": "gui-evidence.json",
+  "archived_real_report_gui": "real-gui-evidence.json",
+  "archived_pair_two_cycle_replay": "replay-100952.json",
+  "scope": {
+    "physical_camera_opened": false,
+    "new_physical_captures": 0,
+    "ai_requests": 0,
+    "production_preferences_changed": false,
+    "second_physical_server_tested": false,
+    "long_running_hardware_monitor_tested": false,
+    "linux_tested_this_revision": false,
+    "github_ci_triggered_for_feature_push": false
+  }
+}

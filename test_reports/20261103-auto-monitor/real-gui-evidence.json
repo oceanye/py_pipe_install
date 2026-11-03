@@ -1,0 +1,36 @@
+{
+  "source": "test_reports\\20261103-auto-monitor\\replay-100952.json",
+  "real_camera_opened": false,
+  "network_requests": 0,
+  "ai_requests": 0,
+  "cad_pipe_count": 12,
+  "result_rows": [
+    [
+      "S1",
+      "39.68",
+      "P011",
+      "疑似已安装"
+    ],
+    [
+      "S2",
+      "39.39",
+      "P008",
+      "疑似已安装"
+    ],
+    [
+      "S3",
+      "47.92",
+      "P004",
+      "疑似已安装"
+    ],
+    [
+      "C4",
+      "—",
+      "P009",
+      "断面未解 · 疑似已安装"
+    ]
+  ],
+  "next_cycle_section_empty": true,
+  "late_previous_result_rejected": true,
+  "passed": true
+}

@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "entries": {
+    "settings": {
+      "text": "设置…",
+      "x": 922,
+      "width": 87,
+      "enabled": true
+    },
+    "monitor": {
+      "text": "自动监控…",
+      "x": 345,
+      "width": 87,
+      "enabled": true
+    }
+  },
+  "runtime_choices": [
+    "服务器端",
+    "前端",
+    "本地运算"
+  ],
+  "applied_modes": [
+    "server",
+    "client",
+    "local"
+  ],
+  "monitor_opens_from_button": true,
+  "camera_opened": false,
+  "server_started": false,
+  "network_requests": 0,
+  "ai_requests": 0,
+  "production_preferences_written": false
+}

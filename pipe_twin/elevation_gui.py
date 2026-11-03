@@ -642,6 +642,8 @@ class ElevationCaptureDialog:
         self.calibration_dialog = None
         self.camera_dialog = None
         self.ground_monitor = None
+        self.auto_monitor = None
+        self._monitor_active = False
         self.model_viewer = None
         self.quality_dialog = None
         self.messages: queue.Queue = queue.Queue()
@@ -720,6 +722,8 @@ class ElevationCaptureDialog:
         ttk.Button(action_bar, text='现场模型 / 编号 / 方向', command=self.open_model_viewer).pack(side='left', padx=6)
         self.save_button = ttk.Button(action_bar, text="仅保存基础现场", command=lambda: self.submit(False))
         ttk.Button(action_bar, text='Kimi 设置', command=self.ai_controller.open_settings).pack(side='left', padx=3)
+        self.monitor_button = ttk.Button(action_bar, text='自动监控…', command=self.open_auto_monitor)
+        self.monitor_button.pack(side='left', padx=3)
         ttk.Label(action_bar, text='先抓拍 → ④准备 → ⑤本地 / AI 评估', foreground='#355371').pack(side='left', padx=6)
         method_bar = ttk.Frame(self.controls)
         method_bar.pack(fill="x", pady=(0, 4))
@@ -2040,6 +2044,110 @@ class ElevationCaptureDialog:
             raise ValueError(problem)
         return calibration
 
+    def open_auto_monitor(self) -> None:
+        """Open a separate monitor without opening a camera or changing the scene."""
+        if self.auto_monitor is not None and self.auto_monitor.window.winfo_exists():
+            self.auto_monitor.window.deiconify()
+            self.auto_monitor.window.lift()
+            return
+        if self.busy or not self.runtime.permits():
+            return
+        from .auto_monitor_gui import AutoMonitorDialog
+        self.auto_monitor = AutoMonitorDialog(self)
+
+    def _monitor_start_problem(self) -> str | None:
+        if self.closed:
+            return '主窗口已关闭。'
+        if self.busy:
+            return '当前任务尚未结束，请完成后再启动自动监控。'
+        if self.runtime.mode == 'server' or self.runtime.changing or self.runtime.checking:
+            return '自动监控需要前端或本地运算模式；请先完成运行设置和连接检测。'
+        for name in ('camera_dialog', 'calibration_dialog', 'ground_monitor'):
+            dialog = getattr(self, name, None)
+            if dialog is None:
+                continue
+            if dialog.window.winfo_exists() or getattr(dialog, '_opening', False):
+                return '请先关闭抓拍、标定或实时地面窗口，释放相机后再启动自动监控。'
+            worker = getattr(dialog, 'worker', None)
+            if worker is not None and worker.active:
+                return '相机正在释放，请稍后启动自动监控。'
+        viewer = self.model_viewer
+        if viewer is not None and viewer.window.winfo_exists() and viewer.has_pending_camera_side():
+            return '观察方向尚未应用，请先在模型窗口应用或恢复相机观察侧。'
+        return None
+
+    def monitor_configuration(self) -> dict:
+        """Freeze setup only; the monitor supplies its own fresh stereo pair."""
+        if problem := self._monitor_start_problem():
+            raise ValueError(problem)
+        from .stereo_analyzer import _analysis_config, _calibration_from_manifest
+        from .elevation_dataset import normalize_registration_settings
+        from .ground_monitor_gui import camera_options
+        calibration = copy.deepcopy(self.current_calibration())
+        parsed = _calibration_from_manifest(calibration)
+        if not self.pipes or not self.fields['model'].get().strip():
+            raise ValueError('请先导入 STL 或 DXF 管道模型。')
+        model = Path(self.fields['model'].get()).resolve()
+        if not model.is_file():
+            raise ValueError('模型文件不存在，请重新选择模型。')
+        settings = copy.deepcopy(self.analysis_settings)
+        try:
+            disparities = int(self.disparity_count.get())
+        except ValueError:
+            raise ValueError('视差搜索范围需为 16 的正整数倍。') from None
+        settings['stereo_matching'] = {**settings.get('stereo_matching', {}),
+            'num_disparities': disparities,
+            'preprocessing': 'low_light' if self.matching_preset.get() == '弱光降噪' else 'none'}
+        settings['matching'] = self._matching_settings_from_controls()
+        settings = _analysis_config(settings)
+        if disparities + settings['stereo_matching']['min_disparity'] >= parsed.left.width:
+            raise ValueError('视差搜索范围必须小于每目图像宽度。')
+        scope = normalize_zone_settings(self.zone_settings, image_size=(parsed.left.width, parsed.left.height))
+        if len(scope['zones']) > 1:
+            raise ValueError('自动监控只使用一个管段评估区域，请重新框选或清除当前区域。')
+        if problem := self.assessment_region_problem(scope):
+            raise ValueError(problem)
+        registration = copy.deepcopy(self.registration_settings)
+        registration.pop('present_pipe_count', None)
+        if count := self.present_pipe_count.get().strip():
+            try:
+                registration['present_pipe_count'] = int(count)
+            except ValueError:
+                raise ValueError('现场实际管数需为正整数。') from None
+        registration = normalize_registration_settings(registration)
+        return {
+            'dataset_arguments': dict(output_root=self.output_root / 'monitor' / 'captures',
+                calibration=calibration, model_path=model, stl_unit=self.stl_unit.get(),
+                pipe_specs=copy.deepcopy(self.pipes), analysis_settings=settings,
+                mode='elevation_auto', registration_settings=registration, scope_settings=scope,
+                rectification_recipe=copy.deepcopy((self.profile or {}).get('rectification_recipe')),
+                previous_manifest=None, temporal_frames=[]),
+            'camera_options': camera_options(calibration, copy.deepcopy(self.profile)),
+            'mode': self.runtime.mode,
+            'server_url': self.runtime.settings.base_url if self.runtime.mode == 'client' else None,
+        }
+
+    def monitor_started(self) -> bool:
+        if problem := self._monitor_start_problem():
+            raise ValueError(problem)
+        self.cancel_image_selections()
+        self._monitor_active = True
+        self.busy = True
+        self._set_controls(False)
+        self.message.set('自动监控运行中；当前设置已固定。请在监控窗口查看照片、断面和倒计时。')
+        log_event(LOGGER, 'auto_monitor_owner_locked', mode=self.runtime.mode)
+        return True
+
+    def monitor_stopped(self) -> None:
+        if not self._monitor_active:
+            return
+        self._monitor_active = False
+        self.busy = False
+        if not self.closed:
+            self._set_controls(True)
+            self.message.set('自动监控已停止并释放相机；监控照片和报告保存在独立目录。')
+            log_event(LOGGER, 'auto_monitor_owner_released')
+
     def refresh_calibration_status(self) -> None:
         try:
             from .stereo_analyzer import _calibration_from_manifest
@@ -2568,7 +2676,7 @@ class ElevationCaptureDialog:
         self.closed = True
         self.runtime.close()
         self.ai_controller.close()
-        for dialog in (self.ground_monitor, self.camera_dialog, self.calibration_dialog, self.model_viewer, self.quality_dialog):
+        for dialog in (self.auto_monitor, self.ground_monitor, self.camera_dialog, self.calibration_dialog, self.model_viewer, self.quality_dialog):
             if dialog is not None and dialog.window.winfo_exists():
                 dialog.close()
         if getattr(self, "poll_id", None):

@@ -3949,6 +3949,8 @@ class ChessboardWizardDialog:
             eye_height=eye_height,
         )
         outcome: dict[str, Any] = {}
+        self._open_outcome = outcome
+        self._open_lock = threading.Lock()
 
         def _task() -> StereoCameraSession:
             session = StereoCameraSession(
@@ -3963,14 +3965,15 @@ class ChessboardWizardDialog:
             return session
 
         def _on_result(result: Any, error: Exception | None) -> None:
-            if error is not None and result is None:
-                outcome["done"] = (None, error)
-                return
-            if self._closing:
-                result.close()
-                outcome["done"] = (None, ChessboardCalibrationError("窗口已关闭"))
-                return
-            outcome["done"] = (result, None)
+            with self._open_lock:
+                if self._closing:
+                    try:
+                        if result is not None:
+                            result.close()
+                    finally:
+                        self._opening = False
+                    return
+                outcome["done"] = (result, error)
 
         run_in_background(_task, _on_result)
         self._poll_open(outcome)
@@ -3984,7 +3987,7 @@ class ChessboardWizardDialog:
             return
         self.open_after_id = None
         self._opening = False
-        session, error = outcome["done"]
+        session, error = outcome.pop("done")
         from .logging_config import get_logger, log_event
 
         logger = get_logger("calibration_wizard")
@@ -4943,7 +4946,19 @@ class ChessboardWizardDialog:
             )
 
     def close(self) -> None:
-        self._closing = True
+        lock = getattr(self, '_open_lock', None)
+        if lock is None:
+            self._closing = True
+        else:
+            with lock:
+                self._closing = True
+                pending = self._open_outcome.pop('done', None)
+                if pending is not None:
+                    try:
+                        if pending[0] is not None:
+                            pending[0].close()
+                    finally:
+                        self._opening = False
         if self.solve_after_id is not None:
             self.window.after_cancel(self.solve_after_id)
             self.solve_after_id = None
