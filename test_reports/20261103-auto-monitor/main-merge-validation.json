@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-03",
+  "branch": "main",
+  "merged_feature_head": "26ff1f642b427b25b55343f4e5f7095a2bbd393f",
+  "merge_type": "fast-forward",
+  "launcher_and_integration_tests": {
+    "files": ["test_gui_launcher.py", "test_office_client.py", "test_auto_monitor_integration.py", "test_analysis_runtime_gui.py"],
+    "passed": 34,
+    "subtests_passed": 7,
+    "skipped": 0,
+    "seconds": 13.36
+  },
+  "gui_entries_reverified_in_main": true,
+  "root_batch_check": "PASS",
+  "nested_checkout_without_venv_check": "PASS: parent environment used, current checkout retained, Chinese and spaces in path supported",
+  "batch_help_subprocess": "PASS: real office-client parser output saved to startup log; no GUI/services started",
+  "environment": {
+    "python": "3.12.10",
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "opencv": "4.13.0",
+    "ezdxf": "1.4.4",
+    "rhino3dm": "8.32.2",
+    "tk": "8.6"
+  },
+  "environment_dependencies_modified": false,
+  "user_running_processes_stopped": false,
+  "physical_camera_opened": false,
+  "production_preferences_changed": false,
+  "full_algorithm_suite_rerun_for_launcher_only_change": false,
+  "full_algorithm_baseline": "validation.json"
+}
